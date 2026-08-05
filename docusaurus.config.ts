@@ -149,40 +149,13 @@ const config: Config = {
           position: 'left',
           label: 'WebSite',
         },
-        ...docList
-          .filter(({ path }) => path !== 'python')
-          .map(({ path, title }) => ({
-            type: 'docSidebar',
-            sidebarId: 'sidebarId',
-            docsPluginId: `${path}Id`,
-            position: 'left' as 'left' | 'right',
-            label: title,
-          })),
-        {
-          type: 'dropdown',
-          label: 'Python',
-          position: 'left',
-          items: [
-            {
-              type: 'doc',
-              docId: '基础语法/变量与数据类型',
-              docsPluginId: 'pythonId',
-              label: '基础语法',
-            },
-            {
-              type: 'doc',
-              docId: '高级特性/装饰器',
-              docsPluginId: 'pythonId',
-              label: '高级特性',
-            },
-            {
-              type: 'docSidebar',
-              sidebarId: 'sidebarId',
-              docsPluginId: 'pythonId',
-              label: '全部文档',
-            },
-          ],
-        },
+        ...docList.map(({ path, title }) => ({
+          type: 'docSidebar',
+          sidebarId: 'sidebarId',
+          docsPluginId: `${path}Id`,
+          position: 'left' as 'left' | 'right',
+          label: title,
+        })),
         {to: 'blog', label: 'Blog', position: 'left'},
         {to: 'download', label: '资源下载', position: 'left'},
         {

@@ -1,0 +1,396 @@
+---
+sidebar_position: 1
+title: 基础语法
+---
+
+# Python 基本语法
+
+本文覆盖 Python 最核心的语法基础：从数据类型、变量、运算符到流程控制，帮助你快速建立对 Python 代码的直觉。
+
+## 语言基本特征
+
+- **解释型** — 无需编译，逐行执行
+- **强类型** — 不同类型之间不会隐式转换
+- **动态类型** — 变量无需声明类型，运行时确定
+- **面向对象** — 一切皆对象
+
+## 注释
+
+```python
+# 这是单行注释
+
+"""
+这是多行注释（三个双引号）
+可以跨多行
+"""
+
+'''
+这也是多行注释（三个单引号）
+'''
+```
+
+## 数据类型
+
+Python 的内置类型可分为**原子类型**（标量）和**容器类型**两大类。
+
+| 类别 | 类型 | 字面量示例 | 说明 |
+| --- | --- | --- | --- |
+| 整数 | `int` | `42`, `-3`, `0b1010` | 支持任意精度，无溢出 |
+| 浮点 | `float` | `3.14`, `-0.5`, `2e10` | 64 位双精度 |
+| 复数 | `complex` | `1+2j` | `j` 表示虚数单位 |
+| 布尔 | `bool` | `True`, `False` | `True` 即 1，`False` 即 0 |
+| 字符串 | `str` | `"hello"`, `'world'` | 单双引号等价 |
+| 空值 | `NoneType` | `None` | 表示"无" |
+
+> **原子类型**：`int`、`float`、`complex`、`bool`、`str`、`NoneType`
+> **容器类型**：`list`、`tuple`、`dict`、`set` 等（后续章节介绍）
+
+```python
+# 整数支持多种进制
+print(42)       # 十进制
+print(0b1010)   # 二进制 → 10
+print(0o52)     # 八进制 → 42
+print(0x2A)     # 十六进制 → 42
+
+# 浮点数的几种写法
+print(3.14)     # 小数
+print(2.5e10)   # 科学计数法 → 25000000000.0
+print(1.2e-3)   # 负指数 → 0.0012
+
+# 布尔值
+print(True, False)
+
+# 字符串：单双引号等价，三引号支持换行
+print("hello")
+print('world')
+print("""第一行
+第二行""")
+
+# 空值
+print(None)
+```
+
+### type 函数
+
+`type()` 返回值的类型对象，常用于调试时确认变量类型。
+
+```python
+print(type(42))       # <class 'int'>
+print(type(3.14))     # <class 'float'>
+print(type(True))     # <class 'bool'>
+print(type("hello"))  # <class 'str'>
+print(type(None))     # <class 'NoneType'>
+```
+
+> `type()` 返回的是类型对象，不是字符串。可以直接与类型比较：
+> ```python
+> print(type(42) == int)  # True
+> ```
+
+## 变量
+
+### 定义与赋值
+
+Python 是动态类型语言，变量无需声明类型，赋值即创建。
+
+```python
+name = "Alice"
+age = 25
+pi = 3.14159
+is_valid = True
+```
+
+### 命名规则
+
+| 规则 | 说明 | 合法示例 | 非法示例 |
+| --- | --- | --- | --- |
+| 字母/下划线开头 | 不可数字开头 | `name`, `_value` | `2value` |
+| 区分大小写 | `Name` ≠ `name` | — | — |
+| 不能用关键字 | Python 保留字禁用 | — | `if`, `class` |
+| 仅字母/数字/下划线 | 无空格、无连字符 | `user_name` | `user-name` |
+
+### 命名规范
+
+| 场景 | 规范 | 示例 |
+| --- | --- | --- |
+| 普通变量 | `snake_case` 小写+下划线 | `user_name`, `total_count` |
+| 常量 | `UPPER_CASE` 全大写 | `MAX_SIZE`, `PI` |
+| 类名 | `PascalCase` 首字母大写驼峰 | `UserInfo`, `DataModel` |
+| 私有成员 | 下划线前缀 | `_internal`, `__private` |
+
+### 多重赋值
+
+```python
+a, b, c = 1, 2, 3       # 同时赋值
+x, y = y, x             # 一行交换
+a = b = c = 0           # 同值多赋
+```
+
+### 类型转换
+
+```python
+int("25")       # "25" → 25
+str(100)        # 100 → "100"
+float(5)        # 5 → 5.0
+int(3.9)        # 3.9 → 3（截断，非四舍五入）
+
+# 真假值转换：0、0.0、""、None、False → False，其余 → True
+bool(0)         # False
+bool("hi")      # True
+```
+
+## 字符串格式化（f-string）
+
+Python 3.6+ 引入 f-string，在字符串前加 `f`，花括号内直接嵌入变量或表达式。
+
+```python
+name = "Alice"
+age = 25
+print(f"姓名: {name}, 年龄: {age}")   # 姓名: Alice, 年龄: 25
+
+a, b = 3, 5
+print(f"{a} + {b} = {a + b}")         # 3 + 5 = 8
+```
+
+## 运算符
+
+### 算术运算符
+
+| 运算符 | 名称 | 示例 | 结果 | 备注 |
+| --- | --- | --- | --- | --- |
+| `+` | 加 | `5 + 3` | `8` | 字符串会拼接 |
+| `-` | 减 | `5 - 3` | `2` | — |
+| `*` | 乘 | `5 * 3` | `15` | 字符串会重复 |
+| `/` | 除 | `5 / 3` | `1.666...` | **始终返回 float** |
+| `//` | 整除 | `5 // 3` | `1` | 向下取整 |
+| `%` | 取余 | `5 % 3` | `2` | — |
+| `**` | 幂 | `5 ** 3` | `125` | — |
+
+```python
+# 基本运算
+print(5 + 3, 5 - 3, 5 * 3, 5 / 3, 5 // 3, 5 % 3, 5 ** 3)
+
+# 字符串的特殊行为
+print("Hello" + "World")   # "HelloWorld"
+print("Hi" * 3)            # "HiHiHi"
+
+# bool 参与运算（True=1, False=0）
+print(True + True)         # 2
+print(True * 5)            # 5
+
+# None 参与任何算术运算都会报 TypeError
+```
+
+### 比较运算符
+
+| 运算符 | 名称 |
+| --- | --- |
+| `==` | 等于 |
+| `!=` | 不等于 |
+| `<` | 小于 |
+| `>` | 大于 |
+| `<=` | 小于等于 |
+| `>=` | 大于等于 |
+
+```python
+# 数值比较
+print(5 == 5, 5 != 3, 5 > 3)
+
+# 字符串按字典序（ASCII）比较
+print("abc" < "def")      # True
+print("A" < "a")          # True（A=65, a=97）
+
+# bool 与 int 互通
+print(True == 1)          # True
+print(False == 0)         # True
+
+# None 只能 == 或 !=，不支持大小比较
+print(None == None)       # True
+```
+
+### 链式比较
+
+Python 独有的语法糖，像数学公式一样连续书写。
+
+```python
+x = 5
+print(1 < x < 10)         # True（等价于 1 < x and x < 10）
+print(1 < x <= 5)         # True
+```
+
+> `a < b < c` 等价于 `a < b and b < c`，但 `b` 只被求值一次。
+
+### 赋值运算符
+
+| 运算符 | 等价于 | 运算符 | 等价于 |
+| --- | --- | --- | --- |
+| `+=` | `a = a + b` | `/=` | `a = a / b` |
+| `-=` | `a = a - b` | `//=` | `a = a // b` |
+| `*=` | `a = a * b` | `%=` | `a = a % b` |
+| | | `**=` | `a = a ** b` |
+
+```python
+a = 10
+a += 5     # 15
+a -= 3     # 12
+a *= 2     # 24
+a /= 4     # 6.0（注意：/= 结果变为 float）
+
+s = "Hello"
+s += " World"   # "Hello World"
+s *= 2          # "Hello WorldHello World"
+```
+
+### 海象运算符（`:=`）
+
+Python 3.8 引入，在表达式中完成赋值并返回该值。
+
+```python
+# 传统写法
+line = input("输入: ")
+while line != "quit":
+    print(f"你输入了: {line}")
+    line = input("输入: ")
+
+# 海象运算符：赋值 + 判断合二为一
+while (line := input("输入: ")) != "quit":
+    print(f"你输入了: {line}")
+```
+
+### 逻辑运算符
+
+| 运算符 | 说明 | 返回值规则 |
+| --- | --- | --- |
+| `and` | 逻辑与 | 第一个假值则短路返回它，否则返回最后一个 |
+| `or` | 逻辑或 | 第一个真值则短路返回它，否则返回最后一个 |
+| `not` | 逻辑非 | 始终返回 `True` / `False` |
+
+**真假值速记**：`0`、`0.0`、`""`、`None`、`False` 为假，其余为真。
+
+```python
+print(0 and 5)          # 0（短路）
+print(3 and 5)          # 5
+print(0 or 5)           # 5
+print(3 or 5)           # 3（短路）
+print(not 0)            # True
+print(not 5)            # False
+
+# 各类型均遵循同样规则
+print("" and "hello")   # ""（空字符串为假）
+print("hi" or "hello")  # "hi"（短路）
+print(None or True)     # True
+print(not None)         # True
+```
+
+### 三元运算符（条件表达式）
+
+```python
+result = "及格" if score >= 60 else "不及格"
+```
+
+适合简单条件判断，复杂逻辑建议用传统 `if-else`。
+
+## 输入输出
+
+```python
+# print 输出
+print("Hello, World!")
+print("a", "b", "c", sep="-")   # a-b-c（自定义分隔符）
+print("Hello", end=" ")          # 不换行，以空格结尾
+print("World")                   # Hello World
+
+# input 输入（始终返回字符串）
+name = input("请输入你的名字: ")
+age = int(input("请输入年龄: "))  # 需要手动转换
+```
+
+## 流程控制
+
+Python 使用缩进（4 个空格）表示代码块，不使用花括号。
+
+### if / elif / else
+
+```python
+score = 85
+
+if score >= 90:
+    grade = "A"
+elif score >= 80:
+    grade = "B"
+elif score >= 60:
+    grade = "C"
+else:
+    grade = "D"
+
+print(f"成绩等级: {grade}")
+```
+
+### pass 占位符
+
+语法上需要语句但逻辑上暂不实现时使用。
+
+```python
+if True:
+    pass  # 待实现
+
+while condition:
+    pass  # 占位
+```
+
+### while 循环
+
+```python
+count = 0
+while count < 5:
+    print(count)
+    count += 1
+```
+
+### break / continue
+
+| 语句 | 作用 |
+| --- | --- |
+| `break` | 立即终止整个循环 |
+| `continue` | 跳过当前迭代，进入下一轮 |
+
+```python
+# break：找到目标就停止
+num = 1
+while num <= 10:
+    if num > 5:
+        print(f"找到: {num}")
+        break
+    num += 1
+
+# continue：跳过奇数
+num = 0
+while num < 10:
+    if num % 2 != 0:
+        num += 1
+        continue
+    print(num)   # 0, 2, 4, 6, 8
+    num += 1
+```
+
+### 循环的 else 子句
+
+循环正常结束（未被 `break` 中断）时执行 `else`。
+
+```python
+count = 0
+while count < 3:
+    print(count)
+    count += 1
+else:
+    print("循环正常结束")
+
+# 典型用法：查找失败时触发
+num = 1
+while num <= 9:
+    if num == 4:
+        print("找到 4")
+        break
+    num += 2
+else:
+    print("未找到 4")    # 4 不在奇数序列中，走 else
+```
