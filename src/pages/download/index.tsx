@@ -1,23 +1,36 @@
-// import React from 'react';
 import Layout from '@theme/Layout';
-import style from './index.module.css'
-import fileList from './fileList.json'
+import style from './index.module.css';
+import fileList from './fileList.json';
+
+type FileItem = {
+  name: string;
+  path: string;
+  size: string;
+};
+
+const typedList = fileList as FileItem[];
+
 export default function Download() {
   return (
-    <Layout title="资源服务器" description="AAA">
-        <ul className={ style.page } >
-            <p className={style.item} >
-                <span>文件名</span>
-                <span>大小</span>
-                {/* <span>上传日期</span> */}
-            </p>
-            {fileList.map((o, idx) => <li key={idx}>
-                <a className={ style.item } href={o.path} download={o.name}>
-                    <span>{o.name}</span>  <span>{o.size}</span>  
-                    {/* <span>{o.date}</span> */}
-                </a>
-            </li>)}
-        </ul>
+    <Layout title="资源下载" description="文档、简历等资源下载">
+      <div className={style.page}>
+        {typedList.length === 0 ? (
+          <p className={style.empty}>暂无文件</p>
+        ) : (
+          <>
+            <div className={style.header}>
+              <span>文件名</span>
+              <span>大小</span>
+            </div>
+            {typedList.map((o) => (
+              <a key={o.name} className={style.item} href={o.path} download={o.name}>
+                <span>{o.name}</span>
+                <span>{o.size}</span>
+              </a>
+            ))}
+          </>
+        )}
+      </div>
     </Layout>
   );
 }

@@ -16,28 +16,26 @@ const docList = [
     path: 'postgre_sql',
     title: 'PostgreSQL'
   },
+  {
+    path: 'python',
+    title: 'Python'
+  },
 ]
 const config: Config = {
   title: 'Doc',
-  tagline: 'Dinosaurs are cool',
+  tagline: '前端技术文档与知识沉淀',
   favicon: 'img/avatar.png',
   markdown: {
     mermaid: true,
     hooks: {
-        onBrokenMarkdownLinks: 'throw', // 遇到损坏的markdown的链接时如何处理，throw表示抛出错误，warn表示警告，ignore表示忽略，log表示记录日志
-        onBrokenMarkdownImages: 'throw', // 遇到损坏的markdown的图片时如何处理，throw表示抛出错误，warn表示警告，ignore表示忽略，log表示记录日志
-    }
+      onBrokenMarkdownLinks: 'warn',
+    },
   },
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: ['@docusaurus/theme-mermaid', '@easyops-cn/docusaurus-search-local'],
   i18n: {
     defaultLocale: 'zh',
     locales: ['zh'],
   },
-
-  // staticDirectories: ['static'],
-  // clientModules: ['./src/pages/download/index.css'],
-
-  // stylesheets: ['https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4'],
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -52,10 +50,41 @@ const config: Config = {
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'facebook', // Usually your GitHub org/user name.
+  organizationName: 'zhangpanonline', // Usually your GitHub org/user name.
   projectName: 'doc', // Usually your repo name.
 
   onBrokenLinks: 'throw',
+
+  headTags: [
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'description',
+        content: '个人前端技术文档站 - TypeScript、Vue、React、NestJS、PostgreSQL 等技术笔记与面试题库',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        property: 'og:description',
+        content: '个人前端技术文档站 - TypeScript、Vue、React、NestJS、PostgreSQL 等技术笔记与面试题库',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        property: 'og:type',
+        content: 'website',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'twitter:card',
+        content: 'summary',
+      },
+    },
+  ],
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -74,8 +103,6 @@ const config: Config = {
             type: ['rss', 'atom'],
             xslt: true,
           },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl:
             'https://github.com/zhangpanonline/enterprise-admin/tree/main/apps/doc/',
           // Useful options to enforce blogging best practices
@@ -122,13 +149,40 @@ const config: Config = {
           position: 'left',
           label: 'WebSite',
         },
-        ...docList.map(({ path, title }) => ({
-          type: 'docSidebar',
-          sidebarId: 'sidebarId',
-          docsPluginId: `${path}Id`,
-          position: 'left' as 'left' | 'right',
-          label: title,
-        })),
+        ...docList
+          .filter(({ path }) => path !== 'python')
+          .map(({ path, title }) => ({
+            type: 'docSidebar',
+            sidebarId: 'sidebarId',
+            docsPluginId: `${path}Id`,
+            position: 'left' as 'left' | 'right',
+            label: title,
+          })),
+        {
+          type: 'dropdown',
+          label: 'Python',
+          position: 'left',
+          items: [
+            {
+              type: 'doc',
+              docId: '基础语法/变量与数据类型',
+              docsPluginId: 'pythonId',
+              label: '基础语法',
+            },
+            {
+              type: 'doc',
+              docId: '高级特性/装饰器',
+              docsPluginId: 'pythonId',
+              label: '高级特性',
+            },
+            {
+              type: 'docSidebar',
+              sidebarId: 'sidebarId',
+              docsPluginId: 'pythonId',
+              label: '全部文档',
+            },
+          ],
+        },
         {to: 'blog', label: 'Blog', position: 'left'},
         {to: 'download', label: '资源下载', position: 'left'},
         {

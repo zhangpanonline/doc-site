@@ -1,0 +1,128 @@
+---
+sidebar_position: 1
+title: 环境配置
+---
+# 环境配置
+
+Python 版本管理是开发环境搭建的第一步。本文使用业界主流的 `pyenv` 方案，帮助你在一台机器上同时管理多个 Python 版本和虚拟环境。
+
+## 安装 pyenv
+
+首先安装构建 Python 所需的前置依赖，再通过 Homebrew 安装 pyenv 本体。
+
+```bash
+# 安装构建依赖
+brew install zstd openssl readline xz zlib
+
+# 安装 pyenv
+brew install pyenv
+
+# 验证安装
+pyenv --version
+```
+
+## 配置镜像源
+
+国内环境建议配置镜像加速，否则 `pyenv install` 从官方源下载会非常慢。
+
+在 `~/.zshrc` 中添加：
+
+```bash
+export PYTHON_BUILD_MIRROR_URL="https://mirrors.aliyun.com/python-release/source/"
+```
+
+## 管理 Python 版本
+
+```bash
+# 查看所有可安装的版本
+pyenv install --list
+
+# 用管道过滤搜索结果
+pyenv install --list | grep "^  3.14"
+
+# 安装指定版本
+pyenv install 3.14.1
+
+# 查看已安装的版本
+pyenv versions
+
+# 查看当前正在使用的版本
+pyenv version
+
+# 卸载某个版本
+pyenv uninstall 3.14.1
+```
+
+pyenv 提供三种级别的作用域切换，按需选择：
+
+```bash
+# 全局生效（影响所有终端）
+pyenv global 3.14.1
+
+# 仅当前项目目录生效（会生成 .python-version 文件）
+pyenv local 3.14.1
+
+# 仅当前终端窗口生效（临时）
+pyenv shell 3.14.1
+```
+
+## 安装 pyenv-virtualenv
+
+`pyenv-virtualenv` 是一个插件，让你在 pyenv 管理的 Python 版本之上，进一步创建隔离的虚拟环境。
+
+```bash
+brew install pyenv-virtualenv
+```
+
+编辑 `~/.zshrc`，确认包含以下内容（最后一行是新增的）：
+
+```bash
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"    # 新增这行
+```
+
+保存后生效并验证：
+
+```bash
+source ~/.zshrc
+pyenv virtualenv --version
+```
+
+## 创建并使用虚拟环境
+
+为项目创建专属虚拟环境，并通过 `pyenv local` 绑定到项目目录，进入目录即自动激活。
+
+```bash
+# 进入项目目录
+cd /Users/zp/Code/downhole-agent
+
+# 基于 3.12.10 创建名为 downhole-agent 的虚拟环境
+pyenv virtualenv 3.12.10 downhole-agent
+
+# 绑定到当前项目目录
+pyenv local downhole-agent
+```
+
+> `pyenv local` 会在项目根目录生成 `.python-version` 文件。之后每次进入该目录，虚拟环境会自动激活。
+> 验证：`pyenv versions` 应列出 `downhole-agent`，`python --version` 应为 3.12.10。
+
+## 日常操作速查
+
+```bash
+# 创建虚拟环境
+pyenv virtualenv 3.14.1 myenv
+
+# 手动激活
+pyenv activate myenv
+
+# 退出当前虚拟环境
+pyenv deactivate
+
+# 查看所有已安装的 Python 版本和虚拟环境
+pyenv versions
+
+# 将当前目录默认绑定到某个虚拟环境
+pyenv local myenv
+```
