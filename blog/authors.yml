@@ -1,0 +1,14 @@
+zhangpan:
+  name: Zhang Pan
+  title: 这是一个title
+  url: https://github.com/zhangpanonline/enterprise-admin/tree/main/apps/doc
+  image_url: https://github.com/zhangpanonline.png
+  page: true
+    # customize the url of the author page at /blog/authors/<permalink>
+    # permalink: '/all-sebastien-lorber-articles'
+  socials:
+    x: zhangpan
+    linkedin: zhangpan
+    github: zhangpanonline
+    newsletter: https://github.com/zhangpanonline/enterprise-admin/tree/main/apps/doc
+

@@ -1,0 +1,128 @@
+---
+sidebar_position: 0
+title: Nest 项目准备
+---
+# Nest 项目准备
+
+## 一、创建 Nest 项目
+
+```bash
+# 使用 Nest CLI 创建项目
+nest new nest-app
+```
+## 二、项目结构介绍
+
+```bash
+nest-app
+├── src
+│   ├── app.controller.ts
+│   ├── app.module.ts
+│   ├── app.service.ts
+│   └── main.ts
+├── test
+│   ├── app.e2e-spec.ts
+│   └── jest-e2e.json
+├── .eslintrc.js
+├── .prettierrc
+├── nest-cli.json
+├── package.json
+├── README.md
+├── tsconfig.build.json
+└── tsconfig.json
+```
+- `src` 目录：包含应用程序的源代码。
+  - `app.controller.ts`：定义了一个控制器，处理传入的请求并返回响应。
+  - `app.module.ts`：定义了一个模块，组织应用程序的结构。
+  - `app.service.ts`：定义了一个服务，包含业务逻辑。
+  - `main.ts`：应用程序的入口文件，负责启动 Nest 应用程序。
+- `test` 目录：包含应用程序的测试代码。
+- `.eslintrc.js`：ESLint 配置文件。
+- `.prettierrc`：Prettier 配置文件。
+- `nest-cli.json`：Nest CLI 配置文件。
+- `package.json`：项目的依赖和脚本。
+- `README.md`：项目的说明文档。
+- `tsconfig.build.json`：TypeScript 构建配置文件。
+- `tsconfig.json`：TypeScript 配置文件。    
+## 三、运行项目
+
+```bash
+# 进入项目目录
+cd nest-app
+# 启动开发服务器
+pnpm start:dev
+``` 
+访问 `http://localhost:3000`，你应该会看到一个欢迎消息，说明你的 Nest 项目已经成功运行了！
+
+
+## 四、全局属性配置
+使用 ConfigModule/ConfigService 进行全局属性配置、获取，例如应用名称、全局前缀等，这些属性会影响整个应用程序的行为。
+
+### 4.1 配置
+在 `src/config/config.module.ts` 文件中创建一个 `ConfigModule` 模块，专门用来配置和导出全局属性。
+
+```ts
+import { Module } from '@nestjs/common';
+import { ConfigService, ConfigModule } from '@nestjs/config';
+@Module({
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true, // 设置为全局模块
+            load: [() => ({
+                app: {
+                    name: 'Nest App',
+                    globalPrefix: 'api',
+                    port: 3000
+                },
+                database: {
+                    host: 'localhost',
+                    port: 5432,
+                    username: 'postgres',
+                    password: 'root',
+                    database: 'db1118',
+                },
+                cors: {
+                    origin: process.env.CORS_ORIGIN || '*'
+                }
+            })], // 加载全局配置
+        }),
+    ],
+    providers: [ConfigService], // 提供 ConfigService 以便在其他模块中注入使用
+    exports: [ConfigService], // 导出 ConfigService 以便在其他模块中使用
+})
+export class NestConfigModule {}
+```
+在 app.module.ts中加载
+```ts
+import { NestConfigModule } from './config/config.module.ts'
+
+@Module({
+    imports: [NestConfigModule]
+})
+export class AppModule {}
+```
+### 4.2 在 main.ts 中使用
+```ts
+import { ConfigService } from '@nestjs/config'
+
+async function bootstrap() {
+    const app = await NestFactory.create(AppModule);
+    const configService = app.get(ConfigService)
+
+    app.enableCors({
+        origin: configService.get('cors.origin'),
+        credentials: true
+    })
+
+    await app.listen(configService.get('app.port'), '0.0.0.0')
+}
+```
+### 4.3 在service或module中使用
+```ts
+// user.service.ts
+import { ConfigService } from '@nestjs/config'
+
+@Injectable()
+export class UserService {
+    constructor(private readonly configService: ConfigService) {}
+}
+```

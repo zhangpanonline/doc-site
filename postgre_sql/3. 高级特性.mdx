@@ -1,0 +1,48 @@
+---
+sidebar_position: 3
+title: 3. 高级特性
+---
+# 高级特性
+
+## 一、[视图](https://postgres.ac.cn/docs/current/tutorial-views.html) `CREATE VIEW`
+
+为查询创建一个视图，为该视图命名，可以像引用普通表一样引用它：
+
+```sql
+CREATE VIEW view1 AS 
+SELECT w.city, w.temp_lo, w.temp_hi, w.prcp, w.date, c.location FROM weather w JOIN cities c ON w.city = c.name;
+
+# 删除视图
+DROP VIEW view1;
+```
+
+<Image src="/postgresql/3.1.jpg" /> 
+
+## 二、[外键](https://postgres.ac.cn/docs/current/tutorial-fk.html)
+
+```sql
+CREATE TABLE cities (
+    name varchar(80) primary key, 
+    location point
+);
+
+CREATE TABLE weather (
+    city varchar(80) references cities(name), 
+    temp_lo int,
+    temp_hi int,
+    prcp real,
+    date date
+);
+
+INSERT INTO cities VALUES('xian', '(88.0, 99.0)');
+```
+
+<Image src="/postgresql/3.2.jpg" /> 
+
+## 三、[事务](https://postgres.ac.cn/docs/current/tutorial-transactions.html)
+
+## 四、[窗口函数](https://postgres.ac.cn/docs/current/tutorial-window.html)
+
+## 五、[继承](https://postgres.ac.cn/docs/current/tutorial-inheritance.html)
+
+​      

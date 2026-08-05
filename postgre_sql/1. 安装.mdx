@@ -1,0 +1,130 @@
+---
+sidebar_position: 1
+title: 1. 安装
+---
+# 安装
+
+##  一、[什么是 PostgreSQL?](https://postgres.ac.cn/docs/current/intro-whatis.html)
+
+PostgreSQL 是一个面向对象的关系型数据库管理系统。
+
+## 二、[架构基础](https://postgres.ac.cn/docs/current/tutorial-arch.html)
+
+PostgreSQL 使用客户端/服务器模型。一个 PostgreSQL 会话由俩部分组成：
+
+* 服务器进程：一个服务器进程，它管理数据库文件，接收来自客户端应用程序（前端接口请求）的数据库连接，执行数据库操作。数据库服务器程序称为 `postgres`。
+* 客户端：想要执行数据库操作的客户端应用程序。这里的客户端应用程序可以是：web前端、postman、Apifox 等等。
+
+PostgreSQL 可以处理多个客户端的并发连接，例如A和B用户同时通过前端页面向数据库服务器发送请求，使用 TCP/IP 网略连接进行通信，那他就会为A和B各开启一个新的进程，当连接关闭时，对应的进程也会关闭，原始的 `postgres` 不会对这些连接进行干预。
+
+## 三、安装
+
+#### 3.1 Windows x86-64
+
+1. 在 `https://www.enterprisedb.com/downloads/postgres-postgresql-downloads` 选择要安装的版本进行下载。
+
+2. 下载好后进行安装，安装过程中需要为默认用户 `postgres` 设置超级密码，例如 `root`，设置端口号，默认 5432
+
+3. 验证安装是否成功
+
+   * 使用 `pgAdmin`
+
+     打开 `pgAdmin`，在服务器列表选择`PostgreSQL 18`，输入超级密码，进行连接。
+
+   * 使用命令行（psql）
+
+     * 打开命令提示符（CMD）
+     * 添加 PostgreSQL 的 bin 目录到 PATH（如果未自动添加）：右键“此电脑” > 属性 > 高级系统设置 > 环境变量 > 编辑 Path > 添加 C:\Program Files\PostgreSQL\16\bin。
+     * 运行 psql -U postgres，输入密码。如果看到 postgres=# 提示符，表示成功。
+
+   如果遇到问题，如端口冲突或权限错误，检查防火墙设置（允许 5432 端口）或重启系统。
+
+## 四、数据库命令
+
+### 4.1 登录数据库
+
+使用 `psql -U postgres` 登录成功后，才能执行数据库的创建、查看、连接和删除。
+
+### 4.2 创建数据库
+
+```postgresql
+CREATE DATABASE mydb;
+```
+
+<Image src="/postgresql/1.4.2.png" alt="创建数据库"/>
+
+指定编码和所有者：
+
+```sql
+CREATE DATABASE mydb
+  WITH OWNER = postgres
+  ENCODING = 'UTF8'
+  CONNECTION LIMIT = -1;
+```
+
+### 4.3 查看数据库列表
+
+```sql
+\l
+# 或
+\list
+```
+
+<Image src="/postgresql/1.4.3.png" />
+
+### 4.4 切换数据库
+
+```sql
+\c mydb
+# 或
+\connect mydb
+```
+
+<Image src="/postgresql/1.4.4_a.png" />
+也可以在登录时指定要连接的数据库：
+
+```sql
+psql -U postgres -d mydb
+```
+
+`-d`  表示要连接的数据库，如果不写默认是 `postgres`。
+
+<Image src="/postgresql/1.4.4_b.png" />
+
+### 4.5 查看当前数据库
+
+```sql
+SELECT current_database();
+```
+
+<Image src="/postgresql/1.4.5.png" />
+
+### 4.6 物理删除数据库
+
+```sql
+DROP DATABASE mydb;
+```
+
+<Image src="/postgresql/1.4.6.png" />
+
+### 4.7 其他命令
+
+```sql
+# 查看版本信息
+SELECT version();
+
+# 查看所有用户
+\du
+
+# 查看当前数据库中所有表
+\dt
+
+# 查看某个表的结构
+\d 表名
+
+# 退出 psql
+\q
+```
+
+<Image src="/postgresql/1.4.7.png" />
+

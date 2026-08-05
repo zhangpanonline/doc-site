@@ -1,0 +1,11 @@
+.page {
+    flex: 1;
+}
+
+.item {
+    display: grid;
+    grid-template-columns: 300px 100px 100px 100px;
+    margin: 0;
+    padding: 0;
+    margin-bottom: 10px;
+}

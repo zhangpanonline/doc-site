@@ -1,0 +1,1 @@
+1. 在 `/src/app/main.ts` 中，`import '@/styles/index.css'` 报错，提示找不到模块。
