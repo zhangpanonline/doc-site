@@ -1,0 +1,342 @@
+---
+sidebar_position: 2
+title: 容器类型
+---
+
+# Python 容器类型
+
+容器类型用于**存储多个数据**，是 Python 中最常用的数据结构。本章逐一介绍四种核心容器，以及它们的通用操作方法。
+
+## 概览
+
+| 类型 | 名称 | 可变 | 有序 | 可重复 | 示例 |
+| --- | --- | --- | --- | --- | --- |
+| `list` | 列表 | 是 | 是 | 是 | `[1, 2, 2, 3]` |
+| `tuple` | 元组 | 否 | 是 | 是 | `(1, 2, 3)` |
+| `dict` | 字典 | 是 | 是（3.7+） | 键否 | `{"a": 1, "b": 2}` |
+| `set` | 集合 | 是 | 否 | 否 | `{1, 2, 3}` |
+
+> `str` 虽是字符序列，但已在[基础语法](./基础语法)中介绍，本章不再展开。
+
+---
+
+## 列表（list）
+
+列表是 Python 中最常用的**可变、有序**容器，元素类型不限。
+
+### 创建
+
+```python
+# 字面量
+nums = [1, 2, 3, 4, 5]
+mixed = [1, "hello", 3.14, True, None]
+empty = []
+
+# list() 函数
+list("abc")       # ['a', 'b', 'c']
+list((1, 2, 3))   # [1, 2, 3]
+```
+
+### 索引与切片
+
+```python
+fruits = ["苹果", "香蕉", "橙子", "葡萄", "西瓜"]
+
+# 索引（支持负数）
+fruits[0]    # 苹果
+fruits[-1]   # 西瓜
+
+# 切片 [start:end:step]，区间左闭右开
+fruits[1:4]    # ['香蕉', '橙子', '葡萄']
+fruits[:3]     # ['苹果', '香蕉', '橙子']
+fruits[2:]     # ['橙子', '葡萄', '西瓜']
+fruits[::2]    # ['苹果', '橙子', '西瓜']  —— 隔一个取一个
+fruits[1:4:2]  # ['香蕉', '葡萄']          —— 范围 + 步长
+fruits[::-1]   # ['西瓜', '葡萄', '橙子', '香蕉', '苹果']  —— 反转
+```
+
+### 增删改查
+
+```python
+nums = [1, 2, 3]
+
+# --- 添加 ---
+nums.append(4)       # [1, 2, 3, 4]        末尾追加
+nums.insert(0, 0)    # [0, 1, 2, 3, 4]     指定位置插入
+nums.extend([5, 6])  # [0, 1, 2, 3, 4, 5, 6]  批量扩展
+
+# --- 删除 ---
+nums.remove(0)       # 删除第一个匹配值
+nums.pop()           # 弹出末尾（返回被删值）
+nums.pop(0)          # 弹出指定位置
+del nums[0]          # 按索引删除
+nums.clear()         # 清空
+
+# --- 查找 ---
+nums = [1, 2, 3, 2, 4]
+nums.index(2)   # 1   第一个匹配的索引
+nums.count(2)   # 2   出现次数
+
+# --- 排序 ---
+nums = [3, 1, 4, 1, 5]
+nums.sort()                # [1, 1, 3, 4, 5]  原地升序
+nums.sort(reverse=True)    # [5, 4, 3, 1, 1]  原地降序
+nums.reverse()             # 原地反转
+
+# sorted() 返回新列表，不修改原列表
+sorted([3, 1, 4])          # [1, 3, 4]
+
+# --- 修改 ---
+nums[0] = 10               # 只能修改已存在的索引
+# nums[5] = 10             # IndexError: 索引越界（nums 只有 5 个元素）
+```
+
+---
+
+## 元组（tuple）
+
+元组是**不可变**的有序序列——创建后内容不可修改。
+
+### 创建
+
+```python
+point = (1, 2)      # 标准写法
+point = 1, 2         # 等价，圆括号可省略
+single = (1,)        # 单元素元组必须加逗号！(1) 只是括号表达式
+empty = ()           # 空元组
+
+tuple([1, 2, 3])     # (1, 2, 3)
+tuple("abc")         # ('a', 'b', 'c')
+```
+
+### 基本操作
+
+```python
+t = (1, 2, 3, 2, 4)
+
+t[0]          # 1     索引
+t[-1]         # 4     负数索引
+t[1:4]        # (2, 3, 2)  切片
+t.index(2)    # 1     查找
+t.count(2)    # 2     计数
+3 in t        # True  成员判断
+
+# 以下操作都会报错——元组不可变
+# t[0] = 100    # TypeError
+# t.append(5)   # AttributeError
+```
+
+### 元组解包
+
+```python
+x, y = (3, 4)           # x=3, y=4
+a, b = 1, 2
+a, b = b, a             # 一行交换变量：a=2, b=1
+
+# 扩展解包（* 收集剩余元素）
+first, *rest = (1, 2, 3, 4)   # first=1, rest=[2, 3, 4]
+*rest, last = (1, 2, 3, 4)    # rest=[1, 2, 3], last=4
+```
+
+---
+
+## 字典（dict）
+
+字典是**键值对**存储结构，通过键快速查找对应值。
+
+### 创建
+
+```python
+person = {"name": "Alice", "age": 25, "city": "北京"}
+
+# dict() 函数的多种用法
+dict(name="Alice", age=25)                            # 关键字参数
+dict([("name", "Alice"), ("age", 25)])                # 二元组列表
+dict.fromkeys(["a", "b", "c"], 0)                     # {'a': 0, 'b': 0, 'c': 0}
+```
+
+### 访问与修改
+
+```python
+person = {"name": "Alice", "age": 25}
+
+# 安全访问
+person["name"]                      # "Alice"
+person.get("gender")               # None（键不存在也不报错）
+person.get("gender", "未知")        # "未知"（提供默认值）
+
+# 写入
+person["gender"] = "女"            # 添加新键
+person["age"] = 26                  # 修改已有键
+person.update({"phone": "123", "age": 27})  # 批量更新
+
+# 删除
+del person["phone"]                # 删除键值对
+person.pop("age")                  # 删除并返回值
+person.popitem()                   # 删除并返回最后插入的项
+person.clear()                     # 清空
+```
+
+> **键的要求**：键必须是不可变类型（hashable）。
+> ```python
+> {"str": 1, 42: 2, (1, 2): 3}  # str、int、tuple 都可以
+> # {[1, 2]: 4}                  # TypeError: list 不可哈希！
+> ```
+> 重复的键会覆盖：`{"a": 1, "a": 2}` → `{"a": 2}`。
+
+---
+
+## 集合（set）
+
+集合是**无序、不重复**的元素集合，天然适合去重和集合运算。
+
+### 创建
+
+```python
+{1, 2, 3, 3, 3}     # {1, 2, 3} —— 自动去重
+set()                # 空集合（注意：{} 是空字典！）
+set([1, 2, 2, 3])    # {1, 2, 3}
+set("hello")         # {'h', 'e', 'l', 'o'}
+```
+
+### 基本操作
+
+```python
+s = {1, 2, 3}
+
+s.add(4)          # {1, 2, 3, 4}
+s.remove(2)       # {1, 3, 4}  —— 元素不存在则报错
+s.discard(10)     # 不报错，适合不确定元素是否存在
+s.pop()           # 随机删除并返回一个元素
+s.clear()         # 清空
+
+# 去重利器
+unique = list(set([1, 2, 2, 3, 3, 3]))  # [1, 2, 3]，注意顺序不保证
+```
+
+### 集合运算
+
+```python
+s1 = {1, 2, 3}
+s2 = {2, 3, 4}
+
+s1 & s2    # {2, 3}         交集
+s1 | s2    # {1, 2, 3, 4}   并集
+s1 - s2    # {1}             差集（在 s1 不在 s2）
+s1 ^ s2    # {1, 4}          对称差集（只在一边的）
+
+# 等价的方法写法
+s1.intersection(s2)             # {2, 3}
+s1.union(s2)                    # {1, 2, 3, 4}
+s1.difference(s2)               # {1}
+s1.symmetric_difference(s2)     # {1, 4}
+```
+
+> 集合重载了部分运算符：`&`（交集）、`|`（并集）、`-`（差集）、`^`（对称差集）。这些符号对 list、tuple、dict 不适用。
+
+---
+
+## 通用操作
+
+以下函数和技巧适用于所有容器类型。
+
+### 内置函数
+
+```python
+# 长度
+len([1, 2, 3])            # 3
+len({"a": 1, "b": 2})     # 2
+len("hello")              # 5
+
+# 极值
+max([3, 1, 4])            # 4
+min("hello")              # 'e'
+
+# 求和（元素必须是数字）
+sum([1, 2, 3, 4])         # 10
+
+# 排序（返回新列表，不修改原容器）
+sorted([3, 1, 4])         # [1, 3, 4]
+sorted("cba")             # ['a', 'b', 'c']
+sorted([3, 1, 2], reverse=True)  # [3, 2, 1]
+
+# 反转（返回迭代器，需转 list）
+list(reversed([1, 2, 3]))  # [3, 2, 1]
+list(reversed("abc"))      # ['c', 'b', 'a']
+```
+
+### 成员运算：`in` / `not in`
+
+```python
+3 in [1, 2, 3]              # True
+"he" in "hello"             # True（检查子串）
+"name" in {"name": "A"}     # True（字典检查的是键，不是值）
+2 in {1, 2, 3}              # True
+```
+
+### 连接与重复
+
+```python
+[1, 2] + [3, 4]     # [1, 2, 3, 4]
+(1, 2) + (3, 4)     # (1, 2, 3, 4)
+"ab" + "cd"         # "abcd"
+# {1, 2} + {3, 4}  # TypeError: 集合不支持 +
+
+[1, 2] * 3          # [1, 2, 1, 2, 1, 2]
+"-" * 10            # "----------"
+```
+
+### 值比较 vs 身份比较
+
+**`==` 比较内容是否相等，`is` 比较是否为同一个对象。**
+
+```python
+a = [1, 2, 3]
+b = a
+c = [1, 2, 3]
+
+a == c    # True  —— 内容相同
+a is c    # False —— 不是同一个对象
+a is b    # True  —— b 是 a 的别名
+
+# 嵌套容器递归比较
+[[1, 2], [3, 4]] == [[1, 2], [3, 4]]   # True
+
+# 字典比较（键值对相同即相等，顺序无关）
+{"a": 1, "b": 2} == {"b": 2, "a": 1}   # True
+```
+
+> 判断 `None` 时永远用 `is`：`if value is None`，不用 `==`。
+
+### 遍历容器
+
+```python
+# 遍历 list / tuple / set
+for item in [1, 2, 3]:
+    print(item)
+
+# 遍历字典
+person = {"name": "Alice", "age": 25}
+for key in person:                    # 默认遍历键
+    print(key)
+for key, val in person.items():       # 同时遍历键值
+    print(key, val)
+for val in person.values():           # 仅遍历值
+    print(val)
+```
+
+### enumerate 与 zip
+
+```python
+# enumerate：同时获取索引和值
+fruits = ["苹果", "香蕉", "橙子"]
+for i, fruit in enumerate(fruits, start=1):
+    print(f"{i}. {fruit}")   # 1. 苹果  2. 香蕉  3. 橙子
+
+# zip：并行遍历多个容器
+names = ["Alice", "Bob", "Charlie"]
+ages = [25, 30, 35]
+for name, age in zip(names, ages):
+    print(f"{name}: {age}")
+# 以最短容器为准，多余元素忽略
+```
