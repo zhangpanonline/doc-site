@@ -1,0 +1,737 @@
+---
+sidebar_position: 1
+title: 基本语法
+---
+
+# Java 基本语法
+
+## 课程目标
+
+- 快速浏览 Java 基础语法
+
+- 掌握 Java 语言基本特性（和其他编程语言做类比学习）
+
+- 使用 Java 语言实现简单的业务流程和数据处理
+
+## 语言基本特征
+
+- **编译型**：源代码通过 `javac` 编译为字节码（`.class`），再由 JVM 解释/编译执行
+
+- **强类型**：所有变量和表达式都有确定的类型，类型不匹配时编译报错
+
+- **静态类型**：变量类型在编译时确定，不能动态改变
+
+- **面向对象**：一切皆对象（除基本类型外），支持类、继承、多态、封装
+
+- **平台无关**：通过 JVM 实现"一次编写，到处运行"
+
+- **自动内存管理**：垃圾回收器（GC）自动回收不再使用的对象
+
+---
+
+## 注释
+
+```java
+// 这是单行注释
+
+/*
+   这是多行注释
+   可以写多行
+*/
+
+/**
+ * 这是文档注释（Javadoc）
+ * 用于生成 API 文档
+ * @param args 命令行参数
+ */
+public class Main {
+    // ...
+}
+```
+
+---
+
+## 数据类型
+
+Java 的数据类型分为两大类：**基本类型（primitive type）** 和 **引用类型（reference type）**。
+
+### 基本类型（8 种）
+
+| 类别 | 类型名    | 字面量示例             | 大小  | 说明                       |
+| ---- | --------- | ---------------------- | ----- | -------------------------- |
+| 整数 | `byte`    | `127`, `-10`           | 8 位  | 范围：-128 ~ 127           |
+| 整数 | `short`   | `32000`, `-5000`       | 16 位 | 范围：-32768 ~ 32767       |
+| 整数 | `int`     | `42`, `-100`, `0`      | 32 位 | 最常用整数类型             |
+| 整数 | `long`    | `100L`, `-5L`          | 64 位 | 字面量需加 `L` 后缀        |
+| 浮点 | `float`   | `3.14f`, `-0.5f`       | 32 位 | 字面量需加 `f` 后缀        |
+| 浮点 | `double`  | `3.14`, `-0.5`, `2e10` | 64 位 | 默认浮点类型               |
+| 字符 | `char`    | `'A'`, `'9'`, `'\n'`   | 16 位 | 使用单引号，Unicode 字符   |
+| 布尔 | `boolean` | `true`, `false`        | —     | 只有两个值，不能与数字互转 |
+
+### 引用类型
+
+包括：类（Class）、接口（Interface）、数组（Array）、枚举（Enum）、字符串（`String`）等。
+
+| 类型     | 字面量示例              | 说明                           |
+| -------- | ----------------------- | ------------------------------ |
+| `String` | `"hello"`, `"world"`    | 字符串，使用双引号             |
+| 数组     | `new int[5]`, `{1,2,3}` | 存储多个同类型元素             |
+| 类       | `new Person()`          | 自定义对象                     |
+| 空值     | `null`                  | 引用类型的空值（不是基本类型） |
+
+```java
+// 整数（多种进制）
+System.out.println(42);        // 十进制
+System.out.println(0b1010);    // 二进制 = 10
+System.out.println(052);       // 八进制 = 42（以0开头）
+System.out.println(0x2A);      // 十六进制 = 42
+
+// 浮点数（多种写法）
+System.out.println(3.14);      // 小数形式
+System.out.println(-0.5);      // 负数
+System.out.println(2.5e10);    // 科学计数法
+System.out.println(1.2e-3);    // 负指数
+
+// 布尔值
+System.out.println(true);
+System.out.println(false);
+
+// 字符（使用单引号）
+System.out.println('A');
+System.out.println('9');
+System.out.println('\n');      // 转义字符（换行）
+
+// 字符串（使用双引号）
+System.out.println("hello");
+System.out.println("world");
+System.out.println("Hello\nworld");   // 包含换行
+
+// 空值（仅限引用类型）
+String s = null;
+System.out.println(s);
+```
+
+---
+
+## `instanceof` 与类型检查
+
+Java 使用 `instanceof` 运算符判断对象是否属于某个类型（基本类型不能使用）。
+
+```java
+String str = "Hello";
+System.out.println(str instanceof String);   // true
+System.out.println(str instanceof Object);   // true
+
+// 数组
+int[] arr = new int[5];
+System.out.println(arr instanceof int[]);    // true
+
+// null 与 instanceof
+System.out.println(null instanceof String);  // false
+```
+
+> [!CAUTION]
+>
+> 注意：Java 没有类似 Python 的 `type()` 函数直接获取类型对象（反射可以，后续会介绍），编译时类型已确定。
+
+---
+
+## 变量
+
+### 变量声明与初始化
+
+Java 是**静态类型**语言，变量必须**先声明类型**，然后才能使用。变量可以声明时初始化，也可以先声明后赋值。
+
+```java
+// 声明并初始化
+String name = "Alice";
+int age = 25;
+double pi = 3.14159;
+boolean isValid = true;
+
+// 先声明，后赋值
+int score;
+score = 90;
+
+// 常量（使用 final 关键字，一经赋值不可改变）
+final double PI = 3.1415926;
+final int MAX_SIZE = 100;
+```
+
+### 变量命名规则
+
+| 规则                              | 说明                                   | 示例                       |
+| --------------------------------- | -------------------------------------- | -------------------------- |
+| 字母/下划线/美元符号开头          | 变量名必须以字母、下划线或美元符号开头 | `name`, `_value`, `$count` |
+| 区分大小写                        | `Name` 和 `name` 是不同的变量          | `Name = 1; name = 2;`      |
+| 不能是关键字                      | 不能使用 Java 保留字                   | `class`, `int`, `for` 等   |
+| 只能包含字母/数字/下划线/美元符号 | 不能包含空格或特殊字符                 | `user_name`, `value2`      |
+
+**关键字（不能作为变量名）：**
+`abstract`, `assert`, `boolean`, `break`, `byte`, `case`, `catch`, `char`, `class`, `const`, `continue`, `default`, `do`, `double`, `else`, `enum`, `extends`, `final`, `finally`, `float`, `for`, `goto`, `if`, `implements`, `import`, `instanceof`, `int`, `interface`, `long`, `native`, `new`, `package`, `private`, `protected`, `public`, `return`, `short`, `static`, `strictfp`, `super`, `switch`, `synchronized`, `this`, `throw`, `throws`, `transient`, `try`, `void`, `volatile`, `while`
+
+```java
+// 有效命名
+String userName = "张三";
+int _age = 25;
+final int MAX_SIZE = 100;
+double value2 = 3.14;
+
+// 无效命名（编译报错）
+// int 2value = 10;      // 数字开头
+// String user-name = "a"; // 包含连字符
+// int class = 5;        // 关键字
+```
+
+### 命名规范（Java 约定俗成）
+
+| 类型          | 规范                          | 示例                                 |
+| ------------- | ----------------------------- | ------------------------------------ |
+| 变量名/方法名 | 小驼峰（lowerCamelCase）      | `userName`, `totalCount`, `getAge()` |
+| 常量名        | 全大写，下划线分隔            | `MAX_SIZE`, `PI`                     |
+| 类名/接口名   | 大驼峰（PascalCase）          | `UserInfo`, `DataModel`, `Runnable`  |
+| 包名          | 全小写，点分隔                | `com.example.util`                   |
+| 私有成员      | 无特殊前缀（可用 `_` 但少见） | `internalValue`                      |
+
+### 多重赋值
+
+```java
+// 同时声明多个变量
+int a = 1, b = 2, c = 3;
+
+// 相同值赋给多个变量（只能用于声明时或分别赋值）
+int x, y, z;
+x = y = z = 0;   // 都可以
+
+// 交换变量值（需要临时变量）
+int p = 10, q = 20;
+int temp = p;
+p = q;
+q = temp;        // p=20, q=10
+```
+
+### 类型转换
+
+Java 的类型转换分为**自动类型转换**（隐式）和**强制类型转换**（显式）。
+
+**自动类型转换**（小范围 → 大范围，无精度损失）：
+
+```java
+// byte -> short -> int -> long -> float -> double（自动提升）
+byte b = 10;
+int i = b;           // 自动转换
+long l = i;          // 自动转换
+double d = l;        // 自动转换
+```
+
+**强制类型转换**（大范围 → 小范围，可能丢失精度）：
+
+```java
+double d = 3.9;
+int i = (int) d;     // 强制转换，结果为 3（截断，不是四舍五入）
+
+long l = 100L;
+int i2 = (int) l;    // 强制转换
+
+// 字符串与基本类型互转
+String ageStr = "25";
+int age = Integer.parseInt(ageStr);   // 字符串 → int
+
+String numStr = String.valueOf(100);  // int → 字符串
+String piStr = String.valueOf(3.14);  // double → 字符串
+
+// 字符与数字
+char ch = 'A';
+int code = ch;        // 自动转换，得到 ASCII 码 65
+char ch2 = (char) 66; // 强制转换，得到 'B'
+```
+
+---
+
+## 字符串格式化
+
+Java 中有多种字符串格式化方式：
+
+### 1. 字符串拼接（`+` 运算符）
+
+```java
+String name = "Alice";
+int age = 25;
+System.out.println("姓名: " + name + ", 年龄: " + age);
+```
+
+### 2. `String.format()`（类似 C 的 `printf`）
+
+```java
+String name = "Alice";
+int age = 25;
+String msg = String.format("姓名: %s, 年龄: %d", name, age);
+System.out.println(msg);   // 姓名: Alice, 年龄: 25
+
+// 数字格式化
+double pi = 3.1415926;
+System.out.println(String.format("%.2f", pi));  // 3.14
+```
+
+### 3. `System.out.printf()`（直接输出格式化字符串）
+
+```java
+String name = "Alice";
+int age = 25;
+System.out.printf("姓名: %s, 年龄: %d\n", name, age);
+```
+
+### 4. `MessageFormat`（适用于复杂国际化）
+
+```java
+import java.text.MessageFormat;
+String msg = MessageFormat.format("姓名: {0}, 年龄: {1}", "Alice", 25);
+System.out.println(msg);
+```
+
+### 5. 文本块 + `formatted()`（Java 15+）
+
+```java
+String name = "Alice";
+int age = 25;
+String json = """
+    {
+      "name": "%s",
+      "age": %d
+    }
+    """.formatted(name, age);
+System.out.println(json);
+```
+
+---
+
+## 运算符
+
+### 算术运算符
+
+| 运算符 | 名称 | 说明                                       |
+| ------ | ---- | ------------------------------------------ |
+| `+`    | 加法 | 数值相加；字符串拼接                       |
+| `-`    | 减法 | 数值相减                                   |
+| `*`    | 乘法 | 数值相乘                                   |
+| `/`    | 除法 | 整数除法截断（返回整数）；浮点除法返回浮点 |
+| `%`    | 取余 | 返回余数（符号与被除数相同）               |
+| `++`   | 自增 | 变量加 1（前缀/后缀）                      |
+| `--`   | 自减 | 变量减 1（前缀/后缀）                      |
+
+```java
+// 整数运算
+int a = 10, b = 3;
+System.out.println(a + b);   // 13
+System.out.println(a - b);   // 7
+System.out.println(a * b);   // 30
+System.out.println(a / b);   // 3（整数除法截断）
+System.out.println(a % b);   // 1
+
+// 浮点运算
+double x = 10.0, y = 3.0;
+System.out.println(x / y);   // 3.3333333333333335
+
+// 字符串拼接
+System.out.println("Hello" + "World");  // HelloWorld
+System.out.println("a" + 1 + 2);        // a12（从左到右拼接）
+System.out.println(1 + 2 + "a");        // 3a（先算术再拼接）
+
+// 自增/自减
+int n = 5;
+System.out.println(++n);     // 6（前缀：先加再输出）
+System.out.println(n++);     // 6（后缀：先输出再加）
+System.out.println(n);       // 7
+
+// 注意：布尔值不能参与算术运算（与 Python 不同）
+// System.out.println(true + 1);  // 编译错误
+```
+
+### 比较运算符
+
+| 运算符 | 名称     | 说明                                 |
+| ------ | -------- | ------------------------------------ |
+| `==`   | 等于     | 基本类型比较值；引用类型比较引用地址 |
+| `!=`   | 不等于   | 同上                                 |
+| `<`    | 小于     | 数值比较                             |
+| `>`    | 大于     | 数值比较                             |
+| `<=`   | 小于等于 | 数值比较                             |
+| `>=`   | 大于等于 | 数值比较                             |
+
+```java
+// 基本类型比较
+int a = 5, b = 5;
+System.out.println(a == b);   // true
+System.out.println(a != 3);   // true
+System.out.println(a > 3);    // true
+
+// 浮点数比较（注意精度问题）
+double d1 = 0.1 + 0.2;
+double d2 = 0.3;
+System.out.println(d1 == d2); // false（浮点精度问题）
+
+// 引用类型比较（比较地址）
+String s1 = "hello";
+String s2 = "hello";
+String s3 = new String("hello");
+System.out.println(s1 == s2);   // true（常量池复用）
+System.out.println(s1 == s3);   // false（不同对象）
+System.out.println(s1.equals(s3)); // true（比较内容，使用 equals）
+
+// 字符比较（基于 Unicode 码点）
+System.out.println('A' < 'a');  // true（65 < 97）
+System.out.println('中' > 'A'); // true（中文 > 英文）
+```
+
+### 链式比较
+
+Java **不支持**像 Python 那样的链式比较 `1 < x < 10`，必须使用逻辑运算符连接。
+
+```java
+int x = 5;
+// 传统写法
+System.out.println(x > 1 && x < 10);   // true
+System.out.println(x > 1 && x <= 5);   // true
+System.out.println(1 < x && x < 10);   // true（与数学写法类似）
+
+// 错误写法（编译报错）
+// System.out.println(1 < x < 10);
+```
+
+### 赋值运算符
+
+| 运算符 | 示例           | 等价于      | 适用类型         |
+| ------ | -------------- | ----------- | ---------------- |
+| `=`    | `a = 5`        | -           | 所有类型         |
+| `+=`   | `a += 3`       | `a = a + 3` | 数值、字符串拼接 |
+| `-=`   | `a -= 3`       | `a = a - 3` | 数值             |
+| `*=`   | `a *= 3`       | `a = a * 3` | 数值             |
+| `/=`   | `a /= 3`       | `a = a / 3` | 数值             |
+| `%=`   | `a %= 3`       | `a = a % 3` | 数值             |
+| `++`   | `a++` 或 `++a` | `a = a + 1` | 数值             |
+| `--`   | `a--` 或 `--a` | `a = a - 1` | 数值             |
+
+```java
+int a = 10;
+a += 5;     // a = 15
+a -= 3;     // a = 12
+a *= 2;     // a = 24
+a /= 4;     // a = 6（整数除法）
+a %= 4;     // a = 2
+
+// 字符串拼接
+String s = "Hello";
+s += " World";   // s = "Hello World"
+```
+
+### 逻辑运算符
+
+| 运算符 | 名称   | 说明                      | 短路特性                      |
+| ------ | ------ | ------------------------- | ----------------------------- |
+| `&&`   | 逻辑与 | 两边都为 true 才为 true   | 是（左边 false 则右边不计算） |
+| `||`   | 逻辑或 | 至少一边为 true 则为 true | 是（左边 true 则右边不计算）  |
+| `!`    | 逻辑非 | 取反                      | —                             |
+
+```java
+boolean a = true, b = false;
+System.out.println(a && b);   // false
+System.out.println(a || b);   // true
+System.out.println(!a);       // false
+
+// 短路演示
+int x = 5;
+boolean result = (x > 10) && (++x > 0);  // 左边 false，右边不执行
+System.out.println(x);   // 5（x 没有增加）
+
+// 非短路版本（位运算符 & 和 |，不常用）
+// System.out.println((x > 10) & (++x > 0));  // 两边都执行，不推荐
+```
+
+**各类型在逻辑运算中的表现**：
+
+- Java 的 `&&` 和 `||` 只能用于 `boolean` 类型，不能用于其他类型
+- 非布尔值不能直接作为条件（例如 `if(0)` 编译报错）
+- 判断真假必须使用比较运算符得到布尔值
+
+```java
+// 错误示例（编译报错）
+// if (0) { }                // 编译错误：不兼容的类型
+// System.out.println(0 && 5); // 编译错误
+
+// 正确示例
+if (0 == 0) { }              // 布尔表达式
+if (str != null) { }         // 比较
+```
+
+### 位运算符（补充）
+
+| 运算符 | 名称           | 示例                      |
+| ------ | -------------- | ------------------------- |
+| `&`    | 按位与         | `5 & 3` → `1`             |
+| `|`    | 按位或         | `5 | 3` → `7`             |
+| `^`    | 按位异或       | `5 ^ 3` → `6`             |
+| `~`    | 按位取反       | `~5` → `-6`               |
+| `<<`   | 左移           | `5 << 1` → `10`           |
+| `>>`   | 右移（带符号） | `5 >> 1` → `2`            |
+| `>>>`  | 无符号右移     | `-5 >>> 1` → `2147483645` |
+
+### 三元运算符（条件运算符）
+
+Java 的三元运算符与 Python 类似，但语法为 **`条件 ? 真值 : 假值`**。
+
+```java
+int score = 85;
+
+// 传统 if-else
+String result;
+if (score >= 60) {
+    result = "及格";
+} else {
+    result = "不及格";
+}
+
+// 三元运算符（更简洁）
+String result2 = (score >= 60) ? "及格" : "不及格";
+System.out.println(result2);  // 及格
+
+// 嵌套三元运算符（可读性下降，慎用）
+int age = 25;
+String category = (age < 40) ? "青年" : ((age < 60) ? "中年" : "老年");
+```
+
+---
+
+## 输入输出
+
+### `System.out` 输出
+
+```java
+// 基本输出（换行）
+System.out.println("Hello, World!");
+
+// 不换行输出
+System.out.print("Hello ");
+System.out.print("World\n");
+
+// 格式化输出
+System.out.printf("姓名: %s, 年龄: %d\n", "Alice", 25);
+```
+
+### `Scanner` 输入
+
+Java 使用 `Scanner` 类读取用户输入（需导入 `java.util.Scanner`）。
+
+```java
+import java.util.Scanner;
+
+public class InputDemo {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        // 获取字符串
+        System.out.print("请输入你的名字: ");
+        String name = scanner.nextLine();
+        System.out.println("你好, " + name);
+
+        // 获取整数
+        System.out.print("请输入年龄: ");
+        int age = scanner.nextInt();
+        System.out.println("明年你 " + (age + 1) + " 岁");
+
+        // 获取浮点数
+        System.out.print("请输入身高（米）: ");
+        double height = scanner.nextDouble();
+
+        // 清理缓冲区（nextLine 与其他 nextX 混用时可能需要）
+        // scanner.nextLine();  // 消耗换行符
+
+        scanner.close();
+    }
+}
+```
+
+---
+
+## 流程控制
+
+### 条件判断（if-else if-else）
+
+| 语法                     | 说明                                        |
+| ------------------------ | ------------------------------------------- |
+| `if (条件) { ... }`      | 条件为 true 时执行                          |
+| `else if (条件) { ... }` | 前一个条件为 false 且当前条件为 true 时执行 |
+| `else { ... }`           | 前面所有条件都为 false 时执行               |
+
+```java
+// 基本 if-else
+int age = 18;
+if (age >= 18) {
+    System.out.println("成年人");
+} else {
+    System.out.println("未成年人");
+}
+
+// if-else if-else
+int score = 85;
+char grade;
+if (score >= 90) {
+    grade = 'A';
+} else if (score >= 80) {
+    grade = 'B';
+} else if (score >= 60) {
+    grade = 'C';
+} else {
+    grade = 'D';
+}
+System.out.println("成绩等级: " + grade);
+
+// 注意：条件必须是布尔表达式，不能是数字或对象
+// if (score) { }  // 编译错误
+```
+
+### `switch` 语句（多分支选择）
+
+Java 12+ 支持**表达式风格**的 `switch`，更简洁。
+
+```java
+// 传统 switch（语句）
+int day = 3;
+String dayName;
+switch (day) {
+    case 1:
+        dayName = "Monday";
+        break;
+    case 2:
+        dayName = "Tuesday";
+        break;
+    case 3:
+        dayName = "Wednesday";
+        break;
+    default:
+        dayName = "Unknown";
+        break;
+}
+System.out.println(dayName);  // Wednesday
+
+// Java 12+ switch 表达式（箭头语法，无 fall-through）
+String dayName2 = switch (day) {
+    case 1 -> "Monday";
+    case 2 -> "Tuesday";
+    case 3 -> "Wednesday";
+    default -> "Unknown";
+};
+System.out.println(dayName2);
+
+// 多值匹配
+String type = switch (day) {
+    case 1, 2, 3, 4, 5 -> "Weekday";
+    case 6, 7 -> "Weekend";
+    default -> "Invalid";
+};
+```
+
+### 空操作
+
+Java 没有 `pass` 语句，但可以使用空块或分号表示空操作。
+
+```java
+// 空循环体（分号直接结束）
+int i = 0;
+while (i < 5) {
+    ;   // 占位，不执行任何操作（不常用）
+    i++;
+}
+
+// 空代码块
+if (true) {
+    // 暂时不实现
+}
+```
+
+---
+
+## 循环
+
+### `while` 循环
+
+```java
+// 基本 while 循环
+int count = 0;
+while (count < 5) {
+    System.out.println(count);
+    count++;
+}
+
+// 带条件的 while 循环（例如读取输入直到退出）
+Scanner scanner = new Scanner(System.in);
+String input = "";
+while (!input.equals("quit")) {
+    System.out.print("输入 'quit' 退出: ");
+    input = scanner.nextLine();
+    System.out.println("你输入了: " + input);
+}
+scanner.close();
+```
+
+### `do-while` 循环（至少执行一次）
+
+```java
+// do-while 先执行后判断
+int num = 0;
+do {
+    System.out.println(num);
+    num++;
+} while (num < 5);
+```
+
+### `for` 循环
+
+```java
+// 基本 for 循环（初始化; 条件; 迭代）
+for (int i = 0; i < 5; i++) {
+    System.out.println(i);
+}
+
+// 增强 for 循环（遍历数组/集合）
+int[] arr = {10, 20, 30, 40, 50};
+for (int value : arr) {
+    System.out.println(value);
+}
+
+// 多重循环（嵌套）
+for (int i = 1; i <= 3; i++) {
+    for (int j = 1; j <= 3; j++) {
+        System.out.print(i * j + " ");
+    }
+    System.out.println();
+}
+```
+
+### 循环控制语句
+
+| 语句       | 作用                         |
+| ---------- | ---------------------------- |
+| `break`    | 立即终止整个循环             |
+| `continue` | 跳过当前迭代，进入下一次循环 |
+| `return`   | 从方法返回（可用于结束循环） |
+
+```java
+// break - 找到第一个大于5的数就停止
+for (int num = 1; num <= 10; num++) {
+    if (num > 5) {
+        System.out.println("找到大于5的数: " + num);
+        break;
+    }
+}
+
+// continue - 跳过奇数，只打印偶数
+for (int num = 0; num < 10; num++) {
+    if (num % 2 != 0) {
+        continue;
+    }
+    System.out.println(num);  // 0, 2, 4, 6, 8
+}
+```
+
+---
+

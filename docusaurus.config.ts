@@ -20,6 +20,10 @@ const docList = [
     path: 'python',
     title: 'Python'
   },
+  {
+    path: 'java',
+    title: 'Java'
+  },
 ]
 const config: Config = {
   title: 'Doc',
