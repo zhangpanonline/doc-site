@@ -1,0 +1,272 @@
+---
+sidebar_position: 3
+title: 3.方法
+---
+
+# 方法
+
+## 课程目标
+
+- 掌握 Java 方法的定义形式
+- 理解 Java 方法的控制手段，能够根据需要设计合理的方法
+
+## 关于类和方法
+
+方法是**可复用**的代码块，用于封装特定功能。在 Java 中，方法必须定义在类中，通过对象或类名调用。方法可以避免重复代码，提高程序的可读性和可维护性。
+
+## 静态方法 vs 实例方法
+
+- **静态方法**（`static`）：属于类，可以直接通过类名调用，无需创建对象。
+- **实例方法**：属于对象，必须先创建对象才能调用，可以访问实例变量。
+
+```java
+public class MathUtils {
+    public static int square(int x) {   // 静态方法
+        return x * x;
+    }
+
+    public int doubleValue(int x) {     // 实例方法
+        return x * 2;
+    }
+}
+
+// 调用
+int s = MathUtils.square(5);        // 类名调用静态方法
+MathUtils obj = new MathUtils();
+int d = obj.doubleValue(5);         // 对象调用实例方法
+```
+
+---
+
+## 定义方法
+
+方法的五大组成结构：
+
+- 访问修饰符
+- 返回值类型
+- 方法名
+- 参数列表
+- 方法体
+
+```java
+public class Demo {
+    // 定义一个无参数、无返回值的方法
+    public static void greet() {
+        System.out.println("Hello, World!");
+    }
+
+    public static void main(String[] args) {
+        greet();  // Hello, World!
+    }
+}
+```
+
+> [!NOTE]
+>
+> **方法签名** = 方法名 + 参数列表（参数类型和顺序），用于区分不同方法。
+
+---
+
+## 参数
+
+### 位置参数
+
+- **形参（形式参数）**：定义方法时，写在方法名后面括号里的变量。它只是一个占位符，没有具体的值，只在方法体内有效。
+- **实参（实际参数）**：调用方法时，实际传入括号里的具体数值或变量。它是真正用来参与运算的数据。
+
+Java 的参数是**强类型**的，必须声明类型，且调用时按顺序传递：
+
+```java
+public static int add(int a, int b) {
+    return a + b;
+}
+
+// 调用
+int result = add(3, 5);
+System.out.println(result); // 8
+```
+
+### 参数传递规则（重要）
+
+Java 中所有参数传递都是**值传递**（pass-by-value）：
+
+- **基本类型**：传递的是值的副本。方法内部修改形参不会影响实参。
+- **引用类型**：传递的是引用的副本（即地址值）。方法内部通过引用修改对象内容会反映到实参，但重新给形参赋值（指向新对象）不会影响实参。
+
+```java
+public static void changeValue(int x, int[] arr) {
+    x = 100;           // 不影响实参（基本类型）
+    arr[0] = 99;       // 影响原数组内容：注意
+    arr = new int[]{1, 2, 3}; // 不影响实参（形参指向新数组）
+}
+
+// 调用
+int num = 5;
+int[] list = {0, 1, 2};
+changeValue(num, list);
+System.out.println(num);   // 5
+System.out.println(list[0]); // 99（原数组被修改）
+```
+
+> [!TIP]
+>
+> 不要随意去修改传入的参数，建议创建新的参数来做后续的处理。
+
+### 方法重载（Overload）：实现多种调用方式
+
+Java **不支持**类似 Python 的默认参数值，但通过**方法重载**可以在同一个类中定义多个同名方法，只要参数列表不同（类型、个数或顺序），即可实现类似"默认参数"或"多种调用方式"的效果。
+
+```java
+// 重载示例：打招呼方法
+public static void greet(String name) {
+    greet(name, "Hello");  // 调用重载版本
+}
+
+public static void greet(String name, String greeting) {
+    System.out.println(greeting + ", " + name + "!");
+}
+
+// 调用
+greet("Alice");          // Hello, Alice!（自动调用单参数版本，内部再调用双参数）
+greet("Bob", "Hi");      // Hi, Bob!
+```
+
+重载不仅用于模拟默认参数，还用于提供不同的参数组合，例如 `System.out.println()` 就有多个重载版本，支持打印各种类型。
+
+### 可变参数（Varargs）
+
+使用 `类型... 参数名` 表示可接收**任意数量**的同类型参数，内部看作数组。
+
+```java
+public static int sumAll(int... nums) {
+    int total = 0;
+    for (int num : nums) {
+        total += num;
+    }
+    return total;
+}
+
+// 调用
+System.out.println(sumAll(1, 2, 3));      // 6
+System.out.println(sumAll(1, 2, 3, 4));   // 10
+System.out.println(sumAll());             // 0（空数组）
+```
+
+> [!CAUTION]
+>
+> 可变参数必须放在参数列表的最后，且每个方法最多一个
+
+```java
+public static void demo(String prefix, int... nums) {
+    // 正确
+}
+
+// 错误：可变参数不能在普通参数后面
+// public static void demo(int... nums, String prefix) { }
+```
+
+---
+
+## 返回值
+
+### 使用 return
+
+方法声明返回值类型，必须用 `return` 返回相应类型的结果：
+
+```java
+public static int square(int x) {
+    return x * x;
+}
+
+int result = square(4);
+System.out.println(result); // 16
+```
+
+### 返回多个值（使用数组或容器）
+
+Java 方法只能返回**一个**值，但可以返回数组、集合或自定义对象来包装多个结果：
+
+```java
+public static int[] minMax(int[] numbers) {
+    int min = numbers[0], max = numbers[0];
+    for (int n : numbers) {
+        if (n < min) min = n;
+        if (n > max) max = n;
+    }
+    return new int[]{min, max};
+}
+
+// 调用
+int[] arr = {3, 1, 4, 1, 5};
+int[] result = minMax(arr);
+System.out.println("min=" + result[0] + ", max=" + result[1]); // min=1, max=5
+```
+
+也可以返回 `List`、`Map` 或自定义类（如 `Person`），这是 Java 中常见的做法。
+
+### 没有返回值（void）
+
+如果方法不返回结果，声明 `void`，可以省略 `return` 或写 `return;` 表示提前结束。
+
+```java
+public static void sayHello() {
+    System.out.println("Hello");
+    // 可省略 return
+}
+
+// 或者提前返回
+public static void printIfPositive(int x) {
+    if (x <= 0) {
+        return; // 结束方法
+    }
+    System.out.println(x);
+}
+```
+
+---
+
+## 访问修饰符（控制方法可见性）
+
+| 修饰符                | 同一类 | 同一包 | 子类 | 任何地方 |
+| --------------------- | ------ | ------ | ---- | -------- |
+| `private`             | ✓      |        |      |          |
+| `default`（无修饰符） | ✓      | ✓      |      |          |
+| `protected`           | ✓      | ✓      | ✓    |          |
+| `public`              | ✓      | ✓      | ✓    | ✓        |
+
+> [!CAUTION]
+>
+> 合理使用访问修饰符可以封装实现细节，仅暴露必要的方法。
+
+```java
+public class Calculator {
+    private int result = 0;          // 私有字段
+
+    public void add(int value) {     // 公共方法
+        result += value;
+    }
+
+    private void log() {             // 私有方法，仅内部使用
+        System.out.println("操作执行");
+    }
+}
+```
+
+---
+
+## 文档注释（Javadoc）
+
+使用 `/** ... */` 编写方法说明，可生成 API 文档。
+
+```java
+/**
+ * 计算 BMI 指数。
+ *
+ * @param weight 体重，单位千克
+ * @param height 身高，单位米
+ * @return BMI 值
+ */
+public static double calculateBMI(double weight, double height) {
+    return weight / (height * height);
+}
+```

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: 容器类型
+title: 2.容器类型
 ---
 
 # 容器类型
@@ -266,6 +266,9 @@ System.out.println(Arrays.toString(nums)); // [1, 1, 3, 4, 5]
 int[] a = {1, 2, 3};
 int[] b = {1, 2, 3};
 System.out.println(Arrays.equals(a, b)); // true
+
+// 填充
+Arrays.fill(nums, 0);           // 全部置 0
 ```
 
 > [!CAUTION]
@@ -325,60 +328,17 @@ map.size();    // 2
 // 是否为空
 list.isEmpty(); // false
 
-// 包含（Map 检查键）
-list.contains(3); // true
-set.contains(3);  // true
+// 包含（Map 检查键，检查值用 containsValue）
+list.contains(3);     // true
+set.contains(3);      // true
 map.containsKey("a"); // true
 map.containsValue(2); // true
 
 // 转数组
 Integer[] arr = list.toArray(new Integer[0]);
-
-// 迭代器
-Iterator<Integer> it = list.iterator();
-while (it.hasNext()) {
-    System.out.println(it.next());
-}
 ```
 
-### 数组通用操作（`Arrays` 类）
-
-```java
-int[] arr = {3, 1, 4, 1, 5};
-
-// 排序
-Arrays.sort(arr);
-
-// 二分查找
-int idx = Arrays.binarySearch(arr, 4); // 3
-
-// 填充
-Arrays.fill(arr, 0); // 全部置0
-
-// 转字符串
-System.out.println(Arrays.toString(arr));
-```
-
----
-
-## 常用运算符与操作
-
-### 成员检查：`contains` / `containsKey` / `containsValue`
-
-```java
-List<String> list = Arrays.asList("a", "b", "c");
-list.contains("b");   // true
-
-Set<Integer> set = new HashSet<>(Arrays.asList(1,2,3));
-set.contains(2);      // true
-
-Map<String, Integer> map = new HashMap<>();
-map.put("key", 123);
-map.containsKey("key"); // true
-map.containsValue(123); // true
-```
-
-### 连接与重复（集合）
+### 连接与重复
 
 Java 不支持 `+` 或 `*` 运算符直接操作集合，需使用方法：
 
@@ -410,20 +370,9 @@ System.out.println(arr1 == arr2);      // false
 System.out.println(Arrays.equals(arr1, arr2)); // true
 ```
 
-### 集合运算（Set 专用）
+### 遍历容器
 
-```java
-// 交集 retainAll, 并集 addAll, 差集 removeAll
-Set<Integer> s1 = new HashSet<>(Arrays.asList(1,2,3));
-Set<Integer> s2 = new HashSet<>(Arrays.asList(2,3,4));
-s1.retainAll(s2); // s1 变为 {2,3}
-```
-
----
-
-## 遍历容器
-
-### 索引遍历（List / 数组）
+#### 索引遍历（List / 数组）
 
 ```java
 // List 索引遍历
@@ -439,7 +388,7 @@ for (int i = 0; i < arr.length; i++) {
 }
 ```
 
-### ✅增强 for 循环（for-each）
+#### 增强 for 循环（for-each）
 
 适用于所有 `Iterable`（集合）和数组。
 
@@ -465,7 +414,7 @@ for (Map.Entry<String, Integer> entry : map.entrySet()) {
 }
 ```
 
-### 使用 Iterator（遍历过程中可删除元素）
+#### 使用 Iterator（遍历过程中可删除元素）
 
 ```java
 List<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
@@ -479,7 +428,7 @@ while (it.hasNext()) {
 }
 ```
 
-### 遍历 Map 的三种方式
+#### 遍历 Map 的三种方式
 
 ```java
 Map<String, Integer> map = new HashMap<>();
