@@ -1,0 +1,197 @@
+---
+sidebar_position: 5
+title: 5.Lambda 表达式
+---
+
+# Lambda 表达式
+
+Lambda表达式用于创建**匿名函数**——即没有名称的临时函数。当你需要一个简单函数且只用一次时，lambda能让代码更简洁。
+
+---
+
+## 基本语法
+
+```python
+lambda 参数1, 参数2, ... : 表达式
+```
+
+```python
+# 普通函数
+def add(x, y):
+    return x + y
+
+# 等价的lambda
+add_lambda = lambda x, y: x + y
+
+print(add(2, 3))         # 5
+print(add_lambda(2, 3))  # 5
+```
+
+**特点：**
+
+- 只能包含**一个表达式**，不能写多条语句
+- 表达式的计算结果**自动返回**
+- 通常不命名，即用即走
+
+---
+
+## Lambda vs 普通函数
+
+| 特性 | Lambda | 普通函数 (`def`) |
+|------|--------|------------------|
+| 名称 | 匿名（通常无名字） | 有函数名 |
+| 函数体 | 只能有一个表达式 | 可以有多条语句 |
+| 返回值 | 自动返回表达式结果 | 需要显式 `return` |
+| 适用场景 | 临时、简单的逻辑 | 复杂、复用的逻辑 |
+
+**原则：** 逻辑简单且只用一次 → 用lambda；逻辑复杂或需要复用 → 用`def`。
+
+---
+
+## 应用场景：内置高阶函数
+
+高阶函数是指接收函数作为参数的函数。这是lambda最经典的使用场景。
+
+### `map()` — 映射
+
+对可迭代对象的每个元素执行指定操作，返回结果的迭代器。
+
+```python
+numbers = [1, 2, 3, 4, 5]
+
+# 普通写法
+def square(x):
+    return x ** 2
+
+result = map(square, numbers)
+print(list(result))  # [1, 4, 9, 16, 25]
+
+# lambda写法——更简洁
+result = map(lambda x: x ** 2, numbers)
+print(list(result))  # [1, 4, 9, 16, 25]
+```
+
+**`map()` 相当于：** 对列表每个元素做"转换"。
+
+```python
+# 将字符串列表转为长度列表
+names = ["Alice", "Bob", "Charlie"]
+lengths = map(lambda s: len(s), names)
+print(list(lengths))  # [5, 3, 7]
+
+# 两个列表对应元素相加
+a = [1, 2, 3]
+b = [10, 20, 30]
+sums = map(lambda x, y: x + y, a, b)
+print(list(sums))  # [11, 22, 33]
+```
+
+---
+
+### `filter()` — 过滤
+
+根据条件筛选可迭代对象中的元素，保留满足条件的。
+
+```python
+numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# 筛选偶数
+evens = filter(lambda x: x % 2 == 0, numbers)
+print(list(evens))  # [2, 4, 6, 8, 10]
+
+# 筛选长度大于3的字符串
+words = ["cat", "elephant", "dog", "butterfly"]
+long_words = filter(lambda s: len(s) > 3, words)
+print(list(long_words))  # ['elephant', 'butterfly']
+```
+
+**`filter()` 相当于：** 按条件"筛选"列表。
+
+```python
+# 筛选正数
+nums = [-2, -1, 0, 1, 2]
+positives = filter(lambda x: x > 0, nums)
+print(list(positives))  # [1, 2]
+```
+
+---
+
+### `sorted()` — 排序（指定key）
+
+`sorted()` 和列表的 `.sort()` 都支持 `key` 参数，用于指定"按什么排序"。
+
+```python
+words = ["banana", "pie", "Washington", "book"]
+
+# 按长度排序
+sorted_by_len = sorted(words, key=lambda s: len(s))
+print(sorted_by_len)  # ['pie', 'book', 'banana', 'Washington']
+
+# 按最后一个字母排序
+sorted_by_last = sorted(words, key=lambda s: s[-1])
+print(sorted_by_last)  # ['banana', 'pie', 'book', 'Washington']
+
+# 降序排序
+sorted_desc = sorted(words, key=lambda s: len(s), reverse=True)
+print(sorted_desc)  # ['Washington', 'banana', 'book', 'pie']
+```
+
+```python
+# 按绝对值排序
+nums = [-5, 2, -8, 1, -9]
+sorted_by_abs = sorted(nums, key=lambda x: abs(x))
+print(sorted_by_abs)  # [1, 2, -5, -8, -9]
+```
+
+---
+
+### `max()` / `min()` — 极值（指定key）
+
+```python
+words = ["apple", "banana", "cherry"]
+
+# 找出最长的单词
+longest = max(words, key=lambda s: len(s))
+print(longest)  # banana
+
+# 找出最短的单词
+shortest = min(words, key=lambda s: len(s))
+print(shortest)  # apple
+```
+
+```python
+students = [
+    {"name": "Alice", "score": 85},
+    {"name": "Bob", "score": 92},
+    {"name": "Charlie", "score": 78}
+]
+
+# 找出分数最高的学生
+top_student = max(students, key=lambda s: s["score"])
+print(top_student)  # {'name': 'Bob', 'score': 92}
+```
+
+---
+
+### `reduce()` — 累积计算
+
+`reduce()` 在 `functools` 模块中，用于将序列逐个累积计算为一个值。
+
+```python
+from functools import reduce
+
+numbers = [1, 2, 3, 4, 5]
+
+# 求和
+total = reduce(lambda x, y: x + y, numbers)
+print(total)  # 15
+
+# 求积
+product = reduce(lambda x, y: x * y, numbers)
+print(product)  # 120
+
+# 求最大值
+maximum = reduce(lambda x, y: x if x > y else y, numbers)
+print(maximum)  # 5
+```
+

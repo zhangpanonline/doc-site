@@ -1,0 +1,609 @@
+---
+sidebar_position: 6
+title: 6.类和对象
+---
+
+# Python 类和对象
+
+Python 是一门**面向对象**的编程语言。类（Class）是创建对象的蓝图，而对象（Object）是类的具体实例。通过类和对象，可以将数据（属性）和行为（方法）封装在一起，使代码更具结构性和可复用性。
+
+---
+
+## 定义类
+
+使用 `class` 关键字定义类：
+
+```python
+class Dog:
+    pass
+
+# 创建实例
+my_dog = Dog()
+print(type(my_dog))  # <class '__main__.Dog'>
+```
+
+### 使用 `type()` 动态定义类
+
+类本身也是对象，`type()` 是创建类的内置函数。可以动态地创建类：
+
+```python
+# type(类名, (父类元组,), {属性字典})
+
+# 定义方法
+def bark(self):
+    print(f"{self.name} says: Woof!")
+
+# 动态创建 Dog 类
+Dog = type('Dog', (), {'name': 'Buddy', 'bark': bark})
+
+# 创建实例
+my_dog = Dog()
+print(my_dog.name)  # Buddy
+my_dog.bark()       # Buddy says: Woof!
+```
+
+**参数说明：**
+
+- 第一个参数：类名（字符串）
+- 第二个参数：继承的父类元组
+- 第三个参数：类属性和方法的字典
+
+**实际应用场景：** 在 ORM 框架或需要根据配置动态生成类的场景中经常使用。
+
+---
+
+## 构造方法 `__init__`
+
+`__init__` 是类的构造方法，在创建对象时自动调用，用于初始化对象的属性：
+
+```python
+class Dog:
+    def __init__(this, name, age):
+        this.name = name
+        this.age = age
+
+# 创建对象时传入参数
+my_dog = Dog("Buddy", 3)
+print(my_dog.name)  # Buddy
+print(my_dog.age)   # 3
+```
+
+**注意：** `self` 代表对象本身，必须是第一个参数，但调用时不需要传。
+
+---
+
+## 实例属性与类属性
+
+### 实例属性
+
+每个对象独立的属性，通过 `self` 定义：
+
+```python
+class Dog:
+    def __init__(self, name):
+        self.name = name  # 实例属性
+
+dog1 = Dog("Buddy")
+dog2 = Dog("Max")
+
+print(dog1.name)  # Buddy
+print(dog2.name)  # Max
+```
+
+### 类属性
+
+所有对象共享的属性，在类内部直接定义：
+
+```python
+class Dog:
+    species = "Canis familiaris"  # 类属性
+
+    def __init__(self, name):
+        self.name = name
+
+dog1 = Dog("Buddy")
+dog2 = Dog("Max")
+
+print(dog1.species)  # Canis familiaris
+print(dog2.species)  # Canis familiaris
+
+# 修改类属性（通过类名）
+Dog.species = "Canis lupus"
+print(dog1.species)  # Canis lupus
+```
+
+**访问规则：** 实例属性通过 `self` 访问，类属性通过 `类名` 或 `self` 访问。
+
+---
+
+## 实例方法
+
+定义在类中的函数，第一个参数必须是 `self`：
+
+```python
+class Dog:
+    def __init__(self, name):
+        self.name = name
+
+    def bark(self):
+        print(f"{self.name} says: Woof!")
+
+    def introduce(self):
+        self.bark()  # 方法内调用其他方法
+        print(f"My name is {self.name}")
+
+my_dog = Dog("Buddy")
+my_dog.bark()       # Buddy says: Woof!
+my_dog.introduce()  # Buddy says: Woof! My name is Buddy
+```
+
+---
+
+## 类方法与静态方法
+
+### 类方法 `@classmethod`
+
+第一个参数是 `cls`，代表类本身，可以访问或修改类属性：
+
+```python
+class Dog:
+    count = 0  # 类属性：记录创建了多少只狗
+
+    def __init__(self, name):
+        self.name = name
+        Dog.count += 1
+
+    @classmethod
+    def get_count(cls):
+        return cls.count
+
+dog1 = Dog("Buddy")
+dog2 = Dog("Max")
+
+print(Dog.get_count())  # 2
+```
+
+### 静态方法 `@staticmethod`
+
+不接收 `self` 或 `cls`，与普通函数类似，只是组织在类中：
+
+```python
+class MathUtils:
+    @staticmethod
+    def add(a, b):
+        return a + b
+
+    @staticmethod
+    def is_even(n):
+        return n % 2 == 0
+
+print(MathUtils.add(3, 5))      # 8
+print(MathUtils.is_even(4))     # True
+```
+
+**对比：**
+
+| 方法类型 | 装饰器          | 第一个参数 | 访问实例属性 | 访问类属性 |
+| -------- | --------------- | ---------- | ------------ | ---------- |
+| 实例方法 | 无              | `self`     | ✓            | ✓          |
+| 类方法   | `@classmethod`  | `cls`      | ✗            | ✓          |
+| 静态方法 | `@staticmethod` | 无         | ✗            | ✗          |
+
+---
+
+## 继承
+
+子类继承父类的属性和方法，并可以扩展或重写：
+
+```python
+class Animal:
+    def __init__(self, name):
+        self.name = name
+
+    def speak(self):
+        print("Some sound")
+
+class Dog(Animal):  # Dog 继承 Animal
+    def speak(self):  # 重写父类方法
+        print(f"{self.name} says: Woof!")
+
+class Cat(Animal):
+    def speak(self):
+        print(f"{self.name} says: Meow!")
+
+dog = Dog("Buddy")
+cat = Cat("Kitty")
+
+dog.speak()  # Buddy says: Woof!
+cat.speak()  # Kitty says: Meow!
+```
+
+### 调用父类方法
+
+使用 `super()` 调用父类的方法：
+
+```python
+class Animal:
+    def __init__(self, name):
+        self.name = name
+        print("Animal init")
+
+class Dog(Animal):
+    def __init__(self, name, breed):
+        super().__init__(name)  # 调用父类的 __init__
+        self.breed = breed      # 扩展新属性
+        print("Dog init")
+
+dog = Dog("Buddy", "Golden Retriever")
+print(dog.name)   # Buddy
+print(dog.breed)  # Golden Retriever
+```
+
+### 多继承
+
+Python 支持一个子类同时继承多个父类：
+
+```python
+class Flyable:
+    def fly(self):
+        print("I can fly!")
+
+class Swimmable:
+    def swim(self):
+        print("I can swim!")
+
+class Duck(Flyable, Swimmable):  # 同时继承 Flyable 和 Swimmable
+    pass
+
+duck = Duck()
+duck.fly()   # I can fly!
+duck.swim()  # I can swim!
+```
+
+#### 方法解析顺序（MRO）
+
+当多个父类有同名方法时，Python 按照 **MRO**（Method Resolution Order）顺序查找：
+
+```python
+class A:
+    def hello(self):
+        print("Hello from A")
+
+class B(A):
+    def hello(self):
+        print("Hello from B")
+
+class C(A):
+    def hello(self):
+        print("Hello from C")
+
+class D(B, C):  # MRO: D -> B -> C -> A
+    pass
+
+d = D()
+d.hello()  # Hello from B（先找到 B 的方法）
+
+# 查看 MRO 顺序
+print(D.__mro__)
+# (<class 'D'>, <class 'B'>, <class 'C'>, <class 'A'>, <class 'object'>)
+```
+
+#### `super()` 在多继承中的行为
+
+`super()` 按照 MRO 顺序调用**下一个**类的方法，不一定是直接父类：
+
+```python
+class A:
+    def __init__(self):
+        print("A init")
+
+class B(A):
+    def __init__(self):
+        print("B init")
+        super().__init__()  # 调用 C 的 __init__，不是 A
+
+class C(A):
+    def __init__(self):
+        print("C init")
+        super().__init__()  # 调用 A 的 __init__
+
+class D(B, C):
+    def __init__(self):
+        print("D init")
+        super().__init__()  # 调用 B 的 __init__
+
+D()
+# 输出：
+# D init
+# B init
+# C init
+# A init
+```
+
+**注意：** 多继承虽然强大，但过度使用会使代码难以维护。通常优先考虑组合（Composition）代替多继承。
+
+---
+
+## 访问控制
+
+Python 没有严格的私有/公有，但以下划线约定访问权限：
+
+| 命名方式 | 含义             | 访问建议         |
+| -------- | ---------------- | ---------------- |
+| `name`   | 公有             | 可自由访问       |
+| `_name`  | 保护（约定）     | 建议不直接访问   |
+| `__name` | 私有（名称改写） | 外部难以直接访问 |
+
+```python
+class BankAccount:
+    def __init__(self, owner, balance):
+        self.owner = owner          # 公有
+        self._balance = balance     # 保护
+        self.__password = "123456"  # 私有（名称改写为 _BankAccount__password）
+
+    def deposit(self, amount):
+        if amount > 0:
+            self._balance += amount
+
+    def get_balance(self):
+        return self._balance
+
+account = BankAccount("Alice", 1000)
+print(account.owner)      # Alice
+print(account._balance)   # 1000（可以访问，但不建议）
+# print(account.__password)  # AttributeError！
+print(account._BankAccount__password)  # 123456（强行访问）
+```
+
+**注意：** Python 的访问控制基于约定，不是强制。
+
+---
+
+## 常见操作
+
+### 内置属性
+
+Python 的类和对象有一些内置属性，用于获取元信息：
+
+| 属性        | 说明                     |
+| ----------- | ------------------------ |
+| `__class__` | 对象所属的类             |
+| `__bases__` | 类的所有直接父类（元组） |
+| `__base__`  | 类的第一个直接父类       |
+| `__dict__`  | 对象或类的属性字典       |
+
+```python
+class Animal:
+    pass
+
+class Dog(Animal):
+    species = "Canis familiaris"
+
+    def __init__(self, name):
+        self.name = name
+
+dog = Dog("Buddy")
+
+# __class__: 查看对象所属的类
+print(dog.__class__)        # <class '__main__.Dog'>
+print(dog.__class__.__name__)  # Dog
+
+# __bases__: 查看类的所有直接父类
+print(Dog.__bases__)        # (<class '__main__.Animal'>,)
+
+# __base__: 查看类的第一个直接父类
+print(Dog.__base__)         # <class '__main__.Animal'>
+
+# __dict__: 查看对象的属性字典
+print(dog.__dict__)         # {'name': 'Buddy'}
+
+# __dict__: 查看类的属性字典（包含方法）
+print(Dog.__dict__.keys())  # dict_keys([..., 'species', '__init__', ...])
+```
+
+---
+
+### `type()`
+
+返回对象的类型（对象是通过哪个类创建的）：
+
+```python
+dog = Dog("Buddy")
+
+print(type(dog))       # <class '__main__.Dog'>
+print(type(Dog))       # <class 'type'>
+print(type(123))       # <class 'int'>
+print(type("hello"))   # <class 'str'>
+```
+
+---
+
+### `isinstance()`
+
+判断对象是否是指定类（或其子类）的实例：
+
+```python
+dog = Dog("Buddy")
+
+print(isinstance(dog, Dog))      # True
+print(isinstance(dog, Animal))   # True（Dog 继承 Animal）
+print(isinstance(dog, str))      # False
+
+# 支持元组形式，判断是否为多个类型之一
+print(isinstance(dog, (Dog, Cat)))   # True
+print(isinstance(123, (str, int)))   # True
+```
+
+**与 `type()` 的区别：** `isinstance()` 会考虑继承关系，`type()` 不会。
+
+---
+
+### `issubclass()`
+
+判断一个类是否是另一个类的子类：
+
+```python
+print(issubclass(Dog, Animal))   # True
+print(issubclass(Dog, Dog))      # True（类是自己的子类）
+print(issubclass(Animal, Dog))   # False
+
+# 支持元组
+print(issubclass(Dog, (Animal, str)))  # True
+```
+
+---
+
+### `dir()`
+
+返回对象的所有属性和方法列表（包括继承的）：
+
+```python
+dog = Dog("Buddy")
+
+# 查看对象的所有属性和方法
+print(dir(dog))
+# ['__class__', '__delattr__', ..., 'name', 'species']
+
+# 查看类的所有属性和方法
+print(dir(Dog))
+
+# 不带参数时，返回当前作用域的所有名称
+print(dir())
+```
+
+---
+
+### `vars()`
+
+返回对象的 `__dict__` 属性，即对象的属性字典：
+
+```python
+dog = Dog("Buddy")
+
+print(vars(dog))        # {'name': 'Buddy'}
+print(vars(Dog))        # 类的 __dict__
+print(dog.__dict__)     # 等同于 vars(dog)
+
+# 不带参数时，等同于 locals()
+print(vars())
+```
+
+---
+
+### `getattr()`
+
+获取对象的属性值，属性不存在时可返回默认值。**会沿着继承链查找属性（包括实例属性、类属性、父类属性）：**
+
+```python
+class Animal:
+    species = "Animal"
+
+    def speak(self):
+        return "Some sound"
+
+class Dog(Animal):
+    def __init__(self, name):
+        self.name = name
+
+dog = Dog("Buddy")
+
+# 查找实例属性
+print(getattr(dog, "name"))           # Buddy
+
+# 查找类属性
+print(getattr(dog, "species"))        # Animal（继承自父类）
+
+# 查找父类方法
+print(getattr(dog, "speak")())       # Some sound
+
+# 属性不存在时，提供默认值
+print(getattr(dog, "age", 3))         # 3（默认值）
+
+# 等价于
+dog.name
+dog.species
+dog.speak()
+```
+
+---
+
+### `setattr()`
+
+设置对象的属性值，属性不存在时会创建。**如果父类定义了描述符（如 `@property.setter`）或 `__setattr__` 方法，会遵循继承链上的这些机制：**
+
+```python
+dog = Dog("Buddy")
+
+setattr(dog, "age", 3)
+print(dog.age)            # 3
+
+# 等价于
+dog.age = 3
+
+# 可以动态设置属性名
+attr_name = "breed"
+setattr(dog, attr_name, "Golden Retriever")
+print(dog.breed)          # Golden Retriever
+```
+
+---
+
+### `hasattr()`
+
+判断对象是否有指定属性。**会检查继承链上的所有属性：**
+
+```python
+dog = Dog("Buddy")
+
+# 实例属性
+print(hasattr(dog, "name"))       # True
+
+# 继承的类属性
+print(hasattr(dog, "species"))    # True（继承自 Animal）
+
+# 继承的方法
+print(hasattr(dog, "speak"))      # True（继承自 Animal）
+
+# 不存在的属性
+print(hasattr(dog, "age"))        # False
+
+# 常用于安全地访问属性前进行检查
+if hasattr(dog, "name"):
+    print(dog.name)
+```
+
+---
+
+### `delattr()`
+
+删除对象的属性：
+
+```python
+dog = Dog("Buddy")
+
+# 添加一个属性
+setattr(dog, "age", 3)
+print(dog.age)            # 3
+
+# 删除属性
+delattr(dog, "age")
+# print(dog.age)          # AttributeError!
+
+# 等价于
+del dog.age
+```
+
+## 额外补充
+
+### 属性与方法查找机制
+
+- 对象的字典（`__dict__`）只包含**自己的实例属性**，不包含父类属性
+- 对象访问属性时，若在自己的字典中找不到，会继续去**类的字典**（及父类）中查找
+- 对象的方法定义在**类的字典**中，因此对象可以调用类中定义的方法
+
+### 内置属性速查
+
+- `__class__`：查看对象的类
+- `__base__`：查看类的直接父类
+- `isinstance()`：判断对象是否是指定类（或其子类）的实例
+- `type()`：返回对象的类型（对象是通过哪个类创建的）

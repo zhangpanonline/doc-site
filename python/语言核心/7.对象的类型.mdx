@@ -1,0 +1,171 @@
+---
+sidebar_position: 7
+title: 7.对象的类型
+---
+
+# 对象的类型
+
+## 知识补充
+
+### 使用 `type()` 动态定义类
+
+类本身也是对象，`type()` 是创建类的内置函数。可以动态地创建类：
+
+```python
+# type(类名, (父类元组,), {属性字典})
+
+# 定义方法
+def bark(self):
+    print(f"{self.name} says: Woof!")
+
+# 动态创建 Dog 类
+Dog = type('Dog', (), {'name': 'Buddy', 'bark': bark})
+
+# 创建实例
+my_dog = Dog()
+print(my_dog.name)  # Buddy
+my_dog.bark()       # Buddy says: Woof!
+```
+
+**参数说明：**
+
+- 第一个参数：类名（字符串）
+- 第二个参数：继承的父类元组
+- 第三个参数：类属性和方法的字典
+
+**实际应用场景：** 在 ORM 框架或需要根据配置动态生成类的场景中经常使用。
+
+### MRO
+
+```python
+class A:
+    pass
+
+
+class B(A):
+    pass
+
+
+class C(A):
+    pass
+
+
+class D(B, C):
+    pass
+
+
+print(D.__mro__)  # (D, B, C, A)
+print(D.mro())  # (D, B, C, A)  和 __mro__一样
+print(D.__bases__)  # (B, C)
+print(D.__base__)  # B，取__bases__第一个
+```
+
+### 类中的私有成员
+
+```python
+# 以下规则适用于所有成员
+
+
+class A:
+    _a = 1  # 约定私有成员，外部仍然可以访问，大部分情况用它
+    __a = 2  # 严格私有成员，外部无法直接访问__a
+    __a__ = 3  # 有特殊作用的成员，往往是系统内置的
+
+    @classmethod
+    def test(cls):
+        print(cls._a, cls.__a, cls.__a__)  # 内部可以访问所有成员
+
+
+A.test()  # 1 2 3
+print(A._a, A.__a, A.__a__)  # __a访问不到，其他可以
+```
+
+---
+
+## 类型与元类
+
+所有的对象都是通过类创建的，创建对象的类，称之为该对象的类型（也有所属类的说法）
+
+可以使用 `type(对象)` 得到某个对象的类型
+
+![基础类.excalidraw](https://resource.duyiedu.com/yuanjin/202605181745106.svg)
+
+- 所有函数的类型是 `function`
+- 所有类的类型是 `type`
+- **创建类的类，称之为元类（metaclass）**
+
+> 见 `demo1.py` 的打印结果
+
+---
+
+## 成员的查找顺序
+
+**类成员的查找顺序**
+
+1. 查找自身的MRO链条
+2. 查找元类的MRO链条
+
+
+
+**其他实例的查找顺序**
+
+1. 查找自身
+2. 查找类型的MRO链条
+
+## 验证 type 与 isinstance 的关系
+
+```python
+function = type(lambda: None)
+
+# type
+print("type(type)", type(type))
+print("isinstance(type, type)", isinstance(type, type))
+print("isinstance(type, function)", isinstance(type, function))
+print("isinstance(type, object)", isinstance(type, object))
+print("\n")
+
+# object
+print("type(object)", type(object))
+print("isinstance(object, type)", isinstance(object, type))
+print("isinstance(object, function)", isinstance(object, function))
+print("\n")
+
+# function
+print("type(function)", type(function))
+print("isinstance(function, object)", isinstance(function, object))
+print("isinstance(function, type)", isinstance(function, type))
+print("isinstance(function, function)", isinstance(function, function))
+print("\n")
+
+
+# 普通对象和类
+class A:
+    pass
+
+
+a = A()
+print("type(a)", type(a))
+print("type(A)", type(A))
+print("isinstance(A, A)", isinstance(A, A))
+print("isinstance(A, object)", isinstance(A, object))
+print("isinstance(A, type)", isinstance(A, type))
+print("isinstance(A, function)", isinstance(A, function))
+print("isinstance(a, A)", isinstance(a, A))
+print("isinstance(a, object)", isinstance(a, object))
+print("isinstance(a, type)", isinstance(a, type))
+print("isinstance(a, function)", isinstance(a, function))
+print("\n")
+
+
+# 普通函数
+def func():
+    pass
+
+
+print("type(func)", type(func))
+print("isinstance(func, object)", isinstance(func, object))
+print("isinstance(func, type)", isinstance(func, type))
+print("isinstance(func, function)", isinstance(func, function))
+print("\n")
+```
+

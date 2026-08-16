@@ -1,0 +1,263 @@
+---
+sidebar_position: 4
+title: 3.作用域
+---
+
+# Python 作用域
+
+作用域（Scope）决定了程序中变量和名字的**可见范围**。理解作用域能帮助你预测代码的执行结果，避免变量名冲突。
+
+---
+
+## LEGB 规则
+
+Python 查找变量时遵循 **LEGB** 规则，按以下优先级顺序搜索：
+
+| 优先级 | 层级 | 说明 |
+|--------|------|------|
+| 1 | **L**ocal | 函数内部（局部作用域） |
+| 2 | **E**nclosing | 嵌套函数的外层函数（闭包） |
+| 3 | **G**lobal | 模块级别（全局作用域） |
+| 4 | **B**uilt-in | Python 内置（如 `len`、`print`） |
+
+```python
+x = "global"          # G：全局作用域
+
+def outer():
+    x = "enclosing"   # E：外层函数作用域
+    
+    def inner():
+        x = "local"   # L：局部作用域
+        print(x)      # 按 L → E → G → B 查找
+    
+    inner()
+
+outer()  # local
+```
+
+---
+
+## 局部作用域（Local）
+
+函数内部定义的变量，只在函数内部可见：
+
+```python
+def demo():
+    local_var = 100   # 局部变量
+    print(local_var)
+
+demo()        # 100
+# print(local_var)  # NameError！函数外部访问不到
+```
+
+**函数参数也是局部变量：**
+
+```python
+def greet(name):      # name 是局部变量
+    message = f"Hello, {name}"  # message 也是局部变量
+    print(message)
+
+greet("Alice")
+# print(name)     # NameError！
+```
+
+---
+
+## 全局作用域（Global）
+
+模块级别（文件最外层）定义的变量：
+
+```python
+count = 0             # 全局变量
+
+def increment():
+    print(count)      # 读取全局变量，OK
+
+increment()  # 0
+```
+
+### 在函数内修改全局变量
+
+直接赋值会创建局部变量，而非修改全局变量：
+
+```python
+count = 0
+
+def wrong_increment():
+    count += 1        # UnboundLocalError！
+
+# wrong_increment()
+```
+
+使用 `global` 关键字声明：
+
+```python
+count = 0
+
+def increment():
+    global count      # 声明使用全局变量
+    count += 1
+    print(count)
+
+increment()  # 1
+increment()  # 2
+print(count) # 2
+```
+
+---
+
+## 闭包作用域（Enclosing）
+
+嵌套函数中，内层函数可以访问外层函数的变量：
+
+```python
+def outer():
+    x = "outer"       # 外层函数的局部变量
+    
+    def inner():
+        print(x)      # 访问外层变量
+    
+    inner()
+
+outer()  # outer
+```
+
+### 修改外层变量
+
+内层函数不能直接修改外层变量：
+
+```python
+def counter():
+    count = 0
+    
+    def increment():
+        count += 1    # UnboundLocalError！
+    
+    increment()
+
+# counter()
+```
+
+使用 `nonlocal` 关键字：
+
+```python
+def make_counter():
+    count = 0
+    
+    def increment():
+        nonlocal count   # 声明使用外层变量
+        count += 1
+        return count
+    
+    return increment
+
+counter = make_counter()
+print(counter())  # 1
+print(counter())  # 2
+print(counter())  # 3
+```
+
+**`nonlocal` vs `global`：**
+
+| 关键字 | 作用 |
+|--------|------|
+| `global` | 声明变量来自**全局**作用域 |
+| `nonlocal` | 声明变量来自**外层函数**作用域 |
+
+---
+
+## 常见错误
+
+### 错误 1：在函数内同时读写全局变量
+
+```python
+x = 10
+
+def demo():
+    print(x)      # 先读
+    x = 20        # 再写 → 编译期就判定 x 是局部变量！
+
+# demo()  # UnboundLocalError
+```
+
+**原因：** Python 在编译函数时就确定了变量作用域，一旦函数内有赋值语句，该变量就被视为局部变量。
+
+**修正：**
+
+```python
+x = 10
+
+def demo():
+    global x
+    print(x)
+    x = 20
+
+demo()  # 10
+print(x)  # 20
+```
+
+### 错误 2：默认参数的陷阱
+
+```python
+def add_item(item, items=[]):
+    items.append(item)
+    return items
+
+print(add_item(1))  # [1]
+print(add_item(2))  # [1, 2] —— 意外！列表被共享了
+```
+
+默认参数在函数定义时求值，只创建一次。
+
+**修正：**
+
+```python
+def add_item(item, items=None):
+    if items is None:
+        items = []
+    items.append(item)
+    return items
+```
+
+---
+
+## 作用域速查
+
+```python
+# 1. 简单函数
+name = "global"
+
+def func():
+    name = "local"    # 局部变量，不影响全局
+    print(name)       # local
+
+func()
+print(name)           # global
+
+# 2. 嵌套函数
+
+def outer():
+    name = "outer"
+    
+    def inner():
+        name = "inner"   # 自己的局部变量
+        print(name)      # inner
+    
+    inner()
+    print(name)          # outer
+
+outer()
+
+# 3. 使用 nonlocal
+def outer():
+    name = "outer"
+    
+    def inner():
+        nonlocal name
+        name = "modified"  # 修改外层变量
+    
+    inner()
+    print(name)            # modified
+
+outer()
+```
