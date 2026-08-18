@@ -1,0 +1,134 @@
+---
+sidebar_position: 10
+title: 10.元类
+---
+
+# 元类
+
+## 类的创建过程
+
+使用 `class` 关键字定义类时，Python 底层会调用元类来创建类：
+
+```python title="class 关键字的等效形式" {6,11,14}
+class Dog:
+    pass
+
+
+# 等效于
+class Dog(metaclass=type):
+    pass
+
+
+# 等效于
+Dog = type("Dog", (), {})
+
+# 等效于
+Dog = type.__call__(type, "Dog", (), {})
+```
+
+也就是说，`class` 关键字只是语法糖，底层仍然是通过 `type()` 创建类。
+
+---
+
+## 自定义元类
+
+通过继承 `type`，可以自定义元类，控制类的创建过程。
+
+```python title="自定义元类" {2,8,13}
+class MyMeta(type):
+    def __new__(mcs, name, bases, namespace):
+        print(f"正在创建类: {name}")
+        print(f"父类: {bases}")
+        print(f"属性: {list(namespace.keys())}")
+
+        # 必须调用 type.__new__ 来真正创建类
+        cls = super().__new__(mcs, name, bases, namespace)
+        return cls
+
+
+# 使用 metaclass 参数指定元类
+class Dog(metaclass=MyMeta):
+    species = "Canis familiaris"
+
+    def bark(self):
+        print("Woof!")
+
+
+# 等效于
+# def bark(self):
+#     print("Woof!")
+
+
+# Dog = type.__call__(MyMeta, "Dog", (), {"species": "Canis familiaris", "bark": bark})
+
+# 输出：
+# 正在创建类: Dog
+# 父类: ()
+# 属性: ['__module__', '__qualname__', 'species', 'bark']
+```
+
+:::note 参数说明
+
+- `mcs`：元类自身（类似类方法中的 `cls`）
+- `name`：类名字符串
+- `bases`：父类元组
+- `namespace`：类属性的字典
+
+:::
+
+---
+
+## 深入：元类的查找顺序
+
+子类会继承父类的元类：
+
+```python title="元类的继承" {7,10}
+class MyMeta(type):
+    pass
+
+class Base(metaclass=MyMeta):
+    pass
+
+class Child(Base):  # 自动继承 MyMeta
+    pass
+
+print(type(Child))  # <class '__main__.MyMeta'>
+```
+
+如果父类元类不兼容，需要使用更通用的元类：
+
+```python title="元类冲突与解决" {13,16,19}
+class MetaA(type):
+    pass
+
+class MetaB(type):
+    pass
+
+class A(metaclass=MetaA):
+    pass
+
+class B(metaclass=MetaB):
+    pass
+
+# class C(A, B): pass  # TypeError! 元类冲突
+
+# 解决方法：创建兼容的元类
+class CommonMeta(MetaA, MetaB):
+    pass
+
+class C(A, B, metaclass=CommonMeta):  # 正常
+    pass
+```
+
+---
+
+## 总结
+
+| 概念 | 说明 |
+| ---- | ---- |
+| 元类 | 创建类的类，默认是 `type` |
+| `__new__` | 创建类，返回类对象 |
+| `__init__` | 初始化类，无返回值 |
+| `__call__` | 控制类的实例化过程 |
+| 应用场景 | 命名检查、自动注册、方法增强、ORM 等 |
+
