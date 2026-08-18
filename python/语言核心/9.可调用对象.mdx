@@ -1,0 +1,109 @@
+---
+sidebar_position: 9
+title: 可调用对象
+---
+
+# 可调用对象
+
+在 Python 中，**可调用对象（Callable）**是指可以像函数一样使用括号 `()` 调用的对象。
+
+## 如何判断对象是否可调用
+
+使用内置函数 `callable()`：
+
+```python title="判断可调用性" {1,2,4}
+print(callable(len))        # True，内置函数
+print(callable(int))        # True，类
+print(callable([1, 2]))     # False，列表不可调用
+print(callable(lambda: 1))  # True，lambda 表达式
+```
+
+函数是最常见的可调用对象：
+
+```python title="函数是可调用对象" {4-5}
+def greet(name):
+    return f"Hello, {name}!"
+
+print(callable(greet))  # True
+print(greet("Alice"))   # Hello, Alice!
+```
+
+类也是可调用对象：
+
+```python title="类是可调用对象" {5-6}
+class Dog:
+    def __init__(self, name):
+        self.name = name
+
+print(callable(Dog))    # True
+my_dog = Dog("Buddy")   # 调用类，创建实例
+print(my_dog.name)      # Buddy
+```
+
+---
+
+## 让对象变成可调用对象
+
+在类中定义 `__call__` 方法，**实例**就变成了可调用对象：
+
+```python title="__call__ 让实例可调用" {5,8,11}
+class Adder:
+    def __init__(self, n):
+        self.n = n
+
+    def __call__(self, x):
+        return self.n + x
+
+add_5 = Adder(5)
+print(callable(add_5))   # True
+# add_5(10) 等效于 Adder.__call__(add_5, 10)
+print(add_5(10))         # 15，像函数一样调用
+print(add_5(100))        # 105
+```
+
+:::tip 关键理解
+
+- `__call__` 让**实例**可以像函数一样被调用
+- 调用实例时，传入的参数会传给 `__call__` 方法
+
+:::
+
+---
+
+## 实际应用场景
+
+### 1. 实现可配置的函数对象
+
+```python title="可配置的函数对象" {5,8,11}
+class Multiplier:
+    def __init__(self, factor):
+        self.factor = factor
+
+    def __call__(self, value):
+        return self.factor * value
+
+double = Multiplier(2)
+triple = Multiplier(3)
+
+print(double(5))   # 10
+triple(5)   # 15
+```
+
+### 2. 实现状态保持的回调函数
+
+```python title="状态保持的回调" {7,11-12}
+class Logger:
+    def __init__(self, prefix):
+        self.prefix = prefix
+        self.log_count = 0
+
+    def __call__(self, message):
+        self.log_count += 1
+        print(f"[{self.prefix}] #{self.log_count}: {message}")
+
+error_log = Logger("ERROR")
+error_log("文件未找到")     # [ERROR] #1: 文件未找到
+error_log("网络连接失败")   # [ERROR] #2: 网络连接失败
+```
+
+---

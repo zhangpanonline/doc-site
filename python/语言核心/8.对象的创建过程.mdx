@@ -1,0 +1,108 @@
+---
+sidebar_position: 8
+title: 对象的创建过程
+---
+
+# 对象的创建过程
+
+下面是对象创建的伪代码
+
+```python title="对象创建的伪代码" {3,6-7}
+def create_object(cls, *args, **kwargs):
+    # 1. 调用 __new__ 创建实例
+    obj = cls.__new__(cls, *args, **kwargs)
+
+    # 2. 类型检查：只有 obj 是 cls 的实例（或其子类的实例）时才调用 __init__
+    if isinstance(obj, cls):
+        obj.__init__(*args, **kwargs)
+
+    # 3. 返回对象
+    return obj
+
+
+# 测试
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    def sayHi(self):
+        print(f"my name is {self.name}, I'm {self.age} years old")
+
+p = create_object(Person, "shae", 5)
+p.sayHi()
+```
+
+---
+
+## 应用场景
+
+理解对象的创建过程后，我们可以通过重写 `__new__` 和 `__init__` 来实现多种设计模式。
+
+### 1. 单例模式
+
+确保一个类只有一个实例：
+
+```python title="单例模式" {4-7,12}
+class Database:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+# 测试
+conn1 = Database()
+conn2 = Database()
+print(conn1 is conn2)  # True，说明是同一个实例
+```
+
+### 2. 对象池/缓存
+
+复用已有对象，避免重复创建：
+
+```python title="对象池/缓存" {4-8,14-15}
+class ConnectionPool:
+    _pool = {}
+
+    def __new__(cls, conn_id):
+        if conn_id not in cls._pool:
+            obj = super().__new__(cls)
+            cls._pool[conn_id] = obj
+        return cls._pool[conn_id]
+
+# 测试
+pool1 = ConnectionPool("conn_1")
+pool2 = ConnectionPool("conn_1")
+pool3 = ConnectionPool("conn_2")
+print(pool1 is pool2)  # True，相同 conn_id 返回同一个对象
+print(pool1 is pool3)  # False，不同 conn_id 返回不同对象
+```
+
+### 3. 正整数（带默认值回退）
+
+`__new__` 可以返回不同类型的对象。当返回的对象不是当前类的实例时，`__init__` 不会被执行：
+
+```python title="正整数（返回不同类型）" {3-4,16-18}
+class PositiveInt:
+    def __new__(cls, value):
+        if value < 0:
+            return 0  # 返回 int 类型的 0，不是 PositiveInt 的实例
+        return super().__new__(cls)
+
+    def __init__(self, value):
+        print("PositiveInt.__init__ 被调用")
+        self.value = value
+
+# 测试
+p = PositiveInt(5)
+print(type(p))    # <class '__main__.PositiveInt'>
+print(p.value)    # 5
+
+n = PositiveInt(-3)
+print(type(n))    # <class 'int'>
+print(n)          # 0
+```
+
+
