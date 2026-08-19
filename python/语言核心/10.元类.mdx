@@ -121,7 +121,108 @@ class C(A, B, metaclass=CommonMeta):  # 正常
 ```
 
 ---
+## 深入：DogMeta 调用协议拆解
 
+下面这段代码，用**两条时间线**拆开理解：一条是「创建 `Dog` 类」，一条是「创建 `dog` 实例」。
+
+```python title="元类调用协议示例" {2-3,5-6,9,14}
+class DogMeta(type):
+    def __new__(mcs, name, bases, namespace):
+        return super().__new__(mcs, name, bases, namespace)
+
+    def __call__(self, *args, **kwds):
+        return super().__call__(*args, **kwds)
+
+
+class Dog(metaclass=DogMeta):
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls)
+
+
+dog = Dog()
+```
+
+### 线一：创建 Dog 类（`class Dog(metaclass=DogMeta)` 语句执行时）
+
+1. `class` 语句开始执行，Python 收集类体命名空间
+
+   ```python
+   namespace = {'__module__': ..., '__qualname__': 'Dog', '__new__': <function>}
+   ```
+
+   （`Dog` 里定义的 `__new__` 被收进 `namespace`）
+
+2. 因为指定了 `metaclass=DogMeta`，Python 调用元类：
+
+   ```python
+   DogMeta("Dog", (), namespace)
+   ```
+
+3. 调用协议：`type(DogMeta).__call__(DogMeta, "Dog", (), namespace)`
+
+   - `DogMeta` 的类型是 `type`，所以入口是 `type.__call__`
+   - ⚠️ 注意：此时 `DogMeta.__call__` 不会被调用！
+
+4. `type.__call__` 内部转调：
+
+   ```python
+   DogMeta.__new__(DogMeta, "Dog", (), namespace)
+   ```
+
+   （`cls=DogMeta` → 调用 `DogMeta` 的 `__new__`）
+
+5. `DogMeta.__new__` 执行：
+
+   ```python
+   return super().__new__(mcs, name, bases, namespace)
+   # → type.__new__(DogMeta, "Dog", (), namespace)
+   # → type.__new__ 真正创建 Dog 类对象
+   # → Dog 的类型是 DogMeta：type(Dog) == DogMeta
+   ```
+
+6. `type.__call__` 再调 `DogMeta.__init__(Dog, ...)` 初始化类
+
+7. 返回 `Dog` 类，绑定名字 `Dog`
+
+> **关键**：`DogMeta.__new__` 在这条线被调用一次，`DogMeta.__call__` 在这条线不参与。
+
+### 线二：创建 dog 实例（`dog = Dog()` 时）
+
+1. `Dog()` 被调用
+
+   - 调用协议：`type(Dog).__call__(Dog)`
+   - `Dog` 的类型是 `DogMeta`（线一 ⑤ 的结果）
+   - 所以入口是：`DogMeta.__call__(Dog)`
+   - ✅ 这次轮到 `DogMeta.__call__` 出场了！
+
+2. `DogMeta.__call__(Dog)` 执行：
+
+   ```python
+   return super().__call__(*args, **kwds)
+   # → type.__call__(Dog)
+   ```
+
+   （`DogMeta` 没重写太多，`super()` 到父类 `type`）
+
+3. `type.__call__(Dog)` 内部：
+
+   - **a.** `obj = Dog.__new__(Dog)` ← 转调 `Dog` 自己的 `__new__`
+
+     `Dog.__new__` 执行：
+
+     ```python
+     return super().__new__(cls)
+     # → object.__new__(Dog)   ← 沿 MRO：Dog → object
+     # → 真正分配内存，创建实例
+     ```
+
+   - **b.** `isinstance(obj, Dog)` 为 `True`
+     - → `Dog.__init__(obj)` ← `Dog` 没定义 `__init__`，用 `object.__init__`
+     - → 初始化（无操作）
+
+4. 返回实例 → 绑定名字 `dog`
+
+---
 ## 总结
 
 | 概念 | 说明 |
@@ -131,4 +232,40 @@ class C(A, B, metaclass=CommonMeta):  # 正常
 | `__init__` | 初始化类，无返回值 |
 | `__call__` | 控制类的实例化过程 |
 | 应用场景 | 命名检查、自动注册、方法增强、ORM 等 |
+
+:::success 调用协议
+* 调用协议：x() 永远查找 type(x).__call__(x)，不找 x 自己的 __call__
+* 类被调用：B() → type(B).__call__ = type.__call__（调用 B.__new__ 创建实例）
+* 实例被调用：b() → type(b).__call__ = B.__call__（执行逻辑）
+:::
+
+:::success 创建链
+* 创建实例：A() → type.__call__(A) → A.__new__(A) → 最终 object.__new__
+* 创建类：class X(metaclass=MyMeta) → type.__call__(MyMeta, ...) → MyMeta.__new__(...) → 最终 type.__new__
+* type.__call__ 收到的 cls 是"要创建实例的那个类"，内部写死执行 cls.__new__(cls)——谁要创建实例，就让谁的 __new__ 来干
+* 同一个 type.__call__，cls=type 时创建类（走 type.new），cls=A 时创建实例（走 A.new）
+:::
+
+:::success new 参数
+* 普通类 __new__(cls)：cls 是类自己（制造者），return super().__new__(cls) 返回的才是实例
+* 元类 __new__(mcs, name, bases, namespace)：mcs 是元类自己（工厂），name/bases/namespace 是"图纸"，return 的正是 super().__new__(mcs, name, bases, namespace) 的返回值——也就是 type.__new__ 创建出来的那个新类
+* 元类 __new__ 必须 return super().__new__(mcs, ...)——MyMeta 只是包装层，真正创建类对象的是父类 type.__new__，不 return 会报 TypeError
+:::
+
+:::success 类与实例
+* issubclass(A, A) 恒 True——所有类都是自己的子类
+* isinstance(A, A) 通常 False——只有 type 是自己的实例（自指）
+* isinstance(x, Y) 等价于 issubclass(type(x), Y)
+* isinstance(x, object) 在 Python 3 恒为 True——所有类都强制继承 object
+* isinstance(function, function) 是 False——function 类本身的类型是 type，不是 function
+:::
+
+:::success 类型系统
+* object 是继承链的终点（万物之根），type 是创建链的起点（万物之源）
+* type 是它自己的实例：type(type) → type；type 继承自 object：type.__base__ → object
+* type("Dog", (), {}) 与 class Dog: pass 完全等价，第三个字典参数就是类成员（属性+方法）
+* class 语句是语法糖，底层就是调用 type 创建类
+:::
+
+---
 

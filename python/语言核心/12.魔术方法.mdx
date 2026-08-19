@@ -1,0 +1,449 @@
+---
+sidebar_position: 12
+title: 12.魔术方法
+---
+
+# 魔术方法
+
+魔术方法（Magic Methods）是 Python 中**以双下划线开头和结尾**的特殊方法，如 `__init__`、`__str__`。它们不需要显式调用，而是由 Python 在特定场景下**自动触发**。
+
+## 字符串表示
+
+当使用 `print()`、`str()` 或 `repr()` 时，Python 会自动调用对应的魔术方法：
+
+```python title="字符串表示" {6,10}
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        """面向用户，友好的可读格式"""
+        return f"Point({self.x}, {self.y})"
+
+    def __repr__(self):
+        """面向开发者，精确的重建格式"""
+        return f"Point({self.x!r}, {self.y!r})"
+
+
+p = Point(3, 4)
+print(p)           # Point(3, 4) —— 调用 __str__
+print(str(p))      # Point(3, 4) —— 调用 __str__
+print(repr(p))     # Point(3, 4) —— 调用 __repr__
+
+# 交互式环境中直接显示对象，调用 __repr__
+# p  # Point(3, 4)
+```
+
+:::tip 建议
+
+两个方法都实现。如果只实现 `__repr__`，`__str__` 会回退到使用它。
+
+:::
+
+---
+
+## 比较操作
+
+通过实现比较魔术方法，可以让自定义对象支持 `==`、`<`、`>` 等操作：
+
+```python title="比较操作" {6,13}
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    def __eq__(self, other):
+        """=="""
+        if not isinstance(other, Person):
+            return NotImplemented
+        return self.age == other.age
+
+    def __lt__(self, other):
+        """<"""
+        if not isinstance(other, Person):
+            return NotImplemented
+        return self.age < other.age
+
+    def __le__(self, other):
+        """<="""
+        return self < other or self == other
+
+    def __gt__(self, other):
+        """>"""
+        return not self <= other
+
+    def __ge__(self, other):
+        """>="""
+        return not self < other
+
+    def __ne__(self, other):
+        """!="""
+        return not self == other
+
+    def __repr__(self):
+        return f"Person({self.name!r}, {self.age})"
+
+
+alice = Person("Alice", 30)
+bob = Person("Bob", 25)
+
+print(alice == bob)  # False   
+print(alice > bob)   # True
+print(alice <= bob)  # False
+
+# 实现了比较方法后，可以使用 sorted
+people = [bob, alice]
+print(sorted(people))  # [Person('Bob', 25), Person('Alice', 30)]
+```
+
+:::tip 简化方案
+
+使用 `@functools.total_ordering` 装饰器，只需实现 `__eq__` 和其中一个（如 `__lt__`），其余会自动推导：
+
+:::
+
+```python title="total_ordering 简化" {3}
+from functools import total_ordering
+
+@total_ordering
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    def __eq__(self, other):
+        if not isinstance(other, Person):
+            return NotImplemented
+        return self.age == other.age
+
+    def __lt__(self, other):
+        if not isinstance(other, Person):
+            return NotImplemented
+        return self.age < other.age
+
+    def __repr__(self):
+        return f"Person({self.name!r}, {self.age})"
+```
+
+---
+
+## 算术运算
+
+让对象支持 `+`、`-`、`*`、`/` 等运算符：
+
+```python title="算术运算" {6,18,24}
+class Vector:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __add__(self, other):
+        """+"""
+        if isinstance(other, Vector):
+            return Vector(self.x + other.x, self.y + other.y)
+        return NotImplemented  # 返回 NotImplemented，让 Python 尝试 other 的 __radd__
+
+    def __sub__(self, other):
+        """-"""
+        if isinstance(other, Vector):
+            return Vector(self.x - other.x, self.y - other.y)
+        return NotImplemented
+
+    def __mul__(self, scalar):
+        """*，向量与标量相乘"""
+        if isinstance(scalar, (int, float)):
+            return Vector(self.x * scalar, self.y * scalar)
+        return NotImplemented
+
+    def __rmul__(self, scalar):
+        """右乘：scalar * vector"""
+        return self * scalar  # 复用 __mul__
+
+    def __truediv__(self, scalar):
+        """/"""
+        if isinstance(scalar, (int, float)):
+            return Vector(self.x / scalar, self.y / scalar)
+        return NotImplemented
+
+    def __neg__(self):
+        """负号：-vector"""
+        return Vector(-self.x, -self.y)
+
+    def __abs__(self):
+        """abs()"""
+        return (self.x ** 2 + self.y ** 2) ** 0.5
+
+    def __repr__(self):
+        return f"Vector({self.x}, {self.y})"
+
+
+v1 = Vector(1, 2)
+v2 = Vector(3, 4)
+
+print(v1 + v2)       # Vector(4, 6)
+print(v2 - v1)       # Vector(2, 2)
+print(v1 * 3)        # Vector(3, 6)
+print(2 * v1)        # Vector(2, 4) —— 调用 __rmul__
+print(-v1)           # Vector(-1, -2)
+print(abs(v1))       # 2.236...
+```
+
+**常用算术魔术方法：**
+
+| 运算符 | 魔术方法 | 说明 |
+|--------|----------|------|
+| `+` | `__add__` | 加法 |
+| `-` | `__sub__` | 减法 |
+| `*` | `__mul__` | 乘法 |
+| `/` | `__truediv__` | 真除法 |
+| `//` | `__floordiv__` | 整除 |
+| `%` | `__mod__` | 取模 |
+| `**` | `__pow__` | 幂运算 |
+| `+a` | `__pos__` | 正号 |
+| `-a` | `__neg__` | 负号 |
+| `abs()` | `__abs__` | 绝对值 |
+
+---
+
+## 容器协议
+
+实现容器协议，让自定义对象可以像 `list`、`dict` 一样使用 `[]`、 `len()`、`in` 等操作：
+
+```python title="容器协议" {5,9,21,25}
+class ShoppingCart:
+    def __init__(self):
+        self._items = []
+
+    def __len__(self):
+        """len(cart)"""
+        return len(self._items)
+
+    def __getitem__(self, index):
+        """cart[index]"""
+        return self._items[index]
+
+    def __setitem__(self, index, value):
+        """cart[index] = value"""
+        self._items[index] = value
+
+    def __delitem__(self, index):
+        """del cart[index]"""
+        del self._items[index]
+
+    def __contains__(self, item):
+        """item in cart"""
+        return item in self._items
+
+    def __iter__(self):
+        """for item in cart"""
+        return iter(self._items)
+
+    def append(self, item):
+        self._items.append(item)
+
+    def __repr__(self):
+        return f"ShoppingCart({self._items!r})"
+
+
+cart = ShoppingCart()
+cart.append("apple")
+cart.append("banana")
+cart.append("orange")
+
+print(len(cart))           # 3
+print(cart[0])             # apple
+print(cart[1:])            # ['banana', 'orange'] —— 支持切片
+print("apple" in cart)     # True
+
+for item in cart:
+    print(item)
+# apple
+# banana
+# orange
+```
+
+---
+
+## 类型转换
+
+实现类型转换魔术方法，让对象支持 `int()`、`float()`、`bool()` 等转换：
+
+```python title="类型转换" {5,8,11}
+class Money:
+    def __init__(self, amount):
+        self.amount = amount
+
+    def __int__(self):
+        return int(self.amount)
+
+    def __float__(self):
+        return float(self.amount)
+
+    def __bool__(self):
+        return self.amount != 0
+
+    def __repr__(self):
+        return f"Money({self.amount})"
+
+
+m = Money(100.5)
+print(int(m))      # 100
+print(float(m))    # 100.5
+print(bool(m))     # True
+
+m0 = Money(0)
+print(bool(m0))    # False
+```
+
+---
+
+## 属性访问拦截
+
+通过实现属性访问相关的魔术方法，可以拦截对对象属性的**读取**、**设置**和**删除**操作：
+
+```python title="属性访问拦截" {6,12,20}
+class Config:
+    def __init__(self):
+        # 必须用 object.__setattr__，否则会无限递归
+        object.__setattr__(self, "_data", {})
+
+    def __getattr__(self, name):
+        """访问不存在的属性时触发"""
+        if name in self._data:
+            return self._data[name]
+        raise AttributeError(f"'{type(self).__name__}' 对象没有属性 '{name}'")
+
+    def __setattr__(self, name, value):
+        """设置任意属性时触发"""
+        if name.startswith("_"):
+            # 内部属性直接设置，避免递归
+            object.__setattr__(self, name, value)
+        else:
+            self._data[name] = value
+
+    def __delattr__(self, name):
+        """删除属性时触发"""
+        if name in self._data:
+            del self._data[name]
+        else:
+            raise AttributeError(f"'{type(self).__name__}' 对象没有属性 '{name}'")
+
+    def __repr__(self):
+        return f"Config({self._data!r})"
+
+
+cfg = Config()
+cfg.debug = True      # 调用 __setattr__
+cfg.port = 8080       # 调用 __setattr__
+print(cfg.debug)      # True —— 调用 __getattr__
+print(cfg.port)       # 8080 —— 调用 __getattr__
+del cfg.debug         # 调用 __delattr__
+print(cfg)            # Config({'port': 8080})
+```
+
+:::warning 注意
+
+`__setattr__` 拦截**所有**属性设置。如果在其内部使用 `self.xxx = value` 的方式赋值，会再次触发 `__setattr__`，导致**无限递归**。应使用 `object.__setattr__(self, name, value)` 来绕过拦截。
+
+:::
+
+---
+
+### `__getattr__` vs `__getattribute__`
+
+- `__getattr__`：**仅**在访问**不存在**的属性时触发
+- `__getattribute__`：访问**任何**属性时都会触发（更底层，优先级更高）
+
+```python title="__getattr__ vs __getattribute__" {5,11}
+class Demo:
+    def __init__(self):
+        self.existing = 100
+
+    def __getattribute__(self, name):
+        """所有属性访问都会经过这里"""
+        print(f"正在访问: {name}")
+        # 必须用 object.__getattribute__，否则会无限递归
+        return object.__getattribute__(self, name)
+
+    def __getattr__(self, name):
+        """只有访问不存在的属性时才到这里"""
+        return f"'{name}' 不存在，返回默认值"
+
+
+d = Demo()
+print(d.existing)   # 先触发 __getattribute__，返回 100
+print(d.missing)    # 先触发 __getattribute__，找不到，再触发 __getattr__
+```
+
+:::warning 警告
+
+在 `__getattribute__` 中再次访问 `self.xxx` 也会触发自身，必须使用 `object.__getattribute__(self, name)`。
+
+:::
+
+---
+
+## 对象生命周期
+
+除了 `__init__`，还有 `__del__` 在对象被销毁时调用：
+
+```python title="对象生命周期" {6}
+class DatabaseConnection:
+    def __init__(self, db_name):
+        self.db_name = db_name
+        print(f"连接到数据库: {db_name}")
+
+    def __del__(self):
+        """对象被销毁时调用"""
+        print(f"关闭数据库连接: {self.db_name}")
+
+
+conn = DatabaseConnection("test_db")
+del conn  # 关闭数据库连接: test_db
+```
+
+:::note 注意
+
+`__del__` 的调用时机不确定（取决于垃圾回收），不应依赖它做关键清理。对于资源管理，应使用**上下文管理器**（后续课程讲）。
+
+:::
+
+---
+
+## 常用魔术方法速查
+
+| 类别 | 方法 | 触发场景 |
+|------|------|----------|
+| 构造 | `__init__` | 创建对象后初始化 |
+| 构造 | `__new__` | 创建对象（已讲过） |
+| 字符串 | `__str__` | `print()`、`str()` |
+| 字符串 | `__repr__` | `repr()`、交互式显示 |
+| 比较 | `__eq__` | `==` |
+| 比较 | `__lt__` | `<` |
+| 比较 | `__gt__` | `>` |
+| 比较 | `__le__` | `<=` |
+| 比较 | `__ge__` | `>=` |
+| 比较 | `__ne__` | `!=` |
+| 算术 | `__add__` | `+` |
+| 算术 | `__sub__` | `-` |
+| 算术 | `__mul__` | `*` |
+| 算术 | `__truediv__` | `/` |
+| 容器 | `__len__` | `len()` |
+| 容器 | `__getitem__` | `obj[key]` |
+| 容器 | `__setitem__` | `obj[key] = value` |
+| 容器 | `__delitem__` | `del obj[key]` |
+| 容器 | `__contains__` | `in` |
+| 容器 | `__iter__` | `for...in` |
+| 转换 | `__int__` | `int()` |
+| 转换 | `__float__` | `float()` |
+| 转换 | `__bool__` | `bool()` |
+| 可调用 | `__call__` | `obj()` |
+| 属性 | `__getattr__` | 访问不存在的属性 |
+| 属性 | `__getattribute__` | 访问任意属性 |
+| 属性 | `__setattr__` | 设置属性 |
+| 属性 | `__delattr__` | 删除属性 |
+| 生命周期 | `__del__` | 对象销毁 |
+
+---
+
