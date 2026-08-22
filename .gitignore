@@ -21,3 +21,5 @@ yarn-error.log*
 
 .history
 .DS_Store
+.codegraph/
+AGENTS.md

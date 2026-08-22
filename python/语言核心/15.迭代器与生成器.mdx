@@ -1,0 +1,521 @@
+---
+sidebar_position: 15
+title: 15.迭代器与生成器
+---
+
+# 迭代器与生成器
+
+## 迭代器(Iterator)
+
+迭代器是实现了`__iter__`和`__next__`方法的对象
+
+```python title="迭代器类示例" {3,10}
+class MyIterator:
+
+    def __iter__(self):
+        """
+        要求：必须返回迭代器
+        99.999999%的情况下，返回迭代器自身
+        """
+        return self
+
+    def __next__(self):
+        """返回下一个值"""
+        pass
+      
+obj = MyIterator()  # obj 是一个迭代器
+```
+
+
+
+### 应用：无限序列
+
+```python title="无限斐波那契数列迭代器" {8,11}
+class FibonacciIterator:
+    """无限斐波那契数列迭代器"""
+
+    def __init__(self):
+        self.a = 1
+        self.b = 1
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        current = self.a
+        self.a, self.b = self.b, self.a + self.b
+        return current
+
+
+# 使用示例
+fib = FibonacciIterator()
+
+print(next(fib))  # 输出: 1  等效于 fib.__next__()
+print(next(fib))  # 输出: 1
+print(next(fib))  # 输出: 2
+print(next(fib))  # 输出: 3
+print(next(fib))  # 输出: 5
+print(next(fib))  # 输出: 8
+
+```
+
+
+
+## 可迭代对象(Iterable)
+
+**可迭代协议规定，只要一个对象实现了 `__iter__()` 方法，且返回一个迭代器，则它就是可迭代对象**
+
+推理可知：**迭代器一定是可迭代对象**
+
+:::note 提示
+
+python中的容器类型都是可迭代对象
+
+:::
+
+```python title="可迭代对象：list"
+my_list = [1, 2, 3]
+
+# 调用 iter() 获取迭代器
+iterator = iter(my_list)  # 等价于 my_list.__iter__()
+
+print(type(iterator))     # <class 'list_iterator'>
+
+# 使用 next() 逐个获取值
+print(next(iterator))     # 1
+print(next(iterator))     # 2
+print(next(iterator))     # 3
+
+# print(next(iterator))   # StopIteration! 没有更多元素了
+```
+
+### 示例：倒数对象
+
+```python title="可迭代对象：倒数"
+class Countdown:
+    """可迭代对象：倒数"""
+
+    def __init__(self, start):
+        self.start = start
+
+    def __iter__(self):
+        """返回一个新的迭代器"""
+        return CountdownIterator(self.start)
+
+
+class CountdownIterator:
+    """迭代器"""
+
+    def __init__(self, start):
+        self.current = start
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current < 0:
+            raise StopIteration
+        num = self.current
+        self.current -= 1
+        return num
+
+
+cd = Countdown(5)
+
+iterator = iter(cd)
+print(next(iterator))  # 5
+print(next(iterator))  # 4
+print(next(iterator))  # 3
+print(next(iterator))  # 2
+print(next(iterator))  # 1
+print(next(iterator))  # 0
+# print(next(iterator))  # StopIteration!
+
+```
+
+
+
+### 消费者
+
+#### 1. `for`循环
+
+```python title="for 循环消费"
+# for 循环会自动调用 iter() 和 next()
+for n in Countdown(3):
+    print(n)  # 3 2 1 0
+```
+
+#### 2. **`list()`、`tuple()`、`set()` 等构造函数**
+
+```python title="构造函数消费"
+print(list(Countdown(3)))  # [3, 2, 1, 0]
+print(tuple(Countdown(3)))  # (3, 2, 1, 0)
+print(set(Countdown(3)))  # {0, 1, 2, 3}
+```
+
+#### 3. **`*` 解包操作符**
+
+```python title="* 解包操作符"
+first, *rest = Countdown(3)
+print(first)  # 3
+print(rest)   # [2, 1, 0]
+
+# 或用列表解包
+values = [*Countdown(3)]
+print(values)  # [3, 2, 1, 0]
+```
+
+#### 4. **`in` 成员判断**
+
+```python title="in 成员判断"
+print(5 in Countdown(3))   # False
+print(2 in Countdown(3))   # True
+```
+
+#### 5. **`sum()`、`max()`、`min()` 等内置函数**
+
+```python title="内置函数消费"
+print(sum(Countdown(3)))  # 6
+print(max(Countdown(3)))  # 3
+print(min(Countdown(3)))  # 0
+```
+
+#### 6. **`zip()`、`map()`、`filter()` 等函数**
+
+```python title="zip、map、filter"
+# zip 合并多个可迭代对象
+names = ["Alice", "Bob", "Charlie"]
+ages = [25, 30, 35]
+for name, age in zip(names, ages):
+    print(f"{name}: {age}")
+# Alice: 25
+# Bob: 30
+# Charlie: 35
+
+# map 对元素进行转换
+squares = map(lambda x: x**2, Countdown(3))
+print(list(squares))  # [9, 4, 1, 0]
+
+# filter 过滤元素
+evens = filter(lambda x: x % 2 == 0, Countdown(3))
+print(list(evens))  # [2, 0]
+```
+
+#### 7. **`any()`、`all()`**
+
+```python title="any、all"
+numbers = Countdown(3)
+print(any(numbers))  # True (至少一个为真)
+print(all(numbers))  # False (是否所有都为真)
+```
+
+### range函数
+
+`range()` 是 Python 中最常用的可迭代对象之一，用于生成整数序列：
+
+```python title="range 基本用法"
+# range(stop): 0 到 stop-1
+for i in range(5):
+    print(i, end=" ")  # 0 1 2 3 4
+
+# range(start, stop): start 到 stop-1
+for i in range(2, 6):
+    print(i, end=" ")  # 2 3 4 5
+
+# range(start, stop, step): 指定步长
+for i in range(0, 10, 2):
+    print(i, end=" ")  # 0 2 4 6 8
+
+# 负数步长（倒序）
+for i in range(5, 0, -1):
+    print(i, end=" ")  # 5 4 3 2 1
+```
+
+**重要特性：**
+
+1. **惰性计算**：`range` 不会一次性生成所有数字，而是按需生成
+2. **支持索引和切片**：与列表不同，`range` 支持随机访问
+
+```python title="range 支持索引和切片"
+r = range(0, 100, 2)
+
+print(len(r))      # 50
+print(r[5])        # 10
+print(r[0:5])      # range(0, 10, 2)
+print(10 in r)     # True
+print(11 in r)     # False
+```
+
+3. **不是迭代器**：`range` 是可迭代对象，但不是迭代器（可以重复使用）
+
+```python title="range 可重复遍历"
+r = range(3)
+
+for i in r:
+    print(i, end=" ")  # 0 1 2
+print()
+
+for i in r:
+    print(i, end=" ")  # 0 1 2（可以再次遍历）
+```
+
+:::tip 内存特性
+
+range 对象在内存中只存储 start、stop、step 三个值，无论范围多大都占用固定内存
+
+:::
+
+### 推导式
+
+推导式(Comprehension)是一种简洁的语法，用于从一个可迭代对象创建新的列表、字典或集合。
+
+#### 列表推导式
+
+```python title="列表推导式"
+# 基本语法：[表达式 for 变量 in 可迭代对象]
+squares = [x**2 for x in range(5)]
+print(squares)  # [0, 1, 4, 9, 16]
+
+# 带条件过滤：[表达式 for 变量 in 可迭代对象 if 条件]
+evens = [x for x in range(10) if x % 2 == 0]
+print(evens)  # [0, 2, 4, 6, 8]
+
+# 带 if-else 条件
+labels = ["偶数" if x % 2 == 0 else "奇数" for x in range(5)]
+print(labels)  # ['偶数', '奇数', '偶数', '奇数', '偶数']
+```
+
+#### 字典推导式
+
+```python title="字典推导式"
+# 基本语法：{键表达式: 值表达式 for 变量 in 可迭代对象}
+square_dict = {x: x**2 for x in range(5)}
+print(square_dict)  # {0: 0, 1: 1, 2: 4, 3: 9, 4: 16}
+
+# 带条件过滤
+odd_squares = {x: x**2 for x in range(10) if x % 2 != 0}
+print(odd_squares)  # {1: 1, 3: 9, 5: 25, 7: 49, 9: 81}
+```
+
+#### 集合推导式
+
+```python title="集合推导式"
+# 基本语法：{表达式 for 变量 in 可迭代对象}
+square_set = {x**2 for x in range(10)}
+print(square_set)  # {0, 1, 4, 81, 64, 9, 16, 49, 25, 36}
+
+# 带条件过滤
+evens = {x for x in range(20) if x % 2 == 0}
+print(evens)  # {0, 2, 4, 6, 8, 10, 12, 14, 16, 18}
+```
+
+#### 嵌套推导式
+
+```python title="嵌套推导式"
+# 嵌套列表推导式：将二维列表展平
+matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+flat = [x for row in matrix for x in row]
+print(flat)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+# 等价于：
+# flat = []
+# for row in matrix:
+#     for x in row:
+#         flat.append(x)
+
+# 嵌套条件
+matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+# 只保留偶数
+result = [x for row in matrix for x in row if x % 2 == 0]
+print(result)  # [2, 4, 6, 8]
+```
+
+#### 元组推导式
+
+Python中没有元组推导式。
+
+#### 推导式 vs 循环
+
+推导式通常比等效的 `for` 循环更快，也更简洁：
+
+```python title="推导式 vs 循环"
+# 推导式（推荐）
+squares = [x**2 for x in range(10)]
+
+# 等效的循环写法
+squares = []
+for x in range(10):
+    squares.append(x**2)
+```
+
+:::note 建议
+
+注意：当逻辑过于复杂时，使用普通循环会更清晰易读
+
+:::
+
+---
+
+## 生成器(Generator)
+
+### 生成器函数
+
+```python title="生成器函数" {4,6,8}
+# Python识别到这个函数中包含yield的关键字，因此该函数是一个生成器函数。
+def simple_generator():
+    print("开始")
+    yield 1
+    print("继续")
+    yield 2
+    print("结束")
+    yield 3
+
+
+g = simple_generator() # 生成器函数返回的是生成器，生成器是一个迭代器。
+print(next(g))  # 开始
+                # 1
+print(next(g))  # 继续
+                # 2
+print(next(g))  # 结束
+                # 3
+# print(next(g))  # StopIteration!
+```
+
+可以利用生成器这种简易写法，快速完成迭代器的编写。
+
+```python title="生成器函数：倒数"
+def countdown(start):
+    """生成器函数"""
+    while start >= 0:
+        yield start
+        start -= 1
+
+
+# 调用生成器函数，返回生成器
+cd = countdown(5)
+print(type(cd))       # <class 'generator'>
+
+for n in cd:
+    print(n, end=" ")  # 5 4 3 2 1 0
+```
+
+**生成器的特点：**
+
+1. **惰性计算**：只在需要时生成值，不占用大量内存
+2. **状态保存**：每次 `yield` 后暂停，下次从暂停处继续
+3. **一次性**：和迭代器一样，只能遍历一次
+
+### 链式调用
+
+```python title="链式调用"
+def sub_generator():
+    yield 1
+    yield 2
+
+
+def main_generator():
+    yield "开始"
+    for value in sub_generator():
+        yield value
+    yield "结束"
+
+
+for value in main_generator():
+    print(value)
+# 开始
+# 1
+# 2
+# 结束
+```
+
+可使用`yield from` 语法糖简化代码：
+
+```python title="yield from 简化链式调用" {3}
+def main_generator():
+    yield "开始"
+    yield from sub_generator()  # 委托给子生成器
+    yield "结束"
+```
+
+### 发送数据
+
+当调用生成器的`send`函数的时候，可以向生成器发送数据，该数据会导致`yield`的表达式返回对应的值。
+
+```python title="生成器 send 发送数据" {4}
+def calculator():
+    total = 0
+    while True:
+        x = yield total  # yield 返回当前总数，并接收新值
+        if x is None:
+            break
+        total += x
+
+calc = calculator()
+print(next(calc))      # 输出: 0 (启动)
+print(calc.send(10))   # 输出: 10 (发送10，累加后返回)
+print(calc.send(20))   # 输出: 30
+print(calc.send(5))    # 输出: 35
+```
+
+### 生成器表达式
+
+类似列表推导式，但使用圆括号，返回生成器：
+
+```python title="生成器表达式"
+# 生成器表达式 —— 惰性计算，节省内存
+squares_gen = (x**2 for x in range(1000000))
+
+print(type(squares_gen))   # <class 'generator'>
+
+# 按需获取值
+print(next(squares_gen))   # 0
+print(next(squares_gen))   # 1
+print(next(squares_gen))   # 4
+```
+
+---
+
+
+
+## itertools 简介
+
+`itertools` 模块提供了许多高效的迭代器工具：
+
+```python title="itertools 常用工具"
+import itertools
+
+# count(start, step)：无限计数
+counter = itertools.count(10, 2)
+print(next(counter))  # 10
+print(next(counter))  # 12
+print(next(counter))  # 14
+
+# cycle(iterable)：无限循环
+cy = itertools.cycle(["A", "B", "C"])
+print(next(cy))  # A
+print(next(cy))  # B
+print(next(cy))  # C
+print(next(cy))  # A（重新开始）
+
+# repeat(value, times)：重复值
+times_three = list(itertools.repeat("x", 3))
+print(times_three)  # ['x', 'x', 'x']
+
+# chain(*iterables)：连接多个可迭代对象
+combined = list(itertools.chain([1, 2], [3, 4], [5, 6]))
+print(combined)  # [1, 2, 3, 4, 5, 6]
+
+# islice(iterable, start, stop, step)：切片（支持无限迭代器）
+first_five = list(itertools.islice(itertools.count(), 5))
+print(first_five)  # [0, 1, 2, 3, 4]
+
+# permutations(iterable, r)：排列
+perms = list(itertools.permutations([1, 2, 3], 2))
+print(perms)  # [(1, 2), (1, 3), (2, 1), (2, 3), (3, 1), (3, 2)]
+
+# combinations(iterable, r)：组合
+combs = list(itertools.combinations([1, 2, 3, 4], 2))
+print(combs)  # [(1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)]
+```
+
+---
