@@ -1,0 +1,198 @@
+---
+sidebar_position: 16
+title: 16.上下文管理器
+---
+
+# 上下文管理器
+
+```python title="with 语句的等效形式"
+with 表达式 as 变量名:
+    代码块
+
+# 等效于
+变量名 = 表达式.__enter__()
+try:
+    代码块
+except Exception as e:
+    stopPropagation = 变量名.__exit__(type(e), e, e.__traceback__)
+    if not stopPropagation:
+        raise
+else:
+    变量名.__exit__(None, None, None)
+```
+
+带 `__enter__` 和 `__exit__` 方法的对象叫做**上下文管理器（Context Manager）**。
+
+- **上下文管理器**是支持 `with` 语句的对象
+- **必须同时实现**两个方法，否则 `with` 会报错
+
+## 基本用法
+
+```python title="文件操作 —— 自动关闭文件"
+# 文件操作 —— 自动关闭文件
+with open("data.txt", "r") as f:
+    content = f.read()
+    # 离开 with 块时，文件自动关闭
+
+# 等价于
+f = open("data.txt", "r")
+try:
+    content = f.read()
+except Exception as e:
+    stopPropagation = f.__exit__(type(e), e, e.__traceback__)
+    if not stopPropagation:
+        raise
+else:
+    f.__exit__(None, None, None)
+```
+
+## 自定义上下文管理器
+
+实现 `__enter__` 和 `__exit__` 方法：
+
+```python title="自定义上下文管理器" {6,12}
+class DatabaseConnection:
+    def __init__(self, host):
+        self.host = host
+        self.connected = False
+
+    def __enter__(self):
+        """进入 with 块时调用，返回的对象赋值给 as 后的变量"""
+        print(f"连接到数据库: {self.host}")
+        self.connected = True
+        return self  # 返回自身，供 with 块使用
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        离开 with 块时调用
+        exc_type: 异常类型（无异常时为 None）
+        exc_val: 异常值
+        exc_tb: 异常追踪信息
+        返回 True 表示异常已处理，不再向上传播
+        """
+        print(f"关闭数据库连接: {self.host}")
+        self.connected = False
+        return False  # 返回 False，不处理异常，让异常继续传播
+
+    def query(self, sql):
+        if not self.connected:
+            raise RuntimeError("未连接到数据库")
+        print(f"执行查询: {sql}")
+        return ["result1", "result2"]
+
+
+# 使用上下文管理器
+with DatabaseConnection("localhost") as conn:
+    print(f"连接状态: {conn.connected}")  # True
+    results = conn.query("SELECT * FROM users")
+    print(results)
+
+# 离开 with 块后
+print(f"连接状态: {conn.connected}")  # False
+```
+
+## 异常处理
+
+`__exit__` 方法可以处理或记录异常：
+
+```python title="异常处理：忽略指定异常" {13}
+class SuppressError:
+    """忽略指定类型的异常"""
+    
+    def __init__(self, *exception_types):
+        self.exception_types = exception_types
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None and issubclass(exc_type, self.exception_types):
+            print(f"捕获并忽略异常: {exc_type.__name__}: {exc_val}")
+            return True  # 返回 True，异常被处理，不再传播
+        return False  # 不处理其他异常
+
+
+# 使用
+with SuppressError(ZeroDivisionError):
+    result = 1 / 0  # 不会报错
+    print("这行不会执行")
+
+print("程序继续执行")  # 正常执行
+```
+
+---
+
+## 使用 @contextmanager 装饰器
+
+对于简单的上下文管理器，可以使用 `contextlib` 模块的 `@contextmanager` 装饰器，用生成器函数实现：
+
+```python title="@contextmanager 装饰器" {9}
+from contextlib import contextmanager
+
+@contextmanager
+def managed_resource(name):
+    """用生成器实现上下文管理器"""
+    print(f"获取资源: {name}")
+    resource = {"name": name, "status": "active"}
+    try:
+        yield resource  # yield 之前的代码等价于 __enter__
+    finally:
+        print(f"释放资源: {name}")  # yield 之后的代码等价于 __exit__
+
+
+# 使用
+with managed_resource("database") as res:
+    print(f"使用资源: {res}")
+# 获取资源: database
+# 使用资源: {'name': 'database', 'status': 'active'}
+# 释放资源: database
+```
+
+**带异常处理的版本：**
+
+```python title="带异常处理的版本" {9}
+from contextlib import contextmanager
+
+@contextmanager
+def safe_file_write(file_path):
+    """安全写入文件：先写入临时文件，成功后再替换原文件"""
+    temp_path = file_path + ".tmp"
+    try:
+        f = open(temp_path, "w")
+        yield f
+        f.close()
+        # 写入成功，替换原文件
+        import os
+        os.replace(temp_path, file_path)
+        print("写入成功")
+    except Exception as e:
+        # 写入失败，清理临时文件
+        f.close()
+        import os
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        print(f"写入失败: {e}")
+        raise  # 重新抛出异常
+
+
+# 使用
+with safe_file_write("data.txt") as f:
+    f.write("Hello, World!\n")
+```
+
+---
+
+## 多个上下文管理器
+
+可以同时使用多个 `with`：
+
+```python title="多个上下文管理器" {7}
+# 嵌套写法
+with open("input.txt", "r") as fin:
+    with open("output.txt", "w") as fout:
+        fout.write(fin.read().upper())
+
+# 简化写法（Python 3.1+）
+with open("input.txt", "r") as fin, open("output.txt", "w") as fout:
+    fout.write(fin.read().upper())
+```
