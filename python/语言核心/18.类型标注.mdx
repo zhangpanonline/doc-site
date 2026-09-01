@@ -1,0 +1,291 @@
+---
+sidebar_position: 18
+title: 18.类型标注
+---
+
+# 类型标注
+
+:::note 提示
+
+现在开始，开启`python.analysis.typeCheckingMode`
+
+:::
+
+## 为什么需要类型标注
+
+```python title="参数类型不明确的问题"
+# 问题：参数类型不明确
+def add(a, b):
+    return a + b
+
+# 调用者不知道应该传什么类型
+add(1, 2)        # 3
+add("1", "2")    # "12"  —— 这也是合法的，但可能不是预期行为
+add([1], [2])    # [1, 2]  —— 同样合法
+
+# 没有类型提示，难以在编码时发现错误
+```
+
+## 基础类型标注
+
+### 变量类型标注
+
+```python title="变量类型标注"
+# 声明变量的类型
+name: str = "Alice"
+age: int = 25
+pi: float = 3.14
+is_active: bool = True
+
+# 没有初始值
+value: int
+value = 10
+
+# Python 是动态语言，类型标注不会强制约束
+x: int = "hello"  # 不会报错，但类型检查工具会提示
+```
+
+### 函数类型标注
+
+```python title="函数类型标注"
+def greet(name: str, age: int) -> str:
+    """函数参数和返回值的类型标注"""
+    return f"{name} 今年 {age} 岁"
+
+
+# 调用
+greet("Alice", 25)        # 正确
+greet("Alice", "25")      # 运行不会报错，但类型检查会警告
+```
+
+```python title="NoReturn 类型"
+from typing import NoReturn
+
+
+def exit_program() -> NoReturn:
+    """表示函数永远不会正常返回"""
+    import sys
+    sys.exit(1)
+```
+
+## 常用复合类型
+
+### Optional 和 Union
+
+```python title="Optional 和 Union" {5,13}
+from typing import Optional, Union
+
+
+# Optional：值可以是某个类型，也可以是 None
+def find_user(user_id: int) -> Optional[str]:
+    """返回用户名，找不到时返回 None"""
+    if user_id <= 0:
+        return None
+    return f"User_{user_id}"
+
+
+# Union：值可以是多种类型之一
+def parse_value(value: str) -> Union[int, float, str]:
+    """尝试将字符串转换为数字，失败则返回原字符串"""
+    try:
+        if "." in value:
+            return float(value)
+        return int(value)
+    except ValueError:
+        return value
+```
+
+### 容器类型
+
+```python title="容器类型标注"
+from typing import List, Dict, Tuple, Set
+
+
+# 列表：元素类型
+scores: List[int] = [85, 90, 78]
+names: List[str] = ["Alice", "Bob", "Charlie"]
+
+
+# 字典：键类型, 值类型
+student_scores: Dict[str, int] = {
+    "Alice": 85,
+    "Bob": 90,
+}
+
+
+# 元组：固定长度，每个位置类型可不同
+point: Tuple[int, int] = (10, 20)
+person: Tuple[str, int, bool] = ("Alice", 25, True)
+
+
+# 集合：元素类型
+tags: Set[str] = {"python", "typing", "type-hints"}
+```
+
+### Any 和 类型别名
+
+```python title="Any 和类型别名"
+from typing import Any, TypeAlias
+
+
+# Any：任意类型，相当于没有类型约束
+def log_data(data: Any) -> None:
+    print(f"数据: {data}")
+
+
+# 类型别名，让复杂类型更易读
+Vector: TypeAlias = List[float]
+Matrix: TypeAlias = List[List[float]]
+
+
+def dot_product(v1: Vector, v2: Vector) -> float:
+    """计算两个向量的点积"""
+    return sum(a * b for a, b in zip(v1, v2))
+```
+
+## 类与自定义类型
+
+```python title="类与自定义类型" {4,9}
+from typing import Self
+
+
+class Point:
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
+    def move(self, dx: float, dy: float) -> Self:
+        """返回移动后的新点"""
+        return Point(self.x + dx, self.y + dy)
+
+    def distance_to(self, other: "Point") -> float:
+        """计算到另一个点的距离"""
+        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
+
+
+# 使用
+p1 = Point(0, 0)
+p2 = Point(3, 4)
+print(p1.distance_to(p2))  # 5.0
+```
+
+## 泛型
+
+```python title="泛型" {7}
+from typing import TypeVar, Generic
+
+
+T = TypeVar("T")
+
+
+class Stack(Generic[T]):
+    """泛型栈，可以存储任意类型的元素"""
+
+    def __init__(self) -> None:
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        if not self._items:
+            raise IndexError("栈为空")
+        return self._items.pop()
+
+    def peek(self) -> T | None:
+        if not self._items:
+            return None
+        return self._items[-1]
+
+
+# 使用
+int_stack: Stack[int] = Stack()
+int_stack.push(1)
+int_stack.push(2)
+print(int_stack.pop())  # 2
+
+str_stack: Stack[str] = Stack()
+str_stack.push("hello")
+# str_stack.push(123)  # 类型检查会警告
+```
+
+## Callable 和 回调函数
+
+```python title="Callable 和回调函数"
+from typing import Callable
+
+
+def execute_callback(
+    callback: Callable[[int, int], int],
+    a: int,
+    b: int
+) -> int:
+    """执行回调函数"""
+    return callback(a, b)
+
+
+# 使用
+result = execute_callback(lambda x, y: x + y, 3, 5)
+print(result)  # 8
+```
+
+## 应用场景
+
+### 1. API 接口定义
+
+```python title="TypedDict API 接口定义"
+from typing import TypedDict
+
+
+class UserResponse(TypedDict):
+    """API 返回的用户数据结构"""
+    id: int
+    name: str
+    email: str
+    is_active: bool
+
+
+def get_user(user_id: int) -> UserResponse:
+    return {
+        "id": user_id,
+        "name": "Alice",
+        "email": "alice@example.com",
+        "is_active": True,
+    }
+```
+
+### 2. 配合 IDE 获得智能提示
+
+类型标注让 IDE 可以提供：
+- 自动补全
+- 参数提示
+- 类型错误高亮
+
+```python title="配合 IDE 智能提示"
+class Database:
+    def connect(self, host: str, port: int = 5432) -> "Connection":
+        ...
+
+    def query(self, sql: str) -> list[dict[str, Any]]:
+        ...
+
+
+db = Database()
+conn = db.connect("localhost")  # IDE 会提示 port 参数
+```
+
+## 忽略类型检查
+
+有时某些代码难以标注或不需要检查，可以使用 `# type: ignore` 忽略：
+
+```python title="忽略类型检查"
+# 忽略整行的类型检查
+data = some_dynamic_library.load()  # type: ignore
+
+# 有具体错误码时，可以指定忽略特定错误
+x: int = "hello"  # type: ignore[assignment]
+```
+
+**注意：** 应该尽量少用，只在必要时使用
+
+---

@@ -1,0 +1,204 @@
+---
+sidebar_position: 24
+title: 24.协程
+---
+
+# 协程 Coroutine
+
+## 回调之痛
+
+在之前的课程中，我们用 `Future` 把延时函数和网络请求封装成了异步模式，但使用者依然需要注册回调：
+
+```python title="使用 Future 注册回调"
+async_delay(2).add_done_callback(lambda _: print("2秒后执行"))
+```
+
+如果请求之后还有请求，就会出现**回调地狱**：
+
+```python title="回调地狱"
+async_request("host1").add_done_callback(lambda r1:
+    async_request("host2").add_done_callback(lambda r2:
+        async_request("host3").add_done_callback(lambda r3:
+            ...
+        )
+    )
+)
+```
+
+代码横向增长，可读性急剧下降。
+
+## 协程函数
+
+`Python` 中，使用 `async def` 定义一个**协程函数**。调用协程函数会得到一个**协程对象**。
+
+```python title="定义协程函数" {6}
+from async_delay import async_delay
+from async_request import async_request
+import asyncio
+
+
+async def test():
+    print("main begins")
+    resp1 = await async_request("localhost", 5500, "/index.html")
+    print("resp1", resp1[:9])
+    await async_delay(1)
+    print("delayed")
+    resp2 = await async_request("localhost", 5500, "/index.html")
+    print("resp2", resp2[:9])
+    return "ok"
+```
+
+## 协程 VS 线程
+
+| 对比维度        | 🧵 线程 (Thread)                                              | 🍃 协程 (Coroutine)                                           |
+| :-------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+| **运行载体**    | 运行在操作系统内核态，受系统管理。                           | 完全运行在**用户态**，由事件循环（如 `asyncio`）管理。       |
+| **资源开销**    | **较高** 每个线程需要独立的栈空间（通常数MB）和内核资源，创建和切换开销大。 | **极低** 协程栈空间很小（通常几KB），切换只需保存少量CPU寄存器上下文。 |
+| **切换成本**    | **昂贵** 涉及用户态与内核态切换，需要数百个CPU时钟周期。     | **非常廉价** 纯用户态操作，仅需几十个时钟周期。              |
+| **数据同步**    | 复杂且易出错 多线程共享内存，需要使用 `锁(Lock)`、`信号量(Semaphore)` 等机制，容易产生**死锁**、**竞态条件**。 | **相对安全** 单线程内运行，同一时刻只有一个协程在执行，天然避免了数据竞争。但使用多线程事件循环时仍需注意。 |
+| **利用多核**    | ✅ **原生支持** 可将不同线程分配到不同CPU核心，实现并行计算（CPU密集型任务）。 | ❌ **单线程内不支持** 一个事件循环默认只运行在一个线程、一个核心上。需要配合 `asyncio` 的 `run_in_executor` 或多进程才能利用多核。 |
+| **适用场景**    | **CPU密集型任务** 或 **对实时性要求高的I/O任务**（通过多线程掩盖阻塞） | **海量I/O密集型任务** 网络爬虫、Web服务器（如FastAPI）、聊天服务、高并发数据库访问等。可以轻松创建成千上万个协程。 |
+| **代表库/语法** | `threading`, `concurrent.futures.ThreadPoolExecutor`         | `asyncio`, `async`/`await`, `trio`, `gevent` (基于协程的库)  |
+| **典型数量级**  | 百级别（数百个线程开销已相当可观）                           | 万/十万级别（轻松创建数万个协程）                            |
+
+## 驱动协程对象
+
+```python title="手动驱动协程对象"
+
+def main():
+    coro = test()
+    loop = asyncio.get_event_loop()
+    f = loop.create_future()
+    r = coro.send(None)
+
+    def done_callback(fut):
+        try:
+            r = coro.send(fut.result())
+            r.add_done_callback(done_callback)
+        except StopIteration as e:
+            f.set_result(e.value)
+
+    r.add_done_callback(done_callback)
+    return f
+
+
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+
+def run():
+    fut = main()
+
+    def done_callback(fut):
+        loop.stop()
+        print(fut.result())
+
+    fut.add_done_callback(done_callback)
+
+
+loop.call_soon(run)
+loop.run_forever()
+print("over")
+```
+
+## Task
+
+`Task`是`Future`的子类，它专门用于驱动协程对象的执行
+
+```python title="Task 驱动协程"
+def main():
+    coro = test()
+    loop = asyncio.get_event_loop()
+    f = loop.create_future()
+
+    def done_callback(fut):
+        try:
+            r = coro.send(fut.result())
+            r.add_done_callback(done_callback)
+        except StopIteration as e:
+            f.set_result(e.value)
+
+    r.add_done_callback(done_callback)
+    return f
+
+
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+
+def run():
+    fut = main()
+
+    def done_callback(fut):
+        loop.stop()
+        print(fut.result())
+
+    fut.add_done_callback(done_callback)
+
+
+loop.call_soon(run)
+loop.run_forever()
+print("over")
+
+# 等效于
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+
+def run():
+    task = asyncio.create_task(test())  # 将协程包装成一个Task
+
+    def done_callback(task):
+        loop.stop()
+        print(task.result())
+
+    task.add_done_callback(done_callback)
+
+
+loop.call_soon(run)
+loop.run_forever()
+print("over")
+```
+
+
+
+## asyncio.run
+
+`asyncio.run`可以直接驱动一个协程对象，在内部会将其转换为`Task`
+
+```python title="asyncio.run 驱动协程"
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+
+def run():
+    task = asyncio.create_task(test())  # 将协程包装成一个Task
+
+    def done_callback(task):
+        loop.stop()
+        print(task.result())
+
+    task.add_done_callback(done_callback)
+
+
+loop.call_soon(run)
+loop.run_forever()
+print("over")
+
+# 等效于
+result = asyncio.run(test())
+print(result)
+print("over")
+```
+
+## 深度总结
+
+1. `async`修饰的函数称之为**协程函数/异步函数**，调用后返回**协程对象**
+2. 协程对象可以通过`asyncio.create_task`包装成一个`Task`，用于驱动协程对象
+   1. `Task`创建后，会立即启动协程对象的执行，执行放到ready队列中
+   2. 协程对象执行结束，Task完成，完成的数据即是协程对象的返回值
+3. `await`关键字可以等待一个`awaitable`对象
+   1. `await`必须在协程函数中
+   2. 常见的`awaitable`对象：**协程对象**、**Task**、**Future**
+
+4. `asyncio.run`可接收一个协程对象，其在内部转换为`Task`
