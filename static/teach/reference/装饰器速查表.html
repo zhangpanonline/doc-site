@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>装饰器速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>装饰器速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0011-装饰器.html">《装饰器互动教学课程》</a>与《11.装饰器》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>装饰器</dt>
+        <dd>接收函数、返回新函数的高阶函数；<code>@deco</code> 即 <code>f = deco(f)</code>。</dd>
+        <dt>wrapper</dt>
+        <dd>装饰器返回的包装函数，替代原函数；用 <code>*args, **kwargs</code> 接住任意参数。</dd>
+        <dt>functools.wraps</dt>
+        <dd>把原函数的 <code>__name__</code>/<code>__doc__</code> 等元信息复制给 wrapper。</dd>
+        <dt>带参装饰器</dt>
+        <dd>三层结构：外层收参数 → 返回装饰器 → 装饰器返回 wrapper。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>三大模板</h2>
+      <pre><code># 1. 基本装饰器（计时）
+import time
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        print(f"{func.__name__} 执行时间: {time.time() - start:.4f} 秒")
+        return result          # 必须 return，否则返回值丢失
+    return wrapper
+
+# 2. 元信息保留（等价于 functools.wraps）
+def wraps(func):
+    def decorator(wrapper):
+        wrapper.__name__ = func.__name__
+        wrapper.__doc__ = func.__doc__
+        return wrapper
+    return decorator
+
+# 3. 带参数装饰器（重复 n 次）
+def repeat(n):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for _ in range(n):
+                func(*args, **kwargs)
+        return wrapper
+    return decorator</code></pre>
+    </section>
+
+    <section>
+      <h2>叠加顺序</h2>
+      <pre><code>@a
+@b
+def f(): ...
+
+# 等价于 f = a(b(f))
+# 调用顺序：a 外层 → b 外层 → f → b 内层 → a 内层</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>wrapper 忘 return</strong>：被装饰函数的返回值变成 None。</li>
+        <li><strong>装饰器在定义时执行、wrapper 在调用时执行</strong>：装饰器本体里别放「每次调用都要做」的逻辑。</li>
+        <li><strong>不保留元信息</strong>：<code>f.__name__</code> 变成 "wrapper"，影响调试与工具识别——用 wraps。</li>
+        <li><strong>叠加顺序记反</strong>：<code>@a @b</code> 是 a 包 b，不是 b 包 a。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/装饰器/">11.装饰器</a> · <a href="/python/语言核心/魔术方法/">12.魔术方法</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/library/functools.html#functools.wraps">functools.wraps</a></li>
+        <li>Real Python：<a href="https://realpython.com/primer-on-python-decorators/">Primer on Python Decorators</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0011-装饰器.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

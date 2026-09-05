@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>类型标注速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>类型标注速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0018-类型标注.html">《类型标注互动教学课程》</a>与《18.类型标注》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>常用构造</h2>
+      <table class="cmp-table">
+        <tr><th>需求</th><th>写法（3.10+ 优先）</th><th>旧写法</th></tr>
+        <tr><td>可选</td><td><code>str | None</code></td><td><code>Optional[str]</code></td></tr>
+        <tr><td>联合</td><td><code>int | float</code></td><td><code>Union[int, float]</code></td></tr>
+        <tr><td>列表</td><td><code>list[int]</code></td><td><code>List[int]</code></td></tr>
+        <tr><td>字典</td><td><code>dict[str, int]</code></td><td><code>Dict[str, int]</code></td></tr>
+        <tr><td>元组</td><td><code>tuple[int, str]</code></td><td><code>Tuple[int, str]</code></td></tr>
+        <tr><td>回调</td><td><code>Callable[[int, int], int]</code></td><td>同左</td></tr>
+        <tr><td>任意</td><td><code>Any</code></td><td>同左</td></tr>
+        <tr><td>永不返回</td><td><code>NoReturn</code></td><td>同左</td></tr>
+        <tr><td>自身</td><td><code>Self</code>（3.11+）</td><td><code>"ClassName"</code> 字符串前向引用</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>泛型与 TypedDict 模板</h2>
+      <pre><code># 泛型类
+from typing import TypeVar, Generic
+
+T = TypeVar("T")
+
+class Stack(Generic[T]):
+    def __init__(self) -> None:
+        self._items: list[T] = []
+    def push(self, item: T) -> None: ...
+    def pop(self) -> T: ...
+
+int_stack: Stack[int] = Stack()
+
+# TypedDict（固定键结构的字典）
+from typing import TypedDict
+
+class DatabaseConfig(TypedDict):
+    host: str
+    port: int
+    username: str
+
+class AppConfig(TypedDict):
+    app_name: str
+    debug: bool
+    db: DatabaseConfig          # 可以嵌套</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>运行时不强制</strong>：标注是给 IDE/类型检查器（mypy/pyright）看的提示。</li>
+        <li><strong>裸 List/Dict 等于没说</strong>：必须带类型参数 <code>list[int]</code>。</li>
+        <li><strong>可空的要标出来</strong>：可能返回 None 就标 <code>int | None</code>，别用 int 掩盖。</li>
+        <li><strong>type: ignore 尽量少用</strong>：必要时 <code># type: ignore[code]</code> 精确忽略。</li>
+        <li><strong>泛型别忘 TypeVar</strong>：<code>T = TypeVar("T")</code> 才能参数化。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/抽象类/">17.抽象类</a> · <a href="/python/语言核心/类型标注/">18.类型标注</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/library/typing.html">typing — Support for type hints</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-type-checking/">Python Type Checking</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0018-类型标注.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>异步编程速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>异步编程速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0025-异步编程.html">《异步编程互动教学课程》</a>与《25.异步编程》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>同步 ↔ 异步协议</h2>
+      <table class="cmp-table">
+        <tr><th>同步</th><th>异步</th></tr>
+        <tr><td><code>__iter__</code> / <code>__next__</code></td><td><code>__aiter__</code> / <code>__anext__</code></td></tr>
+        <tr><td><code>for x in it</code> / StopIteration</td><td><code>async for x in it</code> / StopAsyncIteration</td></tr>
+        <tr><td><code>__enter__</code> / <code>__exit__</code></td><td><code>__aenter__</code> / <code>__aexit__</code></td></tr>
+        <tr><td><code>with ctx</code></td><td><code>async with ctx</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>官方 API 速查</h2>
+      <pre><code>await asyncio.sleep(1)                 # 非阻塞等待
+task = asyncio.create_task(coro())     # 包装协程并调度
+results = await asyncio.gather(a(), b())                     # 并发，按传入顺序返回
+results = await asyncio.gather(a(), b(), return_exceptions=True)  # 异常作为结果
+done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+async with asyncio.TaskGroup() as tg:  # 3.11+ 结构化并发，异常取消全组
+    t1 = tg.create_task(a())
+async with asyncio.timeout(2):         # 3.11+ 超时（TimeoutError）
+    await slow()
+await asyncio.wait_for(slow(), timeout=2)   # 旧式超时
+await asyncio.to_thread(time.sleep, 1)      # 同步阻塞丢给线程池
+lock / event / semaphore / queue       # asyncio.Lock() 等同步原语</code></pre>
+    </section>
+
+    <section>
+      <h2>三大陷阱与最佳实践</h2>
+      <ul class="pitfall-list">
+        <li><strong>❌ 协程里 time.sleep → 阻塞整个事件循环</strong>：改 <code>await asyncio.sleep</code> 或 <code>await asyncio.to_thread(time.sleep, 1)</code>。</li>
+        <li><strong>❌ 忘了 await 协程对象 → 永远不执行</strong>：<code>asyncio.run(main(), debug=True)</code> 会警告 "was never awaited"。</li>
+        <li><strong>❌ 手动 new_event_loop/run_forever</strong>：一律 <code>asyncio.run(main())</code> 作入口。</li>
+        <li><strong>✅ CancelledError 清理后必须 raise</strong>：吞掉取消信号的任务会「赖着不走」。</li>
+        <li><strong>✅ 循环内取 loop 用 get_running_loop()</strong>：模块级 get_event_loop 可能拿错。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/协程/">24.协程</a> · <a href="/python/语言核心/异步编程/">25.异步编程</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/library/asyncio-task.html">Coroutines and Tasks</a></li>
+        <li>Real Python：<a href="https://realpython.com/async-io-python/">Async IO in Python: A Complete Walkthrough</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0025-异步编程.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

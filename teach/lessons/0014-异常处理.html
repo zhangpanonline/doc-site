@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《14.异常处理》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（安全除法/重试/自定义异常）作为最终考核">
+  <title>异常处理 · 互动教学课程（第 14 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 14 课</p>
+      <h1>异常处理</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/异常处理/">14.异常处理</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 <code>try/except/else/finally</code> 各自的触发时机</li>
+        <li>利用异常层次结构<strong>精确捕获</strong>（子类在前）</li>
+        <li>写出安全除法、重试装饰器与带自定义异常的银行账户——<strong>最终考核的三道实现题</strong></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《14.异常处理》里，测验和考核会考。</p>
+
+      <h3>try 语句四件套</h3>
+      <table class="cmp-table">
+        <tr><th>子句</th><th>触发时机</th></tr>
+        <tr><td><code>try</code></td><td>监控的代码块</td></tr>
+        <tr><td><code>except</code></td><td>捕获匹配的异常（可多个、可带 as e）</td></tr>
+        <tr><td><code>else</code></td><td><strong>没有</strong>异常时执行</td></tr>
+        <tr><td><code>finally</code></td><td><strong>无论是否异常都执行</strong>（清理资源）</td></tr>
+      </table>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>异常是继承树</strong>：<code>ZeroDivisionError ⊂ ArithmeticError ⊂ Exception</code>。捕获父类会连子类一起捕获；<code>except</code> 顺序应<strong>先具体后宽泛</strong>。<a href="https://docs.python.org/3/library/exceptions.html#exception-hierarchy">官方文档：Exception hierarchy</a></li>
+        <li><strong>自定义异常继承 Exception</strong>：<code>class InsufficientFundsError(Exception)</code>，用 <code>raise</code> 抛出，调用方按类型精确捕获。<a href="https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions">官方教程：User-defined Exceptions</a></li>
+        <li><strong>异常链</strong>：except 里 <code>raise</code> 裸抛保留原上下文（<code>__context__</code>）；<code>raise B from e</code> 显式关联（<code>__cause__</code>）。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. <code>else</code> 子句什么时候执行？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">try 中没有异常发生时</button>
+            <button class="quiz-option">无论有无异常都执行</button>
+            <button class="quiz-option">异常被捕获之后</button>
+            <button class="quiz-option">只有未捕获异常时</button>
+          </div>
+          <div class="quiz-explain" hidden><code>else</code> 只在 try <strong>没有</strong>抛出异常时执行；<code>finally</code> 才是无论怎样都执行。详见「异常的捕获」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>except Exception</code> 能捕获 <code>ZeroDivisionError</code> 吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">能，因为 ZeroDivisionError 是 Exception 的子类</button>
+            <button class="quiz-option">不能，必须精确写 ZeroDivisionError</button>
+            <button class="quiz-option">只能捕获 Exception 本身</button>
+            <button class="quiz-option">会直接崩溃</button>
+          </div>
+          <div class="quiz-explain" hidden>异常有层次结构：<code>ZeroDivisionError → ArithmeticError → Exception</code>。捕获父类会连子类一起捕获——但应尽量精确捕获。详见「异常类型」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. except 里写 <code>raise</code>（不带任何异常）表示？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">重新抛出当前正在处理的异常</button>
+            <button class="quiz-option">抛出新的 RuntimeError</button>
+            <button class="quiz-option">语法错误</button>
+            <button class="quiz-option">结束异常处理</button>
+          </div>
+          <div class="quiz-explain" hidden>裸 <code>raise</code> 重新抛出<strong>当前异常</strong>（常用于记录日志后继续上抛）。详见「主动抛出异常」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 自定义异常的规范做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">继承 Exception 或其子类</button>
+            <button class="quiz-option">继承 BaseException</button>
+            <button class="quiz-option">继承 object</button>
+            <button class="quiz-option">不用继承，直接 class 定义</button>
+          </div>
+          <div class="quiz-explain" hidden>自定义异常继承 <code>Exception</code>（常规异常基类）；<code>BaseException</code> 还包含 SystemExit/KeyboardInterrupt，不应用于业务异常。详见「自定义异常」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>raise RuntimeError("B") from e</code> 后，<code>B.__cause__</code> 是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">原来的异常 e</button>
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">RuntimeError 自己</button>
+            <button class="quiz-option">字符串 "B"</button>
+          </div>
+          <div class="quiz-explain" hidden><code>from e</code> 显式关联异常链：新异常的 <code>__cause__</code> 指向 e。不用 from 的隐式关联则只设置 <code>__context__</code>。详见「异常链」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 多个 except 子句的书写顺序建议是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先具体（子类），后宽泛（父类）</button>
+            <button class="quiz-option">先宽泛（父类），后具体（子类）</button>
+            <button class="quiz-option">任意顺序都一样</button>
+            <button class="quiz-option">只能写一个 except</button>
+          </div>
+          <div class="quiz-explain" hidden>匹配按书写顺序进行：父类在前会把子类异常「抢走」，后面的 except 永远不执行。应<strong>先具体后宽泛</strong>。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《14.异常处理》源课程作业的三道实现题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·安全除法）：<code>safe_divide</code> 要求——除以 0 返回 0；参数类型错误打印 "参数类型错误" 并返回 None。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先 except ZeroDivisionError 返回 0，再 except TypeError 打印并返回 None</button>
+            <button class="quiz-option">两个 except 交换顺序，TypeError 在前</button>
+            <button class="quiz-option">只捕获 Exception 统一返回 0</button>
+            <button class="quiz-option">不捕获异常，直接 a / b</button>
+          </div>
+          <div class="quiz-explain" hidden>正确结构：<code>try: return a / b</code>，<code>except ZeroDivisionError: return 0</code>，<code>except TypeError: print("参数类型错误"); return None</code>。两种异常类型不同，顺序其实无碍，但<strong>分别处理</strong>返回不同结果才是题意 ✗（第二个：顺序反了不影响这两个类型，但打印语义错位；第三个把 TypeError 也当 0，返回值错；第四个直接崩）。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业一）</summary>
+<pre><code>def safe_divide(a, b):
+    try:
+        return a / b
+    except ZeroDivisionError:
+        return 0
+    except TypeError:
+        print("参数类型错误")
+        return None
+
+print(safe_divide(10, 2))    # 5.0
+print(safe_divide(10, 0))    # 0
+print(safe_divide("10", 2))  # 参数类型错误
+                             # None</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·重试装饰器）：<code>@retry(max_attempts=3, delay=1)</code>——函数抛异常则等 delay 秒重试，最多重试 3 次，最后一次仍失败则抛出该异常。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">for 循环 1..max_attempts：成功 return；失败且是最后一次就 raise，否则 sleep 后继续</button>
+            <button class="quiz-option">失败后无论第几次都吞掉异常返回 None</button>
+            <button class="quiz-option">只 try 一次，失败就 raise</button>
+            <button class="quiz-option">循环重试但不 sleep，失败后直接 raise</button>
+          </div>
+          <div class="quiz-explain" hidden>正确结构：<code>for attempt in range(1, max_attempts + 1): try: return func(...) except Exception as e: if attempt == max_attempts: raise; time.sleep(delay)</code>——成功即返回；最后一次失败<strong>重新抛出</strong>。第二个吞异常 ✗；第三个没重试 ✗；第四个没等待也没重试 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业二）</summary>
+<pre><code>import time
+
+def retry(max_attempts, delay=1):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_attempts:
+                        raise
+                    time.sleep(delay)
+        return wrapper
+    return decorator</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（作业三·银行账户）：withdraw 要求——冻结抛 AccountFrozenError；金额 ≤ 0 抛 ValueError；余额不足抛 InsufficientFundsError；成功后扣款。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">依次检查冻结 → 金额 ≤ 0 → 余额不足，通过后扣款</button>
+            <button class="quiz-option">只检查余额不足，其余不检查</button>
+            <button class="quiz-option">检查了条件但忘记扣款</button>
+            <button class="quiz-option">用 assert 实现全部检查</button>
+          </div>
+          <div class="quiz-explain" hidden>正确顺序：<code>if self.frozen: raise AccountFrozenError(...)</code> → <code>if amount &lt;= 0: raise ValueError(...)</code> → <code>if amount &gt; self.balance: raise InsufficientFundsError(...)</code> → 全部通过才 <code>self.balance -= amount</code>。第二个漏了两个条件 ✗；第三个余额永远不变 ✗；第四个 assert 可被 -O 优化掉，且类型不符题意 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业三）</summary>
+<pre><code>class InsufficientFundsError(Exception):
+    """余额不足"""
+    pass
+
+class AccountFrozenError(Exception):
+    """账户已冻结"""
+    pass
+
+class BankAccount:
+    def __init__(self, balance=0, frozen=False):
+        self.balance = balance
+        self.frozen = frozen
+
+    def withdraw(self, amount):
+        if self.frozen:
+            raise AccountFrozenError("账户已冻结，无法取款")
+        if amount &lt;= 0:
+            raise ValueError("取款金额必须大于零")
+        if amount &gt; self.balance:
+            raise InsufficientFundsError("余额不足")
+        self.balance -= amount</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（异常链预测）：<code>raise RuntimeError("错误B") from e</code>（e 是捕获的 ValueError）后，捕获 RuntimeError 时 <code>__cause__</code> 与 <code>__context__</code> 分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__cause__ 是 ValueError；__context__ 是 None</button>
+            <button class="quiz-option">__cause__ 是 None；__context__ 是 ValueError</button>
+            <button class="quiz-option">两者都是 ValueError</button>
+            <button class="quiz-option">两者都是 None</button>
+          </div>
+          <div class="quiz-explain" hidden><code>from e</code> 是<strong>显式关联</strong>：<code>__cause__</code> 指向 e，<code>__context__</code> 不设置（None）。对比：不用 from 的隐式关联只设置 <code>__context__</code>。详见「异常链」一节。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握异常处理——可以继续学习《<a href="/python/语言核心/迭代器与生成器/">15.迭代器与生成器</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/errors.html">8. Errors and Exceptions</a>——异常机制的权威讲解。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-exceptions/">Python Exceptions: An Introduction</a>，把捕获、抛出自定义异常讲得很全。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/异常处理速查表.html">异常处理速查表</a>——try 四件套、异常树、三大模板一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/描述符/">13.描述符</a> · <a href="/python/语言核心/异常处理/">14.异常处理</a> · <a href="/python/语言核心/迭代器与生成器/">15.迭代器与生成器</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/异常处理/">回到《14.异常处理》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

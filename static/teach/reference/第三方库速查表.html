@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第三方库速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>第三方库速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0021-第三方库.html">《第三方库互动教学课程》</a>与《21.第三方库》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>pip 命令速查</h2>
+      <pre><code>pip install 包名                    # 装最新
+pip install 包名==2.31.0           # 固定版本
+pip install "包名&gt;=2.20,&lt;3.0"      # 版本范围
+pip install -U 包名                # 升级
+pip uninstall -y 包名              # 卸载（-y 免确认）
+pip list / pip list --outdated    # 已装列表 / 可升级列表
+pip show 包名                      # 包详情（版本/依赖/被谁依赖）
+pip freeze &gt; requirements.txt      # 冻结依赖
+pip install -r requirements.txt   # 按清单安装
+python -m pip ...                  # 用当前解释器对应的 pip（多版本共存时更稳）</code></pre>
+    </section>
+
+    <section>
+      <h2>版本约束符号</h2>
+      <table class="cmp-table">
+        <tr><th>符号</th><th>含义</th><th>示例</th></tr>
+        <tr><td><code>==</code></td><td>固定版本</td><td><code>requests==2.31.0</code></td></tr>
+        <tr><td><code>&gt;=</code> / <code>&lt;=</code></td><td>最低 / 最高限制</td><td><code>numpy&gt;=1.24.0</code></td></tr>
+        <tr><td><code>~=</code></td><td>同系列小版本更新</td><td><code>~=2.31.0</code> 即 &gt;=2.31,&lt;3</td></tr>
+        <tr><td><code>,</code></td><td>组合多条件</td><td><code>&gt;=2.20,&lt;3.0</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>venv 工作流</h2>
+      <pre><code># 1. 创建
+python -m venv .venv
+# 2. 激活（macOS/Linux）
+source .venv/bin/activate
+# 3. 装依赖
+pip install -r requirements.txt
+# 4. 开发完冻结
+pip freeze &gt; requirements.txt
+# 5. 退出
+deactivate</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>dotenv 不是标准库</strong>：读 .env 需要 <code>pip install python-dotenv</code>。</li>
+        <li><strong>流式打印要 flush</strong>：<code>print(x, end="", flush=True)</code> 才能边到边显示。</li>
+        <li><strong>.env 不进版本库</strong>：API 密钥放 .env 并加进 .gitignore。</li>
+        <li><strong>激活 venv 后再装包</strong>：未激活时 pip 装进的是全局环境。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/标准库/">20.标准库</a> · <a href="/python/语言核心/第三方库/">21.第三方库</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/library/venv.html">venv</a> · <a href="https://pip.pypa.io/en/stable/">pip</a></li>
+        <li>Real Python：<a href="https://realpython.com/what-is-pip/">Using Python's pip to Manage Your Projects' Dependencies</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0021-第三方库.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

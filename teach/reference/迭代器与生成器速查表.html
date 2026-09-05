@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>迭代器与生成器速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>迭代器与生成器速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0015-迭代器与生成器.html">《迭代器与生成器互动教学课程》</a>与《15.迭代器与生成器》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>三者关系</h2>
+      <table class="cmp-table">
+        <tr><th>概念</th><th>协议</th><th>一次性？</th><th>例子</th></tr>
+        <tr><td>可迭代对象</td><td><code>__iter__</code> 返回迭代器</td><td>不一定</td><td>list、range（可反复遍历）</td></tr>
+        <tr><td>迭代器</td><td><code>__iter__</code> + <code>__next__</code></td><td>是</td><td>list_iterator</td></tr>
+        <tr><td>生成器</td><td>含 <code>yield</code> 的函数返回的对象</td><td>是</td><td>generator</td></tr>
+      </table>
+      <p><strong>迭代器一定是可迭代对象；生成器一定是迭代器。三者都惰性计算。</strong></p>
+    </section>
+
+    <section>
+      <h2>关键语法</h2>
+      <pre><code># 生成器函数：调用不执行函数体，next() 驱动到下一个 yield
+def gen():
+    yield 1          # 暂停点，返回 1
+    yield 2
+
+g = gen()
+next(g)              # 1；再次 next(g) → 2；再 next → StopIteration
+
+# yield from：委托子生成器（递归扁平化）
+def flatten(nested):
+    for item in nested:
+        if isinstance(item, list):
+            yield from flatten(item)
+        else:
+            yield item
+
+# send：给暂停的 yield 送值并继续
+def calc():
+    total = 0
+    while True:
+        x = yield total    # send 的值赋给 x
+        if x is None: break
+        total += x
+
+c = calc()
+next(c)              # 启动，yield 0
+c.send(10)           # yield 10；c.send(20) → yield 30
+
+# close：终止生成器，之后 next 抛 StopIteration
+g.close()
+
+# 生成器表达式：惰性的列表推导式
+squares = (x**2 for x in range(1000000))</code></pre>
+    </section>
+
+    <section>
+      <h2>推导式速查</h2>
+      <pre><code>[x**2 for x in range(5)]                    # 列表推导式
+{x: x**2 for x in range(5)}                 # 字典推导式
+{x**2 for x in range(5)}                    # 集合推导式
+(x**2 for x in range(5))                    # 生成器表达式（惰性）
+[x for row in matrix for x in row]          # 嵌套：展平二维
+[x for x in range(10) if x % 2 == 0]        # 带过滤
+["偶" if x % 2 == 0 else "奇" for x in ...]  # 带 if-else
+# 没有元组推导式！(x for x in ...) 是生成器表达式</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>迭代器只能遍历一次</strong>：第二次 for 循环是空的。</li>
+        <li><strong>调用生成器函数不执行函数体</strong>：先得到 generator，next 才驱动。</li>
+        <li><strong>range 不是迭代器</strong>：是可迭代对象，支持索引、切片、重复遍历。</li>
+        <li><strong>close 之后 next 抛 StopIteration</strong>：不是重新开始，也不是 None。</li>
+        <li><strong>元组没有推导式</strong>：<code>(x for x in ...)</code> 是生成器表达式。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/异常处理/">14.异常处理</a> · <a href="/python/语言核心/迭代器与生成器/">15.迭代器与生成器</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/howto/functional.html#iterators">Functional Programming HOWTO: Iterators</a></li>
+        <li>Real Python：<a href="https://realpython.com/introduction-to-python-generators/">How to Use Generators and yield in Python</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0015-迭代器与生成器.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>作用域速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>作用域速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0004-作用域.html">《作用域互动教学课程》</a>与《4.作用域》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>作用域</dt>
+        <dd>变量名的可见范围，决定名字在哪里能读到、能修改。</dd>
+        <dt>LEGB</dt>
+        <dd>查找顺序：Local 局部 → Enclosing 外层函数 → Global 全局 → Built-in 内置。</dd>
+        <dt>全局变量</dt>
+        <dd>模块最外层定义的变量；函数内<strong>读取</strong>没问题，<strong>修改</strong>要 <code>global</code>。</dd>
+        <dt>闭包</dt>
+        <dd>内层函数捕获外层函数的变量，随外层函数返回后仍能访问。</dd>
+        <dt>UnboundLocalError</dt>
+        <dd>编译期把名字判为局部变量，但读取时还没赋值——经典作用域报错。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>global 与 nonlocal</h2>
+      <table class="cmp-table">
+        <tr><th>关键字</th><th>指向</th><th>适用场景</th></tr>
+        <tr><td><code>global x</code></td><td>模块级全局变量</td><td>函数内修改全局变量（如计数器）</td></tr>
+        <tr><td><code>nonlocal x</code></td><td>外层函数的变量</td><td>嵌套函数修改外层状态（闭包计数器、账户余额）</td></tr>
+      </table>
+      <pre><code>count = 0                # 全局
+
+def outer():
+    count = 10            # 外层函数的局部
+    def inner():
+        global count      # 改全局：count 0→1
+        count += 1
+    inner()
+    print(count)          # 10 —— outer 的局部未被 inner 修改
+
+outer()
+print(count)              # 1 —— 全局被 inner 修改</code></pre>
+    </section>
+
+    <section>
+      <h2>闭包模板</h2>
+      <pre><code>def make_counter():
+    count = 0                      # 外层状态
+
+    def increment():
+        nonlocal count             # 修改外层状态
+        count += 1
+        return count
+
+    return increment               # 返回内层函数
+
+counter = make_counter()
+print(counter())   # 1
+print(counter())   # 2 —— 状态保留</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>「先读后写」全局变量报错</strong>：函数内只要对某名字赋值，该名字就是局部变量；<code>print(x)</code> 后 <code>x = 20</code> 会抛 UnboundLocalError。</li>
+        <li><strong>读取全局不需要 global</strong>：只有<strong>修改</strong>才需要声明。</li>
+        <li><strong>global 与 nonlocal 不可互换</strong>：模块级没有外层函数，<code>nonlocal</code> 会报错；闭包里误用 <code>global</code> 会改错变量。</li>
+        <li><strong>闭包状态各自独立</strong>：每次调用外层函数都创建新的变量环境，两个计数器互不影响。</li>
+        <li><strong>默认参数在定义时求值</strong>：<code>def f(items=[])</code> 的列表只创建一次，多次调用共享（第 3 章陷阱的根因）。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/函数/">3.函数</a> · <a href="/python/语言核心/作用域/">4.作用域</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/reference/executionmodel.html#resolution-of-names">Execution Model: Name Resolution</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-scope-legb-rule/">Python Scope &amp; the LEGB Rule</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0004-作用域.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

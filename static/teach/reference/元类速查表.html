@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>元类速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>元类速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0010-元类.html">《元类互动教学课程》</a>与《10.元类》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>元类</dt>
+        <dd>创建类的类，默认是 <code>type</code>；<code>class MyMeta(type)</code> 自定义。</dd>
+        <dt>mcs</dt>
+        <dd>元类 <code>__new__</code> 的第一参数，元类自身（类似 cls 之于类）。</dd>
+        <dt>namespace</dt>
+        <dd>类体收集到的属性字典：<code>{'__module__': ..., '__qualname__': ..., 'bark': &lt;function&gt;}</code>。</dd>
+        <dt>调用协议</dt>
+        <dd><code>x()</code> 永远查找 <code>type(x).__call__(x)</code>。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>两条时间线</h2>
+      <table class="cmp-table">
+        <tr><th>事件</th><th>入口</th><th>元类方法</th></tr>
+        <tr><td>创建类（class 语句）</td><td><code>type.__call__(MyMeta, ...)</code></td><td><code>MyMeta.__new__</code> 执行一次</td></tr>
+        <tr><td>实例化（Dog()）</td><td><code>MyMeta.__call__(Dog)</code></td><td><code>MyMeta.__call__</code> 每次执行</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>三条模板</h2>
+      <pre><code># 1. 单例元类（拦截实例化 → 重写 __call__）
+class SingletonMeta(type):
+    _instance = {}
+    def __call__(cls, *args, **kwds):
+        if cls not in cls._instance:
+            cls._instance[cls] = super().__call__(*args, **kwds)
+        return cls._instance[cls]
+
+# 2. 自动注册（拦截类创建 → 重写 __new__）
+class PluginMeta(type):
+    registry = {}
+    def __new__(mcs, name, bases, namespace):
+        cls = super().__new__(mcs, name, bases, namespace)
+        if name != "Plugin":
+            mcs.registry[name] = cls
+        return cls
+
+# 3. 方法日志（创建前替换 namespace 中的函数）
+class LogMeta(type):
+    def __new__(mcs, name, bases, namespace):
+        for key, value in namespace.items():
+            if not key.startswith("_") and callable(value):
+                namespace[key] = mcs.wrap(value)
+        return super().__new__(mcs, name, bases, namespace)</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>元类 __new__ 必须 return</strong>：<code>return super().__new__(mcs, name, bases, namespace)</code>，忘了 return 类创建失败。</li>
+        <li><strong>单例要改 __call__ 不是 __new__</strong>：元类的 <code>__new__</code> 只在创建类时跑一次，拦不住实例化。</li>
+        <li><strong>注册在 __new__ 里做</strong>：定义子类即触发；放在 <code>__call__</code> 里则必须实例化才注册。</li>
+        <li><strong>替换要在 super().__new__ 之前</strong>：创建类前改好 namespace，新类才带上被包裹的方法。</li>
+        <li><strong>子类自动继承元类</strong>：<code>class Child(Base)</code> 且 Base 用 MyMeta，Child 也用 MyMeta。</li>
+        <li><strong>元类冲突</strong>：多继承两个不同元类的父类会 TypeError；解法是 <code>class CommonMeta(MetaA, MetaB)</code>。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/可调用对象/">9.可调用对象</a> · <a href="/python/语言核心/元类/">10.元类</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/reference/datamodel.html#metaclasses">Data Model: Metaclasses</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-metaclasses/">Python Metaclasses</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0010-元类.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>容器类型速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>容器类型速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0002-容器类型.html">《容器类型互动教学课程》</a>与《2.容器类型》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>五容器对比</h2>
+      <table class="cmp-table">
+        <tr><th>容器</th><th>可变</th><th>有序</th><th>元素可重复</th><th>创建</th></tr>
+        <tr><td><code>list</code> 列表</td><td>✅</td><td>✅</td><td>✅</td><td><code>[1, 2]</code> / <code>list("ab")</code></td></tr>
+        <tr><td><code>tuple</code> 元组</td><td>❌</td><td>✅</td><td>✅</td><td><code>(1, 2)</code> / <code>1, 2</code> / 单元素 <code>(1,)</code></td></tr>
+        <tr><td><code>dict</code> 字典</td><td>✅</td><td>✅(3.7+)</td><td>键不可重复</td><td><code>{"a": 1}</code> / <code>dict(a=1)</code></td></tr>
+        <tr><td><code>set</code> 集合</td><td>✅</td><td>❌</td><td>❌ 去重</td><td><code>{1, 2}</code> / 空集 <code>set()</code></td></tr>
+        <tr><td><code>str</code> 字符串</td><td>❌</td><td>✅</td><td>✅</td><td><code>"hello"</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>高频操作</h2>
+      <pre><code># 列表增删改查
+nums.append(4)      # 末尾添加      nums.insert(0, 0)  # 指定位置插入
+nums.extend([5, 6]) # 批量添加      nums.remove(0)      # 删第一个匹配值
+nums.pop()          # 删并返回末尾  nums.pop(0)         # 删并返回指定位置
+nums.index(2)       # 第一个匹配位置 nums.count(2)       # 出现次数
+nums.sort()         # 原地排序，返回 None！  sorted(nums)  # 返回新列表
+
+# 元组解包
+first, *rest = (1, 2, 3, 4)   # first=1, rest=[2, 3, 4]
+*rest, last = (1, 2, 3, 4)    # rest=[1, 2, 3], last=4
+
+# 字典安全访问
+d.get("k")            # 键不存在返回 None（不报错）
+d.get("k", "默认")     # 键不存在返回默认值
+d.update({"k": 1})    # 批量更新      d.pop("k")        # 删并返回值
+d.popitem()           # 删并返回最后插入的键值对
+
+# 集合运算（方法与运算符等价）
+s1 & s2     # 交集  s1.intersection(s2)
+s1 | s2     # 并集  s1.union(s2)
+s1 - s2     # 差集  s1.difference(s2)
+s1 ^ s2     # 对称差 s1.symmetric_difference(s2)</code></pre>
+    </section>
+
+    <section>
+      <h2>切片与 in</h2>
+      <table class="cmp-table">
+        <tr><th>语法</th><th>含义</th><th>示例</th></tr>
+        <tr><td><code>s[a:b]</code></td><td>索引 a 到 b-1（左闭右开）</td><td><code>"hello"[1:4] → "ell"</code></td></tr>
+        <tr><td><code>s[a:b:step]</code></td><td>带步长</td><td><code>fruits[::2]</code> 隔一个取一个</td></tr>
+        <tr><td><code>s[::-1]</code></td><td>反转</td><td>返回反转后的新序列</td></tr>
+        <tr><td><code>x in 列表/元组/集合</code></td><td>查元素</td><td><code>2 in {1, 2, 3} → True</code></td></tr>
+        <tr><td><code>x in 字符串</code></td><td>查子串</td><td><code>"el" in "hello" → True</code></td></tr>
+        <tr><td><code>x in 字典</code></td><td>查<strong>键</strong>，不查值</td><td><code>20 in {"x": 10} → False</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>单元素元组要加逗号</strong>：<code>(1)</code> 是数字 1，<code>(1,)</code> 才是元组。</li>
+        <li><strong>空集合是 <code>set()</code></strong>：<code>{}</code> 创建的是空字典。</li>
+        <li><strong>字典键必须可哈希</strong>：<code>str/int/tuple</code> 可以，<code>list</code> 不行（报 TypeError）。</li>
+        <li><strong><code>sort()</code> 原地排序返回 None</strong>：要接返回值用 <code>sorted()</code>。</li>
+        <li><strong><code>==</code> 不是 <code>is</code></strong>：<code>==</code> 比内容（<code>[1,2]==[1,2] → True</code>），<code>is</code> 比身份（两个独立列表 <code>is</code> → False）；判 None 用 <code>is</code>。</li>
+        <li><strong>类型不同不相等</strong>：<code>[1, 2] == (1, 2) → False</code>。</li>
+        <li><strong>zip 以最短为准</strong>：长度不同的容器配对到最短的结束。</li>
+        <li><strong>集合无序</strong>：遍历/打印顺序不固定，别依赖顺序。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/基础语法/">1.基础语法</a> · <a href="/python/语言核心/容器类型/">2.容器类型</a></li>
+        <li>Python 官方教程：<a href="https://docs.python.org/3/tutorial/datastructures.html">5. Data Structures</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-lists-tuples/">Lists and Tuples in Python</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0002-容器类型.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

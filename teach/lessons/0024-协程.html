@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="配合《24.协程》的互动教学课程：知识速览 + 即时反馈测验，5-10 分钟巩固 Python 协程核心概念">
-  <title>协程 Coroutine · 互动教学课程（第 1 课）</title>
+  <title>协程 Coroutine · 互动教学课程（第 24 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
 <body>
   <main class="page">
 
     <header class="lesson-header">
-      <p class="lesson-kicker">互动教学课程 · 第 1 课</p>
+      <p class="lesson-kicker">互动教学课程 · 第 24 课</p>
       <h1>协程 Coroutine</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/协程/">24.协程</a>》使用<span class="dot"></span>预计 5–10 分钟<span class="dot"></span>8 道即时反馈测验</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/协程/">24.协程</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>8 道即时反馈测验 + 3 道最终考核</p>
     </header>
 
     <section class="lesson-goal card">
@@ -184,6 +184,125 @@ async def worker():
           <div class="quiz-explain" hidden>驱动协程的是<strong>事件循环</strong>：它负责调度 Task 与 Future；<code>asyncio.run</code> 内部就是创建事件循环，把协程包装成 Task 并驱动其完成。</div>
         </div>
       </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《24.协程》源课程作业的两道实现题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。作业引用的 <code>async_delay</code> 等 demo 代码已内嵌在折叠区。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（源作业·实现 gather）：用 Future 手写 <code>gather(*aws)</code>——并发执行多个协程，全部完成后按<strong>传入顺序</strong>返回结果列表。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">结果按索引存储，完成计数等于总数时 set_result(results)</button>
+            <button class="quiz-option">结果按完成顺序 append，谁先完成谁在前</button>
+            <button class="quiz-option">直接把协程对象加进列表却不 create_task，最后统一 await</button>
+            <button class="quiz-option">完成计数达到总数减一时就 set_result，漏掉最后一个</button>
+          </div>
+          <div class="quiz-explain" hidden>正确实现：<code>results = [None] * count</code> 按<strong>索引</strong>存结果（闭包捕获 idx）；<code>create_task(aw)</code> 包装协程并注册完成回调；<code>finish_count == count</code> 时 <code>future.set_result(results)</code>。第二个顺序错（gather 语义是按传入顺序）✗；第三个协程没被调度，永远等不到 ✗；第四个提前完成，漏最后一个结果 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看内嵌 demo 与参考答案（作业一）</summary>
+<pre><code># async_delay.py（课程前文封装，gather 的底层依赖）
+import asyncio
+
+def async_delay(duration: int):
+    loop = asyncio.get_event_loop()
+    future = loop.create_future()
+    loop.call_later(duration, future.set_result, None)
+    return future
+
+# gather.py（参考答案）
+import asyncio
+from typing import Coroutine
+
+def gather(*aws: Coroutine) -&gt; asyncio.Future:
+    future = asyncio.Future()
+    finish_count = 0
+    count = len(aws)
+    results = [None] * count
+
+    def on_done(f: asyncio.Future, idx: int) -&gt; None:
+        nonlocal finish_count
+        results[idx] = f.result()          # 按索引存储
+        finish_count += 1
+        if finish_count == count:
+            future.set_result(results)
+
+    for i, aw in enumerate(aws):
+        asyncio.create_task(aw).add_done_callback(lambda f, idx=i: on_done(f, idx))
+
+    return future
+
+async def coro(name: str, duration: int):
+    await async_delay(duration)
+    return f"{name} 完成"
+
+async def main():
+    results = await gather(coro("A", 2), coro("B", 1), coro("C", 3))
+    print(results)  # ['A 完成', 'B 完成', 'C 完成']</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（源作业·实现 Event）：手写 Event 类——<code>wait()</code> 挂起当前协程，<code>set()</code> 唤醒所有等待者。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">set() 对已存在的 Future set_result；wait() 创建 Future 并 await 它</button>
+            <button class="quiz-option">wait() 创建 Future 但不 await，直接返回</button>
+            <button class="quiz-option">set() 无条件 set_result，Future 为 None 时抛异常</button>
+            <button class="quiz-option">wait() 每次都用同一个共享 Future，且 set 后不重置</button>
+          </div>
+          <div class="quiz-explain" hidden>正确实现：<code>wait()</code> 里 <code>self._fut = loop.create_future()</code> 然后 <code>await self._fut</code>（挂起直到 set）；<code>set()</code> 里 <code>if self._fut: self._fut.set_result(None)</code>（None 判空防止没等待者时崩溃）。第二个没 await 就不挂起 ✗；第三个空指针 ✗；第四个复用已完成的 Future 会立即返回，第二次 wait 不再等待 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看内嵌参考答案（作业二·Event.py）</summary>
+<pre><code>import asyncio
+from async_delay import async_delay
+from gather import gather
+
+class Event:
+    def __init__(self):
+        self._fut = None
+
+    def set(self):
+        if self._fut:
+            self._fut.set_result(None)
+
+    async def wait(self):
+        loop = asyncio.get_running_loop()
+        self._fut = loop.create_future()
+        await self._fut
+
+async def test():
+    event = Event()
+
+    async def waiter():
+        print("waiter: 开始等待")
+        await event.wait()
+        print("waiter: 被唤醒")
+
+    async def setter():
+        print("setter: 1秒后设置事件")
+        await async_delay(1)
+        event.set()
+        print("setter: 事件已设置")
+
+    await gather(waiter(), setter())
+# 输出：waiter 开始等待 → setter 1 秒后设置事件 → waiter 被唤醒</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（顺序预测）：<code>gather(coro("A", 2), coro("B", 1), coro("C", 3))</code>——B 最先完成、C 最后完成。返回的 results 是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">['A 完成', 'B 完成', 'C 完成']（按传入顺序）</button>
+            <button class="quiz-option">['B 完成', 'A 完成', 'C 完成']（按完成顺序）</button>
+            <button class="quiz-option">['C 完成', 'B 完成', 'A 完成']（完成倒序）</button>
+            <button class="quiz-option">无法确定顺序</button>
+          </div>
+          <div class="quiz-explain" hidden>gather 的语义：<strong>并发执行，结果按传入顺序返回</strong>。虽然 B 1 秒先完成，结果仍按 A、B、C 的位置排列——这就是「按索引存储」而不是「按完成顺序 append」的原因。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">三道考核全部答对，说明你已经把协程、Task、Future 串成了整体——可以继续学习《<a href="/python/语言核心/异步编程/">25.异步编程</a>》了。</p>
     </section>
 
     <section>

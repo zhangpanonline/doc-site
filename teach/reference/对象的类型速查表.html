@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>对象的类型速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>对象的类型速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0007-对象的类型.html">《对象的类型互动教学课程》</a>与《7.对象的类型》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>类型</dt>
+        <dd>创建对象的类；<code>type(对象)</code> 得到它。</dd>
+        <dt>元类</dt>
+        <dd>创建类的类，默认是 <code>type</code>。</dd>
+        <dt>继承链</dt>
+        <dd>子类 → 父类 → … → object（万物之根，终点）。</dd>
+        <dt>创建链</dt>
+        <dd>实例 ← 类 ← type（万物之源，起点）。</dd>
+        <dt>自指</dt>
+        <dd><code>type(type) → type</code>：type 是自己的实例。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>关键结论速查（demo1.py 全部结果）</h2>
+      <table class="cmp-table">
+        <tr><th>表达式</th><th>结果</th><th>一句话原因</th></tr>
+        <tr><td><code>type(type)</code></td><td><code>type</code></td><td>type 是自己的元类（自指）</td></tr>
+        <tr><td><code>isinstance(type, type)</code></td><td><code>True</code></td><td>同上</td></tr>
+        <tr><td><code>isinstance(type, function)</code></td><td><code>False</code></td><td>type 是类不是函数</td></tr>
+        <tr><td><code>isinstance(type, object)</code></td><td><code>True</code></td><td>所有类都继承 object</td></tr>
+        <tr><td><code>type(object)</code></td><td><code>type</code></td><td>object 也由 type 创建</td></tr>
+        <tr><td><code>isinstance(object, type)</code></td><td><code>True</code></td><td>object 是 type 的实例</td></tr>
+        <tr><td><code>type(类A)</code></td><td><code>type</code></td><td>类的类型是元类</td></tr>
+        <tr><td><code>type(实例a)</code></td><td><code>A</code></td><td>实例的类型是类</td></tr>
+        <tr><td><code>isinstance(A, A)</code></td><td><code>False</code></td><td>类 A 不是 A 的实例</td></tr>
+        <tr><td><code>isinstance(a, A)</code></td><td><code>True</code></td><td>实例是类的实例</td></tr>
+        <tr><td><code>isinstance(a, object)</code></td><td><code>True</code></td><td>万物皆 object 实例</td></tr>
+        <tr><td><code>type(func)</code></td><td><code>function</code></td><td>函数的类型是 function</td></tr>
+        <tr><td><code>isinstance(function, function)</code></td><td><code>False</code></td><td>function 类是 type 的实例</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>成员查找顺序</h2>
+      <pre><code>类成员（类属性/类方法）：
+  ① 自身的 MRO 链条（子类 → 父类 → object）
+  ② 元类的 MRO 链条
+
+实例成员（实例属性/实例方法）：
+  ① 实例自身（__dict__）
+  ② 类型的 MRO 链条（类 → 父类 → object）</code></pre>
+    </section>
+
+    <section>
+      <h2>三种下划线</h2>
+      <table class="cmp-table">
+        <tr><th>写法</th><th>含义</th><th>外部访问</th></tr>
+        <tr><td><code>_a</code></td><td>约定私有（推荐日常用）</td><td>可访问，不建议</td></tr>
+        <tr><td><code>__a</code></td><td>名称改写 <code>_A__a</code></td><td>报错（可绕）</td></tr>
+        <tr><td><code>__a__</code></td><td>系统内置成员</td><td>可访问</td></tr>
+      </table>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/类和对象/">6.类和对象</a> · <a href="/python/语言核心/对象的类型/">7.对象的类型</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/reference/datamodel.html#metaclasses">Data Model: Metaclasses</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-metaclasses/">Python Metaclasses</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0007-对象的类型.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

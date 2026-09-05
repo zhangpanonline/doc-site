@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《11.装饰器》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（timer/wraps 装饰器）作为最终考核">
+  <title>装饰器 · 互动教学课程（第 11 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 11 课</p>
+      <h1>装饰器</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/装饰器/">11.装饰器</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清装饰器的本质：<strong>接收函数、返回新函数的高阶函数</strong></li>
+        <li>预测<strong>多个装饰器叠加</strong>的执行顺序</li>
+        <li>亲手写出 <code>timer</code> 计时装饰器与 <code>wraps</code> 元信息保留装饰器——<strong>最终考核的两道实现题</strong></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《11.装饰器》里，测验和考核会考。</p>
+
+      <h3>本质与语法糖</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">func</span>
+          <span class="diagram-arrow">─ 传入 ─▶</span>
+          <span class="diagram-node">decorator</span>
+          <span class="diagram-arrow">─ 返回 ─▶</span>
+          <span class="diagram-node plain">wrapper（替代原函数）</span>
+        </div>
+        <p class="diagram-note">⚙️ <code>@my_decorator</code> 等价于 <code>say_hello = my_decorator(say_hello)</code>——装饰器在<strong>定义时</strong>就执行，wrapper 在<strong>调用时</strong>才执行。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>wrapper 要接住参数并返回结果</strong>：用 <code>def wrapper(*args, **kwargs)</code> 接收任意参数，并 <code>return func(*args, **kwargs)</code> 把原函数的结果传出去——丢了 return，被装饰函数的返回值就变成 None。</li>
+        <li><strong>叠加顺序：从下到上应用，从上到下包裹</strong>：<code>@a @b</code> 等价于 <code>func = a(b(func))</code>，调用时 a 的外层逻辑最先执行。<a href="https://docs.python.org/3/reference/compound_stmts.html#function-definitions">官方文档：Function Definitions</a></li>
+        <li><strong>装饰器会替换函数元信息</strong>：wrapper 的 <code>__name__</code> 是 "wrapper"——用 <code>functools.wraps(func)</code>（或自己实现 wraps 装饰器）把 <code>__name__</code>/<code>__doc__</code> 复制过来。<a href="https://docs.python.org/3/library/functools.html#functools.wraps">官方文档：functools.wraps</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 装饰器本质上是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">接收函数并返回新函数的高阶函数</button>
+            <button class="quiz-option">修改函数源码的编辑器</button>
+            <button class="quiz-option">类的特殊方法</button>
+            <button class="quiz-option">异常处理机制</button>
+          </div>
+          <div class="quiz-explain" hidden>装饰器是一个可调用对象：接收一个可调用对象（函数），返回另一个可调用对象（wrapper）来替代它。详见「装饰器的本质」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>@my_decorator</code> 写在函数上方，等价于？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">func = my_decorator(func)</button>
+            <button class="quiz-option">my_decorator() 立即执行函数体</button>
+            <button class="quiz-option">func = func(my_decorator)</button>
+            <button class="quiz-option">仅仅是一个注释标记</button>
+          </div>
+          <div class="quiz-explain" hidden><code>@my_decorator</code> 是语法糖：<code>def f(): ...</code> 之后自动执行 <code>f = my_decorator(f)</code>。详见「装饰器本质示例」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>@decorator_a @decorator_b</code> 两个装饰器叠加，执行顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">a 外层先执行，再 b 外层，再原函数</button>
+            <button class="quiz-option">b 外层先执行，再 a 外层，再原函数</button>
+            <button class="quiz-option">a、b 同时执行，无先后</button>
+            <button class="quiz-option">只执行最上面的 a</button>
+          </div>
+          <div class="quiz-explain" hidden><code>@a @b</code> 等价于 <code>func = a(b(func))</code>：调用时 a 的外层先执行，然后是 b 的外层，再原函数，返回时逆序。详见「多个装饰器叠加」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>functools.wraps(func)</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把原函数的 __name__ 等元信息复制到 wrapper</button>
+            <button class="quiz-option">让 wrapper 执行得更快</button>
+            <button class="quiz-option">自动重试原函数</button>
+            <button class="quiz-option">缓存原函数的返回值</button>
+          </div>
+          <div class="quiz-explain" hidden>装饰后 <code>f.__name__</code> 默认变成 "wrapper"；<code>functools.wraps(func)</code> 把 <code>__name__</code>、<code>__doc__</code> 等元信息复制到 wrapper 上，保持函数身份。本课作业二就是手写实现它。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. timer 装饰器的 wrapper 中忘了 <code>return func(...)</code>，被装饰函数调用返回什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">None，原函数的返回值丢失</button>
+            <button class="quiz-option">原函数的返回值，不受影响</button>
+            <button class="quiz-option">wrapper 对象本身</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>wrapper 没有 return 时默认返回 None——<code>slow_function()</code> 就拿不到 "Done" 了。所以计时装饰器既要打印耗时，也要 <code>return result</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 带参数的装饰器 <code>@repeat(3)</code> 的结构是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">外层函数收参数，返回真正的装饰器</button>
+            <button class="quiz-option">装饰器直接写在参数后面</button>
+            <button class="quiz-option">与不带参数的装饰器完全一样</button>
+            <button class="quiz-option">Python 不支持带参数装饰器</button>
+          </div>
+          <div class="quiz-explain" hidden>三层结构：<code>repeat(n)</code> 先执行并返回真正的装饰器 <code>decorator</code>，再由它去包装函数——<code>@repeat(3)</code> 等价于 <code>func = repeat(3)(func)</code>。源课程答案 p3.py 即此模式。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《11.装饰器》源课程作业的两道实现题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·timer 装饰器）：实现 <code>@timer</code>——调用函数后打印 <code>函数名 执行时间: X.XXXX 秒</code>，且调用结果必须保留（<code>slow_function()</code> 返回 "Done"）。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">wrapper 先记 start，调用 func 存 result，打印耗时后 return result</button>
+            <button class="quiz-option">wrapper 只打印耗时，不 return func 的结果</button>
+            <button class="quiz-option">直接在装饰器外层打印耗时，不定义 wrapper</button>
+            <button class="quiz-option">wrapper 在 func 调用前就打印耗时</button>
+          </div>
+          <div class="quiz-explain" hidden>正确结构：<code>wrapper</code> 里 <code>start = time.time()</code> → <code>result = func(*args, **kwargs)</code> → 计算耗时并打印 → <code>return result</code>。第二个丢失返回值 ✗；第三个在<strong>定义时</strong>（import 阶段）就打印，且不返回新函数 ✗；第四个计的不是函数执行耗时 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业一）</summary>
+<pre><code>import time
+
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        elapsed = time.time() - start
+        print(f"{func.__name__} 执行时间: {elapsed:.4f} 秒")
+        return result
+    return wrapper
+
+@timer
+def slow_function():
+    time.sleep(1)
+    return "Done"
+
+slow_function()
+# 输出：slow_function 执行时间: 1.0012 秒</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·wraps 装饰器）：手写 <code>wraps(func)</code>，让被装饰函数保持原来的 <code>__name__</code> 和 <code>__doc__</code>。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">返回的装饰器把 func.__name__ 和 func.__doc__ 复制给 wrapper 后返回 wrapper</button>
+            <button class="quiz-option">只复制 __name__，不管 __doc__</button>
+            <button class="quiz-option">把 wrapper 的元信息复制给原函数</button>
+            <button class="quiz-option">直接返回原函数，不返回 wrapper</button>
+          </div>
+          <div class="quiz-explain" hidden>正确结构：<code>wraps(func)</code> 返回装饰器 <code>decorator(wrapper)</code>，其中把 <code>wrapper.__name__ = func.__name__</code>、<code>wrapper.__doc__ = func.__doc__</code>，再返回 wrapper。第二个只保留了一半 ✗；第三个方向反了 ✗；第四个等于没装饰 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业二）</summary>
+<pre><code>def wraps(func):
+    def decorator(wrapper):
+        wrapper.__name__ = func.__name__
+        wrapper.__doc__ = func.__doc__
+        return wrapper
+    return decorator
+
+def my_decorator(func):
+    @wraps(func)
+    def wrapper():
+        print("函数执行前")
+        func()
+        print("函数执行后")
+    return wrapper
+
+@my_decorator
+def say_hello():
+    """打招呼"""
+    print("Hello!")
+
+say_hello.__name__  # 'say_hello'（不包裹则是 'wrapper'）
+say_hello.__doc__   # '打招呼'</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（叠加顺序预测）：以下代码的输出顺序是？
+<pre><code>def a(func):
+    def wrapper():
+        print("A 前")
+        func()
+        print("A 后")
+    return wrapper
+
+def b(func):
+    def wrapper():
+        print("B 前")
+        func()
+        print("B 后")
+    return wrapper
+
+@a
+@b
+def hello():
+    print("执行")
+
+hello()</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">A 前 → B 前 → 执行 → B 后 → A 后</button>
+            <button class="quiz-option">B 前 → A 前 → 执行 → A 后 → B 后</button>
+            <button class="quiz-option">A 前 → 执行 → A 后 → B 前 → 执行 → B 后</button>
+            <button class="quiz-option">B 前 → 执行 → B 后 → A 前 → 执行 → A 后</button>
+          </div>
+          <div class="quiz-explain" hidden><code>@a @b</code> 即 <code>hello = a(b(hello))</code>：调用时先进入 a 的 wrapper（打印 A 前）→ 调用 b 的 wrapper（打印 B 前）→ 原函数（执行）→ 返回 b 的 wrapper（B 后）→ 返回 a 的 wrapper（A 后）。顺序：<strong>A 前 → B 前 → 执行 → B 后 → A 后</strong>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（返回值保留）：用正确的 timer 装饰 <code>slow_function</code>（内部 <code>time.sleep(1); return "Done"</code>），调用后程序的输出<strong>最后一行</strong>是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">"Done"（调用方 print 了返回值）</button>
+            <button class="quiz-option">"slow_function 执行时间: 1.XXXX 秒"</button>
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">没有输出</button>
+          </div>
+          <div class="quiz-explain" hidden>wrapper 内先打印耗时行，然后 <code>return result</code>；调用方 <code>print(slow_function())</code> 再打印返回值。所以最后一行是 <strong>"Done"</strong>——这验证了「返回值必须保留」。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握装饰器——可以继续学习《<a href="/python/语言核心/魔术方法/">12.魔术方法</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/glossary.html#term-decorator">Glossary: decorator</a> 与 <a href="https://docs.python.org/3/library/functools.html#functools.wraps">functools.wraps</a>——装饰器的权威定义。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/primer-on-python-decorators/">Primer on Python Decorators</a>，从零到带参数装饰器的完整教程。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/装饰器速查表.html">装饰器速查表</a>——本质、叠加顺序、timer/wraps 模板一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/元类/">10.元类</a> · <a href="/python/语言核心/装饰器/">11.装饰器</a> · <a href="/python/语言核心/魔术方法/">12.魔术方法</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/装饰器/">回到《11.装饰器》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

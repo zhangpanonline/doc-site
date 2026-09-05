@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《9.可调用对象》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（Counter 计数器）作为最终考核">
+  <title>可调用对象 · 互动教学课程（第 9 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 9 课</p>
+      <h1>可调用对象</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/可调用对象/">9.可调用对象</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>用 <code>callable()</code> 判断对象是否可调用，并说出判断依据</li>
+        <li>通过定义 <code>__call__</code> 把实例变成「带状态的函数」——<strong>最终考核考的就是它</strong></li>
+        <li>说清「调用协议」：<code>x()</code> 永远走 <code>type(x).__call__(x)</code></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《9.可调用对象》里，测验和考核会考。</p>
+
+      <h3>调用协议</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">函数 f()</span>
+          <span class="diagram-arrow">→</span>
+          <span class="diagram-node">type(f).__call__(f)</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">类 Dog()</span>
+          <span class="diagram-arrow">→</span>
+          <span class="diagram-node">type.__call__(Dog)：__new__ + __init__</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">实例 obj()</span>
+          <span class="diagram-arrow">→</span>
+          <span class="diagram-node">type(obj).__call__(obj) = 类里的 __call__</span>
+        </div>
+        <p class="diagram-note">⚙️ 统一规则：<code>x()</code> 永远查找 <code>type(x).__call__</code>，不直接找 x 自己的 <code>__call__</code>。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>可调用 = 定义了 <code>__call__</code></strong>：函数有、类有（type 的 <code>__call__</code>）、定义了 <code>__call__</code> 的实例也有；列表没有，所以 <code>callable([1,2]) → False</code>。<a href="https://docs.python.org/3/library/functions.html#callable">官方文档：callable</a></li>
+        <li><strong>实例调用走类的 <code>__call__</code></strong>：<code>add_5(10)</code> 等效于 <code>Adder.__call__(add_5, 10)</code>——self 就是实例本身。</li>
+        <li><strong><code>__call__</code> 让实例携带状态</strong>：闭包能做的它都能做（<code>self.xxx</code> 存状态），还更面向对象——计数器、可配置函数、带日志的回调都是它。<a href="https://docs.python.org/3/reference/datamodel.html#object.__call__">官方文档：object.__call__</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. <code>callable([1, 2])</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>列表没有 <code>__call__</code> 方法，不可调用 → <code>False</code>。对比：<code>callable(len)</code>、<code>callable(int)</code>、<code>callable(lambda: 1)</code> 都是 True。详见「如何判断对象是否可调用」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 类（如 Dog）可以被调用，是因为？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">元类 type 实现了 __call__ 完成实例化</button>
+            <button class="quiz-option">类内部自动定义了 __call__</button>
+            <button class="quiz-option">类继承了 function 类型</button>
+            <button class="quiz-option">所有 Python 对象都可调用</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Dog()</code> 走调用协议 <code>type(Dog).__call__(Dog)</code>——<code>type(Dog)</code> 是 type，<code>type.__call__</code> 内部执行 <code>__new__</code> + <code>__init__</code> 完成实例化。详见「类也是可调用对象」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>add_5 = Adder(5); add_5(10)</code> 等效于？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Adder.__call__(add_5, 10)</button>
+            <button class="quiz-option">add_5.__call__(10)</button>
+            <button class="quiz-option">Adder(5)(10)</button>
+            <button class="quiz-option">callable(add_5, 10)</button>
+          </div>
+          <div class="quiz-explain" hidden>实例调用时 <code>self</code> 自动传入：<code>add_5(10)</code> 即 <code>Adder.__call__(add_5, 10)</code>。注意实例自己的 <code>__call__</code> 属性不会被调用——走的始终是<strong>类里</strong>的 <code>__call__</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 定义 <code>__call__</code> 方法，让哪个对象变得可调用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">类的实例</button>
+            <button class="quiz-option">类本身</button>
+            <button class="quiz-option">模块</button>
+            <button class="quiz-option">内置类型</button>
+          </div>
+          <div class="quiz-explain" hidden>在类中定义 <code>__call__</code>，<strong>实例</strong>就变成可调用对象：<code>add_5(10) → 15</code>。详见「让对象变成可调用对象」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>double = Multiplier(2); double(5)</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">10</button>
+            <button class="quiz-option">7</button>
+            <button class="quiz-option">25</button>
+            <button class="quiz-option">2</button>
+          </div>
+          <div class="quiz-explain" hidden><code>__init__</code> 保存了 <code>factor=2</code>，<code>__call__</code> 返回 <code>self.factor * value</code> → <code>2 × 5 = 10</code>。这就是「可配置的函数对象」。详见「实现可配置的函数对象」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. <code>error_log = Logger("ERROR")</code> 调用两次后，<code>log_count</code> 是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">2</button>
+            <button class="quiz-option">1</button>
+            <button class="quiz-option">0</button>
+            <button class="quiz-option">每次调用都会重置</button>
+          </div>
+          <div class="quiz-explain" hidden><code>__call__</code> 里 <code>self.log_count += 1</code>，状态保存在<strong>实例属性</strong>中，两次调用后为 2——「状态保持的回调」正是可调用对象的优势。详见「实现状态保持的回调函数」一节。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《9.可调用对象》源课程作业的两道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·计数器）：实现 Counter 类——实例化时指定起始值，每次调用实例值加 1，支持 reset() 与 get()。要求 <code>c = Counter(10); c() → 11</code>。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__call__ 中 value 自增并返回；reset 恢复初始值；get 返回当前值</button>
+            <button class="quiz-option">__call__ 中 value 自增但不 return，依赖 get 取当前值</button>
+            <button class="quiz-option">reset 把 value 重置为 0 而不是初始值</button>
+            <button class="quiz-option">get 返回起始值 start 而不是当前值</button>
+          </div>
+          <div class="quiz-explain" hidden>正确实现：<code>__init__</code> 同时存 <code>start</code> 和 <code>value</code>；<code>__call__</code> 里 <code>self.value += 1; return self.value</code>；<code>reset</code> 恢复 <code>self.value = self.start</code>；<code>get</code> 返回 <code>self.value</code>。第二个调用 <code>c()</code> 返回 None，题目要求输出 11 ✗；第三个重置错目标 ✗；第四个拿到的是旧值 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业一）</summary>
+<pre><code>class Counter:
+    def __init__(self, start):
+        self.start = start
+        self.value = start
+
+    def __call__(self):
+        self.value += 1
+        return self.value
+
+    def reset(self):
+        self.value = self.start
+
+    def get(self):
+        return self.value
+
+c = Counter(10)
+print(c())      # 11
+c()             # 12
+print(c.get())  # 12
+c.reset()
+print(c.get())  # 10</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·思考题）：以下代码的输出是？
+<pre><code>class A:
+    def __call__(self):
+        print("A called")
+
+class B(A):
+    def __call__(self):
+        print("B called")
+        super().__call__()
+
+b = B()
+b()</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">先 B called，再 A called</button>
+            <button class="quiz-option">只输出 B called</button>
+            <button class="quiz-option">只输出 A called</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>b()</code> 调 <code>B.__call__(b)</code>：先打印 B called，然后 <code>super().__call__()</code> 沿 MRO 调到父类 A 的 <code>__call__</code>，打印 A called。顺序：<strong>B called → A called</strong>。与第 6 课 MRO 知识呼应。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（状态保持回调）：以下代码第二次调用的输出是？
+<pre><code>class Logger:
+    def __init__(self, prefix):
+        self.prefix = prefix
+        self.log_count = 0
+
+    def __call__(self, message):
+        self.log_count += 1
+        print(f"[{self.prefix}] #{self.log_count}: {message}")
+
+error_log = Logger("ERROR")
+error_log("文件未找到")
+error_log("网络连接失败")</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">[ERROR] #2: 网络连接失败</button>
+            <button class="quiz-option">[ERROR] #1: 网络连接失败</button>
+            <button class="quiz-option">[ERROR] #0: 网络连接失败</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>log_count</code> 是实例属性，第一次调用后为 1，第二次 <code>+= 1</code> 后为 2 → <strong>[ERROR] #2: 网络连接失败</strong>。实例「记住」了调用历史，这是闭包之外的另一种状态保存方式。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（callable 判断组合）：下列哪一组 <code>callable()</code> 结果全部正确？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">len→True，int→True，[1,2]→False，lambda→True</button>
+            <button class="quiz-option">len→False，int→True，[1,2]→False，lambda→True</button>
+            <button class="quiz-option">len→True，int→False，[1,2]→False，lambda→True</button>
+            <button class="quiz-option">len→True，int→True，[1,2]→True，lambda→False</button>
+          </div>
+          <div class="quiz-explain" hidden>逐项核对：<code>len</code> 是内置函数 → True；<code>int</code> 是类（type.__call__ 实例化）→ True；<code>[1, 2]</code> 列表无 <code>__call__</code> → False；<code>lambda: 1</code> 是函数 → True。<strong>第一个组合全部正确</strong>。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握可调用对象——可以继续学习《<a href="/python/语言核心/元类/">10.元类</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/reference/datamodel.html#object.__call__">Data Model: object.__call__</a>——调用协议的权威出处。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-callable-instances/">Python's .__call__() Method: Creating Callable Instances</a>，把可调用实例的应用场景讲得很全。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/可调用对象速查表.html">可调用对象速查表</a>——调用协议、__call__ 模板、常见误区一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/对象的创建过程/">8.对象的创建过程</a> · <a href="/python/语言核心/可调用对象/">9.可调用对象</a> · <a href="/python/语言核心/元类/">10.元类</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/可调用对象/">回到《9.可调用对象》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

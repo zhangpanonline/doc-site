@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>可调用对象速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>可调用对象速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0009-可调用对象.html">《可调用对象互动教学课程》</a>与《9.可调用对象》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>调用协议</h2>
+      <table class="cmp-table">
+        <tr><th>调用</th><th>走什么</th><th>结果</th></tr>
+        <tr><td><code>f()</code> 函数</td><td><code>type(f).__call__(f)</code></td><td>执行函数体</td></tr>
+        <tr><td><code>Dog()</code> 类</td><td><code>type.__call__(Dog)</code></td><td><code>__new__</code> + <code>__init__</code> 实例化</td></tr>
+        <tr><td><code>obj()</code> 实例</td><td><code>type(obj).__call__(obj)</code></td><td>类里定义的 <code>__call__</code></td></tr>
+      </table>
+      <p><strong>统一规则：</strong><code>x()</code> 永远查找 <code>type(x).__call__(x)</code>，不找 x 自己的 <code>__call__</code> 属性。</p>
+    </section>
+
+    <section>
+      <h2>callable() 速查</h2>
+      <pre><code>callable(len)        # True   内置函数
+callable(int)        # True   类（type.__call__ 实例化）
+callable(lambda: 1)  # True   lambda 函数
+callable(obj)        # True   当且仅当类里定义了 __call__
+callable([1, 2])     # False  列表没有 __call__
+callable("hello")    # False  字符串没有 __call__</code></pre>
+    </section>
+
+    <section>
+      <h2>__call__ 模板（带状态的函数对象）</h2>
+      <pre><code>class Logger:
+    def __init__(self, prefix):
+        self.prefix = prefix
+        self.log_count = 0
+
+    def __call__(self, message):
+        self.log_count += 1
+        print(f"[{self.prefix}] #{self.log_count}: {message}")
+
+error_log = Logger("ERROR")
+error_log("文件未找到")      # [ERROR] #1: 文件未找到
+error_log("网络连接失败")    # [ERROR] #2: 网络连接失败
+
+# 计数器模板
+class Counter:
+    def __init__(self, start):
+        self.start = start
+        self.value = start
+
+    def __call__(self):
+        self.value += 1
+        return self.value
+
+    def reset(self):
+        self.value = self.start
+
+    def get(self):
+        return self.value</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>实例的 __call__ 属性不会被调用</strong>：<code>obj.__call__ = f</code> 后 <code>obj()</code> 仍走类里的 <code>__call__</code>。</li>
+        <li><strong>callable 判断的是「能不能调用」</strong>：<code>callable(Dog)</code> 是 True，但 <code>callable(dog)</code> 要类里定义了 <code>__call__</code> 才是 True。</li>
+        <li><strong>super().__call__() 沿 MRO</strong>：B(A) 里 <code>super().__call__()</code> 调 A 的 <code>__call__</code>——先打印子类再打印父类。</li>
+        <li><strong>状态存在实例属性里</strong>：<code>self.xxx</code> 是「可调用对象携带状态」的关键，与闭包捕获变量异曲同工。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/对象的创建过程/">8.对象的创建过程</a> · <a href="/python/语言核心/可调用对象/">9.可调用对象</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/reference/datamodel.html#object.__call__">Data Model: object.__call__</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-callable-instances/">Python's .__call__() Method</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0009-可调用对象.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

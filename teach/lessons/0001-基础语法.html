@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《1.基础语法》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业作为最终考核，10-15 分钟巩固 Python 基本语法">
+  <title>基础语法 · 互动教学课程（第 1 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 1 课</p>
+      <h1>基础语法</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/基础语法/">1.基础语法</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清<strong>解释型、强类型、动态类型</strong>三个语言特征分别意味着什么</li>
+        <li>预测算术、比较、逻辑、赋值运算符与<strong>链式比较</strong>的输出</li>
+        <li>独立写出「输入 → 计算 → 判断 → 输出」的小程序（BMI、素数筛选）——<strong>最终考核考的就是这个</strong></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《1.基础语法》里，测验和考核会考。</p>
+
+      <h3>语言的三个特征</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">源码 .py 文件</span>
+          <span class="diagram-arrow">─ 逐行执行 ─▶</span>
+          <span class="diagram-node">解释型：无需编译</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">a = 10，随后 a = "hello"</span>
+          <span class="diagram-arrow">─ 运行时定类型 ─▶</span>
+          <span class="diagram-node">动态类型：变量可换类型</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">10 + "5"</span>
+          <span class="diagram-arrow">─ 类型不匹配 ─▶</span>
+          <span class="diagram-node">强类型：直接报错</span>
+        </div>
+        <p class="diagram-note">⚙️ 三种特征叠加：写起来自由（不用声明类型），运行时严格（类型错了立刻 TypeError）。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong><code>and</code> / <code>or</code> 返回操作数本身，而不是布尔值</strong>：<code>0 and 5 → 0</code>、<code>3 or 5 → 3</code>、<code>"" and "hello" → ""</code>。<a href="https://docs.python.org/3/reference/expressions.html#boolean-operations">官方文档：Boolean Operations</a></li>
+        <li><strong>除法三兄弟与截断</strong>：<code>/</code> 总是返回 float（<code>5 / 2 → 2.5</code>）；<code>//</code> 整除（<code>5 // 2 → 2</code>）；<code>%</code> 取余；<code>int(3.9) → 3</code> 是<strong>截断</strong>，不是四舍五入。<a href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">官方文档：数值类型</a></li>
+        <li><strong>链式比较与循环 else</strong>：<code>a &lt; b &lt; c</code> 等价于 <code>a &lt; b and b &lt; c</code>，且中间的 <code>b</code> 只计算一次；循环的 <code>else</code> 只在<strong>正常结束</strong>（未被 break 打断）时执行。<a href="https://docs.python.org/3/reference/expressions.html#comparisons">官方文档：Comparisons</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. <code>print(type(42) == int)</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">字符串'int'</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>type</code> 函数返回的不是字符串，而是<strong>类型对象</strong>：<code>type(42)</code> 得到 <code>&lt;class 'int'&gt;</code>，它 <code>== int</code> 成立，所以输出 <code>True</code>。详见《1.基础语法》「type 函数」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>print(int(3.9))</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">3</button>
+            <button class="quiz-option">4</button>
+            <button class="quiz-option">3.9</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>int()</code> 把浮点数转整数时是<strong>截断小数</strong>，不是四舍五入：<code>int(3.9) → 3</code>。想四舍五入要用 <code>round()</code>。详见「变量类型转换」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. <code>print(5 / 2)</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">2</button>
+            <button class="quiz-option">2.5</button>
+            <button class="quiz-option">2.0</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>/</code> 是「真除法」，<strong>总是返回 float</strong>：<code>5 / 2 → 2.5</code>。想要整数部分用 <code>//</code>（整除）：<code>5 // 2 → 2</code>。详见「算术运算符」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>print(0 and 5)</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">0</button>
+            <button class="quiz-option">5</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden><code>and</code> 的规则：第一个为假就<strong>返回第一个</strong>，否则返回第二个。<code>0</code> 为假，所以 <code>0 and 5 → 0</code>——返回的是操作数本身，不是布尔值。详见「逻辑运算符」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>print(3 or 5)</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">3</button>
+            <button class="quiz-option">5</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+          </div>
+          <div class="quiz-explain" hidden><code>or</code> 的规则：第一个为真就<strong>返回第一个</strong>，否则返回第二个。<code>3</code> 为真，所以 <code>3 or 5 → 3</code>。注意 <code>0 or 5</code> 才是 <code>5</code>。详见「逻辑运算符」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 执行 <code>x = 10; x /= 4; print(x)</code>，输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">2.5</button>
+            <button class="quiz-option">2</button>
+            <button class="quiz-option">10</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>x /= 4</code> 等价于 <code>x = x / 4</code>，而 <code>/</code> 总返回 float：<code>10 / 4 → 2.5</code>，<strong>x 从 int 变成了 float</strong>。详见「赋值运算符」一节。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《1.基础语法》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里（或纸上）算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·逻辑运算符陷阱）：<code>print("" and "hello")</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">空字符串</button>
+            <button class="quiz-option">hello</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>空字符串 <code>""</code> 是「假值」，<code>and</code> 第一个为假就返回第一个——所以输出<strong>空字符串</strong>（屏幕上是一行空白，看不到任何字符）。对比：<code>"hi" and "hello" → "hello"</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·循环累加）：以下代码最终输出的 result 是？
+<pre><code>n = 1
+result = 0
+while n &lt;= 5:
+    if n % 2 == 0:
+        result += n
+    else:
+        result -= n
+    n += 1
+print(result)</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">-3</button>
+            <button class="quiz-option">3</button>
+            <button class="quiz-option">0</button>
+            <button class="quiz-option">15</button>
+          </div>
+          <div class="quiz-explain" hidden>逐轮推演：n=1（奇）result=-1 → n=2（偶）+2 → 1 → n=3（奇）-3 → -2 → n=4（偶）+4 → 2 → n=5（奇）-5 → <strong>-3</strong>。奇数减、偶数加，1..5 的交替和是 <strong>-3</strong>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（作业三·BMI 计算器）：标准为 18.5/24/28 三档边界。下列分类判断中，<strong>边界处理正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">bmi&lt;18.5 偏瘦 → bmi&lt;24 正常 → bmi&lt;28 超重 → 否则肥胖</button>
+            <button class="quiz-option">bmi&lt;=18.5 偏瘦 → bmi&lt;=24 正常 → bmi&lt;=28 超重 → 否则肥胖</button>
+            <button class="quiz-option">bmi&gt;28 肥胖 → bmi&gt;24 超重 → bmi&gt;18.5 正常 → 否则偏瘦</button>
+            <button class="quiz-option">bmi&lt;24 正常 → bmi&lt;18.5 偏瘦 → bmi&lt;28 超重 → 否则肥胖</button>
+          </div>
+          <div class="quiz-explain" hidden>标准是 18.5 ≤ BMI &lt; 24 为正常，所以 <code>bmi == 18.5</code> 必须落在「正常」档：<strong>第一个选项</strong>用 <code>&lt; 18.5</code> 判断偏瘦，18.5 落进下一档「正常」✓；第二个用 <code>&lt;= 18.5</code>，18.5 被误判为偏瘦 ✗；第三个 18.5 落进 else 偏瘦 ✗；第四个 17 会先命中 <code>&lt; 24</code> 被误判为正常 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业三）</summary>
+<pre><code>height = float(input("请输入您的身高（米）："))
+weight = float(input("请输入您的体重（千克）："))
+
+bmi = weight / (height**2)
+
+if bmi &lt; 18.5:
+    category = "偏瘦"
+    advice = "建议适当增加营养摄入，多吃富含蛋白质的食物，进行适量力量训练。"
+elif bmi &lt; 24:
+    category = "正常"
+    advice = "保持良好的生活习惯，均衡饮食，适量运动，继续保持！"
+elif bmi &lt; 28:
+    category = "超重"
+    advice = "建议控制饮食，减少高热量食物摄入，增加有氧运动，如慢跑、游泳等。"
+else:
+    category = "肥胖"
+    advice = "建议咨询专业医生或营养师，制定科学的减重计划，注意饮食控制和规律运动。"
+
+print(f"\n您的 BMI 值为：{bmi:.2f}")
+print(f"身体状况：{category}")
+print(f"建议：{advice}")</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（作业四·素数筛选器）：素数 = 大于 1 且只能被 1 和自己整除的数。下列 <code>is_prime(n)</code> 实现中，<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">n&lt;2 返回 False；range(2, int(n**0.5)+1) 中遇 n%i==0 返回 False，循环完返回 True</button>
+            <button class="quiz-option">range(2, n) 中遇 n%i!=0 立即返回 True，循环完返回 False</button>
+            <button class="quiz-option">n&lt;2 返回 True；其余与第一个选项相同</button>
+            <button class="quiz-option">range(2, int(n**0.5)+1) 中遇 n%i==0 返回 True，循环完返回 False</button>
+          </div>
+          <div class="quiz-explain" hidden>验证关键样例：<code>n=2</code> 是素数 → 必须 True；<code>n=1</code> 不是 → 必须 False；<code>n=9</code> 不是 → 必须 False。只有<strong>第一个</strong>全对（n=2 时 range 为空直接返回 True；9 在 i=3 时被整除返回 False）。第二个把 9 判成素数 ✗；第三个把 1 判成素数 ✗；第四个把 2 判成非素数 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业四·核心逻辑）</summary>
+<pre><code># 判断 num 是否为素数（i*i &lt;= num 等价于 i &lt;= num**0.5）
+is_prime = True
+i = 2
+while i * i &lt;= num:
+    if num % i == 0:
+        is_prime = False
+        break
+    i += 1
+
+# 遍历范围（start/end 需先通过合法性检查：正整数、end &gt; start）
+num = start
+prime_count = 0
+while num &lt;= end:
+    if num &gt;= 2:
+        # 用上面的逻辑判断 num 是否为素数
+        ...
+        if is_prime:
+            prime_count += 1
+    num += 1
+print(f"共计 {prime_count} 个素数")</code></pre>
+          </details>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握本课核心能力——可以继续学习《<a href="/python/语言核心/容器类型/">2.容器类型</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/index.html">The Python Tutorial</a>——本课概念的权威出处，重点读第 3 章（数据类型）、第 5 章（控制流）、第 7 章（输入输出）。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-operators-expressions/">Operators and Expressions in Python</a>，把运算符优先级与表达式求值讲得很透。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/基础语法速查表.html">基础语法速查表</a>——类型转换、运算符、流程控制一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/基础语法/">1.基础语法</a> · <a href="/python/语言核心/容器类型/">2.容器类型</a> · <a href="/python/语言核心/函数/">3.函数</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/基础语法/">回到《1.基础语法》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

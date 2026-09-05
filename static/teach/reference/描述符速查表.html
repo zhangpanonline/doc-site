@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>描述符速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>描述符速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0013-描述符.html">《描述符互动教学课程》</a>与《13.描述符》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>描述符类</dt>
+        <dd>实现了 <code>__get__</code> / <code>__set__</code> / <code>__delete__</code> 任意一个的类。</dd>
+        <dt>数据型描述符</dt>
+        <dd>实现了 <code>__set__</code> 或 <code>__delete__</code>；优先级高于实例字典。</dd>
+        <dt>非数据型描述符</dt>
+        <dd>只实现了 <code>__get__</code>；实例字典可覆盖它。</dd>
+        <dt>__set_name__</dt>
+        <dd>钩子（3.6+）：类体赋值完成后调用，告诉描述符自己被赋给了哪个类的哪个属性名。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>查找顺序（实例成员）</h2>
+      <pre><code>① 数据型描述符（类属性）   ← 优先级最高，压过实例字典
+② 实例属性（instance.__dict__）
+③ 普通类属性
+④ 父类…</code></pre>
+      <p>通过<strong>类</strong>访问描述符时，<code>__get__</code> 的 instance 参数为 None。</p>
+    </section>
+
+    <section>
+      <h2>三大模板</h2>
+      <pre><code># 1. 只读属性（@property 无 setter）
+class ImmutablePoint:
+    def __init__(self, x, y):
+        self._x, self._y = x, y
+    @property
+    def x(self):
+        return self._x
+    # p.x = 10 → AttributeError
+
+# 2. 范围验证（property + setter）
+class Temperature:
+    def __init__(self, celsius):
+        self._celsius = celsius
+    @property
+    def celsius(self):
+        return self._celsius
+    @celsius.setter
+    def celsius(self, value):
+        if value &lt; -273.15 or value &gt; 1000:
+            raise ValueError("温度超出范围")
+        self._celsius = value
+    @property
+    def fahrenheit(self):
+        return self._celsius * 9 / 5 + 32
+
+# 3. 访问计数器（数据型描述符）
+class AccessCounter:
+    _access_count = 0
+    _modify_count = 0
+    def __init__(self, init_value):
+        self._value = init_value
+    def __get__(self, instance, owner):
+        AccessCounter._access_count += 1
+        return self._value
+    def __set__(self, instance, value):
+        AccessCounter._modify_count += 1
+        self._value = value</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>描述符必须做类属性</strong>：实例属性不会触发协议。</li>
+        <li><strong>数据描述符压过实例字典</strong>：<code>a.__dict__["x"] = v</code> 后读 <code>a.x</code> 仍走 <code>__get__</code>。</li>
+        <li><strong>通过类覆盖描述符</strong>：<code>MyClass.my_attr = 20</code> 直接把类属性换成普通值，描述符失效。</li>
+        <li><strong>惰性计算缓存要写回实例</strong>：非数据描述符 <code>__get__</code> 里 <code>setattr(instance, name, value)</code> 缓存结果，第二次直接走实例字典。</li>
+        <li><strong>property 就是数据描述符</strong>：getter/setter/deleter 语法糖背后仍是描述符协议。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/魔术方法/">12.魔术方法</a> · <a href="/python/语言核心/描述符/">13.描述符</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/howto/descriptor.html">Descriptor HowTo Guide</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-descriptors/">Python Descriptors</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0013-描述符.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

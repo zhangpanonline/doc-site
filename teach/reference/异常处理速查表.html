@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>异常处理速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>异常处理速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0014-异常处理.html">《异常处理互动教学课程》</a>与《14.异常处理》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>try 四件套</h2>
+      <table class="cmp-table">
+        <tr><th>子句</th><th>触发时机</th><th>典型用途</th></tr>
+        <tr><td><code>try</code></td><td>—</td><td>监控的代码块</td></tr>
+        <tr><td><code>except X as e</code></td><td>捕获匹配异常（顺序匹配）</td><td>按类型处理错误</td></tr>
+        <tr><td><code>else</code></td><td>无异常时</td><td>与 try 成功绑定的事务逻辑</td></tr>
+        <tr><td><code>finally</code></td><td>无论有无异常</td><td>释放资源、关闭文件</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>异常层次（节选）</h2>
+      <pre><code>BaseException
+ ├── SystemExit / KeyboardInterrupt   ← 一般不要捕获
+ └── Exception                        ← 业务异常的基类
+      ├── ArithmeticError ─ ZeroDivisionError
+      ├── LookupError ─ IndexError / KeyError
+      ├── TypeError
+      ├── ValueError ─ UnicodeError
+      └── 自定义：class MyError(Exception)</code></pre>
+      <p><strong>捕获顺序：先具体（子类）后宽泛（父类）。</strong></p>
+    </section>
+
+    <section>
+      <h2>常用模板</h2>
+      <pre><code># 安全除法
+def safe_divide(a, b):
+    try:
+        return a / b
+    except ZeroDivisionError:
+        return 0
+    except TypeError:
+        print("参数类型错误")
+        return None
+
+# 重试装饰器
+def retry(max_attempts, delay=1):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_attempts:
+                        raise
+                    time.sleep(delay)
+        return wrapper
+    return decorator
+
+# 异常链
+raise RuntimeError("错误B")          # 隐式：__context__ = 原异常
+raise RuntimeError("错误B") from e   # 显式：__cause__ = e</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>父类 except 放在前面会「吞掉」子类异常</strong>：后面的 except 永远不执行。</li>
+        <li><strong>不要捕获 BaseException</strong>：会把 Ctrl+C（KeyboardInterrupt）一起吞掉。</li>
+        <li><strong>except 里裸 raise 是重新抛出</strong>：不是抛出 RuntimeError。</li>
+        <li><strong>自定义异常要继承 Exception</strong>：调用方才可能用 <code>except 你的异常</code> 精确捕获。</li>
+        <li><strong>finally 里的 return 会覆盖之前的返回值</strong>：清理逻辑不要 return。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/描述符/">13.描述符</a> · <a href="/python/语言核心/异常处理/">14.异常处理</a></li>
+        <li>Python 官方教程：<a href="https://docs.python.org/3/tutorial/errors.html">8. Errors and Exceptions</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-exceptions/">Python Exceptions: An Introduction</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0014-异常处理.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

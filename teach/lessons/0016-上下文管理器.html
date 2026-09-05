@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《16.上下文管理器》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（timer/TempDirectory）作为最终考核">
+  <title>上下文管理器 · 互动教学课程（第 16 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 16 课</p>
+      <h1>上下文管理器</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/上下文管理器/">16.上下文管理器</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 <code>with</code> 语句的等效形式：<strong><code>__enter__</code> → 代码块 → <code>__exit__</code></strong></li>
+        <li>理解 <code>__exit__</code> 返回 True 的「吞异常」语义</li>
+        <li>写出 <code>timer</code> 计时与 <code>TempDirectory</code> 临时目录两个上下文管理器——<strong>最终考核的两道实现题</strong></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《16.上下文管理器》里，测验和考核会考。</p>
+
+      <h3>with 的等效形式</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node">__enter__()</span>
+          <span class="diagram-arrow">─ 返回值给 as ─▶</span>
+          <span class="diagram-node plain">执行代码块</span>
+          <span class="diagram-arrow">─ 无论成败 ─▶</span>
+          <span class="diagram-node">__exit__(异常三元组)</span>
+        </div>
+        <p class="diagram-note">⚙️ <code>__exit__</code> 收到 (exc_type, exc_val, exc_tb)，无异常时是 (None, None, None)；返回 True 表示「异常我处理了」，不再向上传播。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>上下文管理器 = 实现 <code>__enter__</code> + <code>__exit__</code> 的对象</strong>：两个方法缺一不可，否则 with 报错。<a href="https://docs.python.org/3/reference/datamodel.html#context-managers">官方文档：Context Managers</a></li>
+        <li><strong><code>@contextmanager</code> 用生成器写上下文管理器</strong>：<code>yield</code> 之前的代码等于 <code>__enter__</code>，之后（写在 finally 里最稳妥）等于 <code>__exit__</code>。<a href="https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager">官方文档：contextlib.contextmanager</a></li>
+        <li><strong>清理代码写在 <code>finally</code></strong>：yield 后的清理若不在 finally 中，代码块抛异常时会<strong>跳过清理</strong>——考核四的两版 demo 就是这个差别。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. <code>with 表达式 as 变量名:</code> 首先调用的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">表达式的 __enter__，返回值赋给变量名</button>
+            <button class="quiz-option">表达式的 __exit__</button>
+            <button class="quiz-option">表达式的 __init__</button>
+            <button class="quiz-option">直接执行代码块</button>
+          </div>
+          <div class="quiz-explain" hidden>进入 with 先调 <code>__enter__()</code>，其返回值赋给 as 后的变量；代码块结束后（无论异常与否）调 <code>__exit__</code>。详见「with 语句的等效形式」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>__exit__</code> 返回 True 表示什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">异常已被处理，不再向上传播</button>
+            <button class="quiz-option">异常继续向上传播</button>
+            <button class="quiz-option">代码块执行成功</button>
+            <button class="quiz-option">资源释放失败</button>
+          </div>
+          <div class="quiz-explain" hidden><code>__exit__</code> 返回 True 吞掉异常（如 SuppressError 忽略指定异常）；返回 False（或 None）则异常继续传播。详见「异常处理」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 自定义上下文管理器必须实现哪些方法？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__enter__ 和 __exit__ 两个都要</button>
+            <button class="quiz-option">只实现 __enter__ 即可</button>
+            <button class="quiz-option">只实现 __exit__ 即可</button>
+            <button class="quiz-option">__init__ 和 __del__ 两个都要</button>
+          </div>
+          <div class="quiz-explain" hidden>必须<strong>同时实现</strong> <code>__enter__</code> 和 <code>__exit__</code>，缺一个 with 语句直接报错。详见「基本用法」一节的说明。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>@contextmanager</code> 装饰的生成器中，yield 前后代码对应什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">yield 前等于 __enter__，yield 后等于 __exit__</button>
+            <button class="quiz-option">yield 前等于 __exit__，yield 后等于 __enter__</button>
+            <button class="quiz-option">yield 前后都是 __enter__</button>
+            <button class="quiz-option">yield 前后都是 __exit__</button>
+          </div>
+          <div class="quiz-explain" hidden><code>yield</code> 之前是进入逻辑（<code>__enter__</code>），<code>yield</code> 之后是退出逻辑（<code>__exit__</code>）。详见「使用 @contextmanager 装饰器」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. with 块正常结束（无异常）时，<code>__exit__</code> 收到的三个参数是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">(None, None, None)</button>
+            <button class="quiz-option">(Exception, 异常对象, 堆栈)</button>
+            <button class="quiz-option">(True, True, True)</button>
+            <button class="quiz-option">不调用 __exit__</button>
+          </div>
+          <div class="quiz-explain" hidden>无异常时 <code>__exit__(None, None, None)</code>；有异常时传 (异常类型, 异常值, 追踪信息)。用 exc_type is None 就能判断是否正常退出。详见「with 语句的等效形式」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 同时使用两个上下文管理器的简洁写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">with A() as a, B() as b:（一行逗号分隔）</button>
+            <button class="quiz-option">with A() and B():</button>
+            <button class="quiz-option">with A(), with B():</button>
+            <button class="quiz-option">只能嵌套写两层 with</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 3.1+ 支持 <code>with A() as a, B() as b:</code> 一行并列（按顺序进入、逆序退出）。详见「多个上下文管理器」一节。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《16.上下文管理器》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·timer 计时）：用 <code>@contextmanager</code> 实现——<code>with timer("数据处理")</code> 块结束时打印 <code>数据处理 耗时: X.XXXX 秒</code>（异常时也要打印）。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">yield 前记 start；try: yield 后 finally 打印耗时</button>
+            <button class="quiz-option">yield 后直接打印耗时，不放在 finally 里</button>
+            <button class="quiz-option">打印耗时放在 yield 之前</button>
+            <button class="quiz-option">用 __exit__ 里 except 吞掉所有异常后再打印</button>
+          </div>
+          <div class="quiz-explain" hidden>正确结构：<code>start = time.time(); try: yield; finally: print(耗时)</code>——finally 保证<strong>异常时也打印</strong>。第二个块里抛异常会跳过打印 ✗；第三个计的是 0 秒 ✗；第四个吞异常改变语义 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业一）</summary>
+<pre><code>import time
+from contextlib import contextmanager
+
+@contextmanager
+def timer(name):
+    start = time.time()
+    try:
+        yield
+    finally:
+        elapsed = time.time() - start
+        print(f"{name} 耗时: {elapsed:.4f} 秒")
+
+with timer("数据处理"):
+    time.sleep(1)
+    print("处理完成")
+# 处理完成
+# 数据处理 耗时: 1.0012 秒</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·TempDirectory）：进入时创建临时目录（返回路径），退出时自动删除整个目录。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__enter__ 里 mkdtemp 存路径并返回；__exit__ 里 rmtree 删除，返回 False</button>
+            <button class="quiz-option">__enter__ 里创建目录但返回 self 而不是路径</button>
+            <button class="quiz-option">__exit__ 里只删除目录本身，不递归删除内容</button>
+            <button class="quiz-option">__exit__ 返回 True 吞掉所有异常</button>
+          </div>
+          <div class="quiz-explain" hidden>正确结构：<code>__enter__</code> 里 <code>self.path = tempfile.mkdtemp()</code> 并 <code>return self.path</code>；<code>__exit__</code> 里 <code>shutil.rmtree(self.path)</code>（递归删内容）并 <code>return False</code>（不吞异常）。第二个拿到的是对象不是路径 ✗；第三个目录里的文件删不掉 ✗；第四个吞异常不合题意 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业二）</summary>
+<pre><code>import os
+import tempfile
+import shutil
+
+class TempDirectory:
+    def __enter__(self):
+        self.path = tempfile.mkdtemp()
+        return self.path
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        shutil.rmtree(self.path)
+        return False
+
+with TempDirectory() as tmp_dir:
+    print(f"临时目录: {tmp_dir}")
+    with open(os.path.join(tmp_dir, "test.txt"), "w") as f:
+        f.write("hello")
+
+print("临时目录已清理")</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（作业四·思考题1）：以下代码的输出是？
+<pre><code>@contextmanager
+def demo():
+    print("进入")
+    yield
+    print("正常退出")
+
+with demo():
+    print("执行中")
+    raise ValueError("出错了")
+    print("这行不会执行")</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">进入 → 执行中，随后 ValueError 向外抛出（正常退出不打印）</button>
+            <button class="quiz-option">进入 → 执行中 → 正常退出，然后 ValueError 向外抛出</button>
+            <button class="quiz-option">进入 → 执行中，异常被吞掉不向外抛</button>
+            <button class="quiz-option">进入 → 正常退出 → 执行中</button>
+          </div>
+          <div class="quiz-explain" hidden>块内 raise 后，<code>@contextmanager</code> 把异常<strong>从 yield 处抛进生成器</strong>——生成器不继续执行，<code>print("正常退出")</code> 被跳过，异常向外传播。完整输出：进入 → 执行中 → ValueError。这正是清理代码必须写进 <code>finally</code> 的原因（下一题）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（作业四·思考题2）：把 demo 改成 <code>try: yield / except Exception as e: print(f"捕获异常: {e}") / finally: print("清理")</code>，with 块里同样 raise ValueError，输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">进入 → 执行中 → 捕获异常: 出错了 → 清理，且异常不再向外抛</button>
+            <button class="quiz-option">进入 → 执行中 → 清理，异常仍然向外抛</button>
+            <button class="quiz-option">进入 → 执行中，程序崩溃无清理</button>
+            <button class="quiz-option">进入 → 执行中 → 捕获异常 → 清理 → 异常再抛出</button>
+          </div>
+          <div class="quiz-explain" hidden>except 把异常<strong>接住</strong>了：打印「捕获异常: 出错了」后生成器正常收尾，finally 打印「清理」——with 块像没发生过异常一样继续。这就是上下文管理器「吞异常」的完整演示（等价于 __exit__ 返回 True）。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握上下文管理器——可以继续学习《<a href="/python/语言核心/抽象类/">17.抽象类</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/contextlib.html">contextlib — Utilities for with-statement contexts</a>——contextmanager 的权威出处。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-with-statement/">Context Managers and Python's with Statement</a>，把两种写法讲得很全。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/上下文管理器速查表.html">上下文管理器速查表</a>——等效形式、两种写法、吞异常规则一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/迭代器与生成器/">15.迭代器与生成器</a> · <a href="/python/语言核心/上下文管理器/">16.上下文管理器</a> · <a href="/python/语言核心/抽象类/">17.抽象类</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/上下文管理器/">回到《16.上下文管理器》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

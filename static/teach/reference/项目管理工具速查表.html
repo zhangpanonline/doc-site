@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>项目管理工具速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>项目管理工具速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0028-项目管理工具.html">《项目管理工具互动教学课程》</a>与《28.项目管理工具》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>uv 替代关系</h2>
+      <table class="cmp-table">
+        <tr><th>传统工具</th><th>uv 命令</th></tr>
+        <tr><td>pip</td><td><code>uv pip</code></td></tr>
+        <tr><td>venv</td><td><code>uv venv</code></td></tr>
+        <tr><td>pyenv</td><td><code>uv python install / pin</code></td></tr>
+        <tr><td>pip-tools</td><td><code>uv lock / uv sync</code></td></tr>
+        <tr><td>pipx</td><td><code>uv tool / uvx</code></td></tr>
+        <tr><td>poetry/pdm</td><td><code>uv init / add / remove</code></td></tr>
+        <tr><td>build + twine</td><td><code>uv build / uv publish</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>常用命令</h2>
+      <pre><code>uv init --lib                # 库项目（src layout）
+uv add requests             # 加依赖（--dev 开发依赖）
+uv remove requests          # 移除依赖
+uv sync                     # 按 uv.lock 重建环境
+uv run python main.py       # 项目环境中运行
+uv tree                     # 依赖树
+uv build                    # 构建（dist/）
+uv publish                  # 发布 PyPI；私有：--publish-url 地址 --username/--password
+uv python install 3.12.3    # 装 Python 版本
+uv python pin 3.12          # 固定项目版本（.python-version）
+uvx ruff check .            # 临时运行工具（用完即弃）
+uv tool install ruff        # 持久安装 CLI 工具
+uv cache clean              # 清全局缓存</code></pre>
+    </section>
+
+    <section>
+      <h2>入口配置与 Makefile</h2>
+      <pre><code># pyproject.toml：命令行入口
+[project.scripts]
+my-cli = "my_project:main"   # 命令名 = "模块:函数"
+
+# Makefile：统一入口约定
+.PHONY: test lint build
+test:
+	uv run pytest
+lint:
+	uv run ruff check .
+build:
+	uv build</code></pre>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/构建发布/">27.构建发布</a> · <a href="/python/语言核心/项目管理工具/">28.项目管理工具</a></li>
+        <li>uv 官方文档：<a href="https://docs.astral.sh/uv/">docs.astral.sh/uv</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0028-项目管理工具.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>对象的创建过程速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>对象的创建过程速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0008-对象的创建过程.html">《对象的创建过程互动教学课程》</a>与《8.对象的创建过程》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>创建三步</h2>
+      <pre><code>def create_object(cls, *args, **kwargs):
+    obj = cls.__new__(cls, *args, **kwargs)   # 1. 分配并创建实例
+    if isinstance(obj, cls):                  # 2. 类型检查
+        obj.__init__(*args, **kwargs)         # 3. 初始化
+    return obj</code></pre>
+      <dl class="term-grid">
+        <dt>__new__</dt>
+        <dd>静态方法，第一参数 cls；负责创建实例并 return 它。重写必须 <code>return super().__new__(cls)</code>。</dd>
+        <dt>__init__</dt>
+        <dd>实例已存在时被调用，只负责装属性；不能 return 非 None 值。</dd>
+        <dt>类型检查</dt>
+        <dd><code>__new__</code> 返回的不是 cls 实例时（如返回 int 0），__init__ 被跳过。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>单例模板</h2>
+      <pre><code>class Database:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+conn1 = Database()
+conn2 = Database()
+print(conn1 is conn2)   # True</code></pre>
+    </section>
+
+    <section>
+      <h2>对象池模板</h2>
+      <pre><code>class ConnectionPool:
+    _pool = {}
+
+    def __new__(cls, conn_id):
+        if conn_id not in cls._pool:
+            cls._pool[conn_id] = super().__new__(cls)
+        return cls._pool[conn_id]
+
+pool1 = ConnectionPool("conn_1")
+pool2 = ConnectionPool("conn_1")   # is pool1 → True
+pool3 = ConnectionPool("conn_2")   # is pool1 → False</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>忘了 return</strong>：重写 <code>__new__</code> 不 <code>return super().__new__(cls)</code>，实例化得到 None。</li>
+        <li><strong>单例的 __init__ 每次都会执行</strong>：<code>__new__</code> 返回的仍是 cls 实例（isinstance 通过），所以第二次实例化会重新初始化属性——需要时加「已初始化」标志跳过。</li>
+        <li><strong><code>__init__</code> 不是构造函数</strong>：它被调用时对象已存在；真正的构造在 <code>__new__</code>。</li>
+        <li><strong>返回别的类型会跳过 __init__</strong>：<code>PositiveInt(-3)</code> 返回 int 的 0，得到的是纯 int 对象。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/对象的类型/">7.对象的类型</a> · <a href="/python/语言核心/对象的创建过程/">8.对象的创建过程</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/reference/datamodel.html#object.__new__">Data Model: object.__new__</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-singleton/">Creating a Singleton in Python</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0008-对象的创建过程.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

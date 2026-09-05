@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《3.函数》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业作为最终考核，10-15 分钟掌握参数与返回值">
+  <title>函数 · 互动教学课程（第 3 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 3 课</p>
+      <h1>函数</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/函数/">3.函数</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>分清<strong>位置参数、默认参数、关键字参数、<code>*args</code>、<code>**kwargs</code></strong> 的用法与顺序</li>
+        <li>说出 <code>*args</code> 是元组、<code>**kwargs</code> 是字典、多返回值本质是元组</li>
+        <li>避开<strong>可变默认值</strong>陷阱，读懂并改写带默认参数的函数——<strong>最终考核的重点</strong></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《3.函数》里，测验和考核会考。</p>
+
+      <h3>参数全景图</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">def f(a, b=2, *args, **kwargs)</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">a 位置参数</span>
+          <span class="diagram-arrow">→</span>
+          <span class="diagram-node plain">b 默认参数</span>
+          <span class="diagram-arrow">→</span>
+          <span class="diagram-node">*args 多余位置参数 → 元组</span>
+          <span class="diagram-arrow">→</span>
+          <span class="diagram-node">**kwargs 多余关键字 → 字典</span>
+        </div>
+        <p class="diagram-note">⚙️ 顺序固定：位置 → 默认 → *args → **kwargs。默认参数必须放在非默认参数后面。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong><code>*args</code> 收成元组，<code>**kwargs</code> 收成字典</strong>：函数内部 <code>args</code> 是 <code>tuple</code>、<code>kwargs</code> 是 <code>dict</code>——它们是「收纳袋」，不是特殊语法。<a href="https://docs.python.org/3/tutorial/controlflow.html#arbitrary-argument-lists">官方教程：Arbitrary Argument Lists</a></li>
+        <li><strong>多返回值本质是元组</strong>：<code>return a, b</code> 打包成一个元组返回，<code>x, y = f()</code> 只是解包。<a href="https://docs.python.org/3/tutorial/controlflow.html#defining-functions">官方教程：Defining Functions</a></li>
+        <li><strong>可变默认值是经典陷阱</strong>：<code>def f(items=[])</code> 的 <code>[]</code> 只在<strong>定义时创建一次</strong>，多次调用会共享同一个列表；正确写法是 <code>items=None</code> + 函数内判断后新建——考核一考的正是这个。<a href="https://docs.python.org/3/tutorial/controlflow.html#default-argument-values">官方教程：Default Argument Values</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 函数没有 <code>return</code> 语句时，调用它的返回值是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">空字符串</button>
+            <button class="quiz-option">数字 0</button>
+          </div>
+          <div class="quiz-explain" hidden>没有 <code>return</code>（或 <code>return</code> 后不带值）的函数默认返回 <code>None</code>。详见「返回值」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>def greet(greeting="Hello", name):</code> 会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">定义时语法报错</button>
+            <button class="quiz-option">定义正常，调用时报错</button>
+            <button class="quiz-option">定义正常，调用也正常</button>
+            <button class="quiz-option">name 自动获得默认值</button>
+          </div>
+          <div class="quiz-explain" hidden><strong>默认参数必须放在非默认参数后面</strong>：<code>greeting="Hello"</code> 在前、<code>name</code> 在后，定义函数时就抛出 SyntaxError。详见「默认参数」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>def show_args(*args)</code> 中，<code>args</code> 的类型是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">元组 tuple</button>
+            <button class="quiz-option">列表 list</button>
+            <button class="quiz-option">字典 dict</button>
+            <button class="quiz-option">集合 set</button>
+          </div>
+          <div class="quiz-explain" hidden><code>*args</code> 把多余的位置参数收进一个<strong>元组</strong>：<code>show_args(1, 2, 3)</code> 内部 <code>args</code> 是 <code>(1, 2, 3)</code>。详见「可变参数」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>def show_kwargs(**kwargs)</code> 中，<code>kwargs</code> 的类型是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">字典 dict</button>
+            <button class="quiz-option">元组 tuple</button>
+            <button class="quiz-option">列表 list</button>
+            <button class="quiz-option">集合 set</button>
+          </div>
+          <div class="quiz-explain" hidden><code>**kwargs</code> 把多余的关键字参数收进一个<strong>字典</strong>：<code>show_kwargs(name="Alice")</code> 内部 <code>kwargs</code> 是 <code>{'name': 'Alice'}</code>。详见「可变参数」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>return min(numbers), max(numbers)</code> 返回的本质上是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">元组</button>
+            <button class="quiz-option">两个独立返回值</button>
+            <button class="quiz-option">列表</button>
+            <button class="quiz-option">字典</button>
+          </div>
+          <div class="quiz-explain" hidden><code>return a, b</code> 只是把 <code>a</code> 和 <code>b</code><strong>打包成元组</strong>返回；<code>x, y = f()</code> 是对元组解包。详见「多返回值」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. <code>person_info(name="Alice", 25, "北京")</code> 会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">语法报错</button>
+            <button class="quiz-option">正常执行</button>
+            <button class="quiz-option">运行时类型错误</button>
+            <button class="quiz-option">25 和北京被忽略</button>
+          </div>
+          <div class="quiz-explain" hidden><strong>位置参数不能出现在关键字参数之后</strong>：<code>name="Alice"</code> 后跟 <code>25</code> 会直接触发 SyntaxError。正确写法：位置参数在前——<code>person_info("Alice", 25, city="北京")</code>。详见「关键字参数」一节。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《3.函数》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·默认参数陷阱）：以下代码最后一行 <code>print(result1)</code> 输出是？
+<pre><code>def add_items(base, items=None, *tags):
+    if items is None:
+        items = []
+    items.append(base)
+    for tag in tags:
+        items.append(tag)
+    return items
+
+result1 = add_items(10)
+result2 = add_items(20, [1, 2], 30, 40)
+print(result1)</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">[10]</button>
+            <button class="quiz-option">[1, 2, 20, 30, 40]</button>
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>两次调用互不影响：第一次 <code>add_items(10)</code> 里 <code>items is None</code> 成立，<strong>新建列表</strong>后 append → <code>[10]</code>；第二次调用传入了自己的 <code>[1, 2]</code>，与 result1 无关。所以 result1 仍是 <strong>[10]</strong>。若默认值写成 <code>items=[]</code>，两次调用会共享同一列表，result1 就会被污染——这正是「可变默认值」陷阱。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·**kwargs 合并）：以下代码 <code>print(merged)</code> 输出是？
+<pre><code>def merge_data(base, **extra):
+    result = base.copy()
+    for key, value in extra.items():
+        if key in result:
+            result[key] += value
+        else:
+            result[key] = value
+    return result
+
+data = {"a": 10, "b": [1, 2]}
+merged = merge_data(data, a=5, b=[3], c="hello")
+print(merged)</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">{'a': 15, 'b': [1, 2, 3], 'c': 'hello'}</button>
+            <button class="quiz-option">{'a': 5, 'b': [3], 'c': 'hello'}</button>
+            <button class="quiz-option">{'a': 10, 'b': [1, 2], 'c': 'hello'}</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>逐键推演：<code>a=5</code> → 键存在，<code>10 + 5 = 15</code>；<code>b=[3]</code> → 键存在，<code>[1, 2] + [3] = [1, 2, 3]</code>（列表相加是拼接）；<code>c="hello"</code> → 键不存在，直接放入。输出 <strong>{'a': 15, 'b': [1, 2, 3], 'c': 'hello'}</strong>。进阶注意：<code>base.copy()</code> 是<strong>浅拷贝</strong>——顶层字典被保护（a 键是重新赋值），但嵌套列表 b 与原 data <strong>共享</strong>，<code>result["b"] += [3]</code> 会顺带把原 data 的 b 也改成 <code>[1, 2, 3]</code>。想彻底隔离要用 <code>copy.deepcopy</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（作业三·多返回值与 enumerate）：以下代码 <code>print(result)</code> 输出是？
+<pre><code>def split_data(data):
+    mid = len(data) // 2
+    return data[:mid], data[mid:]
+
+def find_indices(items, target):
+    indices = []
+    for i, item in enumerate(items):
+        if item == target:
+            indices.append(i)
+    return indices
+
+nums = [1, 2, 3, 4, 5, 6]
+first, second = split_data(nums)
+scores = [85, 92, 85, 78, 85]
+positions = find_indices(scores, 85)
+result = second + [len(positions)]
+print(result)</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">[4, 5, 6, 3]</button>
+            <button class="quiz-option">[4, 5, 6]</button>
+            <button class="quiz-option">[4, 5, 6, 85]</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>split_data</code> 从中间切开：second = <code>[4, 5, 6]</code>；<code>find_indices</code> 收集 85 出现的位置 <code>[0, 2, 4]</code>；<code>second + [len(positions)]</code> = <code>[4, 5, 6] + [3]</code> → <strong>[4, 5, 6, 3]</strong>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（作业四·列表扁平化）：实现 <code>flatten</code>，把任意嵌套的列表展开为一维，如 <code>flatten([1, [2, 3], [[4], 5]])</code> 应返回 <code>[1, 2, 3, 4, 5]</code>。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">递归：元素是列表则 extend(flatten(元素))，否则 append(元素)</button>
+            <button class="quiz-option">只展开一层：内层嵌套列表保留原样</button>
+            <button class="quiz-option">递归：元素是列表则 append(flatten(元素))，否则 append(元素)</button>
+            <button class="quiz-option">不判断类型一律 append，原样收集不做展开</button>
+          </div>
+          <div class="quiz-explain" hidden>关键是两个 API 的差别：<code>extend</code> 把内层列表的元素<strong>逐个并入</strong>，<code>append</code> 把内层列表<strong>整体作为一个元素</strong>。正确答案递归处理：<code>flatten([1, [2, 3], [[4], 5]])</code> → 1 直接 append，<code>[2, 3]</code> 递归展开后 extend → <code>[1, 2, 3]</code>，<code>[[4], 5]</code> 递归得到 <code>[4, 5]</code> 再 extend → <strong>[1, 2, 3, 4, 5]</strong>。第三个选项用 append 接递归结果，内层列表会变成嵌套元素 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业四·三个函数）</summary>
+<pre><code># 任务 1：列表扁平化
+def flatten(nested_list):
+    result = []
+    for item in nested_list:
+        if type(item) is list:
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+    return result
+
+# 任务 2：列表/元组转链表
+def to_linked_list(items):
+    if not items:
+        return None
+    head = {"value": items[0], "next": None}
+    current = head
+    for item in items[1:]:
+        current["next"] = {"value": item, "next": None}
+        current = current["next"]
+    return head
+
+# 任务 3：字典合并（后面的覆盖前面的）
+def merge_dicts(*dicts):
+    result = {}
+    for item in dicts:
+        result.update(item)
+    return result</code></pre>
+          </details>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握函数的参数与返回值——可以继续学习《<a href="/python/语言核心/作用域/">4.作用域</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/controlflow.html#defining-functions">4. More Control Flow Tools</a>——函数定义、默认参数、可变参数的权威讲解。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/defining-your-own-python-function/">Defining Your Own Python Function</a>，把参数类型与调用约定讲得很透。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/函数速查表.html">函数速查表</a>——参数全景、返回值、常见陷阱一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/容器类型/">2.容器类型</a> · <a href="/python/语言核心/函数/">3.函数</a> · <a href="/python/语言核心/作用域/">4.作用域</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/函数/">回到《3.函数》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

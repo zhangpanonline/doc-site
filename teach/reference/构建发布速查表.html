@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>构建发布速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>构建发布速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0027-构建发布.html">《构建发布互动教学课程》</a>与《27.构建发布》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>流水线</h2>
+      <pre><code>源码 + pyproject.toml
+   │  python -m build（或 uv build）
+   ▼
+dist/  ←── sdist（.tar.gz）+ wheel（.whl）
+   │  twine check dist/*   （校验）
+   ▼
+twine upload dist/*       （发布到 PyPI / 私有仓库）
+   │
+   ▼
+pip install 包名          （用户安装）</code></pre>
+    </section>
+
+    <section>
+      <h2>pyproject.toml 关键段</h2>
+      <pre><code>[build-system]
+requires = ["hatchling"]          # 构建后端依赖
+build-backend = "hatchling.build" # 后端入口
+
+[project]
+name = "duyi-utils"              # 发行版名称（小写连字符）
+version = "0.1.3"                # 语义化版本
+requires-python = ">=3.14"
+dependencies = [
+    "python-dateutil>=2.8",
+]</code></pre>
+    </section>
+
+    <section>
+      <h2>常用命令</h2>
+      <pre><code>python -m build               # 构建（产物在 dist/）
+twine check dist/*            # 校验产物
+twine upload dist/*           # 上传（用 API token 认证）
+pip install -e .              # 可编辑安装：.pth 链接直指源码，改码即时生效</code></pre>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/多线程和多进程/">26.多线程和多进程</a> · <a href="/python/语言核心/构建发布/">27.构建发布</a></li>
+        <li>官方教程：<a href="https://packaging.python.org/en/latest/tutorials/packaging-projects/">Packaging Python Projects</a></li>
+        <li>规范：<a href="https://peps.python.org/pep-0517/">PEP 517</a> · <a href="https://peps.python.org/pep-0427/">PEP 427</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0027-构建发布.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

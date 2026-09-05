@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lambda 表达式速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>Lambda 表达式速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0005-Lambda表达式.html">《Lambda 表达式互动教学课程》</a>与《5.Lambda表达式》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>匿名函数</dt>
+        <dd>没有名字的临时函数：<code>lambda x, y: x + y</code>。</dd>
+        <dt>高阶函数</dt>
+        <dd>接收函数作为参数的函数：map / filter / sorted / max / min / reduce。</dd>
+        <dt>key 参数</dt>
+        <dd>指定「按什么排序/比较」的取值函数，不影响返回的元素本身。</dd>
+        <dt>迭代器</dt>
+        <dd>惰性求值的对象；map/filter 返回迭代器，需 <code>list()</code> 展开且只能消费一次。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>五个高阶函数</h2>
+      <table class="cmp-table">
+        <tr><th>函数</th><th>作用</th><th>返回</th><th>示例</th></tr>
+        <tr><td><code>map(f, xs)</code></td><td>逐元素转换</td><td>迭代器</td><td><code>list(map(lambda x: x**2, [1,2,3]))</code> → <code>[1,4,9]</code></td></tr>
+        <tr><td><code>filter(f, xs)</code></td><td>按条件筛选</td><td>迭代器</td><td><code>list(filter(lambda x: x&gt;0, [-1,0,2]))</code> → <code>[2]</code></td></tr>
+        <tr><td><code>sorted(xs, key=f, reverse=?)</code></td><td>按 key 排序</td><td>新列表</td><td><code>sorted(ws, key=lambda s: len(s))</code></td></tr>
+        <tr><td><code>max/min(xs, key=f)</code></td><td>按 key 取极值</td><td>元素本身</td><td><code>max(students, key=lambda s: s["score"])</code></td></tr>
+        <tr><td><code>reduce(f, xs)</code></td><td>两两累积</td><td>单个值</td><td><code>reduce(lambda x, y: x+y, [1,2,3])</code> → <code>6</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>组合套路（字典列表数据集）</h2>
+      <pre><code>products = [{"name": "A", "inc": "X", "price": 10, "stock": 5}, ...]
+
+# 排序：按价格升序 / 降序 / 按库存总额
+sorted(products, key=lambda p: p["price"])
+sorted(products, key=lambda p: p["price"], reverse=True)
+sorted(products, key=lambda p: p["price"] * p["stock"])
+
+# 筛选 + 取字段：某公司所有产品名
+list(map(lambda p: p["name"],
+         filter(lambda p: p["inc"] == "X", products)))
+
+# 极值：最贵产品
+max(products, key=lambda p: p["price"])
+
+# 聚合：某公司平均价格
+xs = list(map(lambda p: p["price"],
+              filter(lambda p: p["inc"] == "X", products)))
+sum(xs) / len(xs)</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>lambda 只能写一个表达式</strong>：赋值、if 语句块、多条语句都写不进去——复杂逻辑用 <code>def</code>。</li>
+        <li><strong>map/filter 要 list() 展开</strong>：直接 print 看到的是迭代器对象。</li>
+        <li><strong>迭代器只能消费一次</strong>：同一个 map 对象转两次 list，第二次是空的。</li>
+        <li><strong>max/min 返回元素本身</strong>：<code>max(xs, key=len)</code> 返回最长的字符串，不是长度值。</li>
+        <li><strong>reduce 需要导入</strong>：<code>from functools import reduce</code>。</li>
+        <li><strong>sorted 不修改原列表</strong>：返回新列表；原地排序用 <code>xs.sort(key=...)</code>。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/作用域/">4.作用域</a> · <a href="/python/语言核心/Lambda表达式/">5.Lambda表达式</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/howto/functional.html">Functional Programming HOWTO</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-lambda/">How to Use Python Lambda Functions</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0005-Lambda表达式.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

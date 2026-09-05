@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>上下文管理器速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>上下文管理器速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0016-上下文管理器.html">《上下文管理器互动教学课程》</a>与《16.上下文管理器》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>with 的等效形式</h2>
+      <pre><code>with 表达式 as 变量名:
+    代码块
+
+# 等效于
+变量名 = 表达式.__enter__()
+try:
+    代码块
+except Exception as e:
+    stopPropagation = 变量名.__exit__(type(e), e, e.__traceback__)
+    if not stopPropagation:
+        raise
+else:
+    变量名.__exit__(None, None, None)</code></pre>
+      <dl class="term-grid">
+        <dt>__enter__</dt>
+        <dd>进入 with 时调用，返回值赋给 as 变量。</dd>
+        <dt>__exit__</dt>
+        <dd>退出时调用，收 (exc_type, exc_val, exc_tb)；<strong>返回 True = 吞异常</strong>，返回 False/None = 异常继续传播。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>两种写法</h2>
+      <pre><code># 1. 类实现（资源管理）
+class TempDirectory:
+    def __enter__(self):
+        self.path = tempfile.mkdtemp()
+        return self.path
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        shutil.rmtree(self.path)
+        return False            # 不吞异常
+
+# 2. @contextmanager 生成器（简单场景）
+from contextlib import contextmanager
+
+@contextmanager
+def timer(name):
+    start = time.time()
+    try:
+        yield                    # 之前 = __enter__，之后 = __exit__
+    finally:
+        print(f"{name} 耗时: {time.time() - start:.4f} 秒")</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>两个方法缺一不可</strong>：只有 <code>__enter__</code> 或只有 <code>__exit__</code>，with 会报错。</li>
+        <li><strong>@contextmanager 的清理要放 finally</strong>：yield 后不在 finally 的代码，块内抛异常时会跳过。</li>
+        <li><strong>返回 True 会吞异常</strong>：SuppressError 靠这个实现「忽略指定异常」；不想吞就返回 False。</li>
+        <li><strong>多管理器一行写</strong>：<code>with A() as a, B() as b:</code>，按顺序进入、逆序退出。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/迭代器与生成器/">15.迭代器与生成器</a> · <a href="/python/语言核心/上下文管理器/">16.上下文管理器</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/library/contextlib.html">contextlib — Utilities for with-statement contexts</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-with-statement/">Context Managers and Python's with Statement</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0016-上下文管理器.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

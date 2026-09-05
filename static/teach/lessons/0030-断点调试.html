@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《30.断点调试》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（复现 monorepo 工程调试）作为最终考核">
+  <title>断点调试 · 互动教学课程（第 30 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 30 课</p>
+      <h1>断点调试</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/断点调试/">30.断点调试</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清调试的组成：<strong>调试适配器 + 调试客户端 + 调试协议</strong></li>
+        <li>看懂 <code>sys.settrace</code> 追踪原理：frame/event/行号</li>
+        <li>配置 launch.json 单文件调试与 <strong>monorepo 工程的 attach 调试</strong>——最终考核就是源作业的复现题</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《30.断点调试》里，测验和考核会考。</p>
+
+      <h3>调试链路</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">调试客户端（VSCode）</span>
+          <span class="diagram-arrow">─ DAP 协议 ─▶</span>
+          <span class="diagram-node">调试适配器（debugpy）</span>
+          <span class="diagram-arrow">─ 控制 ─▶</span>
+          <span class="diagram-node plain">被调试程序（demo.py）</span>
+        </div>
+        <p class="diagram-note">⚙️ <code>sys.settrace</code> 是「适配器」观察程序的最小实现：每个事件（line/call/return）回调一次 tracer。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>settrace 的 tracer 回调三个参数</strong>：<code>frame</code>（当前栈帧，<code>f_lineno</code> 行号）、<code>event</code>（line/call/return 等事件）、<code>arg</code>；返回自身以持续追踪。<a href="https://docs.python.org/3/library/sys.html#sys.settrace">官方文档：sys.settrace</a></li>
+        <li><strong>launch vs attach</strong>：<code>launch</code> 由调试器启动程序（单文件调试用 <code>${file}</code>）；<code>attach</code> 连接<strong>已在运行</strong>的程序（工程调试：debugpy 监听 5678 端口等待客户端）。<a href="https://github.com/microsoft/debugpy">官方文档：debugpy</a></li>
+        <li><strong>工程调试三步</strong>：<code>uv add --dev debugpy</code> → Makefile 里 <code>python -m debugpy --listen 5678 --wait-for-client 入口</code> → 客户端 attach localhost:5678。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 调试的三大组件是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">调试客户端、调试适配器、调试协议</button>
+            <button class="quiz-option">编译器、链接器、解释器</button>
+            <button class="quiz-option">断点、单步、变量查看</button>
+            <button class="quiz-option">编辑器、终端、浏览器</button>
+          </div>
+          <div class="quiz-explain" hidden>客户端（VSCode）通过<strong>调试协议</strong>（DAP）与<strong>适配器</strong>（debugpy）通信，由适配器控制被调试程序。详见「调试组件」图。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>sys.settrace(my_tracer)</code> 中 tracer 的 event 参数不会出现哪个值？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">click（鼠标事件）</button>
+            <button class="quiz-option">line</button>
+            <button class="quiz-option">call</button>
+            <button class="quiz-option">return</button>
+          </div>
+          <div class="quiz-explain" hidden>tracer 的 event 是<strong>解释器执行事件</strong>：line（执行一行）、call（调用函数）、return（函数返回）、exception 等。click 是 GUI 事件，与解释器无关。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. tracer 回调的 frame 参数有什么用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">当前栈帧，可读 f_lineno 拿到正在执行的行号</button>
+            <button class="quiz-option">当前函数的返回值</button>
+            <button class="quiz-option">浏览器的页面框架</button>
+            <button class="quiz-option">调试器的配置对象</button>
+          </div>
+          <div class="quiz-explain" hidden><code>frame.f_lineno</code> 是当前执行到的行号——适配器核心逻辑就是打印「事件 + 行号」来观察程序执行轨迹。详见「调试适配器的核心逻辑」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. launch.json 中单文件调试的 type 字段是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">"debugpy"</button>
+            <button class="quiz-option">"python"</button>
+            <button class="quiz-option">"vscode"</button>
+            <button class="quiz-option">"pdb"</button>
+          </div>
+          <div class="quiz-explain" hidden><code>"type": "debugpy"</code> 指定使用 debugpy 调试适配器；<code>"program": "${file}"</code> 用当前打开的文件。详见「单文件调试」配置。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. launch 与 attach 调试模式的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">launch 由调试器启动程序，attach 连接已运行的程序</button>
+            <button class="quiz-option">attach 由调试器启动程序，launch 连接已运行的程序</button>
+            <button class="quiz-option">两者完全一样</button>
+            <button class="quiz-option">attach 只能用于网页</button>
+          </div>
+          <div class="quiz-explain" hidden><code>request: "launch"</code> 是调试器拉起程序；<code>request: "attach"</code> 是程序先跑起来（debugpy 监听端口），调试器再连上去。工程调试用 attach。详见「工程调试」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. <code>--wait-for-client</code> 参数的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">程序启动后暂停，等调试客户端连接再继续</button>
+            <button class="quiz-option">让程序更快启动</button>
+            <button class="quiz-option">跳过调试直接运行</button>
+            <button class="quiz-option">限制客户端的连接数</button>
+          </div>
+          <div class="quiz-explain" hidden><code>--wait-for-client</code> 让被调试程序<strong>等待</strong>客户端 attach（否则程序可能已跑完，断点都来不及命中）。详见「配置调试器」。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《30.断点调试》源课程作业（复现 monorepo 工程的调试）的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出答案，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（settrace 预测）：用 settrace 追踪 <code>demo.py</code>（三行函数 + 调用 + print），tracer 打印的第一条记录是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">call 事件，行号 0（exec 触发）</button>
+            <button class="quiz-option">line 事件，行号 1（从第一行开始）</button>
+            <button class="quiz-option">return 事件（函数先返回）</button>
+            <button class="quiz-option">没有任何输出</button>
+          </div>
+          <div class="quiz-explain" hidden>实测第一条是 <strong>call 事件（行号 0）</strong>——<code>exec(code)</code> 本身触发 call 事件；随后才是逐行 line 事件（行号 4、11…），调用 main() 时穿插 call、函数结束有 return 事件。事件顺序：call → line → call（main）→ line → return。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（launch.json 配置）：调试「当前打开的文件」，正确的 launch.json 配置是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">type="debugpy"，request="launch"，program="${file}"</button>
+            <button class="quiz-option">type="python"，request="attach"，program="${file}"</button>
+            <button class="quiz-option">type="debugpy"，request="launch"，不写 program</button>
+            <button class="quiz-option">type="pdb"，request="launch"</button>
+          </div>
+          <div class="quiz-explain" hidden>单文件调试：<code>"type": "debugpy"</code> + <code>"request": "launch"</code> + <code>"program": "${file}"</code>（当前打开的文件）。type 写 python/pdb 都不是 VSCode debugpy 扩展的名字 ✗；不写 program 不知道调谁 ✗。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（attach 配置）：工程调试——debugpy 已监听 5678 端口，客户端 attach 配置正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">request="attach"，connect 里 host="localhost"、port=5678</button>
+            <button class="quiz-option">request="launch"，program 指向 main.py</button>
+            <button class="quiz-option">request="attach"，但不写 connect 信息</button>
+            <button class="quiz-option">request="launch" 且 port 随意填</button>
+          </div>
+          <div class="quiz-explain" hidden>attach 配置：<code>"request": "attach"</code> + <code>"connect": {"host": "localhost", "port": 5678}</code>——与 debugpy 的 <code>--listen 5678</code> 对应。launch 会试图自己启动程序（重复启动）✗。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（工程调试复现）：monorepo 里给 web-service 配调试，Makefile 目标正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">uv run --package web-service python -m debugpy --listen 5678 --wait-for-client app/web-service/main.py</button>
+            <button class="quiz-option">python -m debugpy app/web-service/main.py（不带监听参数）</button>
+            <button class="quiz-option">uv run --package web-service app/web-service/main.py（不经过 debugpy）</button>
+            <button class="quiz-option">debugpy 监听 80 端口（HTTP 端口）</button>
+          </div>
+          <div class="quiz-explain" hidden>工程调试命令三要素：<code>--package web-service</code> 用成员依赖环境；<code>python -m debugpy --listen 5678 --wait-for-client</code> 启动适配器并等客户端；最后是被调试入口。第二个不监听无法 attach ✗；第三个没经过调试器 ✗；第四个端口随意且不是调试器用法 ✗。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握断点调试——<strong>恭喜你完成了《Python 语言核心》全部 30 章的互动课程！</strong>🎉</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：debugpy 官方文档 <a href="https://github.com/microsoft/debugpy">microsoft/debugpy</a> 与 VSCode <a href="https://code.visualstudio.com/docs/python/debugging">Python Debugging</a> 指南。</li>
+        <li><strong>系统梳理</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/sys.html#sys.settrace">sys.settrace</a> 与 <a href="https://docs.python.org/3/library/bdb.html">bdb 调试器框架</a>。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/断点调试速查表.html">断点调试速查表</a>——调试链路、launch/attach 配置、settrace 模板一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/Monorepo/">29.Monorepo</a> · <a href="/python/语言核心/断点调试/">30.断点调试</a> · 全部课程的回顾从第 1 课开始</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/断点调试/">回到《30.断点调试》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

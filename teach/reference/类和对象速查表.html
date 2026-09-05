@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>类和对象速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>类和对象速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0006-类和对象.html">《类和对象互动教学课程》</a>与《6.类和对象》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>类 Class</dt>
+        <dd>创建对象的蓝图；类本身也是对象，由元类 type 创建。</dd>
+        <dt>实例属性</dt>
+        <dd>每个对象独立，通过 <code>self.x</code> 定义，存于实例 <code>__dict__</code>。</dd>
+        <dt>类属性</dt>
+        <dd>所有实例共享，类体内直接定义；修改要<strong>通过类名</strong>。</dd>
+        <dt>MRO</dt>
+        <dd>方法解析顺序：多继承下查找方法/调用 super 的顺序链，<code>C.__mro__</code> 查看。</dd>
+        <dt>super()</dt>
+        <dd>沿 MRO 调用<strong>下一个</strong>类的方法，不一定是直接父类。</dd>
+        <dt>名称改写</dt>
+        <dd><code>__name</code> 被改写为 <code>_类名__name</code>，外部直接访问报错。</dd>
+        <dt>反射</dt>
+        <dd>运行时检查/操作对象：type / isinstance / getattr / setattr / hasattr / vars / dir。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>三种方法</h2>
+      <table class="cmp-table">
+        <tr><th>方法类型</th><th>装饰器</th><th>首参</th><th>实例属性</th><th>类属性</th><th>典型用途</th></tr>
+        <tr><td>实例方法</td><td>无</td><td>self</td><td>✅</td><td>✅</td><td>操作单个对象</td></tr>
+        <tr><td>类方法</td><td>@classmethod</td><td>cls</td><td>❌</td><td>✅</td><td>统计实例数、工厂方法</td></tr>
+        <tr><td>静态方法</td><td>@staticmethod</td><td>无</td><td>❌</td><td>❌</td><td>组织工具函数</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>反射工具速查</h2>
+      <table class="cmp-table">
+        <tr><th>工具</th><th>作用</th><th>关键点</th></tr>
+        <tr><td><code>type(x)</code></td><td>精确类型</td><td><strong>不考虑继承</strong>；类的类型是 type</td></tr>
+        <tr><td><code>isinstance(x, C)</code></td><td>是否 C（或子类）实例</td><td><strong>考虑继承</strong>；支持元组</td></tr>
+        <tr><td><code>issubclass(C, P)</code></td><td>C 是否 P 子类</td><td>issubclass(C, C) 恒 True</td></tr>
+        <tr><td><code>obj.__class__</code></td><td>对象所属类</td><td><code>__name__</code> 取类名</td></tr>
+        <tr><td><code>C.__bases__ / C.__base__</code></td><td>全部直接父类 / 第一个</td><td>元组 / 单类</td></tr>
+        <tr><td><code>vars(obj) / obj.__dict__</code></td><td>对象<strong>自己的</strong>属性字典</td><td>不含类属性和方法</td></tr>
+        <tr><td><code>getattr(o, "k", 默认)</code></td><td>取属性，可带默认值</td><td>沿继承链查找</td></tr>
+        <tr><td><code>setattr(o, "k", v) / hasattr / delattr</code></td><td>设 / 查 / 删属性</td><td>属性名可以是变量</td></tr>
+        <tr><td><code>dir(o)</code></td><td>全部属性方法（含继承）</td><td>返回字符串列表</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>实例上给类属性赋值不会修改类属性</strong>：<code>dog1.species = "X"</code> 只会给 dog1 新建实例属性，其他实例无感；改类属性用 <code>Dog.species = "X"</code>。</li>
+        <li><strong>super() 沿 MRO 而非固定父类</strong>：<code>C(A, B)</code> 中 A 的 <code>super()</code> 调到 B。</li>
+        <li><strong>双下划线只是名称改写</strong>：<code>obj.__password</code> 报错，但 <code>obj._BankAccount__password</code> 仍可访问——约定防护，不是安全边界。</li>
+        <li><strong>type 与 isinstance 结论不同</strong>：<code>type(dog) == Animal → False</code>，<code>isinstance(dog, Animal) → True</code>。</li>
+        <li><strong>多继承优先组合</strong>：菱形继承难维护，能组合就别多继承。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/类和对象/">6.类和对象</a> · <a href="/python/语言核心/对象的类型/">7.对象的类型</a></li>
+        <li>Python 官方教程：<a href="https://docs.python.org/3/tutorial/classes.html">9. Classes</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-super/">Supercharge Your Classes With Python super()</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0006-类和对象.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>多线程和多进程速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>多线程和多进程速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0026-多线程和多进程.html">《多线程和多进程互动教学课程》</a>与《26.多线程和多进程》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>场景选型</h2>
+      <table class="cmp-table">
+        <tr><th>场景</th><th>方案</th></tr>
+        <tr><td>CPU 密集</td><td><code>multiprocessing</code> / <code>ProcessPoolExecutor</code></td></tr>
+        <tr><td>同步 I/O 密集</td><td><code>threading</code> / <code>ThreadPoolExecutor</code></td></tr>
+        <tr><td>异步 I/O 密集</td><td><code>asyncio</code> / 协程</td></tr>
+        <tr><td>调用第三方同步库</td><td><code>asyncio.to_thread</code> / <code>run_in_executor</code></td></tr>
+      </table>
+      <p><strong>GIL：</strong>同一时刻只有一个线程执行 Python 字节码——多线程不能加速 CPU 密集任务；I/O 等待时释放 GIL。</p>
+    </section>
+
+    <section>
+      <h2>锁工具箱</h2>
+      <pre><code># Lock：互斥锁（不可重入，重复 acquire 会死锁）
+lock = threading.Lock()
+with lock:
+    # 临界区：检查 + 修改整体包进来
+    ...
+
+# RLock：可重入锁（递归函数用）
+lock = threading.RLock()
+
+# Semaphore：限制并发数（最多 N 个线程进入）
+sem = threading.Semaphore(3)
+with sem:
+    ...
+
+# Event：线程间通知
+event.wait()   # 阻塞等待
+event.set()    # 唤醒等待者
+
+# Queue：线程安全的队列（内部已同步）
+q = queue.Queue(maxsize=5)
+q.put(item) / q.get() / q.task_done()
+
+# ThreadPoolExecutor：复用线程
+with ThreadPoolExecutor(max_workers=3) as ex:
+    results = ex.map(fetch_url, urls)</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>锁要包住「检查 + 修改」整个临界区</strong>：只锁扣款一行，检查窗口仍在。</li>
+        <li><strong>普通 Lock 不可重入</strong>：递归/嵌套加锁用 RLock。</li>
+        <li><strong>死锁解法 = 固定锁顺序</strong>：所有线程按相同顺序获取多把锁。</li>
+        <li><strong>守护线程别操作资源</strong>：可能被强制终止在半途。</li>
+        <li><strong>CPU 密集别用多线程</strong>：GIL 下不加速，用多进程。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/异步编程/">25.异步编程</a> · <a href="/python/语言核心/多线程和多进程/">26.多线程和多进程</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/library/threading.html">threading</a> · <a href="https://docs.python.org/3/library/multiprocessing.html">multiprocessing</a></li>
+        <li>Real Python：<a href="https://realpython.com/intro-to-python-threading/">An Intro to Threading in Python</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0026-多线程和多进程.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

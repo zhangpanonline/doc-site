@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《20.标准库》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（树形目录展示/Markdown 合并）作为最终考核">
+  <title>标准库 · 互动教学课程（第 20 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 20 课</p>
+      <h1>标准库</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/标准库/">20.标准库</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出标准库的查阅姿势：<a href="https://docs.python.org/3/library/index.html">按功能</a>与<a href="https://docs.python.org/3/py-modindex.html">按名称</a>的官方索引</li>
+        <li>熟练使用 <code>os.path</code>（abspath/basename/join/listdir）与 <code>re</code>（标题正则）</li>
+        <li>完成<strong>树形目录展示</strong>与 <strong>Markdown 合并</strong>两道源课程作业</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《20.标准库》官方手册里，测验和考核会考。</p>
+
+      <h3>本课用到的模块</h3>
+      <table class="cmp-table">
+        <tr><th>模块</th><th>常用函数</th><th>作用</th></tr>
+        <tr><td><code>os</code></td><td><code>listdir(path)</code></td><td>列出目录内容（名称列表）</td></tr>
+        <tr><td><code>os.path</code></td><td><code>abspath / basename / join / exists / isdir</code></td><td>路径处理</td></tr>
+        <tr><td><code>re</code></td><td><code>re.compile / re.sub</code></td><td>正则匹配与替换</td></tr>
+      </table>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>路径先转绝对路径再处理</strong>：<code>os.path.abspath(p)</code> 统一相对/绝对路径；拼路径用 <code>os.path.join</code> 而不是字符串相加（跨平台）。<a href="https://docs.python.org/3/library/os.path.html">官方文档：os.path</a></li>
+        <li><strong>标题正则是 <code>^(#{1,6})\s+(.+)$</code></strong>：<code>#{1,6}</code> 匹配一到六级标题，捕获组分别拿到井号与内容；<code>re.sub(pattern, repl, text)</code> 做替换。<a href="https://docs.python.org/3/library/re.html">官方文档：re</a></li>
+        <li><strong>递归打印树靠前缀参数</strong>：<code>_prefix</code> 逐层追加 <code>"│   "</code>（还有兄弟）或 <code>"    "</code>（最后一个），配合 <code>└──</code>/<code>├──</code> 画出树形结构。<a href="https://docs.python.org/3/library/functions.html#print">官方文档：print</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. <code>os.path.abspath("test.txt")</code> 返回什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">test.txt 的绝对路径</button>
+            <button class="quiz-option">test.txt 文件名本身</button>
+            <button class="quiz-option">test.txt 的目录部分</button>
+            <button class="quiz-option">test.txt 的后缀名</button>
+          </div>
+          <div class="quiz-explain" hidden><code>abspath</code> 把相对路径转成<strong>绝对路径</strong>（拼上当前工作目录）。相对/绝对路径统一处理的第一步。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>os.path.basename("/a/b/c.txt")</code> 返回？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">"c.txt"</button>
+            <button class="quiz-option">"/a/b"</button>
+            <button class="quiz-option">"/a/b/c.txt"</button>
+            <button class="quiz-option">"txt"</button>
+          </div>
+          <div class="quiz-explain" hidden><code>basename</code> 取路径<strong>最后一段</strong>（文件或目录名）；目录部分是 <code>os.path.dirname</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>os.listdir(path)</code> 返回什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">目录内文件/子目录的名称列表</button>
+            <button class="quiz-option">目录内文件的内容</button>
+            <button class="quiz-option">目录的绝对路径</button>
+            <button class="quiz-option">递归的全部文件列表</button>
+          </div>
+          <div class="quiz-explain" hidden><code>listdir</code> 返回该目录下<strong>直接</strong>子项的<strong>名称列表</strong>（字符串），不含递归内容、无序——树形展示时要自己 sort 并递归子目录。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 匹配 Markdown 标题行（一至六级）的正则是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">^(#{1,6})\s+(.+)$</button>
+            <button class="quiz-option">^#(.*)$</button>
+            <button class="quiz-option">^##\s+(.+)$</button>
+            <button class="quiz-option">#{1,6}(.+)#</button>
+          </div>
+          <div class="quiz-explain" hidden><code>^(#{1,6})\s+(.+)$</code>：行首 1-6 个井号 + 至少一个空白 + 标题内容。组 1 是井号（判断级数），组 2 是标题文字。第二个只匹配一级标题 ✗；第三个只匹配二级 ✗。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>open(path, encoding="utf-8")</code> 显式指定编码的原因？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">避免不同平台默认编码不同导致乱码</button>
+            <button class="quiz-option">让文件读取速度更快</button>
+            <button class="quiz-option">语法上必须写这个参数</button>
+            <button class="quiz-option">让文件变成二进制模式</button>
+          </div>
+          <div class="quiz-explain" hidden>默认编码随平台/环境变化（Windows 上可能是 GBK），处理中文 Markdown 时显式 <code>encoding="utf-8"</code> 才稳。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 模块里 <code>__all__: list[str] = ["show_tree"]</code> 的作用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">声明公开 API，控制 import * 的导入清单</button>
+            <button class="quiz-option">限制函数只能被调用一次</button>
+            <button class="quiz-option">给函数加类型检查</button>
+            <button class="quiz-option">标记模块为包</button>
+          </div>
+          <div class="quiz-explain" hidden>同第 19 课：<code>__all__</code> 是模块的公开 API 清单，只影响 <code>from x import *</code>。源答案 p1 就用它导出 <code>show_tree</code>。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《20.标准库》源课程作业的两道实现题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·树形目录展示）：<code>show_tree(dir_path, show_hidden=False)</code> 输出 tree 风格的目录树（隐藏项 = 以 . 开头；目录递归；最后一项用 └──，其余用 ├──）。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">递归 + _prefix 缩进：兄弟未完用 │，最后一个用空格，目录继续递归</button>
+            <button class="quiz-option">只打印第一层，不递归子目录</button>
+            <button class="quiz-option">隐藏过滤条件写反（show_hidden=True 时过滤）</button>
+            <button class="quiz-option">所有层级前缀相同，不区分是否最后一个</button>
+          </div>
+          <div class="quiz-explain" hidden>正确实现三要素：① <code>show_hidden=False</code> 时过滤 <code>basename.startswith(".")</code> 的项；② 按 <code>is_last</code> 选 <code>└──</code>/<code>├──</code>；③ 递归子目录时前缀追加 <code>"    "</code>（该项是最后一个）或 <code>"│   "</code>（还有兄弟）。第二个没有树 ✗；第三个该显示的没显示 ✗；第四个竖线连不到底 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业一）</summary>
+<pre><code>import os
+
+def show_tree(dir_path: str, show_hidden: bool = False, _prefix: str = "") -> None:
+    path = os.path.abspath(dir_path)
+    if not _prefix:
+        print(os.path.basename(path) or path)
+
+    entries = os.listdir(path)
+    if not show_hidden:
+        entries = [e for e in entries
+                   if not os.path.basename(e).startswith(".")]
+    entries.sort()
+
+    for i, entry in enumerate(entries):
+        is_last = i == len(entries) - 1
+        print(f"{_prefix}{'└── ' if is_last else '├── '}{entry}")
+        entry_path = os.path.join(path, entry)
+        if os.path.isdir(entry_path):
+            show_tree(entry_path, show_hidden,
+                      _prefix + ("    " if is_last else "│   "))</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·Markdown 合并）：<code>merge_markdown(files, output)</code>——首行固定 <code># 合并结果</code>，所有原文件标题降一级（一级→二级…六级→加粗正文）。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">正则 ^(#{1,6})\s+(.+)$：1-5 级加一个井号，6 级改成 **加粗**</button>
+            <button class="quiz-option">只把一级标题降为二级，其他不动</button>
+            <button class="quiz-option">所有标题都降一级，六级直接丢弃</button>
+            <button class="quiz-option">不降级，直接拼接文件内容</button>
+          </div>
+          <div class="quiz-explain" hidden>正确实现：<code>HEADING_RE.sub</code> 回调里 <code>level &lt; 6</code> → 井号 +1；<code>level == 6</code> → <code>**内容**</code>（题目规定六级降为正文加粗）。第二个只处理一级 ✗；第三个丢了六级内容 ✗；第四个标题没降级 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业二）</summary>
+<pre><code>import re
+import os
+
+HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
+
+def _demote_heading(match):
+    hashes, content = match.group(1), match.group(2)
+    level = len(hashes)
+    if level &lt; 6:
+        return f'{"#" * (level + 1)} {content}'
+    return f"**{content}**"
+
+def merge_markdown(files: list[str], output: str) -> None:
+    parts: list[str] = ["# 合并结果", ""]
+    for filepath in files:
+        with open(os.path.abspath(filepath), encoding="utf-8") as f:
+            content = f.read()
+        parts.append(HEADING_RE.sub(_demote_heading, content).strip())
+        parts.append("")
+    with open(os.path.abspath(output), "w", encoding="utf-8") as f:
+        f.write("\n".join(parts).strip() + "\n")</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（合并结果预测）：a.md 内容为 <code># 标题一</code> 与正文「你好」；b.md 内容为 <code>## 标题二</code>。用正确实现合并后，b.md 的标题在结果中是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">### 标题二（二级降为三级）</button>
+            <button class="quiz-option">## 标题二（保持不变）</button>
+            <button class="quiz-option">**标题二**（二级降为加粗）</button>
+            <button class="quiz-option"># 标题二（升为一级）</button>
+          </div>
+          <div class="quiz-explain" hidden>降级规则：一级 → 二级、二级 → 三级……所以 <code>## 标题二</code> 变成 <strong>### 标题二</strong>；只有六级才会变成加粗正文。首行固定是 <code># 合并结果</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（隐藏过滤预测）：目录里有 <code>.env</code>（文件）与 <code>app.py</code>。<code>show_tree(dir, show_hidden=False)</code> 的输出包含？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只有 app.py，.env 被过滤</button>
+            <button class="quiz-option">两者都显示</button>
+            <button class="quiz-option">只有 .env，app.py 被过滤</button>
+            <button class="quiz-option">两者都不显示</button>
+          </div>
+          <div class="quiz-explain" hidden><code>show_hidden=False</code> 时，<code>basename.startswith(".")</code> 的项被过滤——<code>.env</code> 不显示，<code>app.py</code> 显示。传 <code>show_hidden=True</code> 才全部显示。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握标准库的实战用法——可以继续学习《<a href="/python/语言核心/第三方库/">21.第三方库</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方手册 <a href="https://docs.python.org/3/library/index.html">The Python Standard Library</a>——按功能浏览全部标准库。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-import/">Python import 进阶</a> 与官方 <a href="https://docs.python.org/3/library/os.html">os</a>、<a href="https://docs.python.org/3/library/re.html">re</a> 文档。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/标准库速查表.html">标准库速查表</a>——os/os.path/re 高频函数一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/模块化/">19.模块化</a> · <a href="/python/语言核心/标准库/">20.标准库</a> · <a href="/python/语言核心/第三方库/">21.第三方库</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/标准库/">回到《20.标准库》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

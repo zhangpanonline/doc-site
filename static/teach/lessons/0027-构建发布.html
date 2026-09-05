@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《27.构建发布》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（完整库构建/私有发布/安装）作为最终考核">
+  <title>构建发布 · 互动教学课程（第 27 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 27 课</p>
+      <h1>构建发布</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/构建发布/">27.构建发布</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>读懂 <code>pyproject.toml</code> 的 <code>[build-system]</code> 与 <code>[project]</code> 配置</li>
+        <li>走通完整流程：<strong>构建 → 校验 → 发布 → 安装</strong>（官方仓库与私有仓库）</li>
+        <li>用 <code>pip install -e .</code> 可编辑安装提升日常开发效率——<strong>最终考核围绕源作业的构建流程复述展开</strong></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《27.构建发布》里，测验和考核会考。</p>
+
+      <h3>构建发布流水线</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">源码 + pyproject.toml</span>
+          <span class="diagram-arrow">─ 构建 ─▶</span>
+          <span class="diagram-node">dist/（sdist + wheel）</span>
+          <span class="diagram-arrow">─ 校验 ─▶</span>
+          <span class="diagram-node">twine check</span>
+          <span class="diagram-arrow">─ 上传 ─▶</span>
+          <span class="diagram-node plain">PyPI / 私有仓库</span>
+        </div>
+        <p class="diagram-note">⚙️ 构建前端（build/uv）负责发起构建，构建后端（hatchling/setuptools）按 PEP 517/427 产出标准产物。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong><code>[build-system]</code> 声明「用什么工具构建」</strong>：<code>requires</code> 列出后端依赖，<code>build-backend</code> 指定入口（如 <code>hatchling.build</code>）。<a href="https://peps.python.org/pep-0517/">PEP 517（构建协议）</a> · <a href="https://peps.python.org/pep-0427/">PEP 427（wheel 标准）</a></li>
+        <li><strong>发布用 twine，token 代替密码</strong>：<code>twine check dist/*</code> 校验产物 → <code>twine upload dist/*</code> 上传；私有仓库在 pip 配置里加 <code>index-url</code>/<code>trusted-host</code>。<a href="https://twine.readthedocs.io/">官方文档：twine</a></li>
+        <li><strong>可编辑安装 = 开发模式</strong>：<code>pip install -e .</code> 在 site-packages 里放<strong>指向源码的 .pth 链接</strong>——改源码即时生效，无需反复构建。<a href="https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs">官方文档：Editable installs</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. pyproject.toml 中 <code>[build-system]</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">声明构建工具与后端（requires/build-backend）</button>
+            <button class="quiz-option">描述包的名称与版本</button>
+            <button class="quiz-option">配置运行时依赖</button>
+            <button class="quiz-option">指定 README 文件</button>
+          </div>
+          <div class="quiz-explain" hidden><code>[build-system]</code> 是构建配置：<code>requires = ["hatchling"]</code> + <code>build-backend = "hatchling.build"</code>；名称版本等在 <code>[project]</code> 里。详见「pyproject.toml 构建配置」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>python -m build</code> 的产物放在哪里、包含什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">dist/ 目录，sdist（源码包）与 wheel（构建包）</button>
+            <button class="quiz-option">build/ 目录，只有 wheel</button>
+            <button class="quiz-option">根目录，只有 sdist</button>
+            <button class="quiz-option">site-packages 里直接安装</button>
+          </div>
+          <div class="quiz-explain" hidden>构建产物在 <code>dist/</code>：<code>.tar.gz</code>（sdist 源码分发包）+ <code>.whl</code>（wheel 二进制分发包）。详见「构建步骤」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 发布前校验构建产物完整性的命令是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">twine check dist/*</button>
+            <button class="quiz-option">twine verify dist/*</button>
+            <button class="quiz-option">pip check dist/*</button>
+            <button class="quiz-option">build check dist/*</button>
+          </div>
+          <div class="quiz-explain" hidden><code>twine check dist/*</code> 校验产物（README 渲染、元数据完整性等），通过后再 <code>twine upload</code>。详见「发布前的准备」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>pip install -e .</code>（可编辑安装）的原理是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">site-packages 放 .pth 链接指向源码，改动即时生效</button>
+            <button class="quiz-option">把源码完整复制到 site-packages</button>
+            <button class="quiz-option">每次调用时重新构建</button>
+            <button class="quiz-option">把源码编译成字节码缓存</button>
+          </div>
+          <div class="quiz-explain" hidden>可编辑安装创建指向项目源码的 <code>.pth</code> 链接（不是复制）——源码修改立即生效，无需重新构建安装。详见「可编辑依赖」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>version = "0.1.3"</code> 中的语义化版本含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">主版本.次版本.补丁版本（0=未稳定）</button>
+            <button class="quiz-option">年份.月份.序号</button>
+            <button class="quiz-option">构建号.发布号.修订号</button>
+            <button class="quiz-option">任意三个数字无含义</button>
+          </div>
+          <div class="quiz-explain" hidden>语义化版本：<code>主.次.补丁</code>——0.x 表示尚未稳定（API 可随时变）。详见「pyproject.toml 构建配置」注释。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 私有仓库的 pip 配置里 <code>trusted-host</code> 的作用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">信任该主机（跳过 HTTPS 证书校验等）</button>
+            <button class="quiz-option">指定仓库的用户名</button>
+            <button class="quiz-option">指定仓库的镜像地址</button>
+            <button class="quiz-option">加速包下载</button>
+          </div>
+          <div class="quiz-explain" hidden>私有仓库常自签证书或走 http：<code>trusted-host = packages.aliyun.com</code> 让 pip 信任该主机。详见「发布到私有仓库」一节。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《27.构建发布》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出答案，再点击核对。</p>
+      <p>📣 源作业还要求<strong>费曼复述</strong>：把「一个库从源码到可安装」的完整构建流程讲一遍（源码+配置 → 构建 → 校验 → 上传 → 安装），讲不通就回到对话里让 AI 老师给你反馈。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（构建流程排序）：一个库从零到可安装，正确的操作顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">建 venv → 激活 → 装 build 工具 → python -m build → dist 产物</button>
+            <button class="quiz-option">python -m build → 建 venv → 装 build 工具</button>
+            <button class="quiz-option">直接 twine upload，上传会自动构建</button>
+            <button class="quiz-option">pip install 包名 即可，无需构建</button>
+          </div>
+          <div class="quiz-explain" hidden>标准流程：<code>python -m venv .venv</code> → <code>source .venv/bin/activate</code> → <code>pip install build</code> → <code>python -m build</code> → 产物在 <code>dist/</code>。构建在前、上传在后，twine 只上传不构建。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（pyproject 配置）：duyi-utils 库声明 name/version/requires-python/dependencies，下列 <code>[project]</code> 配置中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">name="duyi-utils"，version="0.1.3"，requires-python="&gt;=3.14"，dependencies=[...]</button>
+            <button class="quiz-option">name 写成 "Duyi Utils"（带空格）</button>
+            <button class="quiz-option">version 写成 "最新"</button>
+            <button class="quiz-option">把 dependencies 放进 [build-system] 段</button>
+          </div>
+          <div class="quiz-explain" hidden><code>[project]</code> 段：<code>name</code>（发行版名称，小写连字符）、<code>version</code>（语义化版本号）、<code>requires-python</code>（支持的 Python 版本）、<code>dependencies</code>（第三方依赖清单）。带空格的名字 ✗；非数字版本 ✗；依赖放错段 ✗。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（发布流程）：构建完成后发布到 PyPI，正确的操作是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">注册账号 → 创建 token → twine check → twine upload</button>
+            <button class="quiz-option">twine upload 不需要任何凭证</button>
+            <button class="quiz-option">pip install 包名 就是把包发布上去</button>
+            <button class="quiz-option">git push 后自动发布</button>
+          </div>
+          <div class="quiz-explain" hidden>发布流程：注册 PyPI 账号 → 创建 API <strong>token</strong>（比密码安全）→ <code>twine check dist/*</code> 校验 → <code>twine upload dist/*</code> 上传。私有仓库则按仓库指南配置 index-url 后安装。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（可编辑安装预测）：项目 A 用 <code>pip install -e ../duyi-utils</code> 安装了公共库，随后修改了 duyi-utils 的源码，项目 A 需要做什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">什么都不用做，下次调用自动用新代码</button>
+            <button class="quiz-option">重新构建并重新安装</button>
+            <button class="quiz-option">重新激活虚拟环境</button>
+            <button class="quiz-option">清空 pip 缓存</button>
+          </div>
+          <div class="quiz-explain" hidden>可编辑安装通过 <code>.pth</code> 链接<strong>直指源码</strong>：源码一改，下次导入/调用立即用新代码——这正是开发模式下「改完即测」的核心价值。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握构建发布——可以继续学习《<a href="/python/语言核心/项目管理工具/">28.项目管理工具</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 打包官方教程 <a href="https://packaging.python.org/en/latest/tutorials/packaging-projects/">Packaging Python Projects</a>——从零到发布的标准流程。</li>
+        <li><strong>系统梳理</strong>：官方规范 <a href="https://peps.python.org/pep-0517/">PEP 517</a>（构建接口）与 <a href="https://peps.python.org/pep-0427/">PEP 427</a>（wheel 格式）。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/构建发布速查表.html">构建发布速查表</a>——流水线、pyproject 配置、发布命令一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/多线程和多进程/">26.多线程和多进程</a> · <a href="/python/语言核心/构建发布/">27.构建发布</a> · <a href="/python/语言核心/项目管理工具/">28.项目管理工具</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/构建发布/">回到《27.构建发布》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

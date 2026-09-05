@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《2.容器类型》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业作为最终考核，10-15 分钟掌握 list/tuple/dict/set">
+  <title>容器类型 · 互动教学课程（第 2 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 2 课</p>
+      <h1>容器类型</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/容器类型/">2.容器类型</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 <strong>list / tuple / dict / set / str</strong> 五种容器的可变、有序、可重复特征，选对容器</li>
+        <li>预测<strong>切片、解包、集合运算、字典访问</strong>的输出</li>
+        <li>用 <code>==</code> 与 <code>is</code> 区分「值相等」与「身份相同」——<strong>最终考核的重点</strong></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《2.容器类型》里，测验和考核会考。</p>
+
+      <h3>五种容器一张表</h3>
+      <table class="cmp-table">
+        <tr><th>容器</th><th>可变</th><th>有序</th><th>元素可重复</th><th>一句话记忆</th></tr>
+        <tr><td><code>list</code> 列表</td><td>✅</td><td>✅</td><td>✅</td><td>最常用，什么都能装</td></tr>
+        <tr><td><code>tuple</code> 元组</td><td>❌</td><td>✅</td><td>✅</td><td>创建后不能改</td></tr>
+        <tr><td><code>dict</code> 字典</td><td>✅</td><td>✅（3.7+）</td><td>键不可重复</td><td>键值对，键快速查找</td></tr>
+        <tr><td><code>set</code> 集合</td><td>✅</td><td>❌</td><td>❌ 自动去重</td><td>去重与集合运算</td></tr>
+        <tr><td><code>str</code> 字符串</td><td>❌</td><td>✅</td><td>✅</td><td>不可变的字符序列</td></tr>
+      </table>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong><code>==</code> 比内容，<code>is</code> 比身份</strong>：<code>[1, 2] == [1, 2]</code> 为 True，但两个变量 <code>is</code> 只有指向<strong>同一对象</strong>才为 True；判断 <code>None</code> 永远用 <code>is</code>。<a href="https://docs.python.org/3/reference/expressions.html#value-comparisons">官方文档：Value Comparisons</a> · <a href="https://docs.python.org/3/reference/expressions.html#is-not">Identity Comparisons</a></li>
+        <li><strong><code>in</code> 的语义因容器而异</strong>：字典查的是<strong>键</strong>不是值（<code>"Alice" in {"name": "Alice"} → False</code>）；字符串查的是子串（<code>"el" in "hello" → True</code>）。</li>
+        <li><strong>切片左闭右开，解包与排序有坑</strong>：<code>fruits[1:4]</code> 取索引 1~3；<code>[::-1]</code> 反转；<code>first, *rest = t</code> 扩展解包；<code>sort()</code> 原地排序返回 <code>None</code>，<code>sorted()</code> 才返回新列表。<a href="https://docs.python.org/3/library/stdtypes.html#common-sequence-operations">官方文档：序列操作</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. <code>print([1, 2] == (1, 2))</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden><code>==</code> 比较时<strong>类型必须相同</strong>：列表和元组即使内容看起来一样也不相等，输出 <code>False</code>。详见「相等运算符」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>print({1, 2, 3, 3, 3})</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">{1, 2, 3}</button>
+            <button class="quiz-option">{1, 2, 3, 3, 3}</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">[1, 2, 3]</button>
+          </div>
+          <div class="quiz-explain" hidden>集合<strong>自动去重</strong>且无序：重复的 3 只保留一个，输出 <code>{1, 2, 3}</code>。注意空集合必须写 <code>set()</code>，<code>{}</code> 是空字典。详见「集合」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. <code>print("Alice" in {"name": "Alice"})</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">返回键名</button>
+          </div>
+          <div class="quiz-explain" hidden>对字典用 <code>in</code> 检查的是<strong>键</strong>，不是值：<code>"name" in d</code> 才是 True，<code>"Alice" in d</code> 是 False。详见「成员运算符」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 执行 <code>a = [1, 2]; b = a; print(a is b)</code>，输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden><code>b = a</code> 只是让 b 指向<strong>同一个列表对象</strong>，<code>is</code> 判断身份相同 → True。若写 <code>c = [1, 2]</code> 则是新对象：<code>a is c</code> 为 False，但 <code>a == c</code> 为 True。详见「身份运算符」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>fruits = ["苹果", "香蕉", "橙子"]; print(fruits[::-1])</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">['橙子', '香蕉', '苹果']</button>
+            <button class="quiz-option">['苹果', '香蕉', '橙子']</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">('橙子', '香蕉', '苹果')</button>
+          </div>
+          <div class="quiz-explain" hidden>切片 <code>[start:end:step]</code>，<code>step = -1</code> 表示倒着取，即反转列表。返回的仍是列表，<strong>原列表不变</strong>。详见「索引与切片」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 执行 <code>nums = [3, 1, 4]; result = nums.sort(); print(result)</code>，输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">[1, 3, 4]</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">nums 本身</button>
+          </div>
+          <div class="quiz-explain" hidden><code>sort()</code> 是<strong>原地排序</strong>，修改 nums 本身并返回 <code>None</code>——所以打印 result 得到 <code>None</code>。想要新列表用 <code>sorted(nums)</code>。详见「列表操作」一节。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《2.容器类型》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·切片拷贝）：执行以下代码，最后的 <code>print(nums == copy, nums is copy)</code> 输出是？
+<pre><code>nums = [3, 1, 4, 1, 5]
+copy = nums[:]          # 切片拷贝
+nums[0] = 10
+print(nums == copy, nums is copy)</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">False False</button>
+            <button class="quiz-option">True False</button>
+            <button class="quiz-option">True True</button>
+            <button class="quiz-option">False True</button>
+          </div>
+          <div class="quiz-explain" hidden><code>nums[:]</code> 创建的是<strong>新列表</strong>（内容相同但身份不同）。修改 nums 后内容也不同了：<code>==</code> 比内容 → False，<code>is</code> 比身份 → 本来就不是同一对象 → False。输出 <strong>False False</strong>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业三·字典遍历）：执行 <code>d = {"x": 10, "y": 20}</code> 后，<code>print("x" in d, 20 in d)</code> 输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True False</button>
+            <button class="quiz-option">True True</button>
+            <button class="quiz-option">False True</button>
+            <button class="quiz-option">False False</button>
+          </div>
+          <div class="quiz-explain" hidden>字典的 <code>in</code> 只查<strong>键</strong>：<code>"x"</code> 是键 → True；<code>20</code> 是值不是键 → False。输出 <strong>True False</strong>。想查值要用 <code>20 in d.values()</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（作业五·zip 与 get）：以下代码最后一行输出是？
+<pre><code>names = ["Alice", "Bob"]
+ages = (25, 30)
+
+d = {}
+i = 0
+while i &lt; len(names):
+    if ages[i] &gt; 20:
+        d[names[i]] = ages[i]
+    i += 1
+print(d.get("Charlie", "not found"))</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">not found</button>
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">Charlie</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>d</code> 里只有 Alice 和 Bob（年龄都 &gt; 20 被加入）。<code>get("Charlie", "not found")</code> 键不存在时返回<strong>默认值</strong>，不报错 → 输出 <strong>not found</strong>。对比：<code>d["Charlie"]</code> 会抛 KeyError。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（作业六·学生信息查找）：任务要求「找到 id 为 796997 的学生，打印其姓名和电话；找不到打印 未找到」。下列实现中<strong>正确</strong>的是？（students 为字典列表，学生数据见下方折叠区）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">遍历时 if s["id"]==796997 打印并 break；循环 else 打印未找到</button>
+            <button class="quiz-option">遍历时 if s["id"]==796997 打印但不 break；循环 else 打印未找到</button>
+            <button class="quiz-option">遍历时 if s["id"]==796997 打印并 break；循环外无条件打印未找到</button>
+            <button class="quiz-option">if s["id"]==796997 打印，但第一次迭代后无条件 break</button>
+          </div>
+          <div class="quiz-explain" hidden>正确答案是<strong>for-else 模式</strong>：找到就打印并 <code>break</code>；循环的 else 只在「没被 break 打断」时执行，恰好表达「没找到」。第二个选项不 break，找到后仍会走 else 多打印一行 ✗；第三个无论找到与否都打印未找到 ✗；第四个第一次迭代就 break，若目标不在第一个就漏找 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看学生数据与参考答案（作业六·任务12）</summary>
+<pre><code># 学生数据（源课程作业，节选前 3 条；完整 60 条见源课程）
+students = [
+    {"id": 988985, "name": "梁平", "sex": "女", "age": 15, "tel": "12957961008"},
+    {"id": 299422, "name": "邱杰", "sex": "男", "age": 25, "tel": "12685726676"},
+    {"id": 796997, "name": "郝霞", "sex": "女", "age": 29, "tel": "15734778439"},
+    # ... 共 60 条
+]
+
+# 参考答案：for-else 查找
+for student in students:
+    if student["id"] == 796997:
+        print(f"找到学生: {student['name']}, 电话: {student['tel']}")
+        break
+else:
+    print("未找到")
+# 输出：找到学生: 郝霞, 电话: 15734778439</code></pre>
+          </details>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握容器类型的核心操作——可以继续学习《<a href="/python/语言核心/函数/">3.函数</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/datastructures.html">5. Data Structures</a>——列表、元组、字典、集合的权威讲解。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-lists-tuples/">Lists and Tuples in Python</a>，深入两种序列型容器的取舍。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/容器类型速查表.html">容器类型速查表</a>——五容器对比、常用操作、<code>==</code>/<code>is</code> 辨析一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/基础语法/">1.基础语法</a> · <a href="/python/语言核心/容器类型/">2.容器类型</a> · <a href="/python/语言核心/函数/">3.函数</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/容器类型/">回到《2.容器类型》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

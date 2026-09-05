@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monorepo 速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>Monorepo 速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0029-Monorepo.html">《Monorepo 互动教学课程》</a>与《29.Monorepo》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>workspace 三步</h2>
+      <pre><code># 1. 根项目声明成员
+# pyproject.toml
+[tool.uv.workspace]
+members = [
+    "packages/*",
+    "app/*",
+]
+
+# 2. 创建成员包
+uv init --lib packages/shared
+uv init --lib packages/agents
+uv init app/web-service
+
+# 3. 成员间依赖（packages/agents/pyproject.toml）
+dependencies = ["shared"]
+[tool.uv.sources]
+shared = { workspace = true }   # 从工作区源码链接
+
+# 同步与运行
+uv sync --all-packages
+uv run --package web-service python app/web-service/main.py</code></pre>
+    </section>
+
+    <section>
+      <h2>三种引用模式</h2>
+      <table class="cmp-table">
+        <tr><th>模式</th><th>写法</th><th>场景</th></tr>
+        <tr><td>workspace</td><td><code>{ workspace = true }</code></td><td>仓内成员（改码即时生效）</td></tr>
+        <tr><td>path</td><td><code>{ path = "../utils" }</code></td><td>工作区外的本地包</td></tr>
+        <tr><td>git</td><td><code>{ git = "URL", rev = "v0.1.0" }</code></td><td>未发布到 PyPI 的依赖</td></tr>
+      </table>
+      <p>同名冲突时 <strong>workspace 优先</strong>；强制 PyPI 用 <code>{ workspace = false }</code>。</p>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/项目管理工具/">28.项目管理工具</a> · <a href="/python/语言核心/Monorepo/">29.Monorepo</a></li>
+        <li>uv 官方文档：<a href="https://docs.astral.sh/uv/concepts/projects/workspaces/">Using workspaces</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0029-Monorepo.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>模块化速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>模块化速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0019-模块化.html">《模块化互动教学课程》</a>与《19.模块化》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>导入语法</h2>
+      <pre><code>import my_math                # 整模块，用 my_math.PI 访问
+from my_math import PI, add   # 只导入成员
+from my_math import *         # 只导入 __all__ 清单（谨慎）
+import my_math as mm          # 模块别名
+from my_math import add as my_add   # 成员别名
+from .math_ops import add     # 相对导入：. 当前包，.. 父包
+importlib.import_module(name) # 动态导入（模块名来自变量）</code></pre>
+    </section>
+
+    <section>
+      <h2>关键机制</h2>
+      <table class="cmp-table">
+        <tr><th>机制</th><th>要点</th></tr>
+        <tr><td><code>__all__</code></td><td>只影响 <code>import *</code>；也是公开 API 文档</td></tr>
+        <tr><td><code>__name__</code></td><td>直接运行 = <code>"__main__"</code>；被导入 = 模块名</td></tr>
+        <tr><td><code>__init__.py</code></td><td>包的标志；首次导入包时执行；组织导出接口</td></tr>
+        <tr><td>执行与缓存</td><td>首次导入执行一次，之后走 <code>sys.modules</code></td></tr>
+        <tr><td>搜索顺序</td><td>内置模块 → 脚本目录 → PYTHONPATH → site-packages</td></tr>
+        <tr><td>下划线成员</td><td><code>_x</code> 不会被 <code>import *</code> 导入（约定私有）</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>__slots__ 速查</h2>
+      <pre><code>class Point:
+    __slots__ = ("x", "y")     # 固定实例属性槽位
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+p = Point(1, 2)
+# p.z = 3        # AttributeError！没有 __dict__，不能加新属性
+
+# 作用：省内存（无实例 __dict__）、防拼写错误
+# 代价：不能动态加属性；与多继承/弱引用有兼容注意点</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>循环导入</strong>：a 导 b、b 导 a 会 ImportError——抽公共模块或延迟导入。</li>
+        <li><strong>相对导入不能直接运行</strong>：含 <code>from .x import y</code> 的文件要用包的方式导入。</li>
+        <li><strong><code>import *</code> 拿不到非 __all__ 成员</strong>：E、subtract 不在清单里就进不来。</li>
+        <li><strong><code>__slots__</code> 后实例无 __dict__</strong>：依赖 <code>vars(obj)</code> 的代码会失效。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/类型标注/">18.类型标注</a> · <a href="/python/语言核心/模块化/">19.模块化</a></li>
+        <li>Python 官方教程：<a href="https://docs.python.org/3/tutorial/modules.html">6. Modules</a></li>
+        <li>Real Python：<a href="https://realpython.com/python-modules-packages/">Python Modules and Packages</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0019-模块化.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

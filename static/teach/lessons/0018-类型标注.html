@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《18.类型标注》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（函数标注/泛型缓存/TypedDict）作为最终考核">
+  <title>类型标注 · 互动教学课程（第 18 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 18 课</p>
+      <h1>类型标注</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/类型标注/">18.类型标注</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清类型标注的定位：<strong>运行时不管制，IDE/类型检查器负责把关</strong></li>
+        <li>熟练使用 <code>Optional</code> / <code>Union</code> / <code>Callable</code> / <code>TypeVar</code> / <code>TypedDict</code> 等常用构造</li>
+        <li>为函数、泛型类、嵌套数据结构写<strong>正确且完整</strong>的标注——最终考核的三道题</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《18.类型标注》里，测验和考核会考。</p>
+
+      <h3>常用构造一张表</h3>
+      <table class="cmp-table">
+        <tr><th>构造</th><th>写法</th><th>含义</th></tr>
+        <tr><td>可选</td><td><code>Optional[str]</code> / <code>str | None</code></td><td>str 或 None</td></tr>
+        <tr><td>联合</td><td><code>Union[int, float]</code> / <code>int | float</code></td><td>多类型之一</td></tr>
+        <tr><td>容器</td><td><code>list[int]</code>、<code>dict[str, int]</code>、<code>tuple[int, str]</code></td><td>元素/键值类型</td></tr>
+        <tr><td>回调</td><td><code>Callable[[int, int], int]</code></td><td>参数列表 → 返回类型</td></tr>
+        <tr><td>泛型</td><td><code>T = TypeVar("T")</code> + <code>Generic[T]</code></td><td>类型参数化</td></tr>
+        <tr><td>结构字典</td><td><code>class X(TypedDict)</code></td><td>固定键结构的字典</td></tr>
+        <tr><td>自身</td><td><code>-&gt; Self</code></td><td>返回本类实例</td></tr>
+      </table>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>标注是「提示」不是「约束」</strong>：<code>x: int = "hello"</code> 运行不报错——标注给 IDE 和类型检查器（mypy/pyright）看，帮助在<strong>编码期</strong>发现问题。<a href="https://docs.python.org/3/library/typing.html">官方文档：typing</a></li>
+        <li><strong>裸容器标注等于没说</strong>：<code>List</code>、<code>Dict</code> 不带类型参数时检查器无法推断元素类型——应写 <code>list[dict[str, int]]</code> 这类完整形式（考核四）。</li>
+        <li><strong>Python 3.10+ 内置小写写法</strong>：<code>list[int]</code>、<code>int | None</code> 比 <code>typing.List</code>、<code>Optional</code> 更现代，标注放在变量后、函数返回值用 <code>-&gt;</code>。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. <code>x: int = "hello"</code> 运行时会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">正常运行，类型检查器才会警告</button>
+            <button class="quiz-option">抛 TypeError</button>
+            <button class="quiz-option">自动转成 int</button>
+            <button class="quiz-option">SyntaxError</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 是动态语言，<strong>运行时不强制</strong>类型标注；类型检查工具（如 IDE 的 typeCheckingMode）会在编码期提示。详见「变量类型标注」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 返回值可能是 str 也可能是 None，正确的标注是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Optional[str] 或 str | None</button>
+            <button class="quiz-option">str</button>
+            <button class="quiz-option">Union[str, None] 不能用 | 写法</button>
+            <button class="quiz-option">Any[str]</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Optional[str]</code> 即 <code>Union[str, None]</code>，3.10+ 可直接写 <code>str | None</code>。详见「Optional 和 Union」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 回调参数「接收两个 int 返回 int」的标注是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Callable[[int, int], int]</button>
+            <button class="quiz-option">Callable[int, int]</button>
+            <button class="quiz-option">Function[[int, int], int]</button>
+            <button class="quiz-option">(int, int) -&gt; int 直接写在参数位置</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Callable[[参数类型列表], 返回类型]</code>——<code>Callable[[int, int], int]</code> 表示接收两个 int 返回 int 的可调用对象。详见「Callable 和回调函数」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 泛型类 <code>Stack[T]</code> 中，T 的定义方式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">T = TypeVar("T")，类继承 Generic[T]</button>
+            <button class="quiz-option">T = Generic("T")，类继承 TypeVar[T]</button>
+            <button class="quiz-option">直接 class Stack[T] 不需要别的声明</button>
+            <button class="quiz-option">T 是内置的泛型参数名</button>
+          </div>
+          <div class="quiz-explain" hidden>泛型三步：<code>T = TypeVar("T")</code> 声明类型变量；<code>class Stack(Generic[T])</code> 参数化；使用时 <code>Stack[int]</code>。详见「泛型」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 方法返回「本类的新实例」，返回值标注用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">-&gt; Self</button>
+            <button class="quiz-option">-&gt; this</button>
+            <button class="quiz-option">-&gt; 自己的类名（3.11 前必须加引号）</button>
+            <button class="quiz-option">无法标注</button>
+          </div>
+          <div class="quiz-explain" hidden><code>typing.Self</code>（3.11+）表示返回本类实例；旧写法是字符串前向引用 <code>-&gt; "Point"</code>。两者都正确，Self 更通用（子类也成立）。详见「类与自定义类型」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. TypedDict 适合标注什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">固定键结构的字典（如 API 返回数据）</button>
+            <button class="quiz-option">任意键值对的字典</button>
+            <button class="quiz-option">类的实例属性</button>
+            <button class="quiz-option">函数的参数列表</button>
+          </div>
+          <div class="quiz-explain" hidden><code>TypedDict</code> 描述<strong>键结构固定</strong>的字典（每个键的类型分别声明），用于 API 响应等结构化数据。详见「TypedDict API 接口定义」一节。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《18.类型标注》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确标注，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·函数标注）：<code>calculate_bmi(weight, height)</code> 与 <code>get_grade(score) -&gt; "A"/"B"/.../</code>，下列标注中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">weight: float, height: float → float；score: int → str</button>
+            <button class="quiz-option">weight: int, height: int → int</button>
+            <button class="quiz-option">weight: float, height: float → str</button>
+            <button class="quiz-option">都不标注，靠函数名自解释</button>
+          </div>
+          <div class="quiz-explain" hidden>BMI 计算输入是浮点（体重/身高），返回 <code>weight / height**2</code> 也是 float → <code>(weight: float, height: float) -&gt; float</code>；<code>get_grade</code> 接收分数（int）返回等级字符串（str）→ <code>(score: int) -&gt; str</code>。第二个把身高体重当 int 会丢精度 ✗；第三个返回值错 ✗。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·泛型缓存）：<code>Cache[K, V]</code> 的 set 存值、get 返回 Optional[V]、clear 清空。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">self._data: dict[K, V]；set 赋值；get 用 .get(key) 返回 Optional[V]</button>
+            <button class="quiz-option">get 用 self._data[key] 直接下标访问</button>
+            <button class="quiz-option">Cache 不继承 Generic[K, V]</button>
+            <button class="quiz-option">_data 标注为 dict 不带类型参数</button>
+          </div>
+          <div class="quiz-explain" hidden>正确实现：<code>class Cache(Generic[K, V])</code>，<code>self._data: dict[K, V] = {}</code>；<code>get</code> 用 <code>self._data.get(key)</code>（键不存在返回 None，正好匹配 <code>Optional[V]</code>）。第二个键不存在会 KeyError ✗；第三个类型参数失效 ✗；第四个检查器推断不了 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业二）</summary>
+<pre><code>from typing import TypeVar, Generic, Optional
+
+K = TypeVar("K")
+V = TypeVar("V")
+
+class Cache(Generic[K, V]):
+    def __init__(self) -> None:
+        self._data: dict[K, V] = {}
+
+    def set(self, key: K, value: V) -> None:
+        self._data[key] = value
+
+    def get(self, key: K) -> Optional[V]:
+        return self._data.get(key)
+
+    def clear(self) -> None:
+        self._data.clear()</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（作业三·TypedDict）：AppConfig 含 app_name(str)、debug(bool)、db(DatabaseConfig)——db 又含 host/port/username/password/database。下列标注中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先定义 DatabaseConfig(TypedDict) 五个字段，再定义 AppConfig 引用它</button>
+            <button class="quiz-option">AppConfig 里把 db 标成 str</button>
+            <button class="quiz-option">用 Dict[str, Any] 一笔带过 db</button>
+            <button class="quiz-option">TypedDict 里嵌套 TypedDict 会报错，改用 dict</button>
+          </div>
+          <div class="quiz-explain" hidden><strong>TypedDict 可以嵌套</strong>：先定义 <code>class DatabaseConfig(TypedDict)</code>（host: str, port: int, username: str, password: str, database: str），再 <code>class AppConfig(TypedDict)</code> 里写 <code>db: DatabaseConfig</code>。第二个丢失结构信息 ✗；第三个 Any 等于放弃检查 ✗；第四个说法错误 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业三）</summary>
+<pre><code>from typing import TypedDict
+
+class DatabaseConfig(TypedDict):
+    host: str
+    port: int
+    username: str
+    password: str
+    database: str
+
+class AppConfig(TypedDict):
+    app_name: str
+    debug: bool
+    db: DatabaseConfig</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（作业四·思考题）：<code>def process_data(items: List) -&gt; Dict</code> 与 <code>def find_max(a: int, b: int) -&gt; int | None</code>（相等时返回 None），哪项标注需要修改？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">process_data 的裸 List/Dict 要带类型参数；find_max 标注正确</button>
+            <button class="quiz-option">find_max 应改为 int；process_data 没问题</button>
+            <button class="quiz-option">两者都需要修改</button>
+            <button class="quiz-option">两者都正确，不用改</button>
+          </div>
+          <div class="quiz-explain" hidden><code>List</code>/<code>Dict</code> 裸用时检查器不知道元素类型——应写 <code>items: list[dict[str, Any]]</code>、返回 <code>dict[Any, Any]</code>（或更精确的 TypedDict）。<code>find_max</code> 相等时返回 None，标注 <code>int | None</code> <strong>完全正确</strong>——返回值本来就可能是 None。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握类型标注——可以继续学习《<a href="/python/语言核心/模块化/">19.模块化</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/typing.html">typing — Support for type hints</a>——全部类型构造的权威清单。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-type-checking/">Python Type Checking</a>，从入门到 mypy 实战。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/类型标注速查表.html">类型标注速查表</a>——常用构造、泛型/TypedDict 模板一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/抽象类/">17.抽象类</a> · <a href="/python/语言核心/类型标注/">18.类型标注</a> · <a href="/python/语言核心/模块化/">19.模块化</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/类型标注/">回到《18.类型标注》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

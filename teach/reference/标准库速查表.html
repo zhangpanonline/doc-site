@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>标准库速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>标准库速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0020-标准库.html">《标准库互动教学课程》</a>与《20.标准库》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>官方索引（查库先来这里）</h2>
+      <ul class="pitfall-list">
+        <li>按功能：<a href="https://docs.python.org/3/library/index.html">docs.python.org/3/library</a></li>
+        <li>按名称：<a href="https://docs.python.org/3/py-modindex.html">docs.python.org/3/py-modindex</a></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>os / os.path 高频函数</h2>
+      <table class="cmp-table">
+        <tr><th>函数</th><th>作用</th><th>示例</th></tr>
+        <tr><td><code>os.listdir(p)</code></td><td>直接子项名称列表（无序）</td><td><code>['a.py', 'dir1']</code></td></tr>
+        <tr><td><code>os.path.abspath(p)</code></td><td>相对路径转绝对路径</td><td><code>/cwd/test.txt</code></td></tr>
+        <tr><td><code>os.path.basename(p)</code></td><td>路径最后一段</td><td><code>test.txt</code></td></tr>
+        <tr><td><code>os.path.dirname(p)</code></td><td>目录部分</td><td><code>/a/b</code></td></tr>
+        <tr><td><code>os.path.join(a, b)</code></td><td>跨平台拼路径</td><td><code>/a/b</code></td></tr>
+        <tr><td><code>os.path.exists / isdir / isfile</code></td><td>存在性 / 目录 / 文件判断</td><td><code>True/False</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>re 标题处理</h2>
+      <pre><code>import re
+
+HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
+# 组1 = 井号（1-6 个 → 标题级数），组2 = 标题内容
+
+def demote(match):
+    hashes, content = match.group(1), match.group(2)
+    level = len(hashes)
+    if level &lt; 6:
+        return f'{"#" * (level + 1)} {content}'   # 降一级
+    return f"**{content}**"                        # 六级 → 加粗正文
+
+result = HEADING_RE.sub(demote, text)</code></pre>
+    </section>
+
+    <section>
+      <h2>树形展示要点</h2>
+      <pre><code># 递归 + 前缀缩进
+for i, entry in enumerate(entries):
+    is_last = i == len(entries) - 1
+    print(f"{_prefix}{'└── ' if is_last else '├── '}{entry}")
+    if isdir(entry_path):
+        show_tree(entry_path, show_hidden,
+                  _prefix + ("    " if is_last else "│   "))
+
+# 隐藏过滤：show_hidden=False 时去掉 basename 以 . 开头的项</code></pre>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/模块化/">19.模块化</a> · <a href="/python/语言核心/标准库/">20.标准库</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/library/index.html">The Python Standard Library</a> · <a href="https://docs.python.org/3/library/os.path.html">os.path</a> · <a href="https://docs.python.org/3/library/re.html">re</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0020-标准库.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

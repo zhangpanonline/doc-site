@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>函数速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>函数速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0003-函数.html">《函数互动教学课程》</a>与《3.函数》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>位置参数</dt>
+        <dd>按定义顺序传参：<code>add(3, 5)</code>。</dd>
+        <dt>默认参数</dt>
+        <dd>带默认值，调用时可省略；<strong>必须放在非默认参数后面</strong>。</dd>
+        <dt>关键字参数</dt>
+        <dd>按参数名传参，顺序任意：<code>f(age=25, name="Alice")</code>。</dd>
+        <dt>*args</dt>
+        <dd>收纳多余的位置参数，内部是<strong>元组</strong>。</dd>
+        <dt>**kwargs</dt>
+        <dd>收纳多余的关键字参数，内部是<strong>字典</strong>。</dd>
+        <dt>多返回值</dt>
+        <dd><code>return a, b</code> 本质是返回<strong>元组</strong>，接收端解包。</dd>
+        <dt>docstring</dt>
+        <dd>函数体第一行的三引号字符串，<code>f.__doc__</code> 可查看。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>参数速查</h2>
+      <pre><code>def f(a, b=2, *args, **kwargs):
+    #   位置  默认  多余位置→元组  多余关键字→字典
+    pass
+
+f(1)                      # a=1, b=2, args=(), kwargs={}
+f(1, 3)                   # a=1, b=3
+f(1, 3, 4, 5, x=10)       # a=1, b=3, args=(4, 5), kwargs={'x': 10}
+f(1, b=3, x=10)           # 关键字参数传默认参数，合法
+
+# 混合调用：位置参数必须全部在关键字参数之前
+f(1, 2, x=10)             # ✅
+f(a=1, 2)                 # ❌ SyntaxError</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>可变默认值陷阱</strong>：<code>def f(items=[])</code> 的 <code>[]</code> 只在定义时创建一次，多次调用共享同一列表。
+          <pre><code>def f(items=[]):          # ❌ 共享同一个列表
+    items.append(1)
+    return items
+
+def f(items=None):        # ✅ 每次调用新建
+    if items is None:
+        items = []
+    items.append(1)
+    return items</code></pre></li>
+        <li><strong>默认参数必须放后面</strong>：<code>def f(a=1, b)</code> → SyntaxError。</li>
+        <li><strong>没有 return 返回 None</strong>：<code>result = print("hi")</code> 后 result 是 None。</li>
+        <li><strong>多返回值是元组</strong>：<code>return a, b</code> 得到 <code>(a, b)</code>。</li>
+        <li><strong>位置参数不能在关键字参数后</strong>：<code>f(x=1, 2)</code> → SyntaxError。</li>
+        <li><strong>参数顺序固定</strong>：位置 → 默认 → <code>*args</code> → <code>**kwargs</code>。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/函数/">3.函数</a> · <a href="/python/语言核心/作用域/">4.作用域</a></li>
+        <li>Python 官方教程：<a href="https://docs.python.org/3/tutorial/controlflow.html#defining-functions">4. More Control Flow Tools</a></li>
+        <li>Real Python：<a href="https://realpython.com/defining-your-own-python-function/">Defining Your Own Python Function</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0003-函数.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>

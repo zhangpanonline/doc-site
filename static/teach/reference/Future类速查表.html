@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Future 类速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>Future 类速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0023-Future类.html">《Future 类互动教学课程》</a>与《23.Future类》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>状态机</h2>
+      <pre><code>fut = loop.create_future()      # 创建：未完成
+fut.done()                       # False
+# fut.result()                   # ❌ InvalidStateError（未完成取结果）
+
+fut.set_result("result")         # 正常完成
+fut.set_exception(TypeError())   # 错误完成（result() 会抛该异常）
+fut.cancel("不等了")             # 取消（cancelled() → True）
+
+fut.done()      # True
+fut.result()    # 结果；异常完成/取消时抛异常
+fut.exception() # 异常对象；无异常为 None
+fut.cancelled() # 是否被取消
+
+fut.add_done_callback(on_done)   # 完成回调 → 进 ready 队列，事件循环调度</code></pre>
+    </section>
+
+    <section>
+      <h2>封装套路（把阻塞操作包成 Future）</h2>
+      <pre><code># 延时封装
+def async_delay(duration: int):
+    loop = asyncio.get_event_loop()
+    future = loop.create_future()
+    loop.call_later(duration, future.set_result, None)  # 到点完成
+    return future
+
+# 网络封装思路（三步）
+# 1. async_connect：非阻塞 connect + add_writer 监听可写 → set_result(sock)
+# 2. async_read：send 请求 + add_reader 收数据 → set_result(data)
+# 3. async_request：connect 完成的回调里再发起 read，链式传递结果</code></pre>
+    </section>
+
+    <section>
+      <h2>常见误区</h2>
+      <ul class="pitfall-list">
+        <li><strong>未完成就 result() 抛 InvalidStateError</strong>：先 done() 检查或走回调。</li>
+        <li><strong>回调不是同步执行</strong>：add_done_callback 进 ready 队列，等事件循环调度（对已完成 Future 注册也有效）。</li>
+        <li><strong>异常完成的 Future</strong>：回调里 f.result() 会抛异常，要 try/except。</li>
+        <li><strong>Future 本身不执行任务</strong>：它只是容器；「做事的」是 call_later/IO 监听/Task。</li>
+        <li><strong>封装后别忘 stop</strong>：demo 里回调执行完没有 stop，run_forever 不会退出。</li>
+      </ul>
+    </section>
+
+    <section class="sources">
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/事件循环/">22.事件循环</a> · <a href="/python/语言核心/Future类/">23.Future类</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/library/asyncio-future.html">Futures</a></li>
+        <li>Real Python：<a href="https://realpython.com/async-io-python/">Async IO in Python</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或语法不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0023-Future类.html">回到互动课程</a>再做一轮测验。
+    </footer>
+
+  </main>
+</body>
+</html>
