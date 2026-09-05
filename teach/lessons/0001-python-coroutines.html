@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《24.协程》的互动教学课程：知识速览 + 即时反馈测验，5-10 分钟巩固 Python 协程核心概念">
+  <title>协程 Coroutine · 互动教学课程（第 1 课）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 1 课</p>
+      <h1>协程 Coroutine</h1>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/协程/">24.协程</a>》使用<span class="dot"></span>预计 5–10 分钟<span class="dot"></span>8 道即时反馈测验</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清<strong>协程对象、Task、事件循环</strong>三者之间「谁驱动谁」</li>
+        <li>预测一段含 <code>await</code> / <code>create_task</code> 代码的<strong>执行顺序</strong></li>
+        <li>随手写出 <code>asyncio.run</code> 驱动协程的最小程序</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花一分钟把核心关系过一遍——细节都在《24.协程》里，测验会考。</p>
+
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">async def 协程函数</span>
+          <span class="diagram-arrow">─ 调用 ─▶</span>
+          <span class="diagram-node plain">协程对象（惰性，未执行）</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">协程对象</span>
+          <span class="diagram-arrow">─ 包装 ─▶</span>
+          <span class="diagram-node">Task（Future 的子类）</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node">Task</span>
+          <span class="diagram-arrow">─ await ─▶</span>
+          <span class="diagram-node plain">Future 未完成，协程挂起</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">Future 完成</span>
+          <span class="diagram-arrow">─ 回调 ─▶</span>
+          <span class="diagram-node">Task 恢复执行</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node">Task 完成</span>
+          <span class="diagram-arrow">─ 返回 ─▶</span>
+          <span class="diagram-node plain">协程的返回值</span>
+        </div>
+        <p class="diagram-note">⚙️ 事件循环（Event Loop）在幕后调度所有 Task 与 Future；<code>asyncio.run</code> 创建它并运行至协程结束。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>调用 ≠ 执行</strong>：调用 <code>async def</code> 函数只得到一个协程对象，函数体不会立即运行——必须交给事件循环（或 Task）驱动。<a href="https://docs.python.org/3/library/asyncio-task.html#coroutines">官方文档：Coroutines</a></li>
+        <li><strong>Task 是 Future 的子类</strong>，专为驱动协程而生：<code>create_task</code> 创建后协程立即被调度执行；协程执行结束，Task 完成，完成的数据即协程的返回值。<a href="https://docs.python.org/3/library/asyncio-task.html#awaitables">官方文档：Awaitables</a></li>
+        <li><strong>await = 交出控制权 + 取回结果</strong>：只能在协程函数内使用，等待协程对象、Task、Future 等 awaitable，完成后把结果取回给当前协程。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>基础测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 调用一个 <code>async def</code> 定义的协程函数，会得到什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Future对象</button>
+            <button class="quiz-option">Task对象</button>
+            <button class="quiz-option">协程对象</button>
+            <button class="quiz-option">生成器对象</button>
+          </div>
+          <div class="quiz-explain" hidden>调用协程函数只会返回一个<strong>协程对象</strong>，函数体并不会立即执行——它需要被事件循环（或 Task）驱动才会真正运行。回看《24.协程》「协程函数」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>await</code> 关键字的作用是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">等待可等待对象并取回结果</button>
+            <button class="quiz-option">将普通函数转成异步函数</button>
+            <button class="quiz-option">创建新线程来执行该函数</button>
+            <button class="quiz-option">让事件循环阻塞一段时间</button>
+          </div>
+          <div class="quiz-explain" hidden><code>await</code> 只能在协程函数内使用：它等待协程对象、Task、Future 等 <strong>awaitable</strong> 完成，并把结果取回给当前协程。它既不创建线程，也不会让事件循环永久阻塞。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 关于 Task 与 Future 的关系，正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Task是Future的子类</button>
+            <button class="quiz-option">Future是Task的子类</button>
+            <button class="quiz-option">两者没有继承关系</button>
+            <button class="quiz-option">Task负责处理线程任务</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Task</code> 是 <code>Future</code> 的<strong>子类</strong>，专门用来驱动协程对象；<code>asyncio.create_task()</code> 创建后，协程会被立即调度执行。协程执行结束，Task 完成，完成的数据就是协程的返回值。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 协程切换比线程切换便宜得多，主要原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">协程拥有更大的栈空间</button>
+            <button class="quiz-option">协程切换完全在用户态完成</button>
+            <button class="quiz-option">协程使用锁来保护数据</button>
+            <button class="quiz-option">协程由操作系统统一调度</button>
+          </div>
+          <div class="quiz-explain" hidden>线程切换需要陷入<strong>内核态</strong>，开销数百个时钟周期；协程由事件循环在<strong>用户态</strong>调度，只保存少量寄存器上下文，仅需几十个时钟周期。详见文档「协程 VS 线程」对比表。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt"><span class="quiz-tag">顺序预测</span>5. 以下代码的输出顺序是？
+<pre><code>async def main():
+    print("A")
+    await async_delay(1)
+    print("B")
+
+print("C")
+asyncio.run(main())
+print("D")</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">C → A → B → D</button>
+            <button class="quiz-option">A → B → C → D</button>
+            <button class="quiz-option">C → A → D → B</button>
+            <button class="quiz-option">A → C → B → D</button>
+          </div>
+          <div class="quiz-explain" hidden>调用 <code>main()</code> 只是创建协程对象，所以先打印 <code>C</code>；<code>asyncio.run</code> 驱动协程：打印 <code>A</code> → <code>await</code> 挂起等待延时完成 → 打印 <code>B</code>；协程结束后 <code>run</code> 返回，最后打印 <code>D</code>。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>进阶挑战</h2>
+      <p>这三题把「调度」和「场景」合在一起考，是协程理解的分水岭。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt"><span class="quiz-tag">顺序预测</span>6. 以下代码的输出顺序是？
+<pre><code>async def main():
+    print("A")
+    task = asyncio.create_task(worker())
+    await asyncio.sleep(0)
+    print("B")
+    await task
+
+async def worker():
+    print("C")</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">A → C → B</button>
+            <button class="quiz-option">A → B → C</button>
+            <button class="quiz-option">C → A → B</button>
+            <button class="quiz-option">B → C → A</button>
+          </div>
+          <div class="quiz-explain" hidden><code>create_task</code> 把 worker 放进<strong>就绪队列</strong>，不会立即执行；<code>await asyncio.sleep(0)</code> 让出控制权后，worker 才开始运行打印 <code>C</code>，main 恢复后打印 <code>B</code>。这就是「Task 创建后立即调度」的确切含义。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt"><span class="quiz-tag">场景</span>7. 同时爬取一千个网页，最合适的技术是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为每个网页开一个线程</button>
+            <button class="quiz-option">用多进程分别处理</button>
+            <button class="quiz-option">用协程并发处理</button>
+            <button class="quiz-option">在循环里同步逐个请求</button>
+          </div>
+          <div class="quiz-explain" hidden>爬虫是典型的<strong>海量 I/O 密集</strong>任务——成千上万个协程的开销远小于几百个线程，且单线程内天然避免数据竞争。这正是协程的主场（Web 服务器、聊天服务同理）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 驱动协程对象执行的机制是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">解释器的主线程</button>
+            <button class="quiz-option">操作系统的调度器</button>
+            <button class="quiz-option">垃圾回收的机制</button>
+            <button class="quiz-option">事件循环EventLoop</button>
+          </div>
+          <div class="quiz-explain" hidden>驱动协程的是<strong>事件循环</strong>：它负责调度 Task 与 Future；<code>asyncio.run</code> 内部就是创建事件循环，把协程包装成 Task 并驱动其完成。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/asyncio-task.html">Coroutines and Tasks</a>——本课概念的权威出处，重点读 Coroutines / Awaitables / Creating Tasks 三节。</li>
+        <li><strong>理解渊源</strong>：David Beazley 的经典课程 <a href="http://www.dabeaz.com/coroutines/">A Curious Course on Coroutines and Concurrency</a>（PyCon 2009），从生成器的 <code>send()</code> 讲到协程调度，正好对应文档里「手动驱动协程对象」一节。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/async-io-python/">Async IO in Python: A Complete Walkthrough</a>，适合把零散概念串成整体。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/协程速查表.html">协程速查表</a>——术语、语法、对比表一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/python/语言核心/事件循环/">22.事件循环</a> · <a href="/python/语言核心/Future类/">23.Future类</a> · <a href="/python/语言核心/协程/">24.协程</a> · <a href="/python/语言核心/异步编程/">25.异步编程</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完测验也欢迎<a href="/python/语言核心/协程/">回到《24.协程》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>
