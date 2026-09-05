@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>事件循环速查表 · 参考手册</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>事件循环速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/0002-event-loop-course.html">《事件循环互动教学课程》</a>与《22.事件循环》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>事件循环</dt>
+        <dd><code>AbstractEventLoop</code> 类的对象，负责调度所有回调；异步的基础手段。</dd>
+        <dt>ready 队列</dt>
+        <dd>存放「就绪待执行」回调的队列，<code>_run_once</code> 每轮执行它的副本。</dd>
+        <dt>延时队列</dt>
+        <dd>存放「定时」回调的队列，回调到期后才进入 ready 队列。</dd>
+        <dt>call_soon</dt>
+        <dd><code>loop.call_soon(f)</code>：把 f 放入 <strong>ready 队列</strong>，尽早调度。</dd>
+        <dt>call_later</dt>
+        <dd><code>loop.call_later(delay, f)</code>：把 f 放入<strong>延时队列</strong>，delay 秒后进 ready。</dd>
+        <dt>run_forever</dt>
+        <dd>反复执行 <code>_run_once</code> 直到 <code>stop()</code>；没有 stop 就永不返回。</dd>
+        <dt>_run_once</dt>
+        <dd>调度一轮：处理延时队列 → 计算 timeout → 等待 I/O → 复制并执行 ready。</dd>
+        <dt>异步</dt>
+        <dd>单线程上让任务不阻塞线程的编程模式；适合 I/O 密集任务。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>语法速查</h2>
+
+      <h3>创建、绑定、运行、停止</h3>
+      <pre><code>import asyncio
+
+loop = asyncio.new_event_loop()   # 创建事件循环对象
+asyncio.set_event_loop(loop)      # 绑定到当前线程
+loop.run_forever()                # 陷入循环，直到 stop() 被调用
+loop.stop()                       # 停止事件循环</code></pre>
+
+      <h3>调度回调</h3>
+      <pre><code>loop.call_soon(f)                 # f 进入 ready 队列，尽早执行
+loop.call_later(1, f)             # f 进入延时队列，1 秒后进 ready
+loop.call_later(0, f)             # 延时 0 秒：先入延时队列，下一轮 _run_once 开始才进 ready</code></pre>
+    </section>
+
+    <section>
+      <h2>_run_once 五步骤</h2>
+      <ol>
+        <li>检查延时队列，到期的回调加入 ready 队列</li>
+        <li>计算 timeout：ready 非空 → 0；延时队列非空 → 队首时间 − 当前时间；都空 → None</li>
+        <li>用 timeout 阻塞等待 I/O；期间 I/O 任务到达立刻进 ready；超时则回到第 1 步</li>
+        <li>复制 ready 队列，得到本轮回调清单</li>
+        <li>执行复制的队列（保证清单内全部执行）</li>
+      </ol>
+      <p>⚠️ 执行的是<strong>副本</strong>：执行期间新注册的回调（call_soon / call_later 到期）要等下一轮。</p>
+    </section>
+
+    <section>
+      <h2>预测输出三步法</h2>
+      <ol>
+        <li>同步代码先行：<code>print</code> 等同步语句按书写顺序立即输出</li>
+        <li>推演每轮 <code>_run_once</code>：延时队列到期的先进 ready，再复制执行</li>
+        <li>检查有没有 <code>stop()</code>：没有 → 死循环，后续代码永不执行</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>场景对比</h2>
+      <table class="cmp-table">
+        <tr><th>维度</th><th>同步</th><th>异步（事件循环）</th><th>多线程</th></tr>
+        <tr><td>阻塞行为</td><td>一个任务阻塞，全部干等</td><td>任务登记回调后让出线程</td><td>阻塞在线程内，互不干扰</td></tr>
+        <tr><td>并发载体</td><td>无并发</td><td>单线程 + 回调队列</td><td>多线程，操作系统调度</td></tr>
+        <tr><td>适用场景</td><td>简单顺序逻辑</td><td>海量 I/O 密集（爬虫、Web）</td><td>运算密集 / 实时性高的 I/O</td></tr>
+        <tr><td>资源开销</td><td>最低</td><td>极低，单线程即可</td><td>高，每线程栈空间数 MB</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>出处与延伸</h2>
+      <ul>
+        <li>本站课程：<a href="/python/语言核心/事件循环/">22.事件循环</a> · <a href="/python/语言核心/Future类/">23.Future类</a> · <a href="/python/语言核心/协程/">24.协程</a></li>
+        <li>Python 官方文档：<a href="https://docs.python.org/3/library/asyncio-eventloop.html">Event Loop</a>（<code>run_forever</code> / <code>call_soon</code> / <code>call_later</code> 的权威出处）</li>
+        <li>Real Python：<a href="https://realpython.com/async-io-python/">Async IO in Python: A Complete Walkthrough</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      有任何术语或步骤不清楚？回到对话里问你的 AI 老师，也可以<a href="../lessons/0002-event-loop-course.html">回到互动课程</a>再挑战一次最终考核。
+    </footer>
+
+  </main>
+</body>
+</html>
