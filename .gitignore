@@ -23,3 +23,4 @@ yarn-error.log*
 .DS_Store
 .codegraph/
 AGENTS.md
+.claude
