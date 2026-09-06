@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《16.上下文管理器》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（timer/TempDirectory）作为最终考核">
+  <meta name="description" content="配合《16.上下文管理器》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（timer/TempDirectory）+ 真实面试题">
   <title>上下文管理器 · 互动教学课程（第 16 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 16 课</p>
       <h1>上下文管理器</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/上下文管理器/">16.上下文管理器</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/上下文管理器/">16.上下文管理器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -51,9 +51,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. <code>with 表达式 as 变量名:</code> 首先调用的是？</div>
@@ -87,7 +88,10 @@
           </div>
           <div class="quiz-explain" hidden>必须<strong>同时实现</strong> <code>__enter__</code> 和 <code>__exit__</code>，缺一个 with 语句直接报错。详见「基本用法」一节的说明。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. <code>@contextmanager</code> 装饰的生成器中，yield 前后代码对应什么？</div>
           <div class="quiz-options">
@@ -119,6 +123,42 @@
             <button class="quiz-option">只能嵌套写两层 with</button>
           </div>
           <div class="quiz-explain" hidden>Python 3.1+ 支持 <code>with A() as a, B() as b:</code> 一行并列（按顺序进入、逆序退出）。详见「多个上下文管理器」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>with A() as a, B() as b:</code> 退出时 <code>__exit__</code> 的调用顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先 B 后 A（后进先出）</button>
+            <button class="quiz-option">先 A 后 B（先进先出）</button>
+            <button class="quiz-option">同时调用</button>
+            <button class="quiz-option">只调用 A 的</button>
+          </div>
+          <div class="quiz-explain" hidden>多个上下文管理器按<strong>后进先出</strong>退出：B 的 <code>__exit__</code> 先执行，A 的后执行——与嵌套 with 的行为完全一致（一行写法只是语法糖）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. <code>__exit__</code> 返回 False，而 with 块里抛了异常，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">异常继续向外传播</button>
+            <button class="quiz-option">异常被吞掉</button>
+            <button class="quiz-option">程序立即退出</button>
+            <button class="quiz-option">__exit__ 不会被调用</button>
+          </div>
+          <div class="quiz-explain" hidden><code>__exit__</code> 返回 False（或 None）=「我没处理异常」——异常<strong>继续向外传播</strong>，就像没有 with 一样。返回 True 才是吞掉。这是资源清理型上下文管理器（TempDirectory）的标准选择。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. <code>@contextmanager</code> 中清理代码放在 yield 后但<strong>不在 finally</strong> 里，块内抛异常时会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">清理被跳过（异常从 yield 处抛入）</button>
+            <button class="quiz-option">清理仍会执行</button>
+            <button class="quiz-option">语法错误</button>
+            <button class="quiz-option">异常被吞掉</button>
+          </div>
+          <div class="quiz-explain" hidden>块内异常会<strong>从 yield 处抛进生成器</strong>：yield 之后的代码被跳过，清理不执行（异常继续传播）。把清理写进 <code>try/finally</code> 才能保证必执行——这是 @contextmanager 的第一要诀。</div>
         </div>
       </div>
     </section>
@@ -226,6 +266,35 @@ with demo():
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握上下文管理器——可以继续学习《<a href="/python/语言核心/抽象类/">17.抽象类</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（with 原理·必问）：with 语句的工作原理与好处？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">进入调 __enter__，无论是否异常退出都调 __exit__，保证资源释放</button>
+            <button class="quiz-option">只是 try/finally 的语法糖，没有额外保证</button>
+            <button class="quiz-option">with 只能用于文件操作</button>
+            <button class="quiz-option">异常时不会调用 __exit__</button>
+          </div>
+          <div class="quiz-explain" hidden>with 背后是 <code>__enter__</code>/<code>__exit__</code> 协议：进入时 <code>__enter__</code>（返回值给 as），退出时<strong>无论是否异常</strong>都调 <code>__exit__</code>——资源（文件、数据库连接、锁）一定被释放，不会因中途出错而泄漏。注意 <code>__exit__</code> 返回 True 会压制异常，通常不推荐。<a href="https://cloud.tencent.com/developer/article/2409961">出处：腾讯云「Python 高级特性解析与面试应对策略」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（实现方式·高频）：自定义上下文管理器的两种实现方式？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">类实现 __enter__/__exit__，或 @contextmanager 生成器</button>
+            <button class="quiz-option">只能用类实现</button>
+            <button class="quiz-option">只能用 contextmanager 装饰器</button>
+            <button class="quiz-option">用 property 装饰器实现</button>
+          </div>
+          <div class="quiz-explain" hidden>两种方式：① 类实现——定义 <code>__enter__</code>（返回资源给 as）与 <code>__exit__</code>（清理）；② <code>@contextmanager</code> 生成器——yield 前是进入逻辑、yield 后是清理逻辑，代码更简洁。面试时要两种都会写。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题一</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

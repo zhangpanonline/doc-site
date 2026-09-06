@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《28.项目管理工具》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（uv 工程改造与私有发布）作为最终考核">
+  <meta name="description" content="配合《28.项目管理工具》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（uv 工程改造与私有发布）+ 真实面试题">
   <title>项目管理工具 · 互动教学课程（第 28 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 28 课</p>
       <h1>项目管理工具</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/项目管理工具/">28.项目管理工具</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/项目管理工具/">28.项目管理工具</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -51,9 +51,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. uv 是做什么的？</div>
@@ -87,7 +88,10 @@
           </div>
           <div class="quiz-explain" hidden><code>uv add</code> 四步走：解析依赖树 → 安装到虚拟环境 → 更新 <code>pyproject.toml</code> 的 dependencies → 生成/更新 <code>uv.lock</code>。详见「安装依赖」一节。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 别人拉取你的代码后，重建一致环境的命令是？</div>
           <div class="quiz-options">
@@ -119,6 +123,42 @@
             <button class="quiz-option">管理 Python 版本</button>
           </div>
           <div class="quiz-explain" hidden>Makefile 是「约定层」：新人只需 <code>make test</code>/<code>make build</code>，不用记底层命令，CI 也天然适配。详见「Makefile」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 把已有代码改造成 uv 工程，正确的操作顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">uv init --lib → 组织源码进 src → uv add 依赖 → 配 [project.scripts] → uv sync</button>
+            <button class="quiz-option">uv add 依赖 → uv init → 组织源码</button>
+            <button class="quiz-option">直接 uv run 就能自动完成改造</button>
+            <button class="quiz-option">改造 = 只写一个 Makefile</button>
+          </div>
+          <div class="quiz-explain" hidden>改造流程：<code>uv init --lib</code> 建骨架 → 源码放进 <code>src/包名/</code> → <code>uv add httpx python-dotenv aiofiles</code> 写依赖 → <code>[project.scripts]</code> 配命令行入口 → <code>uv sync</code> 同步环境。源码答案 p1 正是按此结构。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 发布后用户终端输入 <code>my-cli</code> 即调用 <code>my_project</code> 包的 <code>main()</code> 函数，pyproject 应写？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">[project.scripts] 下 my-cli = "my_project:main"</button>
+            <button class="quiz-option">[project.scripts] 下 main = "my_project"</button>
+            <button class="quiz-option">[tool.uv] 下 scripts = "my_project:main"</button>
+            <button class="quiz-option">写在 Makefile 里即可生效</button>
+          </div>
+          <div class="quiz-explain" hidden><code>[project.scripts]</code> 的格式：<strong>命令名 = "模块路径:函数名"</strong>——<code>my-cli = "my_project:main"</code>。等号右边冒号前是模块、冒号后是函数。第二个少了冒号函数 ✗；第三个段名错 ✗；第四个 Makefile 只影响本地调用 ✗。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 用 uv 把包发布到阿里云私有制品仓库，正确的命令是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">uv publish --publish-url 仓库地址 --username 用户 --password 密码 dist/*</button>
+            <button class="quiz-option">uv publish（不带任何参数就是发到私有仓库）</button>
+            <button class="quiz-option">uv build --publish-url 仓库地址</button>
+            <button class="quiz-option">pip install 包名 --publish-url 仓库地址</button>
+          </div>
+          <div class="quiz-explain" hidden>私有发布：先 <code>uv build</code> 产出 dist/，再 <code>uv publish --publish-url 私有仓库地址 --username/--password 凭证 dist/*</code>。不带参数默认发 PyPI ✗；build 只构建不发布 ✗；install 是安装不是发布 ✗。</div>
         </div>
       </div>
     </section>
@@ -174,6 +214,35 @@
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握 uv 工程化——可以继续学习《<a href="/python/语言核心/Monorepo/">29.Monorepo</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（现代工具链·高频）：uv 相比 pip + venv 的改进是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">极速 + 一站式 + uv.lock 锁定完整依赖树保证可复现</button>
+            <button class="quiz-option">只是换了名字，功能完全相同</button>
+            <button class="quiz-option">只能替代 pip 的安装功能</button>
+            <button class="quiz-option">是 Python 官方发布的新标准库</button>
+          </div>
+          <div class="quiz-explain" hidden>uv 的三大卖点：① <strong>快</strong>（Rust 实现，比 pip 快 10-100 倍）；② <strong>一站式</strong>（pip/venv/pyenv/build/twine/poetry 的功能合一）；③ <strong>可复现</strong>（<code>uv.lock</code> 锁定完整依赖树）。面试中熟悉 uv/poetry 是「知识更新及时」的信号，只靠手写 requirements.txt 且无锁文件会被视为工程能力不足。<a href="https://cloud.tencent.cn/developer/article/2409986">出处：腾讯云开发者社区（Python 面试高频考点中文版）</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（锁文件·追问）：<code>uv.lock</code> 与手写的 requirements.txt 有什么区别？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">uv.lock 锁定完整依赖树（含传递依赖）的精确版本</button>
+            <button class="quiz-option">两者完全一样，只是文件格式不同</button>
+            <button class="quiz-option">uv.lock 只记录直接依赖</button>
+            <button class="quiz-option">requirements.txt 更精确</button>
+          </div>
+          <div class="quiz-explain" hidden>手写 requirements.txt 通常只列<strong>直接依赖</strong>（可能带范围）；<code>uv.lock</code> 记录<strong>整个依赖树</strong>（含所有传递依赖）的精确版本——这才是「任何机器上都能复现相同环境」的保证，也是区分现代工程与「在我机器上能跑」的关键。<a href="https://cloud.tencent.cn/developer/article/2409986">出处同面试题一</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《2.容器类型》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业作为最终考核，10-15 分钟掌握 list/tuple/dict/set">
+  <meta name="description" content="配合《2.容器类型》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题（深浅拷贝/元组陷阱）">
   <title>容器类型 · 互动教学课程（第 2 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 2 课</p>
       <h1>容器类型</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/容器类型/">2.容器类型</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/容器类型/">2.容器类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -49,9 +49,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. <code>print([1, 2] == (1, 2))</code> 的输出是？</div>
@@ -75,8 +76,22 @@
           <div class="quiz-explain" hidden>集合<strong>自动去重</strong>且无序：重复的 3 只保留一个，输出 <code>{1, 2, 3}</code>。注意空集合必须写 <code>set()</code>，<code>{}</code> 是空字典。详见「集合」一节。</div>
         </div>
 
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>print(type((1)))</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">&lt;class 'int'&gt;</button>
+            <button class="quiz-option">&lt;class 'tuple'&gt;</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">&lt;class 'list'&gt;</button>
+          </div>
+          <div class="quiz-explain" hidden><code>(1)</code> 只是<strong>带括号的数字</strong>，类型是 int；<strong>单元素元组必须加逗号</strong>：<code>(1,)</code> 才是 tuple。这是本课最经典的坑。详见「创建元组」一节。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">3. <code>print("Alice" in {"name": "Alice"})</code> 的输出是？</div>
+          <div class="quiz-prompt">4. <code>print("Alice" in {"name": "Alice"})</code> 的输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">True</button>
             <button class="quiz-option">False</button>
@@ -87,7 +102,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. 执行 <code>a = [1, 2]; b = a; print(a is b)</code>，输出是？</div>
+          <div class="quiz-prompt">5. 执行 <code>a = [1, 2]; b = a; print(a is b)</code>，输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">True</button>
             <button class="quiz-option">False</button>
@@ -98,7 +113,21 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">5. <code>fruits = ["苹果", "香蕉", "橙子"]; print(fruits[::-1])</code> 的输出是？</div>
+          <div class="quiz-prompt">6. <code>nums = [3, 1, 4, 1, 5]; print(nums.count(1))</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">2</button>
+            <button class="quiz-option">1</button>
+            <button class="quiz-option">5</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>count(1)</code> 统计值 1 的<strong>出现次数</strong>：列表里有两个 1 → 输出 2。注意 <code>index(1)</code> 才是第一个匹配的位置（0）。详见「列表操作」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>fruits = ["苹果", "香蕉", "橙子"]; print(fruits[::-1])</code> 的输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">['橙子', '香蕉', '苹果']</button>
             <button class="quiz-option">['苹果', '香蕉', '橙子']</button>
@@ -109,7 +138,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">6. 执行 <code>nums = [3, 1, 4]; result = nums.sort(); print(result)</code>，输出是？</div>
+          <div class="quiz-prompt">8. 执行 <code>nums = [3, 1, 4]; result = nums.sort(); print(result)</code>，输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">None</button>
             <button class="quiz-option">[1, 3, 4]</button>
@@ -117,6 +146,17 @@
             <button class="quiz-option">nums 本身</button>
           </div>
           <div class="quiz-explain" hidden><code>sort()</code> 是<strong>原地排序</strong>，修改 nums 本身并返回 <code>None</code>——所以打印 result 得到 <code>None</code>。想要新列表用 <code>sorted(nums)</code>。详见「列表操作」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. <code>d = dict.fromkeys(["a", "b"], 0); print(d)</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">{'a': 0, 'b': 0}</button>
+            <button class="quiz-option">{'a': 'b', 0: 0}</button>
+            <button class="quiz-option">['a', 'b']</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>dict.fromkeys(键序列, 默认值)</code> 以序列为<strong>键</strong>创建字典，所有键共享同一个默认值 0 → <code>{'a': 0, 'b': 0}</code>。详见「创建字典」一节。</div>
         </div>
       </div>
     </section>
@@ -205,6 +245,40 @@ else:
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握容器类型的核心操作——可以继续学习《<a href="/python/语言核心/函数/">3.函数</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（深浅拷贝·高频必考）：<code>original = [1, [2, 3], [4, 5]]</code>，执行 <code>shallow = original[:]</code> 后 <code>shallow[1][0] = 200</code>，此时 <code>original[1][0]</code> 的值是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">200（嵌套层共享，修改互相影响）</button>
+            <button class="quiz-option">2（完全独立，互不影响）</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">4</button>
+          </div>
+          <div class="quiz-explain" hidden>切片是<strong>浅拷贝</strong>：只复制外层壳，内部嵌套列表仍是同一个对象——所以改 <code>shallow[1][0]</code> 会同步改到 original（「藕断丝连」）。想完全隔离要用 <code>copy.deepcopy()</code>。这是「赋值/浅拷贝/深拷贝」三连问的核心。<a href="https://blog.csdn.net/qq_25987725/article/details/161245703">出处：CSDN「Python 面试八股大全｜数据类型、深浅拷贝」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（元组陷阱·高频）：<code>t = (1, [2]); t[1].append(3); print(t)</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">(1, [2, 3])——元组"不可变"但元素可变对象可变</button>
+            <button class="quiz-option">TypeError——元组不可修改</button>
+            <button class="quiz-option">(1, [2])——修改被忽略</button>
+            <button class="quiz-option">(1, [2, 3], 3)</button>
+          </div>
+          <div class="quiz-explain" hidden>元组的「不可变」指<strong>引用不可变</strong>：<code>t[1]</code> 指向的列表对象本身是可变类型，<code>append</code> 改的是列表的内容（引用没换）→ 合法，输出 <code>(1, [2, 3])</code>。这也是「为什么元组能作字典键」追问的伏笔：内含可变对象的元组不可哈希。<a href="https://www.cnblogs.com/MaxCalvin/articles/19258458">出处：博客园「Python 数据结构与内存管理深究——测试开发进阶笔记」</a></div>
+        </div>
+      </div>
+
+      <details class="quiz-explain" style="border-left-color:var(--accent); margin-top:1rem">
+        <summary>面试追问参考：赋值、浅拷贝、深拷贝三者的完整区别？</summary>
+        <p style="margin:0">① <strong>赋值</strong>（<code>b = a</code>）：只复制引用，同一个对象，一损俱损；② <strong>浅拷贝</strong>（<code>a[:]</code> / <code>a.copy()</code> / <code>copy.copy()</code>）：新外层壳，嵌套元素共享，改嵌套互相影响；③ <strong>深拷贝</strong>（<code>copy.deepcopy()</code>）：递归复制所有层级，完全独立。单层数据用浅拷贝即可，多层嵌套必须深拷贝。<a href="https://blog.csdn.net/qq_25987725/article/details/161245703">出处同面试题一</a></p>
+      </details>
     </section>
 
     <section>

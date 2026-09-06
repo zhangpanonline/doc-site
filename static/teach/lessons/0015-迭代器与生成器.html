@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《15.迭代器与生成器》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（扁平化/分页生成器）作为最终考核">
+  <meta name="description" content="配合《15.迭代器与生成器》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（扁平化/分页生成器）+ 真实面试题">
   <title>迭代器与生成器 · 互动教学课程（第 15 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 15 课</p>
       <h1>迭代器与生成器</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/迭代器与生成器/">15.迭代器与生成器</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/迭代器与生成器/">15.迭代器与生成器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -51,9 +51,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 迭代器（Iterator）必须实现哪两个方法？</div>
@@ -78,18 +79,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">3. 迭代器耗尽后继续 <code>next()</code> 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">抛出 StopIteration</button>
-            <button class="quiz-option">返回 None</button>
-            <button class="quiz-option">从头重新开始</button>
-            <button class="quiz-option">抛出 ValueError</button>
-          </div>
-          <div class="quiz-explain" hidden>迭代器<strong>一次性</strong>：耗尽后 <code>next()</code> 抛 <code>StopIteration</code>——for 循环自动捕获它来结束循环。详见「可迭代对象：list」一节。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. 函数体内含有 <code>yield</code>，调用该函数会？</div>
+          <div class="quiz-prompt">3. 函数体内含有 <code>yield</code>，调用该函数会？</div>
           <div class="quiz-options">
             <button class="quiz-option">返回生成器对象，函数体不立即执行</button>
             <button class="quiz-option">立即执行函数体到结束</button>
@@ -97,6 +87,20 @@
             <button class="quiz-option">返回第一个 yield 的值</button>
           </div>
           <div class="quiz-explain" hidden>含 <code>yield</code> 的函数是<strong>生成器函数</strong>：调用只返回 generator 对象（函数体一行都不执行），<code>next()</code> 才驱动执行到下一个 yield。详见「生成器函数」一节。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 迭代器耗尽后继续 <code>next()</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">抛出 StopIteration</button>
+            <button class="quiz-option">返回 None</button>
+            <button class="quiz-option">从头重新开始</button>
+            <button class="quiz-option">抛出 ValueError</button>
+          </div>
+          <div class="quiz-explain" hidden>迭代器<strong>一次性</strong>：耗尽后 <code>next()</code> 抛 <code>StopIteration</code>——for 循环自动捕获它来结束循环。详见「可迭代对象：list」一节。</div>
         </div>
 
         <div class="quiz-q" data-correct="0">
@@ -119,6 +123,54 @@
             <button class="quiz-option">复制子生成器的代码</button>
           </div>
           <div class="quiz-explain" hidden><code>yield from</code> 是 <code>for v in sub: yield v</code> 的语法糖——把子生成器的值<strong>逐个</strong>转发出去，递归扁平化靠的就是它。详见「链式调用」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 生成器 <code>g</code> 被 <code>close()</code> 之后，再 <code>next(g)</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">抛出 StopIteration</button>
+            <button class="quiz-option">重新从第一个 yield 开始</button>
+            <button class="quiz-option">返回 None</button>
+            <button class="quiz-option">抛出 GeneratorExit</button>
+          </div>
+          <div class="quiz-explain" hidden><code>close()</code> 在暂停处向生成器抛 <code>GeneratorExit</code> 终止它；之后 <code>next()</code> 得到 <strong>StopIteration</strong>——既不重来也不返回 None。详见第 15 课「生成器的一次性与关闭」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 以下代码的输出是？
+<pre><code>def calculator():
+    total = 0
+    while True:
+        x = yield total
+        if x is None:
+            break
+        total += x
+
+calc = calculator()
+print(next(calc))
+print(calc.send(10))
+print(calc.send(20))</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">0 → 10 → 30</button>
+            <button class="quiz-option">0 → 10 → 20</button>
+            <button class="quiz-option">10 → 10 → 30</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>next(calc)</code> 启动，yield 出 total=0；<code>send(10)</code> 让 yield 表达式返回 10 → total=10 → yield 出 10；<code>send(20)</code> → total=30 → yield 出 30。顺序：<strong>0 → 10 → 30</strong>。send 给暂停的 yield 送值并继续执行。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. <code>it = iter([1, 2, 3])</code>，先 <code>next(it)</code> 一次，再 <code>list(it)</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">[2, 3]（已消费的不再出现）</button>
+            <button class="quiz-option">[1, 2, 3]（从头开始）</button>
+            <button class="quiz-option">[]（迭代器被 list 清空）</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>迭代器是<strong>单向游标</strong>：<code>next(it)</code> 已消费 1，<code>list(it)</code> 从当前位置继续收集 → <strong>[2, 3]</strong>。这正是「迭代器一次性、无法回退」的直观体现——也是面试常问的「为什么 for 两次第二次为空」的根源。</div>
         </div>
       </div>
     </section>
@@ -224,6 +276,35 @@ print(calc.send(20))    # ?</code></pre></div>
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握迭代器与生成器——可以继续学习《<a href="/python/语言核心/上下文管理器/">16.上下文管理器</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（三者区别·必问）：可迭代对象、迭代器、生成器的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">可迭代对象有 __iter__；迭代器多一个 __next__；生成器是 yield 写出的迭代器</button>
+            <button class="quiz-option">三者是同一个概念的不同名字</button>
+            <button class="quiz-option">生成器是列表，迭代器是字典</button>
+            <button class="quiz-option">只有生成器能用于 for 循环</button>
+          </div>
+          <div class="quiz-explain" hidden>三问标准答：① 可迭代对象实现 <code>__iter__</code>（list/str 等，可直接 for）；② 迭代器同时实现 <code>__iter__</code> + <code>__next__</code>（带状态，惰性）；③ 生成器是用 <code>yield</code> 写出的<strong>特殊迭代器</strong>（无需手写协议方法）。追问常接「为什么 list 不是迭代器」——因为 list 需要把全部值放内存，无法按需惰性计算。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（惰性读取·高频）：要逐行处理一个 10GB 的大文件，避免内存爆炸，应该？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">生成器逐行 yield，每次内存里只占一行</button>
+            <button class="quiz-option">readlines() 一次性读入列表</button>
+            <button class="quiz-option">read() 一次性读入字符串</button>
+            <button class="quiz-option">把文件先切碎成多个小文件</button>
+          </div>
+          <div class="quiz-explain" hidden>经典答案：<code>for line in open(f):</code> 或写生成器逐行 <code>yield</code>——惰性计算使<strong>任意时刻内存中只有一行</strong>；<code>readlines()</code>/<code>read()</code> 会把整个文件读进内存，10GB 文件直接内存爆炸。这也是「生成器什么时候用」的标准回答。<a href="https://cloud.tencent.com/developer/article/2409961">出处：腾讯云「Python 高级特性解析与面试应对策略」</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《24.协程》的互动教学课程：知识速览 + 即时反馈测验，5-10 分钟巩固 Python 协程核心概念">
+  <meta name="description" content="配合《24.协程》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（gather/Event + demo 内嵌）+ 真实面试题">
   <title>协程 Coroutine · 互动教学课程（第 24 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 24 课</p>
       <h1>协程 Coroutine</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/协程/">24.协程</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>8 道即时反馈测验 + 3 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/协程/">24.协程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -28,7 +28,7 @@
 
     <section>
       <h2>知识速览</h2>
-      <p>先花一分钟把核心关系过一遍——细节都在《24.协程》里，测验会考。</p>
+      <p>先花几分钟把核心关系过一遍——细节都在《24.协程》里，测验和考核会考。</p>
 
       <div class="diagram">
         <div class="diagram-row">
@@ -68,9 +68,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 调用一个 <code>async def</code> 定义的协程函数，会得到什么？</div>
@@ -104,7 +105,10 @@
           </div>
           <div class="quiz-explain" hidden><code>Task</code> 是 <code>Future</code> 的<strong>子类</strong>，专门用来驱动协程对象；<code>asyncio.create_task()</code> 创建后，协程会被立即调度执行。协程执行结束，Task 完成，完成的数据就是协程的返回值。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 协程切换比线程切换便宜得多，主要原因是？</div>
           <div class="quiz-options">
@@ -117,7 +121,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt"><span class="quiz-tag">顺序预测</span>5. 以下代码的输出顺序是？
+          <div class="quiz-prompt">5. 以下代码的输出顺序是？
 <pre><code>async def main():
     print("A")
     await async_delay(1)
@@ -134,16 +138,9 @@ print("D")</code></pre></div>
           </div>
           <div class="quiz-explain" hidden>调用 <code>main()</code> 只是创建协程对象，所以先打印 <code>C</code>；<code>asyncio.run</code> 驱动协程：打印 <code>A</code> → <code>await</code> 挂起等待延时完成 → 打印 <code>B</code>；协程结束后 <code>run</code> 返回，最后打印 <code>D</code>。</div>
         </div>
-      </div>
-    </section>
 
-    <section>
-      <h2>进阶挑战</h2>
-      <p>这三题把「调度」和「场景」合在一起考，是协程理解的分水岭。</p>
-
-      <div class="quiz">
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt"><span class="quiz-tag">顺序预测</span>6. 以下代码的输出顺序是？
+          <div class="quiz-prompt">6. 以下代码的输出顺序是？
 <pre><code>async def main():
     print("A")
     task = asyncio.create_task(worker())
@@ -161,9 +158,12 @@ async def worker():
           </div>
           <div class="quiz-explain" hidden><code>create_task</code> 把 worker 放进<strong>就绪队列</strong>，不会立即执行；<code>await asyncio.sleep(0)</code> 让出控制权后，worker 才开始运行打印 <code>C</code>，main 恢复后打印 <code>B</code>。这就是「Task 创建后立即调度」的确切含义。</div>
         </div>
+      </div>
 
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt"><span class="quiz-tag">场景</span>7. 同时爬取一千个网页，最合适的技术是？</div>
+          <div class="quiz-prompt">7. 同时爬取一千个网页，最合适的技术是？</div>
           <div class="quiz-options">
             <button class="quiz-option">为每个网页开一个线程</button>
             <button class="quiz-option">用多进程分别处理</button>
@@ -182,6 +182,17 @@ async def worker():
             <button class="quiz-option">事件循环EventLoop</button>
           </div>
           <div class="quiz-explain" hidden>驱动协程的是<strong>事件循环</strong>：它负责调度 Task 与 Future；<code>asyncio.run</code> 内部就是创建事件循环，把协程包装成 Task 并驱动其完成。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 在协程函数外直接写 <code>worker()</code>（不 await、不交给事件循环），会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">函数体从不执行，只产生一个未使用的协程对象</button>
+            <button class="quiz-option">立即同步执行函数体</button>
+            <button class="quiz-option">自动在后台线程执行</button>
+            <button class="quiz-option">抛出 TypeError</button>
+          </div>
+          <div class="quiz-explain" hidden><code>worker()</code> 只创建<strong>协程对象</strong>，函数体一行都不执行——若对象从未被 await，还会得到「coroutine was never awaited」的 RuntimeWarning（debug 模式更明显）。忘记 await/忘记 create_task 是异步代码最经典的静默 bug。</div>
         </div>
       </div>
     </section>
@@ -306,18 +317,46 @@ async def test():
     </section>
 
     <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（async/await 原理·必问）：<code>async</code> 与 <code>await</code> 关键字的作用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">async 定义协程函数；await 暂停当前协程等待异步操作完成</button>
+            <button class="quiz-option">async 创建线程；await 等待线程结束</button>
+            <button class="quiz-option">async 修饰普通函数；await 是 return 的别名</button>
+            <button class="quiz-option">两者都是装饰器</button>
+          </div>
+          <div class="quiz-explain" hidden><code>async</code>：定义协程函数，调用后返回协程对象但<strong>不立即执行</strong>，必须由 await 或事件循环调度；<code>await</code>：暂停当前协程等待异步操作完成（只能在 async 函数内使用），等待期间让出执行权——协作式调度的核心。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（协程竞态·高频追问）：单线程的协程也会有竞态条件吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会：await 处切换，读写共享变量被打断仍会出错</button>
+            <button class="quiz-option">不会，单线程天然安全</button>
+            <button class="quiz-option">只有多线程才有竞态</button>
+            <button class="quiz-option">协程有 GIL 保护，不会出错</button>
+          </div>
+          <div class="quiz-explain" hidden><strong>协程也会有竞态</strong>：协程在 <code>await</code> 处切换，若「读共享变量 → await → 写共享变量」被打断，多个协程交错修改共享数据仍会出错（如第 25 课的 Lock 示例）。单线程只是「不会同时执行」，不是「不会交错」。<a href="https://cloud.tencent.com/developer/article/2409986">出处同面试题一</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/asyncio-task.html">Coroutines and Tasks</a>——本课概念的权威出处，重点读 Coroutines / Awaitables / Creating Tasks 三节。</li>
-        <li><strong>理解渊源</strong>：David Beazley 的经典课程 <a href="http://www.dabeaz.com/coroutines/">A Curious Course on Coroutines and Concurrency</a>（PyCon 2009），从生成器的 <code>send()</code> 讲到协程调度，正好对应文档里「手动驱动协程对象」一节。</li>
-        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/async-io-python/">Async IO in Python: A Complete Walkthrough</a>，适合把零散概念串成整体。</li>
-        <li><strong>打印参考</strong>：<a href="../reference/协程速查表.html">协程速查表</a>——术语、语法、对比表一页装下，建议打印。</li>
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/asyncio-task.html">Coroutines and Tasks</a>——本课概念的权威出处。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/async-io-python/">Async IO in Python: A Complete Walkthrough</a>，把协程放进异步全景。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/协程速查表.html">协程速查表</a>——术语、语法、线程/协程对比一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/python/语言核心/事件循环/">22.事件循环</a> · <a href="/python/语言核心/Future类/">23.Future类</a> · <a href="/python/语言核心/协程/">24.协程</a> · <a href="/python/语言核心/异步编程/">25.异步编程</a></li>
       </ul>
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完测验也欢迎<a href="/python/语言核心/协程/">回到《24.协程》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/python/语言核心/协程/">回到《24.协程》</a>复读对应小节。
     </footer>
 
   </main>

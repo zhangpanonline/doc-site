@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《20.标准库》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（树形目录展示/Markdown 合并）作为最终考核">
+  <meta name="description" content="配合《20.标准库》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（树形目录展示/Markdown 合并）+ 真实面试题">
   <title>标准库 · 互动教学课程（第 20 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 20 课</p>
       <h1>标准库</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/标准库/">20.标准库</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/标准库/">20.标准库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -47,9 +47,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. <code>os.path.abspath("test.txt")</code> 返回什么？</div>
@@ -83,7 +84,10 @@
           </div>
           <div class="quiz-explain" hidden><code>listdir</code> 返回该目录下<strong>直接</strong>子项的<strong>名称列表</strong>（字符串），不含递归内容、无序——树形展示时要自己 sort 并递归子目录。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 匹配 Markdown 标题行（一至六级）的正则是？</div>
           <div class="quiz-options">
@@ -115,6 +119,42 @@
             <button class="quiz-option">标记模块为包</button>
           </div>
           <div class="quiz-explain" hidden>同第 19 课：<code>__all__</code> 是模块的公开 API 清单，只影响 <code>from x import *</code>。源答案 p1 就用它导出 <code>show_tree</code>。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 目录结构 dir1 下有两个文件 a.txt、b.txt，树形输出中子目录项 a.txt 应打印为？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">├── a.txt（后面还有兄弟 b.txt）</button>
+            <button class="quiz-option">└── a.txt（默认最后一项）</button>
+            <button class="quiz-option">│ a.txt</button>
+            <button class="quiz-option">a.txt（不带前缀）</button>
+          </div>
+          <div class="quiz-explain" hidden>树形规则：非最后一项用 <code>├──</code>、最后一项用 <code>└──</code>——a.txt 后面还有 b.txt，所以是 <strong>├── a.txt</strong>；b.txt 才是 └──。判断依据是 <code>i == len(entries) - 1</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. Markdown 合并规则中，原文件里的 <code>###### 小标题</code>（六级）在合并结果里变成？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">**小标题**（六级降为加粗正文）</button>
+            <button class="quiz-option">####### 小标题（七级标题）</button>
+            <button class="quiz-option">保持不变</button>
+            <button class="quiz-option">被删除</button>
+          </div>
+          <div class="quiz-explain" hidden>降级规则的特例：一级到五级各加一个井号；<strong>六级没有第七级</strong>，按题意降为正文并<strong>加粗</strong>——<code>**小标题**</code>。这是 merge_markdown 最容易漏的边界。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. <code>show_tree(dir, show_hidden=False)</code>，目录里同时有 <code>.env</code> 文件与 <code>.git/</code> 子目录，输出会包含它们吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者都不显示（. 开头全部过滤）</button>
+            <button class="quiz-option">都显示</button>
+            <button class="quiz-option">只显示 .env 不显示 .git</button>
+            <button class="quiz-option">只显示 .git 不显示 .env</button>
+          </div>
+          <div class="quiz-explain" hidden>隐藏判断只看 basename 是否以 <code>.</code> 开头——<strong>文件与目录一视同仁</strong>：.env 与 .git 都被过滤。传 <code>show_hidden=True</code> 才全部显示。</div>
         </div>
       </div>
     </section>
@@ -220,10 +260,39 @@ def merge_markdown(files: list[str], output: str) -> None:
     </section>
 
     <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（文件操作·高频）：读写文件的标准姿势是？为什么推荐 with open？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">with open(...) as f：退出时自动 close，异常也安全</button>
+            <button class="quiz-option">f = open(...)，用完手动 close</button>
+            <button class="quiz-option">readlines 一次性读入最快最稳</button>
+            <button class="quiz-option">文件不需要显式关闭</button>
+          </div>
+          <div class="quiz-explain" hidden><code>with open(...) as f:</code> 是标准姿势——文件对象是上下文管理器，退出 with（<strong>包括异常退出</strong>）自动 close，不会因中途出错泄漏句柄；大文件应逐行/按需读取而不是 readlines 全量载入。处理中文记得 <code>encoding="utf-8"</code>。<a href="https://wenku.csdn.net/doc/6et562nus6">出处：CSDN 文库「Python 面试核心考点解析：面向对象、异常处理、正则表达式与文件操作」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（正则·高频）：用正则匹配「行首 1-6 个 # 后跟至少一个空格的标题」，正确的模式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">r"^(#{1,6})\s+(.+)$"（配合 re.MULTILINE）</button>
+            <button class="quiz-option">r"^#(.*)$"</button>
+            <button class="quiz-option">r"#{1,6}(.+)"</button>
+            <button class="quiz-option">r"^(#+)(.+)$"</button>
+          </div>
+          <div class="quiz-explain" hidden><code>^(#{1,6})\s+(.+)$</code> + <code>re.MULTILINE</code>：<code>{1,6}</code> 限定井号个数、<code>\s+</code> 要求标题前有空白、两个捕获组分别拿井号与内容——这也是作业二合并器的核心正则。<a href="https://wenku.csdn.net/doc/6et562nus6">出处同面试题一</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方手册 <a href="https://docs.python.org/3/library/index.html">The Python Standard Library</a>——按功能浏览全部标准库。</li>
-        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-import/">Python import 进阶</a> 与官方 <a href="https://docs.python.org/3/library/os.html">os</a>、<a href="https://docs.python.org/3/library/re.html">re</a> 文档。</li>
+        <li><strong>系统梳理</strong>：官方 <a href="https://docs.python.org/3/library/os.html">os</a>、<a href="https://docs.python.org/3/library/re.html">re</a> 文档与 Real Python 的 <a href="https://realpython.com/python-import/">Python import 进阶</a>。</li>
         <li><strong>打印参考</strong>：<a href="../reference/标准库速查表.html">标准库速查表</a>——os/os.path/re 高频函数一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/python/语言核心/模块化/">19.模块化</a> · <a href="/python/语言核心/标准库/">20.标准库</a> · <a href="/python/语言核心/第三方库/">21.第三方库</a></li>
       </ul>

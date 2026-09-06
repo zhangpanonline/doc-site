@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《23.Future类》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（读懂延时/网络封装 demo）作为最终考核">
+  <meta name="description" content="配合《23.Future类》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（读懂延时/网络封装 demo）+ 真实面试题">
   <title>Future类 · 互动教学课程（第 23 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 23 课</p>
       <h1>Future 类</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/Future类/">23.Future类</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/Future类/">23.Future类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -51,9 +51,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. Future 类表达的是什么？</div>
@@ -87,7 +88,10 @@
           </div>
           <div class="quiz-explain" hidden>未完成就取结果 → <code>InvalidStateError</code>。先 <code>fut.done()</code> 检查，或注册回调在完成后读取。详见「操作和检查 Future 状态」代码。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. <code>fut.set_exception(TypeError(...))</code> 之后，<code>fut.result()</code> 会？</div>
           <div class="quiz-options">
@@ -119,6 +123,42 @@
             <button class="quiz-option">只有 result() 被调用时才执行</button>
           </div>
           <div class="quiz-explain" hidden>完成回调被放入事件循环的 <strong>ready 队列</strong>，由事件循环调度——这是第 22 课 <code>call_soon</code> 机制的延续。详见《23.Future类》注释。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>async_delay(2)</code>（call_later + Future 封装）立即返回什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">未完成的 Future，2 秒后 set_result</button>
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">2 秒后的结果</button>
+            <button class="quiz-option">协程对象</button>
+          </div>
+          <div class="quiz-explain" hidden><code>async_delay</code> 内部：创建 Future → <code>loop.call_later(duration, future.set_result, None)</code> 注册定时回调 → <strong>立即返回未完成的 Future</strong>。调用方不阻塞，2 秒后事件循环触发 set_result，完成回调被调度——「延时函数的异步封装」的全部秘密。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 网络封装中，非阻塞 connect 后 <code>loop.add_writer(sock, on_writable)</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">让事件循环监听 socket 可写事件，连接成功时回调</button>
+            <button class="quiz-option">立即写入数据</button>
+            <button class="quiz-option">阻塞等待连接完成</button>
+            <button class="quiz-option">关闭 socket</button>
+          </div>
+          <div class="quiz-explain" hidden>非阻塞 connect 不会立刻完成：<code>add_writer</code> 把「socket 变为可写」注册给事件循环——连接建立后描述符可写，事件循环回调 <code>on_writable</code>，检查 SO_ERROR 无误后 <code>fut.set_result(sock)</code>。这正是第 22 课「阻塞等待 I/O，I/O 到达立刻进 ready」的具体应用。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. Future 已完成（done 为 True）后才 <code>add_done_callback(on_done)</code>，on_done 会执行吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会，被放入 ready 队列尽快调度（不会同步执行）</button>
+            <button class="quiz-option">不会，错过了完成时机</button>
+            <button class="quiz-option">立即在当前调用栈同步执行</button>
+            <button class="quiz-option">抛 RuntimeError</button>
+          </div>
+          <div class="quiz-explain" hidden>对已完成 Future 注册回调同样有效：回调被放入 ready 队列，事件循环下一轮调度它。回调<strong>永远不是同步执行</strong>的——理解这一点才能看懂封装代码里「注册回调 + 返回 Future」的链式写法。</div>
         </div>
       </div>
     </section>
@@ -188,6 +228,35 @@ print(fut.done(), fut.result())</code></pre></div>
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经读懂 Future 与两段封装——可以继续学习《<a href="/python/语言核心/协程/">24.协程</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（Task vs Future·高频）：asyncio 中 Task 与 Future 的关系？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Task 是 Future 的子类，把协程包装成可调度任务</button>
+            <button class="quiz-option">Future 是 Task 的子类</button>
+            <button class="quiz-option">两者完全无关</button>
+            <button class="quiz-option">Task 用于多线程，Future 用于多进程</button>
+          </div>
+          <div class="quiz-explain" hidden><strong>Future</strong>：异步操作最终结果的容器，代表尚未完成的异步操作，多用于底层集成；<strong>Task</strong>：Future 的<strong>子类</strong>，把协程对象包装成可调度任务加入事件循环，实现并发（<code>asyncio.create_task()</code>）。面试必问的组合。<a href="https://www.skillup.host/backend/3404.html">出处：Skillup「Python 后端面试题（asyncio 高频面试题汇总）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（事件循环陷阱·高频）：在协程里调用同步阻塞函数（如 time.sleep），会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">冻结整个事件循环，所有任务被延迟</button>
+            <button class="quiz-option">自动转成异步执行</button>
+            <button class="quiz-option">只阻塞当前协程</button>
+            <button class="quiz-option">抛异常终止程序</button>
+          </div>
+          <div class="quiz-explain" hidden>async 语法<strong>不会自动让阻塞代码变非阻塞</strong>：事件循环线程上的阻塞调用（time.sleep、同步网络请求）会冻结整个循环，延迟所有任务。解法：<code>await asyncio.sleep</code>，或把阻塞函数丢给线程池（<code>asyncio.to_thread</code>）。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

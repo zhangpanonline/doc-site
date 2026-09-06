@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《22.事件循环》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业作为最终考核，10-15 分钟掌握事件循环的调度机制">
+  <meta name="description" content="配合《22.事件循环》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题，15-20 分钟掌握事件循环的调度机制">
   <title>事件循环 · 互动教学课程（第 22 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 22 课</p>
       <h1>事件循环 Event Loop</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/事件循环/">22.事件循环</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 3 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/事件循环/">22.事件循环</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -31,7 +31,6 @@
       <p>先花几分钟把核心机制过一遍——细节都在《22.事件循环》里，测验和考核会考。</p>
 
       <h3>为什么需要事件循环</h3>
-      <p>同步代码里，一个任务发出阻塞请求（网络、磁盘），整个线程就卡住不动，后面的任务只能干等：</p>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">任务1 阻塞请求</span>
@@ -52,7 +51,6 @@
       </div>
 
       <h3>事件循环对象</h3>
-      <p>在 Python 中，一个事件循环就是一个 <code>AbstractEventLoop</code> 类的对象，负责调度所有回调：</p>
       <pre><code>import asyncio
 
 loop = asyncio.new_event_loop()      # 创建事件循环对象
@@ -62,7 +60,6 @@ current_loop.run_forever()           # 陷入循环，直到 stop() 被调用
 current_loop.stop()                  # 停止循环</code></pre>
 
       <h3>run_forever 与 _run_once</h3>
-      <p><code>run_forever</code> 就是反复调用 <code>_run_once</code>，直到 <code>stop()</code> 把 <code>_stopping</code> 置为真：</p>
       <pre><code>def run_forever(self):
     while True:
         self._run_once()
@@ -108,9 +105,10 @@ current_loop.stop()                  # 停止循环</code></pre>
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 同步代码里，<code>task1</code> 的 <code>requests.post(...)</code> 阻塞了线程，此时 <code>task2</code> 会怎样？</div>
@@ -144,7 +142,10 @@ current_loop.stop()                  # 停止循环</code></pre>
           </div>
           <div class="quiz-explain" hidden>一个事件循环就是一个 <code>AbstractEventLoop</code> 类的对象，通过 <code>new_event_loop()</code> 创建、<code>set_event_loop()</code> 绑定到当前线程。详见《22.事件循环》「AbstractEventLoop类」一节。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. <code>run_forever()</code> 什么时候才会停止循环？</div>
           <div class="quiz-options">
@@ -167,8 +168,22 @@ current_loop.stop()                  # 停止循环</code></pre>
           <div class="quiz-explain" hidden><code>call_soon</code> 把回调放入 <strong>ready 队列</strong>（尽早调度）；<code>call_later(delay, f)</code> 才放入延时队列，到期后进 ready。两个队列是 <code>_run_once</code> 调度的对象。</div>
         </div>
 
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. <code>loop.call_later(1, f)</code> 中 f 什么时候执行？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">至少 1 秒后，进 ready 队列被调度</button>
+            <button class="quiz-option">立即执行</button>
+            <button class="quiz-option">1 秒内随机时刻</button>
+            <button class="quiz-option">stop() 之后才执行</button>
+          </div>
+          <div class="quiz-explain" hidden><code>call_later(1, f)</code> 把 f 放进<strong>延时队列</strong>：<code>_run_once</code> 每轮检查到期项，1 秒后 f 才进入 ready 队列被执行——「至少」1 秒（取决于调度时机）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">6. 执行 <code>_run_once</code> 期间，回调里又 <code>call_soon</code> 了一个新回调，它何时执行？</div>
+          <div class="quiz-prompt">7. 执行 <code>_run_once</code> 期间，回调里又 <code>call_soon</code> 了一个新回调，它何时执行？</div>
           <div class="quiz-options">
             <button class="quiz-option">本轮 _run_once 内立刻执行</button>
             <button class="quiz-option">stop() 被调用后才执行</button>
@@ -176,6 +191,41 @@ current_loop.stop()                  # 停止循环</code></pre>
             <button class="quiz-option">永远不执行</button>
           </div>
           <div class="quiz-explain" hidden><code>_run_once</code> 执行的是 ready 队列的<strong>副本</strong>——执行期间新进 ready 的回调要等下一轮。所以若本轮同时调用了 <code>stop()</code>，那个新回调就永远轮不到了（考核第 3 题）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. <code>_run_once</code> 计算 timeout 的规则是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">ready 非空=0；有延时=队首到期时刻−当前；都空=None</button>
+            <button class="quiz-option">总是 0</button>
+            <button class="quiz-option">总是 None</button>
+            <button class="quiz-option">随机值</button>
+          </div>
+          <div class="quiz-explain" hidden>timeout 决定「阻塞等 I/O 等多久」：ready 有活就<strong>不等</strong>（0）；只有延时任务就等到<strong>最近一个到期</strong>；什么都没有就<strong>无限等</strong>（None）。这是 _run_once 五步的第 2 步。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 以下代码的输出是？
+<pre><code>loop = asyncio.new_event_loop()
+
+def delayed():
+    print("B")
+    loop.stop()
+
+def soon():
+    print("A")
+
+loop.call_later(0, delayed)
+loop.call_soon(soon)
+loop.run_forever()
+print("C")</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">A → B → C</button>
+            <button class="quiz-option">B → A → C</button>
+            <button class="quiz-option">A → B（C 不打印）</button>
+            <button class="quiz-option">A → C（B 不打印）</button>
+          </div>
+          <div class="quiz-explain" hidden>第一轮 <code>_run_once</code>：延时队列的 delayed（0 秒到期）先进 ready → ready = [soon, delayed] → 打印 <strong>A</strong> 后打印 <strong>B</strong>，delayed 里调 stop()；本轮结束 <code>_stopping</code> 为真 → run_forever 退出 → 打印 <strong>C</strong>。完整输出：A → B → C。call_later(0) 也要等一轮，不会先于 call_soon。</div>
         </div>
       </div>
     </section>
@@ -281,6 +331,35 @@ print("循环已停止")</code></pre></div>
       </div>
 
       <p style="margin-top:1.2rem">三道考核全部答对且能讲清理由，说明你已经吃透 <code>_run_once</code> 的调度机制——可以继续学习《<a href="/python/语言核心/Future类/">23.Future类</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（并发模型·高频）：asyncio 单线程为什么能实现高并发？事件循环的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">异步非阻塞 I/O：await 让出执行权，事件循环调度其他任务</button>
+            <button class="quiz-option">asyncio 内部偷偷用了多线程</button>
+            <button class="quiz-option">靠 GIL 让多个协程并行执行</button>
+            <button class="quiz-option">单线程只是假象，实际是多进程</button>
+          </div>
+          <div class="quiz-explain" hidden>核心：<strong>异步非阻塞 I/O 模型</strong>——遇到网络/文件等 I/O 等待时不阻塞线程，<code>await</code> 让出执行权，<strong>事件循环</strong>（核心调度器）转去执行其他任务，I/O 完成后恢复；整个过程单线程，无内核线程/进程切换开销，所以能高效处理上千并发连接。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（协程切换·追问）：协程在什么时机切换？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只在 await 处让出（协作式调度，非时间片轮转）</button>
+            <button class="quiz-option">由操作系统按时间片抢占切换</button>
+            <button class="quiz-option">每个字节码指令后都可能切换</button>
+            <button class="quiz-option">随机切换</button>
+          </div>
+          <div class="quiz-explain" hidden>协程是<strong>协作式调度</strong>：只有在遇到 <code>await</code> 时才暂停切换；没有 await 的代码连续执行不会被打断——这与线程的「抢占式」完全不同。追问常接：<code>await asyncio.sleep(0)</code> 为什么能让出执行权。<a href="https://cloud.tencent.com/developer/article/2409986">出处同面试题一</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

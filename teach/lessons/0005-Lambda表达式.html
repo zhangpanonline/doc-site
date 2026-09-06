@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《5.Lambda表达式》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业作为最终考核，10-15 分钟掌握 lambda 与高阶函数">
+  <meta name="description" content="配合《5.Lambda表达式》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题（lambda 局限/闭包延迟绑定）">
   <title>Lambda 表达式 · 互动教学课程（第 5 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 5 课</p>
       <h1>Lambda 表达式</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/Lambda表达式/">5.Lambda表达式</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/Lambda表达式/">5.Lambda表达式</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -49,9 +49,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. lambda 的函数体有什么限制？</div>
@@ -76,7 +77,21 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">3. <code>list(filter(lambda x: x % 2 == 0, [1, 2, 3, 4, 5]))</code> 的结果是？</div>
+          <div class="quiz-prompt">3. <code>callable(lambda: 1)</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>lambda 本质是<strong>匿名函数</strong>，函数是可调用对象 → <code>callable</code> 返回 True。详见第 9 课「可调用对象」的前置呼应。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>list(filter(lambda x: x % 2 == 0, [1, 2, 3, 4, 5]))</code> 的结果是？</div>
           <div class="quiz-options">
             <button class="quiz-option">[2, 4]</button>
             <button class="quiz-option">[1, 3, 5]</button>
@@ -87,7 +102,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. <code>sorted(["banana", "pie", "Washington", "book"], key=lambda s: len(s))</code> 的结果是？</div>
+          <div class="quiz-prompt">5. <code>sorted(["banana", "pie", "Washington", "book"], key=lambda s: len(s))</code> 的结果是？</div>
           <div class="quiz-options">
             <button class="quiz-option">['pie', 'book', 'banana', 'Washington']</button>
             <button class="quiz-option">['banana', 'pie', 'Washington', 'book']</button>
@@ -98,7 +113,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">5. <code>max(students, key=lambda s: s["score"])</code> 返回的是什么？</div>
+          <div class="quiz-prompt">6. <code>max(students, key=lambda s: s["score"])</code> 返回的是什么？</div>
           <div class="quiz-options">
             <button class="quiz-option">分数最高的整个字典</button>
             <button class="quiz-option">最高的分数值</button>
@@ -107,16 +122,43 @@
           </div>
           <div class="quiz-explain" hidden><code>max</code> 按 key 比较，但返回的是<strong>元素本身</strong>——分数最高的那个学生字典（如 <code>{'name': 'Bob', 'score': 92}</code>）。详见「max()/min()」一节。</div>
         </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>sorted(["banana", "pie", "book"], key=lambda s: s[-1])</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">['banana', 'pie', 'book']</button>
+            <button class="quiz-option">['book', 'pie', 'banana']</button>
+            <button class="quiz-option">['pie', 'book', 'banana']</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>按<strong>最后一个字母</strong>排序：banana→a、pie→e、book→k，升序排列 → <strong>['banana', 'pie', 'book']</strong>。key 可以是任意表达式——这是「按任意维度排序」的通用套路。详见「sorted()」一节。</div>
+        </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">6. <code>reduce</code> 函数在哪个模块中？</div>
+          <div class="quiz-prompt">8. 以下代码的输出是？
+<pre><code>funcs = [lambda: i for i in range(3)]
+print([f() for f in funcs])</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">functools</button>
-            <button class="quiz-option">builtins 直接可用</button>
-            <button class="quiz-option">itertools</button>
-            <button class="quiz-option">math</button>
+            <button class="quiz-option">[2, 2, 2]</button>
+            <button class="quiz-option">[0, 1, 2]</button>
+            <button class="quiz-option">[0, 0, 0]</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
-          <div class="quiz-explain" hidden><code>reduce</code> 在 <code>functools</code> 模块中：<code>from functools import reduce</code> 后才能使用。它把序列两两累积成单个值（求和、求积、求最大值）。详见「reduce()」一节。</div>
+          <div class="quiz-explain" hidden>闭包<strong>延迟绑定</strong>陷阱：lambda 捕获的是变量 <code>i</code> 本身而不是当时的值——列表推导完成后 i=2，三个函数调用时都读到 2 → <strong>[2, 2, 2]</strong>。修复：<code>lambda i=i: i</code>（默认参数绑定值）。这是真实面试高频题。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. <code>list(map(lambda x: x ** 2, filter(lambda x: x % 2 == 0, range(6))))</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">[0, 4, 16]</button>
+            <button class="quiz-option">[0, 1, 4, 9, 16, 25]</button>
+            <button class="quiz-option">[0, 2, 4]</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>由内向外读：<code>range(6)</code> → filter 留偶数 <code>[0, 2, 4]</code> → map 平方 → <strong>[0, 4, 16]</strong>。filter 与 map 可以流水线式串联，注意执行顺序是从里到外。</div>
         </div>
       </div>
     </section>
@@ -188,7 +230,7 @@ def avg(inc):
 companies = set(map(lambda p: p["inc"], products))
 list(map(lambda inc: {"inc": inc, "avg_price": avg(inc)}, companies))
 
-# 完整 products 数据（40 条）见源课程作业；节选示例：
+# 完整 products 数据（41 条）见源课程作业；节选示例：
 products = [
     {"name": "iPhone 15", "inc": "APPLE", "price": 5999, "stock": 3012},
     {"name": "MacBook Pro", "inc": "APPLE", "price": 14999, "stock": 580},
@@ -199,6 +241,35 @@ products = [
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握 lambda 与高阶函数的组合使用——可以继续学习《<a href="/python/语言核心/类和对象/">6.类和对象</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（lambda 局限·高频）：关于 lambda 的使用，下列说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只能写单表达式，适合做 sort/filter/map 的 key 或回调</button>
+            <button class="quiz-option">可以包含多行语句和赋值</button>
+            <button class="quiz-option">比 def 定义的函数更强大</button>
+            <button class="quiz-option">lambda 必须有名字才能使用</button>
+          </div>
+          <div class="quiz-explain" hidden>lambda 的局限：<strong>只能是单表达式</strong>，不能包含语句和赋值；适用场景是 sort/filter/map 的 key、简短回调。逻辑复杂或需要复用时应该用 <code>def</code>。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（函数式组合·高频）：把 <code>[1, 2, 3, 4, 5]</code> 中大于 2 的数平方，用 lambda 组合怎么写？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">list(map(lambda x: x**2, filter(lambda x: x &gt; 2, [1,2,3,4,5])))</button>
+            <button class="quiz-option">list(filter(lambda x: x &gt; 2, map(lambda x: x**2, [1,2,3,4,5])))</button>
+            <button class="quiz-option">[x**2 if x &gt; 2 for x in [1,2,3,4,5]]</button>
+            <button class="quiz-option">lambda [1,2,3,4,5]: x**2 if x &gt; 2</button>
+          </div>
+          <div class="quiz-explain" hidden>先 filter 再 map（由内向外）：<code>filter(lambda x: x &gt; 2, ...)</code> 筛出 <code>[3, 4, 5]</code>，再 <code>map(lambda x: x**2, ...)</code> → <strong>[9, 16, 25]</strong>。第二个顺序反了（先平方再筛，条件语义错）✗；第三个语法错（if 应在 for 后）✗。这是高阶函数组合的必考题。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

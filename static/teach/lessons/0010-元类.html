@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《10.元类》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（单例元类/自动注册/日志元类）作为最终考核">
+  <meta name="description" content="配合《10.元类》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（单例元类/自动注册/日志元类）+ 真实面试题">
   <title>元类 · 互动教学课程（第 10 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 10 课</p>
       <h1>元类</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/元类/">10.元类</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/元类/">10.元类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -54,9 +54,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. <code>class Dog: pass</code> 的等价写法是？</div>
@@ -81,18 +82,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">3. 自定义元类的正确方式是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">class MyMeta(type) 并重写 __new__</button>
-            <button class="quiz-option">class MyMeta(object) 并重写 __new__</button>
-            <button class="quiz-option">用 @metaclass 装饰器标记类</button>
-            <button class="quiz-option">直接修改 type 的源码</button>
-          </div>
-          <div class="quiz-explain" hidden>元类必须<strong>继承 type</strong>，然后在 <code>__new__(mcs, name, bases, namespace)</code> 里做手脚（如打印、注册），最后调用 <code>super().__new__</code> 真正创建类。详见「自定义元类」一节。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. 元类 <code>__new__</code> 中，下面哪一步是必须的？</div>
+          <div class="quiz-prompt">3. 元类 <code>__new__</code> 中，下面哪一步是必须的？</div>
           <div class="quiz-options">
             <button class="quiz-option">return super().__new__(mcs, name, bases, namespace)</button>
             <button class="quiz-option">print 类名并返回 None</button>
@@ -101,9 +91,12 @@
           </div>
           <div class="quiz-explain" hidden>真正创建类对象的是 <code>type.__new__</code>，自定义元类只是包装层——<strong>必须 return</strong> <code>super().__new__(mcs, ...)</code>，否则类创建失败（返回 None）。详见「自定义元类」一节。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">5. <code>class Child(Base)</code>，Base 的元类是 MyMeta，Child 的元类是？</div>
+          <div class="quiz-prompt">4. <code>class Child(Base)</code>，Base 的元类是 MyMeta，Child 的元类是？</div>
           <div class="quiz-options">
             <button class="quiz-option">自动继承 MyMeta</button>
             <button class="quiz-option">必须显式指定，否则是 type</button>
@@ -114,7 +107,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">6. 两个父类元类不同导致冲突（TypeError），如何解决？</div>
+          <div class="quiz-prompt">5. 两个父类元类不同导致冲突（TypeError），如何解决？</div>
           <div class="quiz-options">
             <button class="quiz-option">新建同时继承两个元类的兼容元类</button>
             <button class="quiz-option">放弃多继承</button>
@@ -122,6 +115,53 @@
             <button class="quiz-option">把元类改为 object</button>
           </div>
           <div class="quiz-explain" hidden>元类冲突的解法：定义 <code>class CommonMeta(MetaA, MetaB)</code> 同时继承两个元类，再用 <code>metaclass=CommonMeta</code> 创建子类。详见「深入：元类的查找顺序」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 想用元类实现「单例」（拦截实例化），应该重写？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__call__（实例化时触发）</button>
+            <button class="quiz-option">__new__（创建类时触发一次）</button>
+            <button class="quiz-option">__init__（初始化类时触发）</button>
+            <button class="quiz-option">__str__</button>
+          </div>
+          <div class="quiz-explain" hidden>实例化 <code>Dog()</code> 走 <code>元类.__call__</code>——单例要拦截的是「每次实例化」，所以重写 <code>__call__</code> 缓存实例。元类的 <code>__new__</code> 只在<strong>创建类</strong>时执行一次，拦不住实例化。详见「两条时间线」图。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 执行 <code>class Dog(metaclass=DogMeta)</code> 创建类时，<code>DogMeta.__call__</code> 会被调用吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不会，走 type.__call__ 转调 DogMeta.__new__</button>
+            <button class="quiz-option">会，创建类前先调用一次</button>
+            <button class="quiz-option">只在之后实例化 Dog() 时调用</button>
+            <button class="quiz-option">创建类与实例化时各调用一次</button>
+          </div>
+          <div class="quiz-explain" hidden>创建类时，<code>DogMeta</code> 的类型是 type，入口是 <code>type.__call__</code>，其内部转调 <code>DogMeta.__new__</code>——<code>DogMeta.__call__</code> 此时<strong>不参与</strong>。等到 <code>Dog()</code> 实例化时，<code>type(Dog) = DogMeta</code>，<code>DogMeta.__call__</code> 才出场。详见文档「深入：DogMeta 调用协议拆解」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 自动注册插件：希望「定义子类」时就注册（不要求实例化），注册代码应该放在元类的哪里？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__new__ 里创建类之后</button>
+            <button class="quiz-option">__call__ 里实例化时</button>
+            <button class="quiz-option">__init__ 里初始化实例时</button>
+            <button class="quiz-option">任何位置效果都一样</button>
+          </div>
+          <div class="quiz-explain" hidden>定义子类触发的是元类 <code>__new__</code>（创建类），所以注册必须在 <code>__new__</code> 里、<code>super().__new__</code> <strong>之后</strong>（拿到新类再注册）。放 <code>__call__</code> 里则必须实例化才注册 ✗。详见「两条时间线」图。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 单例元类里，实例缓存 <code>cls._instance</code> 应该存成什么结构，才能支持多个不同的类各自单例？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">字典 {cls: 实例}，按类区分</button>
+            <button class="quiz-option">单个变量 _instance，所有类共用一个</button>
+            <button class="quiz-option">列表，按实例化顺序取</button>
+            <button class="quiz-option">集合，自动去重</button>
+          </div>
+          <div class="quiz-explain" hidden>元类是<strong>所有用它的类共享</strong>的：<code>_instance = {}</code> 按 <code>cls</code> 作键缓存，Database 与 Player 才能各自单例（源答案 p1.py 正是 <code>cls not in cls._instance</code>）。单变量会让所有类共享同一个实例 ✗。</div>
         </div>
       </div>
     </section>
@@ -242,6 +282,35 @@ print(calc.add(3, 5))
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握元类的核心玩法——可以继续学习《<a href="/python/语言核心/装饰器/">11.装饰器</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（元类概念·高频）：什么是元类？在什么场景下会用到？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">创建类的类（默认 type），用于控制类的创建过程</button>
+            <button class="quiz-option">一种特殊装饰器，只能装饰函数</button>
+            <button class="quiz-option">类的子类，用于继承</button>
+            <button class="quiz-option">Python 2 的遗留语法，Python 3 已废弃</button>
+          </div>
+          <div class="quiz-explain" hidden>元类是<strong>创建类的类</strong>（默认 type），<code>class</code> 语句底层就是调用元类创建类。应用场景：命名检查、自动注册、方法增强（日志）、ORM、单例——凡是「要在类创建时统一做手脚」的需求。面试建议顺带说出一个自己写过的真实例子。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处：博客园「史上最全 python 面试题详解（三）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（单例元类·高频追问）：单例模式的「元类实现」核心思路是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">重写元类 __call__，按类缓存实例，命中即返回旧实例</button>
+            <button class="quiz-option">重写元类 __new__，创建类时把实例存起来</button>
+            <button class="quiz-option">用全局字典手动保存实例，与元类无关</button>
+            <button class="quiz-option">元类无法实现单例</button>
+          </div>
+          <div class="quiz-explain" hidden>元类实现单例：在元类 <code>__call__</code>（实例化入口）里按 <code>cls</code> 缓存实例——<code>cls not in cls._instance</code> 时创建并缓存，之后直接返回缓存。相比 <code>__new__</code> 方案，元类方案对「所有使用该元类的类」统一生效。<a href="https://blog.51cto.com/u_14691718/4995821">出处：51CTO「你想要的 Python 面试题都在这里了」</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《1.基础语法》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业作为最终考核，10-15 分钟巩固 Python 基本语法">
+  <meta name="description" content="配合《1.基础语法》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题，15-20 分钟巩固 Python 基本语法">
   <title>基础语法 · 互动教学课程（第 1 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 1 课</p>
       <h1>基础语法</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/基础语法/">1.基础语法</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/基础语法/">1.基础语法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -59,9 +59,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. <code>print(type(42) == int)</code> 的输出是？</div>
@@ -85,8 +86,22 @@
           <div class="quiz-explain" hidden><code>int()</code> 把浮点数转整数时是<strong>截断小数</strong>，不是四舍五入：<code>int(3.9) → 3</code>。想四舍五入要用 <code>round()</code>。详见「变量类型转换」一节。</div>
         </div>
 
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>print(bool(""))</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">空字符串</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>空字符串是<strong>假值</strong>：<code>bool("") → False</code>。假值清单：0、0.0、""、None、False，其余都是真值。详见「逻辑运算符」的真假值表。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">3. <code>print(5 / 2)</code> 的输出是？</div>
+          <div class="quiz-prompt">4. <code>print(5 / 2)</code> 的输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">2</button>
             <button class="quiz-option">2.5</button>
@@ -94,17 +109,6 @@
             <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>/</code> 是「真除法」，<strong>总是返回 float</strong>：<code>5 / 2 → 2.5</code>。想要整数部分用 <code>//</code>（整除）：<code>5 // 2 → 2</code>。详见「算术运算符」一节。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. <code>print(0 and 5)</code> 的输出是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">0</button>
-            <button class="quiz-option">5</button>
-            <button class="quiz-option">False</button>
-            <button class="quiz-option">None</button>
-          </div>
-          <div class="quiz-explain" hidden><code>and</code> 的规则：第一个为假就<strong>返回第一个</strong>，否则返回第二个。<code>0</code> 为假，所以 <code>0 and 5 → 0</code>——返回的是操作数本身，不是布尔值。详见「逻辑运算符」一节。</div>
         </div>
 
         <div class="quiz-q" data-correct="0">
@@ -119,14 +123,55 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">6. 执行 <code>x = 10; x /= 4; print(x)</code>，输出是？</div>
+          <div class="quiz-prompt">6. <code>print("A" &lt; "a")</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">2.5</button>
-            <button class="quiz-option">2</button>
-            <button class="quiz-option">10</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">返回原字符串</button>
+          </div>
+          <div class="quiz-explain" hidden>字符串比较按<strong>字典序（ASCII 码）</strong>：'A' 的码值 65 小于 'a' 的 97，所以 <code>"A" &lt; "a" → True</code>。详见「比较运算符」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>print(1 &lt; 5 &lt; 3)</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">1</button>
+          </div>
+          <div class="quiz-explain" hidden>链式比较等价于 <code>1 &lt; 5 and 5 &lt; 3</code>：前半成立但 <code>5 &lt; 3</code> 为假 → 整体 <strong>False</strong>。别被「1 &lt; 5」迷惑，链式比较要求<strong>每一环都成立</strong>。详见「链式比较」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. <code>print(bool("hello") and int(3.9))</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">3</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">"hello"</button>
             <button class="quiz-option">运行时报错</button>
           </div>
-          <div class="quiz-explain" hidden><code>x /= 4</code> 等价于 <code>x = x / 4</code>，而 <code>/</code> 总返回 float：<code>10 / 4 → 2.5</code>，<strong>x 从 int 变成了 float</strong>。详见「赋值运算符」一节。</div>
+          <div class="quiz-explain" hidden>跨知识点综合：<code>bool("hello")</code> 为 True（真值），<code>and</code> 第一个为真则<strong>返回第二个操作数</strong>——而 <code>int(3.9)</code> 是<strong>截断后的 3</strong>。所以整体输出 3，不是 True。两个坑叠一个。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 执行以下代码，最后的输出是？
+<pre><code>x = 10
+x -= 3
+x *= 2
+x /= 4
+print(x)</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">3.5</button>
+            <button class="quiz-option">3</button>
+            <button class="quiz-option">4.5</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>逐步推演：<code>10 - 3 = 7</code> → <code>7 × 2 = 14</code> → <code>14 / 4 = 3.5</code>（<code>/=</code> 让结果变 float）。连续赋值运算符按书写顺序逐个生效。</div>
         </div>
       </div>
     </section>
@@ -238,6 +283,40 @@ print(f"共计 {prime_count} 个素数")</code></pre>
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握本课核心能力——可以继续学习《<a href="/python/语言核心/容器类型/">2.容器类型</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（牛客·最强 Python 面试题系列）：关于「变量、对象、引用」的关系，下列说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">变量是指针，对象存值，赋值 a=1 是创建对象 1 并让 a 指向它</button>
+            <button class="quiz-option">变量就是对象，二者没有区别</button>
+            <button class="quiz-option">类型信息存在变量中，对象没有类型</button>
+            <button class="quiz-option">使用变量前必须先声明其类型</button>
+          </div>
+          <div class="quiz-explain" hidden>经典三问：<strong>变量</strong>是到内存空间的指针；<strong>对象</strong>是存值的内存块；<strong>引用</strong>是自动形成的从变量到对象的指针。<code>a = 1</code> 的过程：创建值 1 的对象 → 创建变量 a → 把 a 连到对象。类型概念<strong>存在于对象中</strong>而非变量中（动态类型）。<a href="https://www.nowcoder.com/discuss/378581336049594368">出处：牛客网「最强 Python 面试题之 Python 基础题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（牛客 NP 系列·进制转换）：把十六进制字符串 "FF" 转成十进制，正确写法与结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">int("FF", 16) → 255</button>
+            <button class="quiz-option">int("FF") → 255</button>
+            <button class="quiz-option">float("FF", 16) → 255.0</button>
+            <button class="quiz-option">直接运算，Python 自动识别十六进制</button>
+          </div>
+          <div class="quiz-explain" hidden><code>int(x, base)</code> 的 base 参数（2~36）指定进制：<code>int("FF", 16) → 255</code>；不带 base 的 <code>int("FF")</code> 会抛 ValueError（无法按十进制解析）。这是牛客 Python 入门题库（NP 系列）的常考题。还可自测：<code>int("101", 2)</code> → 5。<a href="https://developer.aliyun.com/article/1538325">出处：牛客刷题——Python 篇（2）类型转换</a></div>
+        </div>
+      </div>
+
+      <details class="quiz-explain" style="border-left-color:var(--accent); margin-top:1rem">
+        <summary>面试追问参考：变量使用前必须赋值吗？del 有什么用？</summary>
+        <p style="margin:0">① 变量无须事先声明，但<strong>使用前必须先赋值</strong>（赋值的同时创建变量）；② <code>del</code> 释放变量（解除引用），对象会在引用计数归零后被回收；③ 标识符规则：字母/数字/下划线组成、<strong>不能数字开头</strong>、区分大小写。<a href="https://www.nowcoder.com/discuss/378581336049594368">出处同面试题一</a></p>
+      </details>
     </section>
 
     <section>

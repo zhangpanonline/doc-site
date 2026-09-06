@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《27.构建发布》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（完整库构建/私有发布/安装）作为最终考核">
+  <meta name="description" content="配合《27.构建发布》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（库构建/私有发布/安装流程）+ 真实面试题">
   <title>构建发布 · 互动教学课程（第 27 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 27 课</p>
       <h1>构建发布</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/构建发布/">27.构建发布</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/构建发布/">27.构建发布</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -53,9 +53,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. pyproject.toml 中 <code>[build-system]</code> 的作用是？</div>
@@ -80,7 +81,21 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">3. 发布前校验构建产物完整性的命令是？</div>
+          <div class="quiz-prompt">3. <code>version = "0.1.3"</code> 中的语义化版本含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">主版本.次版本.补丁版本（0=未稳定）</button>
+            <button class="quiz-option">年份.月份.序号</button>
+            <button class="quiz-option">构建号.发布号.修订号</button>
+            <button class="quiz-option">任意三个数字无含义</button>
+          </div>
+          <div class="quiz-explain" hidden>语义化版本：<code>主.次.补丁</code>——0.x 表示尚未稳定（API 可随时变）。详见「pyproject.toml 构建配置」注释。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 发布前校验构建产物完整性的命令是？</div>
           <div class="quiz-options">
             <button class="quiz-option">twine check dist/*</button>
             <button class="quiz-option">twine verify dist/*</button>
@@ -91,7 +106,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. <code>pip install -e .</code>（可编辑安装）的原理是？</div>
+          <div class="quiz-prompt">5. <code>pip install -e .</code>（可编辑安装）的原理是？</div>
           <div class="quiz-options">
             <button class="quiz-option">site-packages 放 .pth 链接指向源码，改动即时生效</button>
             <button class="quiz-option">把源码完整复制到 site-packages</button>
@@ -99,17 +114,6 @@
             <button class="quiz-option">把源码编译成字节码缓存</button>
           </div>
           <div class="quiz-explain" hidden>可编辑安装创建指向项目源码的 <code>.pth</code> 链接（不是复制）——源码修改立即生效，无需重新构建安装。详见「可编辑依赖」一节。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">5. <code>version = "0.1.3"</code> 中的语义化版本含义是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">主版本.次版本.补丁版本（0=未稳定）</button>
-            <button class="quiz-option">年份.月份.序号</button>
-            <button class="quiz-option">构建号.发布号.修订号</button>
-            <button class="quiz-option">任意三个数字无含义</button>
-          </div>
-          <div class="quiz-explain" hidden>语义化版本：<code>主.次.补丁</code>——0.x 表示尚未稳定（API 可随时变）。详见「pyproject.toml 构建配置」注释。</div>
         </div>
 
         <div class="quiz-q" data-correct="0">
@@ -121,6 +125,42 @@
             <button class="quiz-option">加速包下载</button>
           </div>
           <div class="quiz-explain" hidden>私有仓库常自签证书或走 http：<code>trusted-host = packages.aliyun.com</code> 让 pip 信任该主机。详见「发布到私有仓库」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 一个库从零到可安装，正确的操作顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">建 venv → 激活 → 装 build 工具 → python -m build → dist 产物</button>
+            <button class="quiz-option">python -m build → 建 venv → 装 build 工具</button>
+            <button class="quiz-option">直接 twine upload，上传会自动构建</button>
+            <button class="quiz-option">pip install 包名 即可，无需构建</button>
+          </div>
+          <div class="quiz-explain" hidden>标准流程：<code>python -m venv .venv</code> → <code>source .venv/bin/activate</code> → <code>pip install build</code> → <code>python -m build</code> → 产物在 <code>dist/</code>。构建在前、上传在后，twine 只上传不构建。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. <code>[project]</code> 段的 <code>name</code>、<code>version</code>、<code>requires-python</code>、<code>dependencies</code> 各自的含义分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">发行版名、版本号、Python 版本要求、第三方依赖</button>
+            <button class="quiz-option">模块名、构建号、解释器路径、测试依赖</button>
+            <button class="quiz-option">作者名、发布时间、目标平台、可选依赖</button>
+            <button class="quiz-option">仓库地址、分支名、运行环境、锁文件</button>
+          </div>
+          <div class="quiz-explain" hidden><code>[project]</code> 四件套：<code>name</code>（发行版名称，小写连字符）、<code>version</code>（语义化版本）、<code>requires-python</code>（如 "&gt;=3.14"）、<code>dependencies</code>（第三方依赖清单）。详见「pyproject.toml 构建配置」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 构建完成发布到 PyPI 的正确顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">注册账号 → 创建 token → twine check → twine upload</button>
+            <button class="quiz-option">twine upload 不需要任何凭证</button>
+            <button class="quiz-option">git push 后自动发布</button>
+            <button class="quiz-option">先 upload 再 check</button>
+          </div>
+          <div class="quiz-explain" hidden>发布流程：注册 PyPI 账号 → 创建 API <strong>token</strong>（比密码安全）→ <code>twine check dist/*</code> 校验 → <code>twine upload dist/*</code> 上传。顺序不能反：先校验再上传。</div>
         </div>
       </div>
     </section>
@@ -177,6 +217,35 @@
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握构建发布——可以继续学习《<a href="/python/语言核心/项目管理工具/">28.项目管理工具</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（工程可复现·高频）：如何把一个带依赖的服务发布到生产环境，保证「在我机器上能跑」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">锁文件 + 构建 wheel + pyproject.toml 声明，实现可复现构建</button>
+            <button class="quiz-option">把 .venv 目录整个打包上传</button>
+            <button class="quiz-option">只靠 requirements.txt 手写版本号</button>
+            <button class="quiz-option">生产环境现装最新版本即可</button>
+          </div>
+          <div class="quiz-explain" hidden>可复现的关键：<strong>pyproject.toml</strong>（现代配置标准）声明依赖 → <strong>锁文件</strong>（如 uv.lock）锁定完整依赖树 → 构建 <strong>wheel</strong> 发布。没有锁文件的团队就会遇到「在我机器上能跑」的经典问题。带 C 扩展的包还要注意 wheel 的平台标签。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（可编辑安装·追问）：<code>pip install -e .</code> 适合什么场景？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">本地开发公共库：改源码立即生效，无需重复构建安装</button>
+            <button class="quiz-option">生产环境部署的推荐方式</button>
+            <button class="quiz-option">代替 requirements.txt 管理依赖</button>
+            <button class="quiz-option">把包发布到 PyPI 的快捷方式</button>
+          </div>
+          <div class="quiz-explain" hidden>可编辑安装（开发模式）适合<strong>本地联调</strong>：一个项目里开发公共库、另一个项目导入实时测试，改码即生效，不用反复 <code>pip install</code>/构建。生产部署应使用构建产物（wheel）而不是 -e 模式。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题一</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

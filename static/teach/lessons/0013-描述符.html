@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《13.描述符》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（只读属性/范围验证/访问计数器）作为最终考核">
+  <meta name="description" content="配合《13.描述符》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（只读属性/范围验证/访问计数器）+ 真实面试题">
   <title>描述符 · 互动教学课程（第 13 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 13 课</p>
       <h1>描述符</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/描述符/">13.描述符</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/描述符/">13.描述符</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -53,9 +53,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 一个类实现了下面哪个方法就可以叫描述符类？</div>
@@ -89,7 +90,10 @@
           </div>
           <div class="quiz-explain" hidden>描述符对象只有作为<strong>类属性</strong>时才会触发 <code>__get__</code>/<code>__set__</code> 拦截；实例属性不经过描述符协议。详见「认识术语」一节。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 实例成员查找的优先级顺序是？</div>
           <div class="quiz-options">
@@ -121,6 +125,42 @@
             <button class="quiz-option">property 只在运行时生效</button>
           </div>
           <div class="quiz-explain" hidden><code>property</code> 是内置的<strong>数据描述符</strong>类，<code>@property</code>/<code>@x.setter</code>/<code>@x.deleter</code> 就是官方提供的描述符语法糖。详见「@property 装饰器」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 数据型描述符 D 挂在类属性 x 上，执行 <code>a.__dict__["x"] = "instance"</code> 后，<code>a.x</code> 读到什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">描述符 __get__ 的结果（数据描述符优先）</button>
+            <button class="quiz-option">"instance"（实例字典优先）</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>查找顺序：<strong>数据描述符 → 实例属性</strong>——即使 "instance" 被塞进实例字典，读 <code>a.x</code> 仍走描述符的 <code>__get__</code>。实例字典里的值被「压住」了（考核四思考题的完整推演）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 非数据型描述符（只有 __get__）与实例属性同名时，读到什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">实例属性（非数据型优先级低于实例字典）</button>
+            <button class="quiz-option">描述符 __get__ 的结果</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">两者都返回</button>
+          </div>
+          <div class="quiz-explain" hidden>只有 <code>__get__</code> 的非数据型描述符<strong>排不过实例字典</strong>：实例 <code>__dict__</code> 里有同名键时优先返回实例属性。惰性计算描述符正是利用这一点——首次计算后把结果写回实例字典「缓存」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 惰性计算描述符（非数据型）的缓存原理是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">首次 __get__ 计算结果并 setattr 写回实例，之后走实例字典</button>
+            <button class="quiz-option">把结果存进类属性，永久共享</button>
+            <button class="quiz-option">每次访问都重新计算</button>
+            <button class="quiz-option">用全局变量缓存</button>
+          </div>
+          <div class="quiz-explain" hidden>惰性计算模板：<code>__get__</code> 里 <code>value = self.func(instance); setattr(instance, self.name, value); return value</code>——第一次计算后<strong>写回实例字典</strong>，第二次访问因「实例属性优先于非数据描述符」直接读缓存，不再计算。详见「应用场景：惰性计算」一节。</div>
         </div>
       </div>
     </section>
@@ -263,6 +303,35 @@ print(a.__dict__)             # ?</code></pre></div>
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握描述符——可以继续学习《<a href="/python/语言核心/异常处理/">14.异常处理</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（描述符应用·高频）：<code>@property</code>、<code>@classmethod</code>、<code>@staticmethod</code> 的底层机制是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">描述符协议（__get__/__set__/__delete__）</button>
+            <button class="quiz-option">元类的 __new__ 方法</button>
+            <button class="quiz-option">装饰器的闭包机制</button>
+            <button class="quiz-option">C 扩展的特殊语法</button>
+          </div>
+          <div class="quiz-explain" hidden>property、classmethod、staticmethod <strong>都是描述符</strong>：它们都实现了描述符协议的 <code>__get__</code>（property 还带 <code>__set__</code>/<code>__delete__</code>），通过类属性挂载拦截访问——理解了描述符，这三个「魔法」就都透明了。<a href="https://wenku.csdn.net/doc/6et562nus6">出处：CSDN 文库「Python 面试核心考点解析：面向对象」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（类型检查·高频追问）：想给实例属性做「类型检查」（如 age 必须是 int），用描述符怎么做？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据描述符 __set__ 里 isinstance 校验，失败抛 TypeError</button>
+            <button class="quiz-option">在 __init__ 里打印警告即可</button>
+            <button class="quiz-option">用普通类属性，靠使用者自觉</button>
+            <button class="quiz-option">Python 无法实现属性类型检查</button>
+          </div>
+          <div class="quiz-explain" hidden>经典 Typed 描述符：<code>__set__</code> 里 <code>if not isinstance(value, self.expected_type): raise TypeError(...)</code>，配合 <code>__set_name__</code> 记录属性名用于报错信息——C/C++ 式的属性类型约束就是这样在 Python 里实现的。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

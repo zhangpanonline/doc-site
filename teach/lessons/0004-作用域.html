@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《4.作用域》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业作为最终考核，10-15 分钟掌握 LEGB 与闭包">
+  <meta name="description" content="配合《4.作用域》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题（LEGB/传参方式）">
   <title>作用域 · 互动教学课程（第 4 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 4 课</p>
       <h1>作用域</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/作用域/">4.作用域</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/作用域/">4.作用域</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -53,9 +53,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. Python 查找变量的 LEGB 顺序是？</div>
@@ -69,18 +70,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">2. <code>count = 0</code> 在全局；函数内写 <code>count += 1</code>（无 global 声明）会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">UnboundLocalError</button>
-            <button class="quiz-option">正常修改全局变量</button>
-            <button class="quiz-option">静默创建局部变量</button>
-            <button class="quiz-option">SyntaxError</button>
-          </div>
-          <div class="quiz-explain" hidden>赋值语句让 <code>count</code> 在编译期被判定为<strong>局部变量</strong>，而 <code>+=</code> 需要先读它——局部还没定义就读取 → <code>UnboundLocalError</code>。详见「在函数内修改全局变量」一节。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">3. <code>global</code> 关键字声明的是？</div>
+          <div class="quiz-prompt">2. <code>global</code> 关键字声明的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">变量来自全局作用域</button>
             <button class="quiz-option">变量来自外层函数</button>
@@ -91,7 +81,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. <code>nonlocal</code> 关键字声明的是？</div>
+          <div class="quiz-prompt">3. <code>nonlocal</code> 关键字声明的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">变量来自外层函数作用域</button>
             <button class="quiz-option">变量来自全局作用域</button>
@@ -100,16 +90,30 @@
           </div>
           <div class="quiz-explain" hidden><code>nonlocal x</code> 声明「x 是我外层函数里的变量」，用于嵌套函数修改外层状态。详见「修改外层变量」一节。</div>
         </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 函数内<strong>只读取</strong>全局变量（不赋值），需要声明 global 吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不需要，直接读取即可</button>
+            <button class="quiz-option">必须声明 global 才能读</button>
+            <button class="quiz-option">读取全局变量会报错</button>
+            <button class="quiz-option">需要用 nonlocal</button>
+          </div>
+          <div class="quiz-explain" hidden>读取沿 LEGB 自动向外找：<strong>读全局不需要声明</strong>，只有<strong>修改</strong>才需要 <code>global</code>。详见「全局作用域」一节。</div>
+        </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">5. 闭包（Closure）是指？</div>
+          <div class="quiz-prompt">5. <code>count = 0</code> 在全局；函数内写 <code>count += 1</code>（无 global 声明）会怎样？</div>
           <div class="quiz-options">
-            <button class="quiz-option">内层函数捕获了外层函数的变量</button>
-            <button class="quiz-option">用 global 声明的全局变量</button>
-            <button class="quiz-option">函数的默认参数</button>
-            <button class="quiz-option">类的私有属性</button>
+            <button class="quiz-option">UnboundLocalError</button>
+            <button class="quiz-option">正常修改全局变量</button>
+            <button class="quiz-option">静默创建局部变量</button>
+            <button class="quiz-option">SyntaxError</button>
           </div>
-          <div class="quiz-explain" hidden>外层函数返回内层函数，内层函数「记住」外层变量——这个内层函数 + 它捕获的环境就是闭包。详见「闭包作用域」一节。</div>
+          <div class="quiz-explain" hidden>赋值语句让 <code>count</code> 在编译期被判定为<strong>局部变量</strong>，而 <code>+=</code> 需要先读它——局部还没定义就读取 → <code>UnboundLocalError</code>。详见「在函数内修改全局变量」一节。</div>
         </div>
 
         <div class="quiz-q" data-correct="0">
@@ -121,6 +125,79 @@
             <button class="quiz-option">默认参数缓存 count</button>
           </div>
           <div class="quiz-explain" hidden>闭包里 <code>nonlocal count</code> 让内层函数直接修改外层函数的 <code>count</code>，状态在多次调用间<strong>保留</strong>。详见「修改外层变量」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 以下代码依次输出的是？
+<pre><code>x = "global"
+
+def outer():
+    x = "enclosing"
+
+    def inner():
+        x = "local"
+        print(x)
+
+    inner()
+    print(x)
+
+outer()
+print(x)</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">local → enclosing → global</button>
+            <button class="quiz-option">local → local → global</button>
+            <button class="quiz-option">enclosing → enclosing → global</button>
+            <button class="quiz-option">global → enclosing → local</button>
+          </div>
+          <div class="quiz-explain" hidden>三层嵌套逐层推演：inner 有自己的 <code>x = "local"</code> → 打印 local；outer 打印自己的局部 x → enclosing；<strong>赋值只是新建局部变量</strong>，全局 x 从未被修改 → global。顺序：<strong>local → enclosing → global</strong>。详见「作用域速查」代码。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 以下代码依次输出的是？
+<pre><code>count = 0
+
+def outer():
+    count = 10
+
+    def inner():
+        global count
+        count += 1
+        print(count)
+
+    inner()
+    print(count)
+
+outer()
+print(count)</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">1 10 1</button>
+            <button class="quiz-option">11 11 11</button>
+            <button class="quiz-option">1 11 11</button>
+            <button class="quiz-option">1 10 11</button>
+          </div>
+          <div class="quiz-explain" hidden><code>global count</code> 让 inner 改的是<strong>全局</strong>的 count（0 + 1 = 1），不是 outer 的局部 count！所以：inner 打印 1；outer 的局部 count 仍是 10 → 打印 10；全局 count 已被改成 1 → 打印 1。顺序：<strong>1 10 1</strong>。若想改外层应使用 <code>nonlocal</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 以下代码的输出是？
+<pre><code>def make_multiplier(n):
+    def multiply(x):
+        return x * n
+    return multiply
+
+double = make_multiplier(2)
+triple = make_multiplier(3)
+print(double(7), triple(7))</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">14 21（两个闭包各自记住自己的 n）</button>
+            <button class="quiz-option">21 21（n 被第二次调用覆盖）</button>
+            <button class="quiz-option">14 14（都记住第一个 n）</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>每次调用 <code>make_multiplier</code> 都创建<strong>独立的变量环境</strong>：double 记住 n=2（7×2=14），triple 记住 n=3（7×3=21）——闭包之间互不干扰。这正是源作业四「闭包计数器」的原理基础。</div>
         </div>
       </div>
     </section>
@@ -232,7 +309,7 @@ print(f"总共调用了 {call_count} 次")  # 总共调用了 2 次</code></pre>
 
     def draw(n):
         nonlocal balance
-        if n > balance:
+        if n &gt; balance:
             return "余额不足"
         balance -= n
         return balance
@@ -252,6 +329,35 @@ print(deposit2(10))   # 60</code></pre>
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握作用域与闭包——可以继续学习《<a href="/python/语言核心/Lambda表达式/">5.Lambda表达式</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（传参方式·高频）：Python 函数传参是值传递还是引用传递？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">传引用：不可变对象改了不生效，可变对象改了生效</button>
+            <button class="quiz-option">纯值传递，函数内修改永远不影响外部</button>
+            <button class="quiz-option">纯引用传递，函数内修改永远影响外部</button>
+            <button class="quiz-option">Python 没有参数传递机制</button>
+          </div>
+          <div class="quiz-explain" hidden>函数参数传递的是<strong>对象的引用（内存地址）</strong>：不可变对象（int/str/tuple）在函数内重新赋值不会影响外部；可变对象（list/dict）原地修改会直接影响外部——「传引用 + 不可变对象天然只读」的组合，常常被简称为「传对象引用」。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（LEGB·概念必问）：函数内部找不到变量时，Python 按什么顺序查找？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">局部 → 外层函数 → 全局 → 内置（LEGB）</button>
+            <button class="quiz-option">全局 → 局部 → 内置 → 外层函数</button>
+            <button class="quiz-option">内置 → 全局 → 局部</button>
+            <button class="quiz-option">只在局部和全局两层查找</button>
+          </div>
+          <div class="quiz-explain" hidden><strong>LEGB</strong>：L（局部）→ E（外层函数/闭包）→ G（全局）→ B（内置）。同时注意：函数是作用域，若自己作用域没有变量就往上级查找——而<strong>赋值</strong>默认只影响当前层。追问常接：什么时候需要 global / nonlocal？<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题一</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

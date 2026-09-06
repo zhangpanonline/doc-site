@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《7.对象的类型》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（demo1.py 逐行预测）作为最终考核">
+  <meta name="description" content="配合《7.对象的类型》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（demo1.py 逐行预测）+ 真实面试题">
   <title>对象的类型 · 互动教学课程（第 7 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 7 课</p>
       <h1>对象的类型</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/对象的类型/">7.对象的类型</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/对象的类型/">7.对象的类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -54,9 +54,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 所有类的类型（即创建类的类）是？</div>
@@ -81,18 +82,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">3. <code>isinstance(type, object)</code> 的结果是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">True</button>
-            <button class="quiz-option">False</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">None</button>
-          </div>
-          <div class="quiz-explain" hidden>Python 3 中所有类都继承 object，type 也不例外——<code>isinstance(type, object) → True</code>。等价判断：<code>issubclass(type, object)</code> 也是 True。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. 类 A 中定义 <code>__a = 2</code>，外部执行 <code>A.__a</code> 会发生什么？</div>
+          <div class="quiz-prompt">3. 类 A 中定义 <code>__a = 2</code>，外部执行 <code>A.__a</code> 会发生什么？</div>
           <div class="quiz-options">
             <button class="quiz-option">AttributeError（名称被改写）</button>
             <button class="quiz-option">返回 2</button>
@@ -100,6 +90,20 @@
             <button class="quiz-option">返回 3</button>
           </div>
           <div class="quiz-explain" hidden>双下划线开头（且不以双下划线结尾）的 <code>__a</code> 会被改写为 <code>_A__a</code>，外部访问 <code>A.__a</code> 抛 AttributeError；访问 <code>A._A__a</code> 才能拿到 2。详见「类中的私有成员」一节。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>isinstance(type, object)</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 3 中所有类都继承 object，type 也不例外——<code>isinstance(type, object) → True</code>。等价判断：<code>issubclass(type, object)</code> 也是 True。</div>
         </div>
 
         <div class="quiz-q" data-correct="0">
@@ -124,16 +128,11 @@
           <div class="quiz-explain" hidden>类成员先沿<strong>自身 MRO</strong>（父类链）查找，找不到再沿<strong>元类 MRO</strong>查找。实例成员则是：自身 → 类型的 MRO 链条。详见「成员的查找顺序」一节。</div>
         </div>
       </div>
-    </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《7.对象的类型》源课程作业（demo1.py 逐行预测）的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。</p>
-      <p>📣 源作业还要求<strong>费曼复述</strong>：用你自己的话讲清楚「object 是万物之根，type 是万物之源」和「实例/类成员的查找顺序」，讲不通的地方回到对话里让 AI 老师给你反馈。</p>
-
+      <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核一（demo1.py·object 段）：<code>print(type(object))</code> 的输出是？</div>
+          <div class="quiz-prompt">7. <code>print(type(object))</code> 的输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">&lt;class 'type'&gt;</button>
             <button class="quiz-option">&lt;class 'object'&gt;</button>
@@ -144,7 +143,37 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核二（demo1.py·type 段）：<code>print(isinstance(type, function))</code> 的输出是？（function = type(lambda: None)）</div>
+          <div class="quiz-prompt">8. <code>print(isinstance(A, A))</code>（A 是一个类）的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden><code>isinstance(A, A)</code> 问「A 这个对象是 A 的实例吗」——A 是<strong>类</strong>，它的实例是 a（<code>isinstance(a, A) → True</code>）；A 本身是 type 的实例，不是 A 的实例 → <strong>False</strong>。对比：<code>issubclass(A, A)</code> 恒为 True。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. <code>function = type(lambda: None)</code>，<code>print(isinstance(function, function))</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden><code>function</code> 类本身的类型是 <code>type</code>（所有类都由 type 创建），不是 function——<code>isinstance(function, function) → False</code>。而普通函数对象 <code>func</code> 才是 function 的实例：<code>isinstance(func, function) → True</code>。这是 demo1.py 里最容易答错的一行。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《7.对象的类型》源课程作业（demo1.py 逐行预测）的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。</p>
+      <p>📣 源作业还要求<strong>费曼复述</strong>：用你自己的话讲清楚「object 是万物之根，type 是万物之源」和「实例/类成员的查找顺序」，讲不通的地方回到对话里让 AI 老师给你反馈。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（demo1.py·type 段）：<code>print(isinstance(type, function))</code> 的输出是？（function = type(lambda: None)）</div>
           <div class="quiz-options">
             <button class="quiz-option">False</button>
             <button class="quiz-option">True</button>
@@ -155,14 +184,25 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核三（demo1.py·类与实例段）：<code>print(isinstance(A, A))</code>（A 是一个类）的输出是？</div>
+          <div class="quiz-prompt">考核二（demo1.py·object 段）：<code>print(isinstance(object, type))</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>object 由 type 创建——<code>isinstance(object, type) → True</code>。继承链终点 object 也是「万物之源」type 的实例，两条链在此交汇。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（demo1.py·类与实例段）：<code>print(isinstance(a, type))</code>（a 是类 A 的实例）的输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">False</button>
             <button class="quiz-option">True</button>
             <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">None</button>
           </div>
-          <div class="quiz-explain" hidden><code>isinstance(A, A)</code> 问「A 这个对象是 A 的实例吗」——A 是<strong>类</strong>，它的实例是 a（<code>isinstance(a, A) → True</code>）；A 本身是 type 的实例，不是 A 的实例 → <strong>False</strong>。对比：<code>issubclass(A, A)</code> 恒为 True。</div>
+          <div class="quiz-explain" hidden>实例 a 是<strong>类 A</strong> 的实例，不是 type 的实例（类才是 type 的实例）——<code>isinstance(a, type) → False</code>；<code>isinstance(a, A)</code> 与 <code>isinstance(a, object)</code> 才是 True。</div>
         </div>
 
         <div class="quiz-q" data-correct="0">
@@ -178,6 +218,35 @@
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握类型系统——可以继续学习《<a href="/python/语言核心/对象的创建过程/">8.对象的创建过程</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（is vs ==·必问）：<code>==</code> 与 <code>is</code> 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">== 比内容（值），is 比身份（同一对象）</button>
+            <button class="quiz-option">两者完全等价</button>
+            <button class="quiz-option">== 比身份，is 比内容</button>
+            <button class="quiz-option">is 只适用于数字比较</button>
+          </div>
+          <div class="quiz-explain" hidden><code>==</code> 调用 <code>__eq__</code> 比较<strong>值</strong>；<code>is</code> 比较<strong>身份</strong>（是否同一内存对象）。<code>[1,2] == [1,2]</code> 为 True 但 <code>is</code> 为 False。经验法则：<code>is</code> 只用于与 None/True/False 等单例比较。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（type vs isinstance·高频）：判断「对象是否为某类实例」时，为什么推荐 isinstance 而不是 type？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">isinstance 考虑继承，type 只认精确类型</button>
+            <button class="quiz-option">type 更快所以更推荐</button>
+            <button class="quiz-option">两者没有区别</button>
+            <button class="quiz-option">isinstance 是 type 的别名</button>
+          </div>
+          <div class="quiz-explain" hidden><code>type(dog) == Animal</code> 为 False（精确类型是 Dog）；<code>isinstance(dog, Animal)</code> 为 True（Dog 是 Animal 的子类）。面向对象场景判断「属于某类型体系」用 isinstance 才符合继承语义。<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题一</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

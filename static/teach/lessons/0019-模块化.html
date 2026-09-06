@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《19.模块化》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（费曼复述与 __slots__ 研究）改编的最终考核">
+  <meta name="description" content="配合《19.模块化》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（费曼复述与 __slots__ 研究）+ 真实面试题">
   <title>模块化 · 互动教学课程（第 19 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 19 课</p>
       <h1>模块化</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/模块化/">19.模块化</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/模块化/">19.模块化</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -51,9 +51,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 一个 <code>.py</code> 文件在模块化体系中是什么？</div>
@@ -87,7 +88,10 @@
           </div>
           <div class="quiz-explain" hidden><code>__all__ = ["PI", "add"]</code> 只影响 <code>from my_math import *</code>：只有清单里的成员被导入；同时作为公开 API 的文档。整模块 <code>import my_math</code> 不受影响。详见「使用 __all__ 控制导出清单」一节。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 直接运行 <code>python my_math.py</code> 时，模块内 <code>__name__</code> 的值是？</div>
           <div class="quiz-options">
@@ -119,6 +123,42 @@
             <button class="quiz-option">零次，只加载不执行</button>
           </div>
           <div class="quiz-explain" hidden>模块<strong>首次导入执行一次</strong>，之后从 <code>sys.modules</code> 缓存直接返回，不重复执行。详见「模块的执行与缓存」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. a.py 里 <code>from b import bar</code>；b.py 里 <code>from a import foo</code>。直接运行 a.py 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">ImportError：b 导入时 a 尚未定义 foo</button>
+            <button class="quiz-option">正常运行，Python 自动解决</button>
+            <button class="quiz-option">死循环直到内存耗尽</button>
+            <button class="quiz-option">SyntaxError</button>
+          </div>
+          <div class="quiz-explain" hidden>a 执行到 <code>from b import bar</code> 时去执行 b；b 里 <code>from a import foo</code> 时 a 还没执行到定义 foo 的那行 → <strong>ImportError</strong>。解法：公共代码抽到第三个模块，或把导入延迟到函数内部。详见「循环导入问题」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. <code>__slots__ = ("x", "y")</code> 的类，实例化后 <code>p.z = 1</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">AttributeError（没有 __dict__，不能加新属性）</button>
+            <button class="quiz-option">正常添加</button>
+            <button class="quiz-option">静默忽略</button>
+            <button class="quiz-option">z 自动成为槽位</button>
+          </div>
+          <div class="quiz-explain" hidden><code>__slots__</code> 声明后实例<strong>没有 <code>__dict__</code></strong>，只能使用声明的槽位——<code>p.z = 1</code> 抛 AttributeError。这是省内存的代价，也是拼写错误的「报警器」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 模块 M 的 <code>__all__ = ["PI", "add"]</code>，另外有公开成员 E 与 <code>_secret</code>。执行 <code>from M import *</code> 后可用的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只有 PI 和 add（__all__ 限定清单）</button>
+            <button class="quiz-option">PI、add、E（下划线成员除外）</button>
+            <button class="quiz-option">全部四个成员</button>
+            <button class="quiz-option">只有 _secret</button>
+          </div>
+          <div class="quiz-explain" hidden>定义了 <code>__all__</code> 后，星号导入<strong>只按清单来</strong>：E 虽是公开成员但不在清单里也进不来；_secret 无论如何都不进。完整规则：有 __all__ 用 __all__，没有则排除下划线成员。</div>
         </div>
       </div>
     </section>
@@ -195,6 +235,35 @@ q.z = 3                # 普通类可以随意添加属性</code></pre>
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握模块化——可以继续学习《<a href="/python/语言核心/标准库/">20.标准库</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（模块 vs 包·必问）：模块和包的区别？<code>__init__.py</code> 的作用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模块是 .py 文件；包是含 __init__.py 的目录，导入时自动执行它</button>
+            <button class="quiz-option">两者完全一样，只是叫法不同</button>
+            <button class="quiz-option">包是 .py 文件，模块是目录</button>
+            <button class="quiz-option">__init__.py 只是占位文件没有作用</button>
+          </div>
+          <div class="quiz-explain" hidden>模块是一个 <code>.py</code> 文件；包是含 <code>__init__.py</code> 的目录（即使为空，也是包的标识）。<code>__init__.py</code> 的作用：① 标识包身份；② 导入包时自动执行（初始化、配置）；③ 定义 <code>__all__</code> 控制 <code>import *</code>；④ 提前导入子模块简化外部导入路径。记忆口诀「标识 + 控制」。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（基础理论 + 工程实践篇）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（循环导入·高频）：两个模块相互 import 导致 ImportError，怎么解决？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">抽公共模块或延迟导入（函数内部 import）</button>
+            <button class="quiz-option">把两个模块合并成一个文件</button>
+            <button class="quiz-option">删除其中一个 import 语句</button>
+            <button class="quiz-option">多 import 几遍就能解决</button>
+          </div>
+          <div class="quiz-explain" hidden>循环导入的成因：互相导入时一方<strong>尚未完成初始化</strong>就访问其成员。标准解法：① 重构——把共享依赖抽到第三个模块；② <strong>延迟导入</strong>——把 import 挪进函数体内（用时才导入，还能加快启动）。<a href="https://cloud.tencent.cn/developer/article/2409971">出处：腾讯云「Python 模块化编程：面试题深度解析」</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

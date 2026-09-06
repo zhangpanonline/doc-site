@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《9.可调用对象》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（Counter 计数器）作为最终考核">
+  <meta name="description" content="配合《9.可调用对象》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（Counter 计数器）+ 真实面试题">
   <title>可调用对象 · 互动教学课程（第 9 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 9 课</p>
       <h1>可调用对象</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/可调用对象/">9.可调用对象</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/可调用对象/">9.可调用对象</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -59,9 +59,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. <code>callable([1, 2])</code> 的结果是？</div>
@@ -75,14 +76,14 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">2. 类（如 Dog）可以被调用，是因为？</div>
+          <div class="quiz-prompt">2. 定义 <code>__call__</code> 方法，让哪个对象变得可调用？</div>
           <div class="quiz-options">
-            <button class="quiz-option">元类 type 实现了 __call__ 完成实例化</button>
-            <button class="quiz-option">类内部自动定义了 __call__</button>
-            <button class="quiz-option">类继承了 function 类型</button>
-            <button class="quiz-option">所有 Python 对象都可调用</button>
+            <button class="quiz-option">类的实例</button>
+            <button class="quiz-option">类本身</button>
+            <button class="quiz-option">模块</button>
+            <button class="quiz-option">内置类型</button>
           </div>
-          <div class="quiz-explain" hidden><code>Dog()</code> 走调用协议 <code>type(Dog).__call__(Dog)</code>——<code>type(Dog)</code> 是 type，<code>type.__call__</code> 内部执行 <code>__new__</code> + <code>__init__</code> 完成实例化。详见「类也是可调用对象」一节。</div>
+          <div class="quiz-explain" hidden>在类中定义 <code>__call__</code>，<strong>实例</strong>就变成可调用对象：<code>add_5(10) → 15</code>。详见「让对象变成可调用对象」一节。</div>
         </div>
 
         <div class="quiz-q" data-correct="0">
@@ -95,16 +96,19 @@
           </div>
           <div class="quiz-explain" hidden>实例调用时 <code>self</code> 自动传入：<code>add_5(10)</code> 即 <code>Adder.__call__(add_5, 10)</code>。注意实例自己的 <code>__call__</code> 属性不会被调用——走的始终是<strong>类里</strong>的 <code>__call__</code>。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. 定义 <code>__call__</code> 方法，让哪个对象变得可调用？</div>
+          <div class="quiz-prompt">4. 类（如 Dog）可以被调用，是因为？</div>
           <div class="quiz-options">
-            <button class="quiz-option">类的实例</button>
-            <button class="quiz-option">类本身</button>
-            <button class="quiz-option">模块</button>
-            <button class="quiz-option">内置类型</button>
+            <button class="quiz-option">元类 type 实现了 __call__ 完成实例化</button>
+            <button class="quiz-option">类内部自动定义了 __call__</button>
+            <button class="quiz-option">类继承了 function 类型</button>
+            <button class="quiz-option">所有 Python 对象都可调用</button>
           </div>
-          <div class="quiz-explain" hidden>在类中定义 <code>__call__</code>，<strong>实例</strong>就变成可调用对象：<code>add_5(10) → 15</code>。详见「让对象变成可调用对象」一节。</div>
+          <div class="quiz-explain" hidden><code>Dog()</code> 走调用协议 <code>type(Dog).__call__(Dog)</code>——<code>type(Dog)</code> 是 type，<code>type.__call__</code> 内部执行 <code>__new__</code> + <code>__init__</code> 完成实例化。详见「类也是可调用对象」一节。</div>
         </div>
 
         <div class="quiz-q" data-correct="0">
@@ -127,6 +131,42 @@
             <button class="quiz-option">每次调用都会重置</button>
           </div>
           <div class="quiz-explain" hidden><code>__call__</code> 里 <code>self.log_count += 1</code>，状态保存在<strong>实例属性</strong>中，两次调用后为 2——「状态保持的回调」正是可调用对象的优势。详见「实现状态保持的回调函数」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 调用协议规定：<code>x()</code> 永远查找什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">type(x).__call__(x)</button>
+            <button class="quiz-option">x.__call__(x)</button>
+            <button class="quiz-option">x.__init__(x)</button>
+            <button class="quiz-option">globals()["__call__"](x)</button>
+          </div>
+          <div class="quiz-explain" hidden>统一规则：<code>x()</code> 查找 <code>type(x).__call__(x)</code>——函数走 function 类型的 __call__，类走 type 的 __call__，实例走类里定义的 __call__。实例自身的 <code>__call__</code> 属性<strong>不参与</strong>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. <code>class B(A)</code>，两者都定义 <code>__call__</code>，B 里 <code>super().__call__()</code> 调用的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">A 的 __call__（沿 MRO 找下一个）</button>
+            <button class="quiz-option">B 自己的 __call__（递归调用）</button>
+            <button class="quiz-option">object 的 __call__（直接父类）</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>与普通方法一样，<code>super().__call__()</code> 沿 MRO 调用<strong>下一个类</strong>的 <code>__call__</code>——B(A) 中即 A 的 <code>__call__</code>。这是源作业思考题的核心：先打印 B called 再打印 A called。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 下列哪一组 <code>callable()</code> 结果全部正确？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">len→True，int→True，[1,2]→False，lambda→True</button>
+            <button class="quiz-option">len→False，int→True，[1,2]→False，lambda→True</button>
+            <button class="quiz-option">len→True，int→False，[1,2]→False，lambda→True</button>
+            <button class="quiz-option">len→True，int→True，[1,2]→True，lambda→False</button>
+          </div>
+          <div class="quiz-explain" hidden>逐项核对：<code>len</code> 是内置函数 → True；<code>int</code> 是类（type.__call__ 实例化）→ True；<code>[1, 2]</code> 列表无 <code>__call__</code> → False；<code>lambda: 1</code> 是函数 → True。<strong>第一个组合全部正确</strong>。</div>
         </div>
       </div>
     </section>
@@ -229,6 +269,35 @@ error_log("网络连接失败")</code></pre></div>
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握可调用对象——可以继续学习《<a href="/python/语言核心/元类/">10.元类</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（__call__·高频）：<code>__call__</code> 的作用是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">让实例像函数一样被调用，相当于重载括号运算符</button>
+            <button class="quiz-option">让类可以被继承</button>
+            <button class="quiz-option">在创建实例时自动初始化属性</button>
+            <button class="quiz-option">让方法变成类方法</button>
+          </div>
+          <div class="quiz-explain" hidden><code>__call__</code> 让<strong>实例像函数一样被调用</strong>（<code>obj()</code>），相当于重载了括号运算符——对象与函数的界限被进一步模糊。它还是<strong>类装饰器</strong>实现的基础：用 @ 装饰函数后，被装饰函数变成装饰器类的实例，调用即触发 <code>__call__</code>。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）：魔法方法、闭包/自省、装饰器/生成器」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（场景选择·追问）：需要「带状态的函数」（如计数器、带前缀的日志回调），除了闭包还有什么实现方式？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">定义 __call__ 的可调用对象（状态存实例属性）</button>
+            <button class="quiz-option">只能使用全局变量</button>
+            <button class="quiz-option">只能使用闭包，没有其他方式</button>
+            <button class="quiz-option">用 lambda 表达式保存状态</button>
+          </div>
+          <div class="quiz-explain" hidden>闭包能做的（状态保存），<strong>可调用对象也能做</strong>：<code>__init__</code> 存状态、<code>__call__</code> 执行逻辑——更面向对象、更易维护。两者是面试中「函数式 vs 面向对象」对比的经典追问。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题一</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

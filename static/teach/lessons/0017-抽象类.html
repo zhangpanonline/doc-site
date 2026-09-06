@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《17.抽象类》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（抽象缓存/抽象序列）作为最终考核">
+  <meta name="description" content="配合《17.抽象类》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（抽象缓存/抽象序列）+ 真实面试题">
   <title>抽象类 · 互动教学课程（第 17 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 17 课</p>
       <h1>抽象类</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/抽象类/">17.抽象类</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/抽象类/">17.抽象类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -51,9 +51,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 定义抽象类的标准做法是？</div>
@@ -78,18 +79,7 @@
         </div>
 
         <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">3. 子类只实现了部分抽象方法，会发生什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">子类仍是抽象类，不能实例化</button>
-            <button class="quiz-option">未实现的方法用 pass 兜底</button>
-            <button class="quiz-option">实例化时只报警告</button>
-            <button class="quiz-option">自动继承父类的抽象方法实现</button>
-          </div>
-          <div class="quiz-explain" hidden>漏掉任意抽象方法，子类<strong>仍是抽象类</strong>——实例化抛 TypeError。详见「子类必须实现所有抽象方法」一节。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">4. 抽象类中可以包含普通方法吗？</div>
+          <div class="quiz-prompt">3. 抽象类中可以包含普通方法吗？</div>
           <div class="quiz-options">
             <button class="quiz-option">可以，子类直接继承使用默认实现</button>
             <button class="quiz-option">不可以，必须全部是抽象方法</button>
@@ -97,6 +87,20 @@
             <button class="quiz-option">只有静态方法可以</button>
           </div>
           <div class="quiz-explain" hidden>抽象类可以有<strong>普通方法</strong>（默认实现），子类直接继承使用——如 Sequence 的 is_empty 就是普通方法。详见「定义抽象类」要点。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 子类只实现了部分抽象方法，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">子类仍是抽象类，不能实例化</button>
+            <button class="quiz-option">未实现的方法用 pass 兜底</button>
+            <button class="quiz-option">实例化时只报警告</button>
+            <button class="quiz-option">自动继承父类的抽象方法实现</button>
+          </div>
+          <div class="quiz-explain" hidden>漏掉任意抽象方法，子类<strong>仍是抽象类</strong>——实例化抛 TypeError。详见「子类必须实现所有抽象方法」一节。</div>
         </div>
 
         <div class="quiz-q" data-correct="0">
@@ -119,6 +123,42 @@
             <button class="quiz-option">缓存计算结果</button>
           </div>
           <div class="quiz-explain" hidden>抽象类常用于<strong>插件接口/框架扩展点</strong>：如 DataSource 定义 connect/read/close，MySQL/MongoDB 各自实现，调用方只认抽象类型。详见「实际应用场景」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>class B(A)</code> 实现了全部抽象方法，<code>class C(B): pass</code>。C 能实例化吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">能，抽象方法已在 B 中实现</button>
+            <button class="quiz-option">不能，C 没亲自实现抽象方法</button>
+            <button class="quiz-option">不能，C 本身是抽象类</button>
+            <button class="quiz-option">能，但调用抽象方法会报错</button>
+          </div>
+          <div class="quiz-explain" hidden>抽象方法<strong>沿继承链生效</strong>：B 已实现全部抽象方法，B 及其子类 C 都不是抽象类——C 可直接实例化，调用方法沿 MRO 找到 B 的实现。详见「子类必须实现所有抽象方法」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 多态场景：<code>process_data(source: DataSource)</code> 接收抽象类型，传 MySQLSource 与 MongoDBSource 都能工作，靠的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者都实现了 DataSource 声明的全部抽象方法</button>
+            <button class="quiz-option">两者都继承自同一个具体类</button>
+            <button class="quiz-option">Python 不检查参数类型，随便传都行</button>
+            <button class="quiz-option">运行时自动转换类型</button>
+          </div>
+          <div class="quiz-explain" hidden>抽象类契约 + 多态：两个数据源都实现了 connect/read/close 三个抽象方法（否则实例化都过不去），调用方才能「面向抽象编程」——这就是插件接口模式的完整闭环。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 抽象基类里定义的普通方法 <code>describe</code> 内部调用了抽象方法 <code>self.area()</code>，子类只实现 area 后调用 describe，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">正常执行，self.area() 动态分发到子类实现</button>
+            <button class="quiz-option">报错，普通方法不能调用抽象方法</button>
+            <button class="quiz-option">调用到 pass 空实现，返回 None</button>
+            <button class="quiz-option">describe 也需要在子类重写</button>
+          </div>
+          <div class="quiz-explain" hidden>模板方法模式：<code>self.area()</code> 是<strong>动态分发</strong>——运行时沿实例类型找到子类的实现（子类已实现 area 才能实例化）。这就是抽象类普通方法的价值：骨架放基类、细节留给子类。详见「定义抽象类」的 describe 示例。</div>
         </div>
       </div>
     </section>
@@ -177,7 +217,7 @@ class MemoryCache(Cache):
             <button class="quiz-option">只实现 append 和 get 两个即可实例化</button>
             <button class="quiz-option">__iter__ 用 yield 实现而不是 return iter(...)</button>
           </div>
-          <div class="quiz-explain" hidden><code>ListSequence</code> 实现四个抽象方法（<code>__iter__</code> 直接 <code>return iter(self._data)</code>），普通方法 <code>is_empty</code> <strong>自动继承</strong>。第二个重复劳动 ✗；第三个漏两个方法，实例化 TypeError ✗；第四个生成器也能工作但不属于「选错」——注意 <code>return iter(...)</code> 是最直接写法 ✗（四个抽象方法必须全部实现）。</div>
+          <div class="quiz-explain" hidden><code>ListSequence</code> 实现四个抽象方法（<code>__iter__</code> 直接 <code>return iter(self._data)</code>），普通方法 <code>is_empty</code> <strong>自动继承</strong>。第二个重复劳动 ✗；第三个漏两个方法，实例化 TypeError ✗；四个抽象方法必须全部实现。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
             <summary>查看源课程参考答案（作业二·ListSequence）</summary>
 <pre><code>class Sequence(ABC):
@@ -240,6 +280,35 @@ class ListSequence(Sequence):
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握抽象类——可以继续学习《<a href="/python/语言核心/类型标注/">18.类型标注</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（鸭子类型·高频）：Python 的「鸭子类型」是指？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只关心对象有没有所需方法，不关心它是什么类</button>
+            <button class="quiz-option">所有对象都必须继承同一个基类</button>
+            <button class="quiz-option">类型检查必须在运行时显式进行</button>
+            <button class="quiz-option">鸭子类型就是抽象类</button>
+          </div>
+          <div class="quiz-explain" hidden>鸭子类型（duck typing）：「走起来像鸭子、叫起来像鸭子，那就是鸭子」——多个类<strong>无继承关系</strong>，只要方法定义与调用方式相同，就能互换使用。这是 Python 多态的灵魂；抽象类 ABC 则是「显式契约」的补充手段。<a href="https://www.cnblogs.com/YZL2333/articles/11900518.html">出处：博客园「Python 面试题面向对象」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（OOP 三特性·必问）：面向对象的三大特性是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">封装、继承、多态</button>
+            <button class="quiz-option">抽象、反射、序列化</button>
+            <button class="quiz-option">闭包、装饰器、生成器</button>
+            <button class="quiz-option">类、对象、方法</button>
+          </div>
+          <div class="quiz-explain" hidden>三大特性：<strong>封装</strong>（数据与方法打包，_/__ 约定控制访问）、<strong>继承</strong>（子类复用父类，配合 MRO）、<strong>多态</strong>（同一接口不同实现，鸭子类型是 Python 特色）。面试常追问三个特性在 Python 里的具体体现。<a href="https://www.cnblogs.com/YZL2333/articles/11900518.html">出处同面试题一</a></div>
+        </div>
+      </div>
     </section>
 
     <section>

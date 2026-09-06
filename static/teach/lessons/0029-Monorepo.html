@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《29.Monorepo》的互动教学课程：知识讲解 + 即时反馈测验 + 源课程作业（手工复现 workspace 工程）作为最终考核">
+  <meta name="description" content="配合《29.Monorepo》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（手工复现 workspace 工程）+ 真实面试题">
   <title>Monorepo · 互动教学课程（第 29 课）</title>
   <link rel="stylesheet" href="../assets/course.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 29 课</p>
       <h1>Monorepo</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/Monorepo/">29.Monorepo</a>》使用<span class="dot"></span>预计 10–15 分钟<span class="dot"></span>6 道基础测验 + 4 道最终考核</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/Monorepo/">29.Monorepo</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -55,9 +55,10 @@
     </section>
 
     <section>
-      <h2>基础测验</h2>
-      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。</p>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
+      <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. Monorepo 相比 MultiRepo 的核心优势是？</div>
@@ -91,7 +92,10 @@
           </div>
           <div class="quiz-explain" hidden>两处都要写：<code>dependencies = ["shared"]</code> 声明依赖 + <code>[tool.uv.sources] shared = { workspace = true }</code> 告诉 uv「从工作区取，别去 PyPI」。只写前者会去 PyPI 找 ✗。详见「第三步：成员包依赖」。</div>
         </div>
+      </div>
 
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 解析全部成员依赖并统一安装的命令是？</div>
           <div class="quiz-options">
@@ -123,6 +127,42 @@
             <button class="quiz-option">两个都装进环境</button>
           </div>
           <div class="quiz-explain" hidden>同名时 <strong>workspace 优先</strong>；要强制走 PyPI 写 <code>{ workspace = false }</code>。详见「第三步」提示框。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 根项目要纳入 packages/ 与 app/ 下的成员，正确的 members 写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">members = ["packages/*", "app/*"]</button>
+            <button class="quiz-option">members = "packages/*"（只能写一个）</button>
+            <button class="quiz-option">members = ["packages/**"]（会误纳深层目录）</button>
+            <button class="quiz-option">members = ["all"]</button>
+          </div>
+          <div class="quiz-explain" hidden>可以配置多个目录：<code>members = ["packages/*", "app/*"]</code>。第二个不是只能一个 ✗；第三个 <code>**</code> 匹配所有嵌套子目录，会纳入不想要的深层目录（源工程 app/web-service 是两层，用 <code>app/*</code> 即可）✗；第四个不是合法写法 ✗。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. agents 包依赖 shared 包，pyproject.toml 正确写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">dependencies = ["shared"]，[tool.uv.sources] shared = { workspace = true }</button>
+            <button class="quiz-option">dependencies = ["shared"]，[tool.uv.sources] shared = { workspace = false }</button>
+            <button class="quiz-option">dependencies = ["shared"]，[tool.uv.sources] shared2 = { workspace = true }</button>
+            <button class="quiz-option">dependencies = ["shared@workspace"]</button>
+          </div>
+          <div class="quiz-explain" hidden>两处一致：<code>dependencies = ["shared"]</code> + <code>[tool.uv.sources] shared = { workspace = true }</code>。<code>workspace = false</code> 是强制走 PyPI ✗；sources 键名与依赖名不一致则链接失败 ✗；没有 <code>@workspace</code> 语法 ✗。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 引用「工作区外的本地包」与「Git 仓库里的包」，分别用什么写法？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">path = "../utils" 与 git = "https://...", rev = "v0.1.0"</button>
+            <button class="quiz-option">workspace = true 与 path = "../utils"</button>
+            <button class="quiz-option">git = "..." 与 workspace = true</button>
+            <button class="quiz-option">两者都只能 workspace = true</button>
+          </div>
+          <div class="quiz-explain" hidden>三种模式：仓内 <code>workspace = true</code>；仓外本地 <code>path = "../utils"</code>；Git 仓库 <code>git = "URL", rev = "版本"</code>（可引用未发布到 PyPI 的依赖）。详见「包间依赖的三种模式」。</div>
         </div>
       </div>
     </section>
@@ -178,6 +218,35 @@
       </div>
 
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握 Monorepo——可以继续学习《<a href="/python/语言核心/断点调试/">30.断点调试</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（monorepo vs multirepo·工程必问）：什么场景选 Monorepo？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">紧密协作的微服务/SDK 集合：需要源码共享、原子提交、统一工具链</button>
+            <button class="quiz-option">所有项目都应该用 monorepo</button>
+            <button class="quiz-option">团队独立、版本节奏不一致的项目</button>
+            <button class="quiz-option">只有前端项目能用 monorepo</button>
+          </div>
+          <div class="quiz-explain" hidden>Monorepo 适合<strong>紧密协作</strong>的微服务、SDK 集合、工具链：源码级共享（不发版即时生效）、跨包改动一次原子提交、统一工具与规范、CI 可增量检测。团队独立、版本节奏不一致的场景则 MultiRepo 更合适——选型看协作密度而非技术时髦。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（workspace 机制·追问）：<code>[tool.uv.sources] shared = { workspace = true }</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">告诉 uv 依赖来自工作区源码链接，而非 PyPI 下载</button>
+            <button class="quiz-option">声明 shared 包已发布到 PyPI</button>
+            <button class="quiz-option">锁定 shared 的版本号</button>
+            <button class="quiz-option">创建 shared 包</button>
+          </div>
+          <div class="quiz-explain" hidden>这是 uv workspace 的<strong>核心机制</strong>：声明后 <code>shared</code> 依赖从工作区内的同名成员包<strong>源码链接</strong>（本地直接引用，修改即时生效），不会去 PyPI 下载；同名冲突时 workspace 优先。<a href="https://docs.astral.sh/uv/concepts/projects/workspaces/">出处：uv 官方文档 Using workspaces（中文技术社区广泛收录）</a></div>
+        </div>
+      </div>
     </section>
 
     <section>
