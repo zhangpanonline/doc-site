@@ -1,0 +1,74 @@
+---
+sidebar_position: 25
+title: '25. Future类'
+---
+
+# Future类
+
+在异步场景中，有很多任务开始后，只能在**将来**的某个时间点才能完成
+
+为了表达这一逻辑，Python封装了`Future`类
+
+
+
+`Future`类表达了一个在将来会完成的异步任务
+
+每一个`Future`对象拥有两种状态：
+
+- 未完成：表示任务还在等待
+- 已完成：表示任务已有结果
+  - 正常完成
+  - 有错误
+  - 被取消
+
+开发者可以通过以下代码操作和检查状态
+
+```python title="操作和检查 Future 状态"
+import asyncio
+
+loop = asyncio.new_event_loop()
+fut = loop.create_future()  # 通过事件循环对象创建Future
+# print(fut.done())  # False，未完成
+# print(fut.result())  # 引发InvalidStateError异常
+
+# 让fut完成
+# fut.set_result("result")  # 设置完成结果的值
+# print(fut.done(), fut.result())  # 是否完成、完成结果，打印：True result
+
+# 发生异常
+# fut.set_exception(TypeError("类型异常"))  # 设置异常
+# print(fut.done(), fut.exception())
+# print(fut.result())  # 此时获取result会引发异常
+
+# 取消
+# fut.cancel("不等了")  # 取消future
+# print(fut.done(), fut.cancelled())  # 已完成、已取消
+# print(fut.result())  # 获取结果会引发CancelledError异常
+# print(fut.exception())  # 获取异常结果同样会引发CancelledError异常
+
+
+# # 注册回调
+# def on_done(f: asyncio.Future) -> None:
+#     try:
+#         print(f"Future完成，结果：{f.result()}")
+#     except Exception as e:
+#         print(f"Future完成，但发生异常：{e}")
+
+
+# # 注册回调函数
+# # 该回调函数会被放到事件循环的ready队列中，等待事件循环调度执行
+# fut.add_done_callback(on_done)
+
+```
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了本章内容？
+
+<a href="/teach/lessons/0025-Future类.html"><strong>👉 点击进入《Future 类互动教学课程》</strong></a>
+
+- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业（读懂延时/网络封装 demo）改编的最终考核
+- 📋 配套<a href="/teach/reference/Future类速查表.html">《Future 类速查表》</a>，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师

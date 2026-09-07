@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《19.ABC》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（抽象缓存/抽象序列）+ 真实面试题">
+  <title>ABC · 互动教学课程（第 19 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 17 课</p>
+      <h1>ABC</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python/ABC/">17.抽象类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出抽象类的作用：<strong>定义子类必须实现的接口，且自身不能实例化</strong></li>
+        <li>用 <code>ABC</code> + <code>@abstractmethod</code> 定义抽象方法/抽象属性</li>
+        <li>实现抽象缓存与抽象序列——<strong>最终考核的两道实现题</strong>，并预测「漏实现」的报错</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《19.ABC》里，测验和考核会考。</p>
+
+      <h3>抽象类规则</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node">class Shape(ABC)</span>
+          <span class="diagram-arrow">─ 不能实例化 ─▶</span>
+          <span class="diagram-node plain">@abstractmethod 标记的接口</span>
+          <span class="diagram-arrow">─ 子类必须实现 ─▶</span>
+          <span class="diagram-node">全部实现后才能实例化</span>
+        </div>
+        <p class="diagram-note">⚙️ 漏掉任意一个抽象方法，子类仍是抽象类；抽象类可以带普通方法（有默认实现）。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong><code>ABC</code> + <code>@abstractmethod</code> 是接口契约</strong>：实例化抽象类直接 TypeError；子类缺实现也 TypeError——在<strong>创建对象时</strong>就拦住错误，而不是运行时才发现。<a href="https://docs.python.org/3/library/abc.html">官方文档：abc</a></li>
+        <li><strong>抽象属性</strong>：<code>@property</code> 在上、<code>@abstractmethod</code> 在下，顺序<strong>不能颠倒</strong>（<code>@property @abstractmethod def salary</code>）。</li>
+        <li><strong>抽象类常用于插件接口</strong>：定义 connect/read/close 契约，具体数据源各自实现，调用方只依赖抽象类型——考核一、二的思路。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 定义抽象类的标准做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">继承 ABC，抽象方法加 @abstractmethod</button>
+            <button class="quiz-option">类名以 Abstract 开头即可</button>
+            <button class="quiz-option">继承 object 并全部写 pass</button>
+            <button class="quiz-option">使用 @abstractclass 装饰器</button>
+          </div>
+          <div class="quiz-explain" hidden>抽象类继承 <code>abc.ABC</code>，抽象方法用 <code>@abstractmethod</code> 标记。两者配合，实例化时才会被拦截。详见「定义抽象类」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 直接实例化抽象类会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TypeError：不能实例化抽象类</button>
+            <button class="quiz-option">正常创建，方法为空</button>
+            <button class="quiz-option">ValueError</button>
+            <button class="quiz-option">警告后创建成功</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Animal()</code> 抛 <code>TypeError: Can't instantiate abstract class ...</code>——抽象类的存在意义就是「只当契约，不当实例」。详见「抽象类基础示例」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 抽象类中可以包含普通方法吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">可以，子类直接继承使用默认实现</button>
+            <button class="quiz-option">不可以，必须全部是抽象方法</button>
+            <button class="quiz-option">可以定义，但子类不能调用</button>
+            <button class="quiz-option">只有静态方法可以</button>
+          </div>
+          <div class="quiz-explain" hidden>抽象类可以有<strong>普通方法</strong>（默认实现），子类直接继承使用——如 Sequence 的 is_empty 就是普通方法。详见「定义抽象类」要点。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 子类只实现了部分抽象方法，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">子类仍是抽象类，不能实例化</button>
+            <button class="quiz-option">未实现的方法用 pass 兜底</button>
+            <button class="quiz-option">实例化时只报警告</button>
+            <button class="quiz-option">自动继承父类的抽象方法实现</button>
+          </div>
+          <div class="quiz-explain" hidden>漏掉任意抽象方法，子类<strong>仍是抽象类</strong>——实例化抛 TypeError。详见「子类必须实现所有抽象方法」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 抽象属性 <code>salary</code> 的装饰器顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">@property 在上，@abstractmethod 在下</button>
+            <button class="quiz-option">@abstractmethod 在上，@property 在下</button>
+            <button class="quiz-option">只用 @abstractmethod 即可</button>
+            <button class="quiz-option">顺序无所谓</button>
+          </div>
+          <div class="quiz-explain" hidden>抽象属性写法：<code>@property</code> 在上、<code>@abstractmethod</code> 在下，顺序<strong>不能颠倒</strong>。详见「抽象属性」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 抽象类最典型的应用场景是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">定义插件接口/框架扩展点</button>
+            <button class="quiz-option">存放常量集合</button>
+            <button class="quiz-option">替代普通工具函数</button>
+            <button class="quiz-option">缓存计算结果</button>
+          </div>
+          <div class="quiz-explain" hidden>抽象类常用于<strong>插件接口/框架扩展点</strong>：如 DataSource 定义 connect/read/close，MySQL/MongoDB 各自实现，调用方只认抽象类型。详见「实际应用场景」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>class B(A)</code> 实现了全部抽象方法，<code>class C(B): pass</code>。C 能实例化吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">能，抽象方法已在 B 中实现</button>
+            <button class="quiz-option">不能，C 没亲自实现抽象方法</button>
+            <button class="quiz-option">不能，C 本身是抽象类</button>
+            <button class="quiz-option">能，但调用抽象方法会报错</button>
+          </div>
+          <div class="quiz-explain" hidden>抽象方法<strong>沿继承链生效</strong>：B 已实现全部抽象方法，B 及其子类 C 都不是抽象类——C 可直接实例化，调用方法沿 MRO 找到 B 的实现。详见「子类必须实现所有抽象方法」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 多态场景：<code>process_data(source: DataSource)</code> 接收抽象类型，传 MySQLSource 与 MongoDBSource 都能工作，靠的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者都实现了 DataSource 声明的全部抽象方法</button>
+            <button class="quiz-option">两者都继承自同一个具体类</button>
+            <button class="quiz-option">Python 不检查参数类型，随便传都行</button>
+            <button class="quiz-option">运行时自动转换类型</button>
+          </div>
+          <div class="quiz-explain" hidden>抽象类契约 + 多态：两个数据源都实现了 connect/read/close 三个抽象方法（否则实例化都过不去），调用方才能「面向抽象编程」——这就是插件接口模式的完整闭环。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 抽象基类里定义的普通方法 <code>describe</code> 内部调用了抽象方法 <code>self.area()</code>，子类只实现 area 后调用 describe，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">正常执行，self.area() 动态分发到子类实现</button>
+            <button class="quiz-option">报错，普通方法不能调用抽象方法</button>
+            <button class="quiz-option">调用到 pass 空实现，返回 None</button>
+            <button class="quiz-option">describe 也需要在子类重写</button>
+          </div>
+          <div class="quiz-explain" hidden>模板方法模式：<code>self.area()</code> 是<strong>动态分发</strong>——运行时沿实例类型找到子类的实现（子类已实现 area 才能实例化）。这就是抽象类普通方法的价值：骨架放基类、细节留给子类。详见「定义抽象类」的 describe 示例。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《19.ABC》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·抽象缓存）：抽象基类 Cache 声明 get/set/delete 三个抽象方法，MemoryCache 用字典实现。下列做法中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">MemoryCache(Cache) 用字典实现全部三个抽象方法</button>
+            <button class="quiz-option">MemoryCache 不继承 Cache，自己独立实现</button>
+            <button class="quiz-option">只实现 get 和 set，delete 留到调用时再说</button>
+            <button class="quiz-option">Cache 不继承 ABC，只用注释说明接口</button>
+          </div>
+          <div class="quiz-explain" hidden>正确做法：<code>MemoryCache(Cache)</code> 继承抽象基类，<strong>三个方法全部实现</strong>（<code>get → dict.get(key)</code>；<code>set → 赋值</code>；<code>delete → del</code>）。第二个不继承就失去契约约束 ✗；第三个漏实现，实例化直接 TypeError ✗；第四个没有强制力 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业一·MemoryCache）</summary>
+<pre><code>from abc import ABC, abstractmethod
+
+class Cache(ABC):
+    @abstractmethod
+    def get(self, key): pass
+
+    @abstractmethod
+    def set(self, key, value): pass
+
+    @abstractmethod
+    def delete(self, key): pass
+
+class MemoryCache(Cache):
+    def __init__(self):
+        self._data = {}
+
+    def get(self, key):
+        return self._data.get(key)
+
+    def set(self, key, value):
+        self._data[key] = value
+
+    def delete(self, key):
+        if key in self._data:
+            del self._data[key]
+
+# FileCache 同接口，用文件 + json 存储，请动手补齐</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·抽象序列）：Sequence 声明 append/get/length/__iter__ 四个抽象方法，并带普通方法 is_empty（<code>return self.length() == 0</code>）。实现 ListSequence 时正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">基于列表实现四个抽象方法，is_empty 直接继承使用</button>
+            <button class="quiz-option">连 is_empty 也要在子类里重写一遍</button>
+            <button class="quiz-option">只实现 append 和 get 两个即可实例化</button>
+            <button class="quiz-option">__iter__ 用 yield 实现而不是 return iter(...)</button>
+          </div>
+          <div class="quiz-explain" hidden><code>ListSequence</code> 实现四个抽象方法（<code>__iter__</code> 直接 <code>return iter(self._data)</code>），普通方法 <code>is_empty</code> <strong>自动继承</strong>。第二个重复劳动 ✗；第三个漏两个方法，实例化 TypeError ✗；四个抽象方法必须全部实现。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业二·ListSequence）</summary>
+<pre><code>class Sequence(ABC):
+    @abstractmethod
+    def append(self, item): pass
+
+    @abstractmethod
+    def get(self, index): pass
+
+    @abstractmethod
+    def length(self): pass
+
+    @abstractmethod
+    def __iter__(self): pass
+
+    def is_empty(self):
+        return self.length() == 0
+
+class ListSequence(Sequence):
+    def __init__(self):
+        self._data = []
+
+    def append(self, item):
+        self._data.append(item)
+
+    def get(self, index):
+        return self._data[index]
+
+    def length(self):
+        return len(self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+# LinkedListSequence 基于链表实现同一接口，请动手补齐</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（作业三·思考题）：<code>class B(A)</code> 实现了 foo；<code>class C(B): pass</code>。执行 <code>c.foo(); c.bar()</code>（bar 是 A 的普通方法），输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">B.foo 然后 A.bar</button>
+            <button class="quiz-option">B.foo 然后 B.bar</button>
+            <button class="quiz-option">A.foo 然后 A.bar</button>
+            <button class="quiz-option">实例化 C 直接 TypeError</button>
+          </div>
+          <div class="quiz-explain" hidden>C 没写任何方法，但 B 已实现抽象方法 foo，所以 <strong>C 可以实例化</strong>。调用沿 MRO 查找：<code>c.foo() → B.foo</code>（输出 B.foo）；<code>c.bar() → A.bar</code>（普通方法，输出 A.bar）。顺序：<strong>B.foo → A.bar</strong>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（思考题第二问）：<code>class D(A): pass</code>（A 有抽象方法 foo，D 不实现），执行 <code>d = D()</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TypeError：不能实例化抽象类 D</button>
+            <button class="quiz-option">正常创建，foo 调用时报错</button>
+            <button class="quiz-option">自动继承 A 的 pass 实现</button>
+            <button class="quiz-option">SyntaxError</button>
+          </div>
+          <div class="quiz-explain" hidden>D 没有实现抽象方法 foo，<strong>仍是抽象类</strong>——实例化抛 <code>TypeError: Can't instantiate abstract class D with abstract method foo</code>。错误在创建对象时就暴露，这正是抽象类的价值。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握抽象类——可以继续学习《<a href="/agents/python/类型标注/">18.类型标注</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（鸭子类型·高频）：Python 的「鸭子类型」是指？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只关心对象有没有所需方法，不关心它是什么类</button>
+            <button class="quiz-option">所有对象都必须继承同一个基类</button>
+            <button class="quiz-option">类型检查必须在运行时显式进行</button>
+            <button class="quiz-option">鸭子类型就是抽象类</button>
+          </div>
+          <div class="quiz-explain" hidden>鸭子类型（duck typing）：「走起来像鸭子、叫起来像鸭子，那就是鸭子」——多个类<strong>无继承关系</strong>，只要方法定义与调用方式相同，就能互换使用。这是 Python 多态的灵魂；抽象类 ABC 则是「显式契约」的补充手段。<a href="https://www.cnblogs.com/YZL2333/articles/11900518.html">出处：博客园「Python 面试题面向对象」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（OOP 三特性·必问）：面向对象的三大特性是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">封装、继承、多态</button>
+            <button class="quiz-option">抽象、反射、序列化</button>
+            <button class="quiz-option">闭包、装饰器、生成器</button>
+            <button class="quiz-option">类、对象、方法</button>
+          </div>
+          <div class="quiz-explain" hidden>三大特性：<strong>封装</strong>（数据与方法打包，_/__ 约定控制访问）、<strong>继承</strong>（子类复用父类，配合 MRO）、<strong>多态</strong>（同一接口不同实现，鸭子类型是 Python 特色）。面试常追问三个特性在 Python 里的具体体现。<a href="https://www.cnblogs.com/YZL2333/articles/11900518.html">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（虚拟子类·机制）：<code>ABCMeta.register</code> 注册的「虚拟子类」与普通子类有什么区别？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不继承任何实现，只让 isinstance/issubclass 认可</button>
+            <button class="quiz-option">自动继承所有抽象方法</button>
+            <button class="quiz-option">虚拟子类就是普通子类</button>
+            <button class="quiz-option">注册后不能再实例化</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Sequence.register(MyClass)</code> 把 MyClass 声明为「虚拟子类」：<strong>只影响 isinstance/issubclass 的判断</strong>，不继承任何方法——用来「事后认可」结构兼容的第三方类。抽象方法与继承照常由真实继承关系决定。<a href="https://www.cnblogs.com/YZL2333/articles/11900518.html">出处：博客园「Python 面试题面向对象」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（抽象方法判定·机制）：Python 怎么判断「子类已实现全部抽象方法」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__abstractmethods__ 集合为空</button>
+            <button class="quiz-option">扫描子类源码中的 def 语句</button>
+            <button class="quiz-option">运行每个方法检查是否报错</button>
+            <button class="quiz-option">由 __init__ 方法声明</button>
+          </div>
+          <div class="quiz-explain" hidden>类的 <code>__abstractmethods__</code> 集合记录<strong>尚未实现的抽象方法名</strong>：子类全部实现后集合为空，才可实例化——所以 <code>abstractmethods</code> 是抽象类机制的「账本」。这也是框架判断插件是否合规的底层依据。<a href="https://www.cnblogs.com/YZL2333/articles/11900518.html">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（ABC vs Protocol·设计）：什么时候选 Protocol 而不是 ABC？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">想按「结构兼容」而非继承关系约束第三方类时</button>
+            <button class="quiz-option">任何场景 Protocol 都优于 ABC</button>
+            <button class="quiz-option">Protocol 已完全取代 ABC</button>
+            <button class="quiz-option">需要强制继承关系时用 Protocol</button>
+          </div>
+          <div class="quiz-explain" hidden>ABC 是<strong>名义子类型</strong>（必须继承）；Protocol 是<strong>结构化子类型</strong>（只要方法签名匹配就算满足，无需继承）——适用于「无法修改第三方类、只想声明接口约定」的场景。选 Protocol 还是 ABC 是高级面试区分「类型思维」的标志题。<a href="https://maxiom.dev/python-developer-interview-questions">出处：Maxiom「Python Developer Interview Questions（2026）」中文面试集收录</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（设计权衡·机制）：鸭子类型与 ABC 的取舍是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">鸭子类型灵活隐式；ABC 显式契约、提前报错</button>
+            <button class="quiz-option">鸭子类型已过时，应只用 ABC</button>
+            <button class="quiz-option">两者互相冲突不能共存</button>
+            <button class="quiz-option">ABC 没有鸭子类型灵活以外的任何优势</button>
+          </div>
+          <div class="quiz-explain" hidden>鸭子类型（duck typing）灵活但错误<strong>延迟到运行时</strong>（调用缺失方法才炸）；ABC 提供<strong>显式契约</strong>——实例化时就拦截未实现，且能做类型检查。实践：内部代码多用鸭子类型，框架/插件接口用 ABC 提前兜底。<a href="https://www.cnblogs.com/YZL2333/articles/11900518.html">出处同面试题三</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/abc.html">abc — Abstract Base Classes</a>——ABC 模块的权威出处。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-interface/">Python Interfaces</a> 与 ABC 章节，把抽象类与鸭子类型的关系讲得清楚。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/抽象类速查表.html">抽象类速查表</a>——ABC 模板、抽象属性、常见误区一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python/上下文管理器/">16.上下文管理器</a> · <a href="/agents/python/ABC/">17.抽象类</a> · <a href="/agents/python/类型标注/">18.类型标注</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/ABC/">回到《19.ABC》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

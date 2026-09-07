@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《25.Future类》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（读懂延时/网络封装 demo）+ 真实面试题">
+  <title>Future类 · 互动教学课程（第 25 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 23 课</p>
+      <h1>Future类</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python/Future类/">23.Future类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 Future 表达的语义：<strong>「将来某个时间点完成」的异步任务</strong></li>
+        <li>操作 Future 状态：<code>done</code> / <code>result</code> / <code>set_result</code> / <code>set_exception</code> / <code>cancel</code></li>
+        <li>读懂源课程的两段封装代码：<strong>延时函数与网络请求的异步封装</strong>——最终考核就考它们</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《25.Future类》里，测验和考核会考。</p>
+
+      <h3>Future 状态机</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">创建：loop.create_future()</span>
+          <span class="diagram-arrow">─ 未完成 ─▶</span>
+          <span class="diagram-node">set_result / set_exception / cancel</span>
+          <span class="diagram-arrow">─ 已完成 ─▶</span>
+          <span class="diagram-node plain">正常 / 出错 / 已取消</span>
+        </div>
+        <p class="diagram-note">⚙️ 未完成时 <code>result()</code> 抛 InvalidStateError；完成回调（add_done_callback）进 ready 队列，等事件循环调度执行。</p>
+      </div>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>Future 由事件循环创建</strong>：<code>loop.create_future()</code>——它只是「未来的结果」的容器，本身不执行任务。<a href="https://docs.python.org/3/library/asyncio-future.html">官方文档：asyncio.Future</a></li>
+        <li><strong>三种完成方式</strong>：<code>set_result(值)</code> 正常完成；<code>set_exception(异常)</code> 错误完成（之后 <code>result()</code> 抛该异常）；<code>cancel()</code> 取消（<code>cancelled()</code> 为 True）。</li>
+        <li><strong>回调异步执行</strong>：<code>add_done_callback(f)</code> 注册的回调不会立即同步执行，而是被放入事件循环的 <strong>ready 队列</strong>，等调度。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. Future 类表达的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一个将在将来某个时间点完成的异步任务</button>
+            <button class="quiz-option">一个立即执行完毕的同步任务</button>
+            <button class="quiz-option">一个线程池</button>
+            <button class="quiz-option">一个网络协议</button>
+          </div>
+          <div class="quiz-explain" hidden>Future 是「未来的结果」的容器：任务开始后，完成时间不确定，用 Future 承载它的最终结果/异常/取消。详见《25.Future类》开头。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 创建 Future 的正确方式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">loop.create_future()（通过事件循环对象）</button>
+            <button class="quiz-option">Future() 直接实例化</button>
+            <button class="quiz-option">asyncio.Future() 不需要事件循环</button>
+            <button class="quiz-option">future() 内置函数</button>
+          </div>
+          <div class="quiz-explain" hidden>Future 由<strong>事件循环</strong>创建：<code>fut = loop.create_future()</code>——这样 Future 才绑定在正确的循环上。详见「操作和检查 Future 状态」代码。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. Future 未完成时调用 <code>fut.result()</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">抛 InvalidStateError</button>
+            <button class="quiz-option">返回 None</button>
+            <button class="quiz-option">阻塞等待直到完成</button>
+            <button class="quiz-option">返回 False</button>
+          </div>
+          <div class="quiz-explain" hidden>未完成就取结果 → <code>InvalidStateError</code>。先 <code>fut.done()</code> 检查，或注册回调在完成后读取。详见「操作和检查 Future 状态」代码。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>fut.set_exception(TypeError(...))</code> 之后，<code>fut.result()</code> 会？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">抛出该 TypeError</button>
+            <button class="quiz-option">返回 TypeError 对象本身</button>
+            <button class="quiz-option">返回 None</button>
+            <button class="quiz-option">抛 InvalidStateError</button>
+          </div>
+          <div class="quiz-explain" hidden>异常完成的 Future：<code>done()</code> 为 True，<code>exception()</code> 返回异常对象，<code>result()</code> <strong>抛出该异常</strong>——回调里要用 try/except 处理。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>fut.cancel("不等了")</code> 之后，<code>fut.cancelled()</code> 返回？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">"不等了"</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>取消后 <code>done()</code> 为 True、<code>cancelled()</code> 为 True；再 <code>result()</code>/<code>exception()</code> 都抛 <code>CancelledError</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. <code>fut.add_done_callback(on_done)</code> 的回调何时执行？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">放入 ready 队列，等事件循环调度</button>
+            <button class="quiz-option">注册时立即同步执行</button>
+            <button class="quiz-option">在另一个线程中执行</button>
+            <button class="quiz-option">只有 result() 被调用时才执行</button>
+          </div>
+          <div class="quiz-explain" hidden>完成回调被放入事件循环的 <strong>ready 队列</strong>，由事件循环调度——这是第 22 课 <code>call_soon</code> 机制的延续。详见《25.Future类》注释。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>async_delay(2)</code>（call_later + Future 封装）立即返回什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">未完成的 Future，2 秒后 set_result</button>
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">2 秒后的结果</button>
+            <button class="quiz-option">协程对象</button>
+          </div>
+          <div class="quiz-explain" hidden><code>async_delay</code> 内部：创建 Future → <code>loop.call_later(duration, future.set_result, None)</code> 注册定时回调 → <strong>立即返回未完成的 Future</strong>。调用方不阻塞，2 秒后事件循环触发 set_result，完成回调被调度——「延时函数的异步封装」的全部秘密。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 网络封装中，非阻塞 connect 后 <code>loop.add_writer(sock, on_writable)</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">让事件循环监听 socket 可写事件，连接成功时回调</button>
+            <button class="quiz-option">立即写入数据</button>
+            <button class="quiz-option">阻塞等待连接完成</button>
+            <button class="quiz-option">关闭 socket</button>
+          </div>
+          <div class="quiz-explain" hidden>非阻塞 connect 不会立刻完成：<code>add_writer</code> 把「socket 变为可写」注册给事件循环——连接建立后描述符可写，事件循环回调 <code>on_writable</code>，检查 SO_ERROR 无误后 <code>fut.set_result(sock)</code>。这正是第 22 课「阻塞等待 I/O，I/O 到达立刻进 ready」的具体应用。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. Future 已完成（done 为 True）后才 <code>add_done_callback(on_done)</code>，on_done 会执行吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会，被放入 ready 队列尽快调度（不会同步执行）</button>
+            <button class="quiz-option">不会，错过了完成时机</button>
+            <button class="quiz-option">立即在当前调用栈同步执行</button>
+            <button class="quiz-option">抛 RuntimeError</button>
+          </div>
+          <div class="quiz-explain" hidden>对已完成 Future 注册回调同样有效：回调被放入 ready 队列，事件循环下一轮调度它。回调<strong>永远不是同步执行</strong>的——理解这一点才能看懂封装代码里「注册回调 + 返回 Future」的链式写法。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《25.Future类》源课程作业（读懂 demo 目录两个封装）的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（延时封装·执行顺序）：以下代码由 <code>run.run(main)</code> 驱动（call_soon 后 run_forever），输出顺序是？
+<pre><code>def async_delay(duration: int):
+    loop = asyncio.get_event_loop()
+    future = loop.create_future()
+    loop.call_later(duration, future.set_result, None)
+    return future
+
+def main():
+    async_delay(2).add_done_callback(lambda _: print("2 seconds have passed"))
+    print("不影响其他代码的执行")</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">先打印「不影响」，2 秒后打印「2 seconds have passed」，随后程序挂住</button>
+            <button class="quiz-option">先等 2 秒，再按代码顺序打印两行，程序正常退出</button>
+            <button class="quiz-option">只打印第一行，回调永远不执行</button>
+            <button class="quiz-option">两行同时打印</button>
+          </div>
+          <div class="quiz-explain" hidden><code>async_delay(2)</code> 立即返回 Future（不等待），所以「不影响其他代码的执行」先打印；2 秒后 <code>call_later</code> 到点触发 <code>set_result</code>，完成回调进 ready 队列并执行，打印第二行。注意：这段代码<strong>没有调用 loop.stop()</strong>——回调执行完后 <code>run_forever</code> 不会退出，程序挂住（这正是第 22 课「没有 stop 就死循环」的教训）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（网络封装·连接完成）：<code>async_connect</code> 中，连接成功后 <code>fut.set_result(sock)</code> 由谁触发？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">socket 可写事件到达时，事件循环调用的 on_writable 回调</button>
+            <button class="quiz-option">connect 调用返回后立即同步触发</button>
+            <button class="quiz-option">主线程定时轮询触发</button>
+            <button class="quiz-option">另一个线程触发</button>
+          </div>
+          <div class="quiz-explain" hidden>非阻塞 connect 不会立刻完成：<code>loop.add_writer(sock, on_writable)</code> 把「socket 变为可写」注册给事件循环——连接建立后描述符可写，事件循环回调 <code>on_writable</code>，检查 <code>SO_ERROR</code> 无误后 <code>fut.set_result(sock)</code>。这正是第 22 课「阻塞等待 I/O，I/O 到达立刻进 ready」的具体应用。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（状态预测）：以下代码的输出是？
+<pre><code>loop = asyncio.new_event_loop()
+fut = loop.create_future()
+print(fut.done())
+fut.set_result("result")
+print(fut.done(), fut.result())</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">False 然后 True result</button>
+            <button class="quiz-option">False 然后 False result</button>
+            <button class="quiz-option">True 然后 True result</button>
+            <button class="quiz-option">第一行就抛 InvalidStateError</button>
+          </div>
+          <div class="quiz-explain" hidden><code>done()</code> 只是<strong>查询</strong>状态不报错：初始 False；<code>set_result("result")</code> 后 done() 为 True、<code>result()</code> 返回 "result"。顺序：<strong>False → True result</strong>。（只有未完成时调用 result() 才抛 InvalidStateError。）</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（回调时机）：<code>fut</code> 已完成（done() 为 True），此时 <code>fut.add_done_callback(on_done)</code>，on_done 会？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">被放入 ready 队列尽快调度，而不是同步执行</button>
+            <button class="quiz-option">永远不会执行（错过了完成时机）</button>
+            <button class="quiz-option">立即在当前调用栈同步执行</button>
+            <button class="quiz-option">抛 RuntimeError</button>
+          </div>
+          <div class="quiz-explain" hidden>对已完成 Future 注册回调同样有效：回调被放入 ready 队列，事件循环下一轮调度它。回调<strong>永远不是同步执行</strong>的——理解这一点才能看懂封装代码里「注册回调 + 返回 Future」的链式写法。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经读懂 Future 与两段封装——可以继续学习《<a href="/agents/python/协程 Coroutine/">24.协程</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（Task vs Future·高频）：asyncio 中 Task 与 Future 的关系？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Task 是 Future 的子类，把协程包装成可调度任务</button>
+            <button class="quiz-option">Future 是 Task 的子类</button>
+            <button class="quiz-option">两者完全无关</button>
+            <button class="quiz-option">Task 用于多线程，Future 用于多进程</button>
+          </div>
+          <div class="quiz-explain" hidden><strong>Future</strong>：异步操作最终结果的容器，代表尚未完成的异步操作，多用于底层集成；<strong>Task</strong>：Future 的<strong>子类</strong>，把协程对象包装成可调度任务加入事件循环，实现并发（<code>asyncio.create_task()</code>）。面试必问的组合。<a href="https://www.skillup.host/backend/3404.html">出处：Skillup「Python 后端面试题（asyncio 高频面试题汇总）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（事件循环陷阱·高频）：在协程里调用同步阻塞函数（如 time.sleep），会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">冻结整个事件循环，所有任务被延迟</button>
+            <button class="quiz-option">自动转成异步执行</button>
+            <button class="quiz-option">只阻塞当前协程</button>
+            <button class="quiz-option">抛异常终止程序</button>
+          </div>
+          <div class="quiz-explain" hidden>async 语法<strong>不会自动让阻塞代码变非阻塞</strong>：事件循环线程上的阻塞调用（time.sleep、同步网络请求）会冻结整个循环，延迟所有任务。解法：<code>await asyncio.sleep</code>，或把阻塞函数丢给线程池（<code>asyncio.to_thread</code>）。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（状态机·深水区）：Future 已完成后再次 <code>set_result(...)</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">InvalidStateError：结果只能设置一次</button>
+            <button class="quiz-option">新结果覆盖旧结果</button>
+            <button class="quiz-option">静默忽略第二次调用</button>
+            <button class="quiz-option">返回 False 表示失败</button>
+          </div>
+          <div class="quiz-explain" hidden>Future 的状态机是<strong>单向不可逆</strong>的：完成后再次 set_result/set_exception 抛 <strong>InvalidStateError</strong>——「未来的结果」一经确定不可篡改，这保证了回调看到的终值稳定。封装异步操作时误设两次是常见 bug 源。<a href="https://www.skillup.host/backend/3404.html">出处：Skillup「Python 后端面试题（asyncio 高频汇总）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（回调隔离·机制）：一个 done 回调抛了异常，其他已注册的回调会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">继续执行，异常被记录到日志</button>
+            <button class="quiz-option">全部被跳过</button>
+            <button class="quiz-option">异常导致事件循环崩溃</button>
+            <button class="quiz-option">回调被依次重试</button>
+          </div>
+          <div class="quiz-explain" hidden>Future 的回调逐个独立调度：某个回调抛异常<strong>不影响其余回调执行</strong>，异常由事件循环的异常处理器记录（默认打印日志）。「回调之间相互隔离」是异步框架的健壮性契约。<a href="https://www.skillup.host/backend/3404.html">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（Task 异常·深水区）：Task 抛了异常但从未被 await/取回，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只出现 "Task exception was never retrieved" 警告</button>
+            <button class="quiz-option">程序立即崩溃</button>
+            <button class="quiz-option">异常自动重抛到主线程</button>
+            <button class="quiz-option">任务自动重启</button>
+          </div>
+          <div class="quiz-explain" hidden>Task 的异常若<strong>从未被取回</strong>（没人 await、没人读 result），只会打一句 <strong>Task exception was never retrieved</strong> 警告就被丢弃——静默失败极难排查。工程规范：所有 Task 都要被 await（或 gather 收拢）并处理异常。<a href="https://runebook.dev/en/docs/python/library/asyncio-task/creating-tasks">出处：Runebook（Python 官方文档中文版）</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（完成语义·机制）：Task 完成与 Future 完成的语义差异是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Task 完成意味着协程函数体执行完；Future 完成只是结果就绪</button>
+            <button class="quiz-option">两者没有任何区别</button>
+            <button class="quiz-option">Future 完成后自动创建 Task</button>
+            <button class="quiz-option">Task 完成不需要事件循环</button>
+          </div>
+          <div class="quiz-explain" hidden>Task = Future + 协程驱动：Task 完成意味着<strong>协程函数体跑完</strong>（返回值/异常/取消三态）；Future 完成只表示「结果就绪」（谁塞进来的都可以）。Task 是 Future 语义在协程上的具体化。<a href="https://www.skillup.host/backend/3404.html">出处同面试题三</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/asyncio-future.html">Futures</a>——Future 全部 API 的权威出处。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/async-io-python/">Async IO in Python</a>，把 Future/Task/事件循环放进异步全景。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/Future类速查表.html">Future 类速查表</a>——状态机、三个 API 组合、封装套路一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python/事件循环/">22.事件循环</a> · <a href="/agents/python/Future类/">23.Future类</a> · <a href="/agents/python/协程 Coroutine/">24.协程</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/Future类/">回到《25.Future类》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

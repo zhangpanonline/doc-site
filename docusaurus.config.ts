@@ -3,31 +3,9 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
-const docList = [
-  {
-    path: 'interview',
-    title: 'Interview'
-  },
-  {
-    path: 'nest',
-    title: 'NestJS'
-  },
-  {
-    path: 'postgre_sql',
-    title: 'PostgreSQL'
-  },
-  {
-    path: 'python',
-    title: 'Python'
-  },
-  {
-    path: 'java',
-    title: 'Java'
-  },
-]
 const config: Config = {
-  title: 'Doc',
-  tagline: '前端技术文档与知识沉淀',
+  title: 'AI 大全栈 · 配套交互课程',
+  tagline: '六个单元 · 一条从 Agents 开发到企业级全栈交付的学习路线',
   favicon: 'img/avatar.png',
   markdown: {
     mermaid: true,
@@ -64,14 +42,14 @@ const config: Config = {
       tagName: 'meta',
       attributes: {
         name: 'description',
-        content: '个人前端技术文档站 - TypeScript、Vue、React、NestJS、PostgreSQL 等技术笔记与面试题库',
+        content: 'AI 大全栈学习路线配套交互课程站：Agents 应用开发 / 后端 / 运维云 / 高效 AI 编程 / 企业级全栈项目 / 就业指导六大单元 + 公共课程，每课配套文档、互动测验与实战作业。',
       },
     },
     {
       tagName: 'meta',
       attributes: {
         property: 'og:description',
-        content: '个人前端技术文档站 - TypeScript、Vue、React、NestJS、PostgreSQL 等技术笔记与面试题库',
+        content: 'AI 大全栈学习路线配套交互课程站：Agents 应用开发 / 后端 / 运维云 / 高效 AI 编程 / 企业级全栈项目 / 就业指导六大单元 + 公共课程，每课配套文档、互动测验与实战作业。',
       },
     },
     {
@@ -90,48 +68,21 @@ const config: Config = {
     },
   ],
 
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
-
   presets: [
     [
       'classic',
       {
         docs: {
-          sidebarPath: './docs/sidebars.ts',
+          path: 'docs',
+          routeBasePath: '/',
+          sidebarPath: './sidebars.ts',
         },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          editUrl:
-            'https://github.com/zhangpanonline/enterprise-admin/tree/main/apps/doc/',
-          // Useful options to enforce blogging best practices
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
       } satisfies Preset.Options,
     ],
-  ],
-  plugins: [
-    ...docList.map(({ path }) => [
-      '@docusaurus/plugin-content-docs',
-      {
-        id: `${path}Id`,
-        path,
-        routeBasePath: path,
-        sidebarPath: `./${path}/sidebars.ts`,
-        editUrl:
-          `https://github.com/zhangpanonline/enterprise-admin/tree/main/apps/doc/${path}`,
-      },
-    ])
   ],
   themeConfig: {
     tableOfContents: {
@@ -143,86 +94,46 @@ const config: Config = {
     navbar: {
       title: 'ZP',
       logo: {
-        alt: 'My Site Logo',
+        alt: 'AI 大全栈',
         src: 'img/avatar.png',
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'sidebarId',
+          to: '/agents/',
+          label: 'Agents 应用开发能力',
           position: 'left',
-          label: 'WebSite',
         },
-        ...docList.map(({ path, title }) => ({
-          type: 'docSidebar',
-          sidebarId: 'sidebarId',
-          docsPluginId: `${path}Id`,
-          position: 'left' as 'left' | 'right',
-          label: title,
-        })),
-        {to: 'blog', label: 'Blog', position: 'left'},
-        // {to: 'download', label: '资源下载', position: 'left'},
         {
-          href: 'https://github.com/zhangpanonline/enterprise-admin/tree/main/apps/doc',
-          label: 'GitHub',
-          position: 'right',
+          to: '/backend/',
+          label: '后端开发能力',
+          position: 'left',
+        },
+        {
+          to: '/devops/',
+          label: '运维和云计算能力',
+          position: 'left',
+        },
+        {
+          to: '/ai-coding/',
+          label: '高效 AI 编程能力',
+          position: 'left',
+        },
+        {
+          to: '/fullstack/',
+          label: '企业级全栈项目',
+          position: 'left',
+        },
+        {
+          to: '/career/',
+          label: '就业指导',
+          position: 'left',
+        },
+        {
+          to: '/common/',
+          label: '公共',
+          position: 'left',
         },
       ],
-    },
-    footer: {
-      style: 'dark',
-      links: [
-        {
-          title: '文档',
-          items: [
-            {
-              label: 'WebSite',
-              to: '/docs/dir',
-            },
-            {
-              label: 'Interview',
-              to: '/interview/vue3/vue',
-            },
-            {
-              label: 'NestJS',
-              to: '/nest/Nest 核心概念',
-            },
-            {
-              label: 'PostgreSQL',
-              to: '/postgre_sql/SQL',
-            },
-            {
-              label: 'Blog',
-              to: '/blog',
-            },
-            // {
-            //   label: '资源下载',
-            //   to: '/download',
-            // },
-          ],
-        },
-        {
-          title: '网站',
-          items: ['main', 'vue.main', 'next.main', 'nuxt.main', 'vercel.api', 'render.api'].map(path => ({
-            label: path,
-            href: `https://${path}.zhangpan.online`,
-          })),
-        },
-        {
-          title: '其它',
-          items: [
-            {
-              label: 'GitHub',
-              href: 'https://github.com/zhangpanonline/enterprise-admin',
-            },
-            {
-              label: '浏览器插件',
-              href: 'https://chromewebstore.google.com/detail/crxzp/cldfhecabiccgemiendkpdckcahicbpc?hl=zh-CN&utm_source=ext_sidebar',
-            },
-          ],
-        },
-      ],
-      copyright: `Copyright © ${new Date().getFullYear()} <a target="__blank" href="https://doc.zhangpan.online" >ZhangPan</a>. Built with <a target="__blank" href="https://docusaurus.io/" >Docusaurus</a>. Deploy in <a target="__blank" href="https://vercel.com/" >Vercel</a>.`,
     },
     prism: {
       theme: prismThemes.github,

@@ -24,3 +24,4 @@ yarn-error.log*
 .codegraph/
 AGENTS.md
 .claude
+.scratch/

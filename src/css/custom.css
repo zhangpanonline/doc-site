@@ -28,3 +28,217 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* ===== AI 大全栈 站点外壳 ===== */
+.ai-hero {
+  background: radial-gradient(1100px 520px at 72% -10%, #57a875 0%, #2e8555 48%, #173f2d 100%);
+  border-radius: 20px;
+  color: #fff;
+  padding: 56px 36px 44px;
+  margin: 24px 0 32px;
+  text-align: center;
+}
+.ai-hero-title {
+  color: #fff;
+  font-size: 38px;
+  margin-bottom: 10px;
+  text-wrap: balance;
+}
+.ai-hero-sub {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 16px;
+  margin-bottom: 36px;
+}
+.ai-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  text-align: left;
+}
+.ai-tile {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 16px;
+  padding: 22px;
+  color: #fff;
+  transition: transform 0.15s, background 0.15s;
+}
+.ai-tile:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  text-decoration: none;
+}
+.ai-tile-emoji {
+  font-size: 34px;
+  line-height: 1;
+}
+.ai-tile-name {
+  color: #fff;
+  font-size: 17px;
+  margin: 12px 0 6px;
+}
+.ai-tile-desc {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 13px;
+  line-height: 1.6;
+  flex: 1;
+  margin-bottom: 0;
+}
+.ai-badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  margin: 10px 0 2px;
+  width: fit-content;
+}
+.ai-enter {
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 10px;
+  color: #fff;
+}
+.ai-course-grid {
+  display: grid;
+  gap: 16px;
+  margin: 8px 0 20px;
+}
+.ai-course-card {
+  background: #fff;
+  border: 1px solid #e3e5e8;
+  border-radius: 14px;
+  padding: 22px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.ai-course-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(28, 30, 33, 0.08);
+}
+.ai-course-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ai-course-emoji {
+  font-size: 28px;
+}
+.ai-course-name {
+  font-size: 19px;
+  margin: 0;
+}
+.ai-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.ai-course-card .ai-badge {
+  background: #eaf6ee;
+  color: #236944;
+  margin: 0;
+}
+.ai-badge-dim {
+  background: #eef0f2;
+  color: #606770;
+}
+.ai-course-desc {
+  color: #606770;
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+.ai-meta {
+  font-size: 12.5px;
+  color: #8a9199;
+  margin-bottom: 10px;
+  font-family: monospace;
+}
+.ai-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.ai-chip {
+  font-size: 12px;
+  background: #f2f4f5;
+  color: #606770;
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+.ai-cta {
+  font-weight: 600;
+  font-size: 14px;
+}
+.ai-c-banner {
+  background: linear-gradient(90deg, #2e8555, #57a875);
+  color: #fff;
+  border-radius: 14px;
+  padding: 30px 28px;
+  margin: 24px 0 20px;
+}
+.ai-c-banner-title {
+  color: #fff;
+  font-size: 26px;
+  margin: 0 0 6px;
+}
+.ai-c-banner-desc {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14.5px;
+  margin: 0;
+}
+.ai-c-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #e3e5e8;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  color: #1c1e21;
+}
+.ai-c-row:hover {
+  text-decoration: none;
+  border-color: #2e8555;
+  color: #1c1e21;
+}
+.ai-c-row-body {
+  display: flex;
+  flex-direction: column;
+}
+.ai-c-row-title {
+  font-weight: 700;
+  font-size: 15.5px;
+}
+.ai-c-row-desc {
+  font-size: 13px;
+  color: #606770;
+}
+.ai-c-row-go {
+  margin-left: auto;
+  font-weight: 700;
+  color: #236944;
+}
+.ai-placeholder {
+  border: 2px dashed #d5d9dd;
+  border-radius: 12px;
+  padding: 26px;
+  text-align: center;
+  color: #8a9199;
+  margin: 8px 0 20px;
+}
+@media (max-width: 996px) {
+  .ai-tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .ai-tiles {
+    grid-template-columns: 1fr;
+  }
+}

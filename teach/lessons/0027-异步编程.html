@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《27.异步编程》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（读懂多智能体异步代码）+ 真实面试题">
+  <title>异步编程 · 互动教学课程（第 27 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 25 课</p>
+      <h1>异步编程</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python/异步编程/">25.异步编程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>使用官方 API 高效开发：<code>async for</code> / <code>async with</code> / <code>gather</code> / <code>TaskGroup</code> / <code>timeout</code></li>
+        <li>避开三大陷阱：协程里同步阻塞、忘记 await、手动管理事件循环</li>
+        <li>读懂<strong>多智能体异步调研系统</strong>的完整代码——最终考核围绕源课程作业展开</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《27.异步编程》里，测验和考核会考。</p>
+
+      <h3>同步 ↔ 异步协议对照</h3>
+      <table class="cmp-table">
+        <tr><th>同步</th><th>异步</th></tr>
+        <tr><td><code>__iter__</code> / <code>__next__</code></td><td><code>__aiter__</code> / <code>__anext__</code></td></tr>
+        <tr><td><code>for x in it</code></td><td><code>async for x in it</code></td></tr>
+        <tr><td><code>__enter__</code> / <code>__exit__</code></td><td><code>__aenter__</code> / <code>__aexit__</code></td></tr>
+        <tr><td><code>with ctx</code></td><td><code>async with ctx</code></td></tr>
+      </table>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>协程里别调同步阻塞函数</strong>：<code>time.sleep(1)</code> 会卡死整个事件循环——用 <code>await asyncio.sleep(1)</code>，或 <code>await asyncio.to_thread(time.sleep, 1)</code> 丢给线程池。<a href="https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread">官方文档：asyncio.to_thread</a></li>
+        <li><strong><code>gather(..., return_exceptions=True)</code> 让异常变成结果</strong>：每个结果是「正常值或异常对象」，用 <code>isinstance(r, BaseException)</code> 逐个判断——多智能体系统靠它让单个子任务失败不拖垮整体。<a href="https://docs.python.org/3/library/asyncio-task.html#asyncio.gather">官方文档：asyncio.gather</a></li>
+        <li><strong><code>CancelledError</code> 清理后必须重新 raise</strong>：<code>except asyncio.CancelledError:</code> 里做完清理要 <code>raise</code>，否则任务被静默吞掉取消信号。<a href="https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError">官方文档：CancelledError</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 遍历异步生成器必须用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">async for</button>
+            <button class="quiz-option">普通 for</button>
+            <button class="quiz-option">while + next</button>
+            <button class="quiz-option">list() 直接转换</button>
+          </div>
+          <div class="quiz-explain" hidden>异步生成器/异步迭代器用 <code>async for</code> 遍历（协议是 <code>__aiter__</code>/<code>__anext__</code>）。普通 for 会得到协程对象而不是值。详见「异步生成器与异步迭代器」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 异步上下文管理器的协议方法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__aenter__ 和 __aexit__</button>
+            <button class="quiz-option">__enter__ 和 __exit__</button>
+            <button class="quiz-option">__aiter__ 和 __anext__</button>
+            <button class="quiz-option">acquire 和 release</button>
+          </div>
+          <div class="quiz-explain" hidden><code>async with</code> 背后是 <code>__aenter__</code>/<code>__aexit__</code>（都是 async def）。详见「异步上下文管理器」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>asyncio.run(main(), debug=True)</code> 能检测出？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">创建了但从未 await 的协程对象</button>
+            <button class="quiz-option">所有运行时错误</button>
+            <button class="quiz-option">内存泄漏</button>
+            <button class="quiz-option">语法错误</button>
+          </div>
+          <div class="quiz-explain" hidden>debug 模式会警告「Coroutine 'xxx' was never awaited」以及长时间阻塞的协程——新手忘记 await 的救星。详见「使用 debug 模式」一节。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>gather(..., return_exceptions=True)</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">异常作为结果返回，不中断 gather</button>
+            <button class="quiz-option">忽略所有异常，结果里只有成功值</button>
+            <button class="quiz-option">异常直接向上抛出</button>
+            <button class="quiz-option">自动重试失败的任务</button>
+          </div>
+          <div class="quiz-explain" hidden><code>return_exceptions=True</code> 时异常<strong>以对象形式出现在结果列表</strong>里，不抛出不中断；用 <code>isinstance(r, BaseException)</code> 逐个检查。详见「gather 异常处理」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>await asyncio.wait_for(slow(), timeout=2)</code> 超时后抛出？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TimeoutError</button>
+            <button class="quiz-option">CancelledError</button>
+            <button class="quiz-option">ValueError</button>
+            <button class="quiz-option">直接返回 None</button>
+          </div>
+          <div class="quiz-explain" hidden>超时抛 <code>TimeoutError</code>（3.11+ 用 <code>async with asyncio.timeout(2)</code> 更现代）。详见「asyncio.wait_for」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 协程中调用同步阻塞函数（如 <code>time.sleep(1)</code>）的正确姿势是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">await asyncio.to_thread(time.sleep, 1) 丢给线程池</button>
+            <button class="quiz-option">直接调用，asyncio 会自动处理</button>
+            <button class="quiz-option">用 threading 再包一层</button>
+            <button class="quiz-option">阻塞就阻塞，无解</button>
+          </div>
+          <div class="quiz-explain" hidden><code>asyncio.to_thread</code> 把同步阻塞函数放进<strong>线程池</strong>执行，事件循环不被卡住；底层是 <code>loop.run_in_executor(None, func)</code>。详见「在异步中运行同步代码」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 任务被取消时（收到 CancelledError），做了清理后应该？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">raise 重新抛出（吞掉取消会让任务赖着不走）</button>
+            <button class="quiz-option">不 raise，静默结束</button>
+            <button class="quiz-option">返回默认值继续运行</button>
+            <button class="quiz-option">调用 cancel() 取消其他任务</button>
+          </div>
+          <div class="quiz-explain" hidden><code>except asyncio.CancelledError:</code> 完成清理后<strong>必须 <code>raise</code></strong> 重新抛出——否则取消信号被吞掉，任务「赖着不走」，优雅关闭模式就失效了。详见「最佳实践 7」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 协程函数里写 <code>time.sleep(1)</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">阻塞整个事件循环，其他协程全部卡住</button>
+            <button class="quiz-option">自动转成异步等待</button>
+            <button class="quiz-option">只阻塞当前协程</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>time.sleep</code> 是同步阻塞，协程执行它时整个线程（连同事件循环）卡住——其他协程无法调度。改用 <code>await asyncio.sleep</code> 或 <code>await asyncio.to_thread(time.sleep, 1)</code>。详见「最佳实践 1」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. <code>threading.Lock</code> 与 <code>asyncio.Lock</code> 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">threading.Lock 协调 OS 线程，asyncio.Lock 协调协程且等待时不阻塞循环</button>
+            <button class="quiz-option">两者可以互换使用</button>
+            <button class="quiz-option">asyncio.Lock 是 threading.Lock 的别名</button>
+            <button class="quiz-option">协程里只能用 threading.Lock</button>
+          </div>
+          <div class="quiz-explain" hidden><code>threading.Lock</code> 协调<strong>OS 线程</strong>（等待时真的阻塞）；<code>asyncio.Lock</code> 协调<strong>同一事件循环内的协程</strong>——等待锁时用 await 让出，事件循环可运行其他任务。二者<strong>不可互换</strong>：协程里用 threading.Lock 会把整个循环卡死。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《27.异步编程》源课程作业（读懂多智能体异步调研系统代码）的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（orchestrator 并行执行）：系统把调研需求分解为多个子任务后<strong>并行</strong>执行，单个失败不拖垮整体。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">asyncio.gather(*[execute_subtask(...) for ...], return_exceptions=True)</button>
+            <button class="quiz-option">for 循环逐个 await execute_subtask（顺序执行）</button>
+            <button class="quiz-option">gather 不传 return_exceptions，一个失败全部中断</button>
+            <button class="quiz-option">create_task 后不 await，直接读结果</button>
+          </div>
+          <div class="quiz-explain" hidden>正确写法：<code>raw_results = await asyncio.gather(*[...], return_exceptions=True)</code>——列表推导创建协程对象，<code>*</code> 展开传给 gather <strong>并发执行</strong>；<code>return_exceptions</code> 让单个失败以异常对象返回，后续用 <code>isinstance(r, BaseException)</code> 标记失败任务。第二个串行 ✗；第三个一个失败中断整批 ✗；第四个读不到结果 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看内嵌参考答案（orchestrator 核心）</summary>
+<pre><code>raw_results: list[str | BaseException] = await asyncio.gather(
+    *[execute_subtask(i + 1, len(subtasks), task)
+      for i, task in enumerate(subtasks)],
+    return_exceptions=True,
+)
+results: list[str] = []
+for r in raw_results:
+    if isinstance(r, BaseException):
+        results.append(f"[执行失败] {r}")
+    else:
+        results.append(r)</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（ai_tools 异步流式解析）：用 httpx 异步请求流式接口，逐行解析 <code>data: {...}</code>、遇 <code>[DONE]</code> 结束、坏行跳过。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">async for line in resp.aiter_lines()，判断 data: 前缀，[DONE] break，解析容错</button>
+            <button class="quiz-option">用 requests 同步库在协程里 post</button>
+            <button class="quiz-option">async for 但不判断 data: 前缀，每行都解析</button>
+            <button class="quiz-option">解析异常不捕获，一个坏块崩溃整个流程</button>
+          </div>
+          <div class="quiz-explain" hidden>异步流式三件套：<code>async with httpx.AsyncClient()</code> + <code>async with client.stream("POST", ...)</code> + <code>async for line in resp.aiter_lines()</code>；行处理与第 21 课 SSE 解析相同（前缀判断 → [DONE] break → 容错）。第二个同步库阻塞事件循环 ✗；第三个心跳行崩 ✗；第四个容错差 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看内嵌参考答案（ai_tools 核心）</summary>
+<pre><code>async def completions(messages) -&gt; AsyncGenerator[str, None]:
+    payload = {"model": MODEL_NAME, "messages": messages, "stream": True}
+    async with httpx.AsyncClient(timeout=120) as client:
+        async with client.stream("POST", _URL, headers=headers, json=payload) as resp:
+            resp.raise_for_status()
+            async for line in resp.aiter_lines():
+                if not line or not line.startswith("data: "):
+                    continue
+                data_str = line[6:]
+                if data_str.strip() == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data_str)
+                    content = chunk["choices"][0].get("delta", {}).get("content", "")
+                    if content:
+                        yield content
+                except (json.JSONDecodeError, KeyError, IndexError):
+                    continue</code></pre>
+          </details>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（gather 异常预测）：两个子任务，一个返回 "ok"、一个抛 ValueError，<code>return_exceptions=True</code> 时 results 的内容是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">['ok', ValueError 对象]，可用 isinstance 判断失败项</button>
+            <button class="quiz-option">只有 ['ok']，异常被丢弃</button>
+            <button class="quiz-option">直接抛出 ValueError，没有 results</button>
+            <button class="quiz-option">['ok', None]，异常变成 None</button>
+          </div>
+          <div class="quiz-explain" hidden><code>return_exceptions=True</code>：异常<strong>作为对象放进结果列表</strong>（位置与传入顺序对应）——<code>['ok', ValueError(...)]</code>。这就是 orchestrator 能标记「[执行失败]」的原因。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（CancelledError 规范）：任务被取消时（收到 CancelledError），需要做清理（如释放资源），正确处理方式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">except CancelledError 里清理，然后 raise 重新抛出</button>
+            <button class="quiz-option">except CancelledError 里清理，但不 raise（吞掉取消）</button>
+            <button class="quiz-option">不捕获，让清理代码在 finally 里做</button>
+            <button class="quiz-option">捕获后返回默认值继续运行</button>
+          </div>
+          <div class="quiz-explain" hidden><code>except asyncio.CancelledError:</code> 完成清理后<strong>必须 <code>raise</code></strong> 重新抛出——否则取消信号被吞掉，任务「赖着不走」。第三个 finally 也可以（取消信号仍会传播），但题意是 except 中的规范处理。详见「最佳实践 7」。</div>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经能用官方 API 高效开发异步程序——可以继续学习《<a href="/agents/python/多线程与多进程/">26.多线程和多进程</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（锁的区别·高频）：<code>threading.Lock</code> 与 <code>asyncio.Lock</code> 可以互换吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不可以：前者协调线程（真阻塞），后者协调协程（等待时让出）</button>
+            <button class="quiz-option">可以，都是互斥锁</button>
+            <button class="quiz-option">协程里用 threading.Lock 更安全</button>
+            <button class="quiz-option">asyncio.Lock 只能用于多进程</button>
+          </div>
+          <div class="quiz-explain" hidden><strong>不可互换</strong>：<code>threading.Lock</code> 协调 OS 线程，等待时真阻塞；<code>asyncio.Lock</code> 协调同一事件循环内的任务，<code>await lock</code> 等待时<strong>让循环运行其他任务</strong>。协程里误用 threading.Lock 会卡死整个事件循环。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（gather vs TaskGroup·追问）：两者都能并发运行协程，失败处理有何不同？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">gather 默认异常即抛；TaskGroup 任一异常会取消全组</button>
+            <button class="quiz-option">两者失败处理完全一样</button>
+            <button class="quiz-option">TaskGroup 不处理异常</button>
+            <button class="quiz-option">gather 会自动重试失败任务</button>
+          </div>
+          <div class="quiz-explain" hidden><code>gather</code>：默认任何异常立即传播（可用 return_exceptions 改）；<code>TaskGroup</code>（3.11+）：<strong>结构化并发</strong>——任一子任务异常会<strong>取消组内所有其他任务</strong>并保证退出前全部完成。选择依据：结果顺序与失败行为。<a href="https://www.skillup.host/backend/3404.html">出处：Skillup「Python 后端面试题（asyncio 高频面试题汇总）」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（异步死锁·深水区）：两个协程按相反顺序获取两把 <code>asyncio.Lock</code>，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">死锁：互相等待对方释放，事件循环整体卡住</button>
+            <button class="quiz-option">锁自动检测并报错</button>
+            <button class="quiz-option">GIL 会打破死锁</button>
+            <button class="quiz-option">后获取的协程自动让出锁</button>
+          </div>
+          <div class="quiz-explain" hidden>与线程死锁同构：<code>asyncio.Lock</code> <strong>默认无超时</strong>，两协程反向获取两把锁 → 互相等待 → 事件循环整体卡死（且没有报错）。工程实践：一致的锁顺序 + 更小临界区 + <code>await asyncio.wait_for(lock.acquire(), timeout=...)</code> 有界等待。<a href="https://blog.csdn.net/itAred/article/details/147422360">出处：CSDN「终面倒计时 5 分钟：候选人用 trio 破解 asyncio 死锁危机」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（TaskGroup 异常·机制）：<code>asyncio.TaskGroup</code> 中某个子任务抛异常，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">取消组内其他任务，异常以 ExceptionGroup 抛出</button>
+            <button class="quiz-option">其他任务继续运行不受影响</button>
+            <button class="quiz-option">异常被静默吞掉</button>
+            <button class="quiz-option">只取消抛出异常的任务</button>
+          </div>
+          <div class="quiz-explain" hidden>TaskGroup 是<strong>结构化并发</strong>：任一子任务异常 → <strong>取消组内所有其他任务</strong> → 退出后以 <code>ExceptionGroup</code>（3.11+）聚合抛出所有异常。与 gather 的「默认异常即抛、其余继续」形成对比——失败行为是两者的选择依据。<a href="https://www.skillup.host/backend/3404.html">出处：Skillup「Python 后端面试题（asyncio 高频汇总）」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（死锁诊断·工程）：生产环境异步服务疑似死锁，第一时间该做什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">PYTHONASYNCIODEBUG=1 观察 pending 任务与卡住的 await</button>
+            <button class="quiz-option">直接重启服务碰运气</button>
+            <button class="quiz-option">把 asyncio 全部改成多线程</button>
+            <button class="quiz-option">在代码里到处加 print</button>
+          </div>
+          <div class="quiz-explain" hidden>诊断异步死锁的标准动作：开 <strong>PYTHONASYNCIODEBUG</strong>（暴露「某任务长期 pending」「Event loop is closed」等静默失败），配合 <code>asyncio.all_tasks()</code> dump 各任务状态，定位卡在哪个 await（锁/网络）。「print 输出顺序不可信」是并发诊断的第一课。<a href="https://www.php.cn/faq/2586478.html">出处：PHP 中文站「如何在 Python 生产环境下调试异步死锁与任务阻塞问题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（入口规范·深水区）：生产环境为什么不推荐裸用 <code>asyncio.run</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会掩盖死锁信号并强制 cancel 未完成任务</button>
+            <button class="quiz-option">运行速度太慢</button>
+            <button class="quiz-option">语法已废弃</button>
+            <button class="quiz-option">不支持协程参数</button>
+          </div>
+          <div class="quiz-explain" hidden><code>asyncio.run</code> 退出时会<strong>强制 cancel 所有未完成任务</strong>并静默关闭循环——异常未处理时静默退出、死锁信号（哪些任务没跑完）被掩盖。生产实践：手动管理循环，退出前用 <code>asyncio.all_tasks()</code> 检查残留任务、cancel 后 gather 收尾。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处：Runebook（Python 官方文档中文版）</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/asyncio-task.html">Coroutines and Tasks</a>——gather/TaskGroup/timeout 的权威出处。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/async-io-python/">Async IO in Python: A Complete Walkthrough</a>，把异步全景串起来。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/异步编程速查表.html">异步编程速查表</a>——协议对照、官方 API、三大陷阱一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python/协程 Coroutine/">24.协程</a> · <a href="/agents/python/异步编程/">25.异步编程</a> · <a href="/agents/python/多线程与多进程/">26.多线程和多进程</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/异步编程/">回到《27.异步编程》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -2,5 +2,16 @@
   "framework": "docusaurus-2",
   "buildCommand": "pnpm build",
   "outputDirectory": "build",
-  "installCommand": "pnpm install --ignore-scripts"
+  "installCommand": "pnpm install --ignore-scripts",
+  "redirects": [
+    {"source": "/python/安装/:path*", "destination": "/agents/python/python环境安装/:path*", "statusCode": 301},
+    {"source": "/python/语言核心/基础语法/:path*", "destination": "/agents/python/python基本语法/:path*", "statusCode": 301},
+    {"source": "/python/语言核心/Lambda表达式/:path*", "destination": "/agents/python/lambda表达式/:path*", "statusCode": 301},
+    {"source": "/python/语言核心/抽象类/:path*", "destination": "/agents/python/ABC/:path*", "statusCode": 301},
+    {"source": "/python/语言核心/协程/:path*", "destination": "/agents/python/协程-Coroutine/:path*", "statusCode": 301},
+    {"source": "/python/语言核心/多线程和多进程/:path*", "destination": "/agents/python/多线程与多进程/:path*", "statusCode": 301},
+    {"source": "/python/语言核心/Monorepo/:path*", "destination": "/agents/python/monorepo/:path*", "statusCode": 301},
+    {"source": "/python/语言核心/:path*", "destination": "/agents/python/:path*", "statusCode": 301},
+    {"source": "/python/:path*", "destination": "/agents/python/:path*", "statusCode": 301}
+  ]
 }

@@ -1,0 +1,173 @@
+---
+sidebar_position: 16
+title: '16. 异常处理'
+---
+
+# 异常处理
+
+## 异常的捕获
+
+使用 `try...except` 捕获可能发生的异常
+
+可以捕获多个异常，并获取异常对象：
+
+```python title="捕获多个异常" {3,5}
+try:
+    number = int("abc")
+except ValueError as e:
+    print(f"数值错误: {e}")
+except TypeError as e:
+    print(f"类型错误: {e}")
+else:
+    print("没有异常时执行")
+finally:
+    print("始终会执行")
+```
+
+```python title="获取异常对象信息" {4,5}
+try:
+    number = int("abc")
+except ValueError as e:
+    print(e.args)  # 获取异常信息
+    print(e.__traceback__)  # 异常的堆栈跟踪对象
+```
+
+## 异常类型
+
+Python 内置异常形成层次结构，捕获父类异常可以捕获其所有子类：
+
+```
+BaseException
+ ├── SystemExit          # sys.exit() 引发
+ ├── KeyboardInterrupt   # Ctrl+C 引发
+ └── Exception           # 常规异常的基类
+      ├── ArithmeticError
+      │    └── ZeroDivisionError
+      ├── LookupError
+      │    ├── IndexError
+      │    └── KeyError
+      ├── TypeError
+      ├── ValueError
+      │    └── UnicodeError
+      └── ...
+```
+
+```python title="捕获基类异常" {5}
+# 捕获 Exception 可以捕获几乎所有常规异常
+try:
+    # 可能引发各种异常的操作
+    pass
+except Exception as e:
+    print(f"发生错误: {e}")
+
+# 但不推荐捕获过于宽泛的异常，应尽量精确
+```
+
+
+
+## 主动抛出异常
+
+使用 `raise` 主动抛出异常：
+
+```python title="主动抛出异常" {3,5}
+def withdraw(balance, amount):
+    if amount > balance:
+        raise ValueError("余额不足")
+    if amount <= 0:
+        raise ValueError("取款金额必须大于零")
+    return balance - amount
+
+try:
+    withdraw(100, 200)
+except ValueError as e:
+    print(e)  # 余额不足
+```
+
+可以重新抛出当前异常：
+
+```python title="重新抛出异常" {6}
+try:
+    risky_operation()
+except Exception:
+    # 记录日志后继续抛出
+    print("发生异常，准备抛出")
+    raise  # 重新抛出
+```
+
+## 自定义异常
+
+通过继承 `Exception` 或其子类创建自定义异常：
+
+```python title="自定义异常" {1,5}
+class ValidationError(Exception):
+    """参数验证失败"""
+    pass
+
+class NotFoundError(Exception):
+    """资源不存在"""
+    
+    def __init__(self, resource, resource_id):
+        self.resource = resource
+        self.resource_id = resource_id
+        super().__init__(f"{resource} (id={resource_id}) 不存在")
+
+
+# 使用
+def get_user(user_id):
+    if user_id <= 0:
+        raise ValidationError("用户ID必须大于零")
+    if user_id not in user_database:
+        raise NotFoundError("User", user_id)
+    return user_database[user_id]
+```
+
+
+
+## 异常链
+
+```python title="异常链的两种方式" {6,14}
+def exception_chains1():
+    # 方式1：直接抛出（无关联）
+    try:
+        raise ValueError("错误A")
+    except ValueError:
+        raise RuntimeError("错误B")  # 隐式关联，__context__ 有值
+
+
+def exception_chains2():
+    # 方式2：from 显式关联
+    try:
+        raise ValueError("错误A")
+    except ValueError as e:
+        raise RuntimeError("错误B") from e  # 显式关联，__cause__ 有值
+
+
+# 查看区别
+try:
+    exception_chains1()
+except RuntimeError as e:
+    print("隐式关联:", e)
+    print(f"  __cause__: {e.__cause__}")  # None
+    print(f"  __context__: {e.__context__}")  # ValueError
+
+try:
+    exception_chains2()
+except RuntimeError as e:
+    print("\n显式关联:", e)
+    print(f"  __cause__: {e.__cause__}")  # ValueError
+    print(f"  __context__: {e.__context__}")  # None
+
+```
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了本章内容？
+
+<a href="/teach/lessons/0016-异常处理.html"><strong>👉 点击进入《异常处理互动教学课程》</strong></a>
+
+- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业（安全除法/重试/银行账户）改编的最终考核
+- 📋 配套<a href="/teach/reference/异常处理速查表.html">《异常处理速查表》</a>，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师
+

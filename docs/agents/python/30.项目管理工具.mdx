@@ -1,0 +1,585 @@
+---
+sidebar_position: 30
+title: '30. 项目管理工具'
+---
+
+# 项目管理工具
+
+从上一节我们知道，构建和发布一个 Python 项目需要依赖 `venv`、`pip`、`build`、`twine` 等一系列工具，流程繁琐且容易出错。
+
+**UV** 就是为解决这些问题而生的现代项目管理工具。
+
+:::note 官方文档
+https://docs.astral.sh/uv/
+:::
+
+## [可选]pyenv 卸载
+
+之前我们使用 `pyenv` 来管理多版本 Python，现在 UV 集成了 Python 版本管理功能（`uv python install` / `uv python list` / `uv python pin`），不再需要 `pyenv`，可以将其卸载。
+
+### macOS（Homebrew 安装）
+
+```shell title="macOS 卸载 pyenv"
+# 1. 卸载 pyenv
+brew uninstall pyenv
+
+# 2. 删除残留的 pyenv 目录和数据
+rm -rf ~/.pyenv
+
+# 3. 编辑 ~/.zshrc，移除以下内容：
+#    - eval "$(pyenv init -)"
+#    - export PYTHON_BUILD_MIRROR_URL="..."
+#    然后执行 source ~/.zshrc 刷新
+```
+
+### Windows（pyenv-win）
+
+```shell title="Windows 卸载 pyenv"
+# 1. 删除安装目录（默认路径）
+rm -r $env:USERPROFILE\.pyenv
+
+# 2. 打开「系统环境变量」，删除：
+#    - 用户变量中的 PYENV
+#    - 用户变量中的 PYTHON_BUILD_MIRROR_URL
+#    - Path 中的 %USERPROFILE%\.pyenv\pyenv-win\bin 和 %USERPROFILE%\.pyenv\pyenv-win\shims
+```
+
+### 验证
+
+```shell title="验证卸载"
+pyenv --version
+# 输出类似：command not found: pyenv
+# 说明卸载成功
+```
+
+## UV 简介
+
+UV 是用 Rust 编写的极速 Python 包和项目管理器，来自 Astral 公司。
+
+它致力于替代以下工具：
+
+| 被替代的工具 | UV 对应命令 | 说明 |
+| :--- | :--- | :--- |
+| `pip` | `uv pip` | 安装包 |
+| `pip-tools` | `uv lock` / `uv sync` | 锁定依赖版本，同步环境 |
+| `pipx` | `uv tool` | 运行/安装 CLI 工具 |
+| `virtualenv` / `venv` | `uv venv` | 管理虚拟环境 |
+| `pyenv` | `uv python` | 管理多版本 Python |
+| `poetry` / `pdm` | `uv init` / `uv add` / `uv remove` | 项目初始化、依赖管理 |
+
+它的最大亮点是**快** —— 比 pip 快 10–100 倍。
+
+
+
+## 安装
+
+```shell title="安装 UV"
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "powershell -c \"irm https://astral.sh/uv/install.ps1 | iex\""
+
+# macOS 上也支持 brew
+brew install uv
+```
+
+安装后确认：
+
+```shell title="确认安装"
+uv --version
+```
+
+:::note 提示
+UV 会自动将自身添加到 `PATH`。如果找不到命令，可以手动将 `~/.local/bin` 加入 `PATH`。
+:::
+
+### 配置镜像源（国内加速）
+
+由于网络原因，国内用户建议配置 PyPI 镜像源来加速包下载。
+
+编写文件`~/.config/uv/uv.toml`
+
+```shell title="配置镜像源（uv.toml）"
+[[index]]
+name = "aliyun-private"
+url = "阿里云私有源地址"
+default = true
+
+[[index]]
+name = "tuna"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+```
+
+### VSCode Code Runner 配置
+
+```json title="VSCode Code Runner 配置"
+"python": "uv run"
+```
+
+
+
+## Python 版本管理
+
+UV 集成了 Python 版本管理功能，无需再使用 `pyenv`。
+
+```python title="Python 版本管理命令"
+# 查看所有可用的 Python 版本（可安装的）
+uv python list
+
+# 查看本地已安装的 Python 版本
+uv python list --only-installed
+
+# 安装特定 Python 版本（例如 3.12.3）
+uv python install 3.12.3
+
+# 安装最新稳定版 Python
+uv python install
+
+# 安装多个版本
+uv python install 3.11.9 3.12.3
+
+# 卸载特定 Python 版本
+uv python uninstall 3.12.3
+
+# 查看当前环境使用的 Python 路径
+uv python find
+
+# 为当前项目固定 Python 版本（会在目录下生成 .python-version 文件）
+uv python pin 3.12
+
+# 移除当前项目的 Python 版本固定（删除 .python-version 文件）
+uv python pin --rm
+
+# 查看当前项目固定了哪个 Python 版本
+uv python pin
+
+# 使用特定 Python 版本执行临时命令（不修改项目设置）
+uv run --python 3.11 python --version
+
+# 创建虚拟环境时指定 Python 版本
+uv venv --python 3.12
+
+# 查看所有已安装的 Python 版本及其路径
+uv python list --only-installed --verbose
+```
+
+
+
+## 快速上手：创建一个项目
+
+### 初始化项目
+
+```shell title="初始化项目"
+# 创建目录并初始化
+uv init my-project 
+cd my-project
+
+# 对当前目录初始化
+uv init
+
+# 不创建git仓库
+uv init --vcs none
+
+# 生成src layout结构的目录
+uv init --lib
+```
+
+### 配置脚本
+
+`uv init` 生成的项目默认没有入口模块配置。要让项目可以通过 `uv run` 直接执行，或发布后提供命令行工具，需要在 `pyproject.toml` 中配置 `[project.scripts]`：
+
+```toml title="配置项目脚本"
+[project.scripts]
+# 等号左边是命令名称，右边是 "模块路径:函数名"
+my-cli = "my_project:main"
+```
+
+配置后：
+- 项目内执行 `uv run my-cli` 即可调用 `my_project/__init__.py` 中的 `main()` 函数
+- 发布到 PyPI 后，用户 `pip install` 安装即可在终端使用 `my-cli` 命令
+
+
+
+### 安装依赖
+
+```shell title="添加依赖"
+# 添加依赖
+uv add requests
+
+# 添加开发依赖
+uv add --dev pytest
+
+# 指定版本
+uv add "fastapi>=0.100.0"
+```
+
+执行 `uv add` 后，UV 会自动：
+
+1. 解析依赖树，找到满足所有约束的最新版本
+2. 安装到当前项目的虚拟环境
+3. 更新 `pyproject.toml` 中的 `dependencies`
+4. 生成/更新 `uv.lock` 锁定文件
+
+```shell title="查看依赖树"
+# 查看当前依赖树（类似 pipdeptree）
+uv tree
+```
+
+输出示例：
+
+```text title="输出示例"
+my-project v0.1.0
+├── certifi v2024.2.2
+├── charset-normalizer v3.3.2
+├── idna v3.6
+├── pytest v8.1.1
+│   ├── iniconfig v2.0.0
+│   ├── packaging v24.0
+│   └── pluggy v1.4.0
+└── requests v2.31.0
+    ├── certifi v2024.2.2
+    ├── charset-normalizer v3.3.2
+    ├── idna v3.6
+    └── urllib3 v2.2.1
+```
+
+### 移除依赖
+
+```shell title="移除依赖"
+uv remove requests
+```
+
+### 同步环境
+
+如果别人拉取了你的代码，或者你想根据 `pyproject.toml` / `uv.lock` 重建环境：
+
+```shell title="同步环境"
+uv sync
+```
+
+`uv sync` 会根据 `uv.lock`（如果有）或 `pyproject.toml` 安装所有依赖，确保环境与锁文件一致。
+
+### 运行项目
+
+```shell title="运行项目"
+# 运行指定文件
+uv run src/main.py
+
+# 运行指定模块
+uv run -m src.main
+```
+
+`uv run` 会自动激活虚拟环境并执行命令，无需手动 `source .venv/bin/activate`。
+
+## 虚拟环境管理
+
+UV 可以独立管理虚拟环境，而不必依赖项目。
+
+### 创建虚拟环境
+
+```shell title="创建虚拟环境"
+# 在当前目录创建 .venv
+uv venv
+
+# 指定目录
+uv venv my-env
+
+# 指定 Python 版本
+uv venv --python 3.11
+
+# 指定 Python 版本范围
+uv venv --python 3.10
+```
+
+### 激活与退出
+
+```shell title="激活与退出"
+# 激活
+source .venv/bin/activate
+
+# 退出
+deactivate
+```
+
+### 查看环境信息
+
+```shell title="查看环境信息"
+uv venv --list   # 显示所有管理的 venv（需要配合项目）
+```
+
+:::note 提示
+UV 会在项目根目录创建 `.venv`，并在 `pyproject.toml` 中记录。你不需要手动管理 `venv` 的路径——`uv run` 会自动检测。
+:::
+
+### UV 的项目级 vs 全局级
+
+| 模式 | 命令 | 说明 |
+| :--- | :--- | :--- |
+| 项目级 | `uv add` / `uv sync` / `uv run` | 关联 `pyproject.toml`，依赖写入项目 |
+| 全局级 | `uv pip install` / `uv venv` | 独立于任何项目，像传统 pip 一样使用 |
+
+:::note 提示
+UV 的全局模式兼容 pip 的用法。如果你有现成的 `requirements.txt`：
+
+```shell title="使用 requirements.txt"
+uv pip install -r requirements.txt
+```
+
+项目模式比全局模式更推荐使用。
+:::
+
+### 全局缓存
+
+UV 使用全局缓存（`~/.cache/uv`）来存储下载的包，多个项目共享同一份缓存。
+
+```shell title="查看缓存信息"
+# 查看缓存信息
+uv cache dir
+
+# 清理缓存
+uv cache clean
+```
+
+## Running Tools —— 无需安装即可运行
+
+在开发中经常需要临时运行一些工具，比如 `black`、`ruff`、`pre-commit` 等。传统做法是先 `pip install`，用完再卸载。UV 提供了更优雅的方式：
+
+### uvx —— 一键运行
+
+```shell title="uvx 一键运行"
+# 运行一个工具，无需安装
+uvx ruff check .
+
+# 等价于传统的
+# pip install ruff && ruff check . && pip uninstall ruff
+
+# 指定版本
+uvx bandit@1.7.5 .
+
+# 传递参数（跟在 `--` 后面）
+uvx cowsay -- "Hello, UV!"
+```
+
+`uvx` 会：
+
+1. 在临时虚拟环境中安装指定包
+2. 运行对应命令
+3. 结束后清理环境
+
+### uv tool —— 持久安装 CLI 工具
+
+如果你想长期使用一个工具：
+
+```shell title="uv tool 持久安装"
+# 安装
+uv tool install ruff
+
+# 运行
+ruff check .
+
+# 查看所有安装的工具
+uv tool list
+
+# 更新
+uv tool upgrade ruff
+
+# 卸载
+uv tool uninstall ruff
+```
+
+
+
+### 在项目中添加工具依赖
+
+```shell title="在项目中添加工具依赖"
+# 将工具作为开发依赖添加到项目中
+uv add --dev ruff black mypy
+```
+
+然后在项目中：
+
+```shell title="运行项目工具"
+uv run ruff check .
+uv run black .
+uv run mypy src/
+```
+
+:::note 提示
+通过 `uv add --dev` 安装的工具，其他协作者执行 `uv sync` 后同样可用，这是团队协作推荐的方式。
+:::
+
+## 构建与发布
+
+UV 内置了构建和发布功能，完全替代了 `build` + `twine`。
+
+### 构建
+
+```shell title="构建分发包"
+# 构建 sdist 和 wheel
+uv build
+
+# 产物在 dist/ 目录下
+ls dist/
+# my_project-0.1.0.tar.gz
+# my_project-0.1.0-py3-none-any.whl
+```
+
+:::note 提示
+`uv build` 会读取 `pyproject.toml` 中的 `[build-system]` 配置，使用后端工具（如 `hatchling`）完成构建。
+:::
+
+### 发布
+
+```shell title="发布到 PyPI"
+# 发布到 PyPI
+uv publish
+
+# 指定 token（推荐用环境变量）
+UV_PUBLISH_TOKEN=pypi-xxxxx uv publish
+
+# 发布到私有仓库
+uv publish \
+  --publish-url 私有仓库地址\
+  --username 你的用户名\
+  --password 你的密码\
+  dist/*
+```
+
+:::note 提示
+`uv publish` 直接替代了 `twine upload`。
+
+首次发布需要先在 pypi.org 注册账号并创建 API token，UV 也支持使用 `.pypirc` 配置文件。
+:::
+
+
+
+## Makefile —— 统一项目命令入口
+
+:::note 安装 make（Windows）
+`make` 是 macOS 和 Linux 系统自带的工具，但 Windows 默认没有。Windows 用户可以按以下方式安装：
+
+```shell title="安装 make"
+# 方式一：Chocolatey（推荐）
+choco install make
+
+# 方式二：winget
+winget install GnuWin32.Make
+
+# 方式三：通过 Git Bash 安装（安装 Git 时勾选 Git Bash 即可）
+# 然后在 Git Bash 中运行 make，或将其加入 PATH
+```
+
+安装后验证：
+
+```shell title="验证安装"
+make --version
+```
+:::
+
+虽然 UV 提供了丰富的命令，但团队成员（或未来的你）仍需要记住 `uv run pytest`、`uv run ruff check`、`uv build` 等一串命令。**Makefile** 可以把常用操作封装成简短一致的名字。
+
+### 一个典型的 Python + UV 项目的 Makefile
+
+```makefile title="典型 Makefile"
+.PHONY: install test lint format build clean
+
+# 安装依赖
+install:
+	uv sync
+
+# 运行测试
+test:
+	uv run pytest
+
+# 代码检查
+lint:
+	uv run ruff check .
+
+# 自动格式化
+format:
+	uv run ruff format .
+
+# 构建分发包
+build:
+	uv build
+
+# 清理构建产物和缓存
+clean:
+	rm -rf dist/
+	rm -rf .pytest_cache/
+	uv cache clean
+```
+
+使用方式：
+
+```shell title="使用方式"
+make install   # uv sync
+make test      # uv run pytest
+make lint      # uv run ruff check .
+make format    # uv run ruff format .
+make build     # uv build
+make clean     # 清理
+```
+
+### 带参数的目标
+
+```makefile title="带参数的目标"
+.PHONY: publish
+
+# 发布到指定仓库，用法: make publish REPO_URL=https://...
+publish:
+	uv publish --publish-url $(REPO_URL)
+```
+
+### 串联多个任务
+
+```makefile title="串联多个任务"
+.PHONY: ci
+
+# CI 流程：检查 → 测试 → 构建
+ci: 
+	lint test build
+```
+
+```shell title="make ci"
+make ci   # 依次执行 lint → test → build
+```
+
+:::note 提示
+Makefile 的核心价值是**约定**：不管项目用什么工具链，新人只需 `make test` 就能跑测试，`make build` 就能构建。对于 CI/CD 也天然适配。
+:::
+
+## 常用命令速查
+
+| 命令 | 作用 |
+| :--- | :--- |
+| `uv init` | 初始化新项目 |
+| `uv add` | 添加依赖 |
+| `uv remove` | 移除依赖 |
+| `uv sync` | 同步环境（安装/更新依赖） |
+| `uv lock` | 更新锁定文件 |
+| `uv run` | 在项目环境中运行命令 |
+| `uv tree` | 查看依赖树 |
+| `uv build` | 构建分发包 |
+| `uv publish` | 发布到 PyPI |
+| `uv venv` | 创建虚拟环境 |
+| `uv python install` | 安装 Python 版本 |
+| `uv python list` | 列出已安装的 Python |
+| `uv python pin` | 锁定项目 Python 版本 |
+| `uv tool install` | 安装 CLI 工具 |
+| `uv tool run` / `uvx` | 临时运行 CLI 工具 |
+| `uv cache clean` | 清理缓存 |
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了本章内容？
+
+<a href="/teach/lessons/0030-项目管理工具.html"><strong>👉 点击进入《项目管理工具互动教学课程》</strong></a>
+
+- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业（uv 工程改造/私有发布）改编的最终考核
+- 📋 配套<a href="/teach/reference/项目管理工具速查表.html">《项目管理工具速查表》</a>，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师
+

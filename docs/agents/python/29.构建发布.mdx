@@ -1,0 +1,164 @@
+---
+sidebar_position: 29
+title: '29. 构建发布'
+---
+
+# 构建发布
+
+## 库的开发流程
+
+![image-20260601134020260](https://resource.duyiedu.com/yuanjin/202606011340298.png)
+
+## 构建
+
+:::note 参考资料
+
+构建协议：https://peps.python.org/pep-0517/
+
+构建产物标准：https://peps.python.org/pep-0427/
+
+:::
+
+```toml title="pyproject.toml 构建配置"
+# pyproject.toml
+
+[build-system] # 构建系统配置，指定构建工具和依赖
+requires = ["hatchling"] # 依赖的后端构建工具
+build-backend = "hatchling.build" # 使用哪个工具的哪个模块来构建项目
+
+[project] # 工程描述
+name = "duyi-utils" # 发行版名称
+version = "0.1.3" # 版本号，遵循语义化版本控制
+description = "一个用于学习 Python 公共库构建和发布的示例工程" # 项目简介
+requires-python = ">=3.14" # 指定支持的 Python 版本
+readme = "README.md" # 指定项目的 README 文件路径
+dependencies = [
+    "python-dateutil>=2.8", # 依赖的第三方库，指定版本要求
+    "Markdown>=3.5", # 另一个依赖
+]
+
+[tool.hatch.build.targets.sdist] # 配置源代码分发包
+# 配置留空，表示它会默认包含所有项目文件
+
+[tool.hatch.build.targets.wheel] # 配置 wheel 包
+packages = ["src/duyi_utils"] # 配置 wheel 包的构建目标，指定包含的包路径
+```
+
+:::note 提示
+
+需要安装VSCode插件：even better toml
+
+:::
+
+:::note 常用工具
+
+常用构建前端：`uv`、`Poetry`、`PDM`、...
+
+常用构建后端：`hatchling`、`setuptools`、`PDM-backend`、`uv-build` `poetry-core`...
+
+:::
+
+构建方式
+
+```shell title="构建步骤"
+# 1. 创建虚拟环境
+python -m venv .venv
+
+# 2. 激活虚拟环境
+source .venv/bin/activate
+
+# 3. 安装构建工具
+pip install build
+
+# 4. 运行构建
+python -m build
+```
+
+构建产物放到了`./dist`中
+
+## 发布和安装
+
+### 发布前的准备
+
+```shell title="发布前的准备"
+# 先构建（略）
+
+# 安装官方的发布工具
+pip install twine
+
+# 【可选】验证构建产物的完整性
+twine check dist/*
+```
+
+### 发布到官方仓库
+
+1. 注册账号：https://pypi.org/account/register/
+2. 创建一个token：https://pypi.org/manage/account/token/
+3. 复制token
+4. 运行`twine upload dist/*`命令上传
+
+---
+
+安装：使用`pip install xxx`安装即可
+
+### 发布到私有仓库
+
+通常使用云服务完成私有仓库的搭建
+
+1. 创建阿里云效制品仓库
+   https://packages.aliyun.com/
+2. 按照仓库指南配置并上传包
+
+---
+
+安装：
+
+1. 将制品仓库作为镜像源
+   ```ini title="私有仓库镜像源配置"
+   [global]
+   index-url = 制品仓库地址
+   extra-index-url = 镜像源地址
+   trusted-host = packages.aliyun.com
+   ```
+
+2. 直接安装`pip install xxx`即可
+
+## 可编辑依赖
+
+:::note 可编辑安装
+
+可编辑安装（editable install）又称开发模式安装，通过 `pip install -e .` 将项目以链接形式安装到当前环境。
+
+:::
+
+当项目被可编辑安装后，你对源码的任何修改都会**即时生效**，无需重新构建和重新安装。
+
+这在日常开发中非常有用：
+
+- 你可以在一个项目里开发公共库，同时在另一个项目里导入并实时测试
+- 代码改动后不用反复执行 `pip install`，节约大量时间
+
+```shell title="可编辑安装"
+# 在项目根目录执行
+pip install -e 目标工程路径
+```
+
+其原理是在 `site-packages` 中创建一个指向项目源码的链接（ `.pth` 文件），而不是复制一份代码过去。
+
+```python title="使用可编辑安装的模块"
+# 执行后，可以在任意位置导入
+from duyi_utils import some_func
+# 修改源码后，下次调用自动生效
+```
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了本章内容？
+
+<a href="/teach/lessons/0029-构建发布.html"><strong>👉 点击进入《构建发布互动教学课程》</strong></a>
+
+- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业（库构建/私有发布/安装流程）改编的最终考核
+- 📋 配套<a href="/teach/reference/构建发布速查表.html">《构建发布速查表》</a>，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师

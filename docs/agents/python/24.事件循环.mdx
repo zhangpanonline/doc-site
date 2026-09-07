@@ -1,0 +1,144 @@
+---
+sidebar_position: 24
+title: '24. 事件循环'
+---
+
+# 事件循环
+
+## 同步代码的问题
+
+```python title="同步代码的阻塞问题"
+import requests
+
+def task1():
+  # 任务1
+  requests.post(...) # 发送请求，阻塞线程
+
+def task2():
+  # 任务2
+  pass
+
+task1()	# task1的阻塞导致后续任务白白等待，浪费了CPU资源
+task2()
+```
+
+## 什么是异步
+
+异步是一种编程模式，当有多个任务需要在**一个线程**上执行时，这种模式可以让任务不会造成线程阻塞
+
+![async_vs_sync](https://resource.duyiedu.com/yuanjin/202605271757205.svg)
+
+## 异步 VS 多线程
+
+运算密集型：多线程
+
+I/O密集型：异步
+
+## Python的事件循环
+
+事件循环是实现异步的基础手段
+
+### AbstractEventLoop类
+
+在`python`中，一个事件循环就是一个`AbstractEventLoop`类的对象
+
+```python title="创建和运行事件循环"
+import asyncio
+
+# 创建一个新的事件循环对象
+loop = asyncio.new_event_loop()
+
+# 绑定事件循环到当前线程
+asyncio.set_event_loop(loop)
+
+# 获取当前线程的事件循环
+current_loop = asyncio.get_event_loop()
+
+print("当前事件循环:", current_loop)
+
+# 移除事件循环绑定
+asyncio.set_event_loop(None)
+
+# 运行事件循环
+# 陷入死循环，除非在循环中终止，否则后续代码永远无法得到运行
+current_loop.run_forever()
+
+# 停止事件循环
+current_loop.stop()
+```
+
+### run_forever方法
+
+```python title="run_forever 方法" {5}
+def run_forever(self):
+    """Run until stop() is called."""
+    while True:
+        self._run_once()
+        if self._stopping:
+            break
+```
+
+### \_run\_once逻辑
+
+`_run_once`方法的核心，就是调度事件循环中的队列
+
+它要确保每次该方法运行，都能保证ready队列中的所有回调得到执行
+
+![队列.excalidraw](https://resource.duyiedu.com/yuanjin/202605271642589.svg)
+
+:::note \_run_once 执行步骤
+
+1. 检查延时队列，加入ready
+2. 计算等待时间 timeout
+   1. ready有东西，timeout = 0
+   2. 延时队列还有任务，timeout = 延时队列的队首 - 当前时间
+   3. 都没有任务，timeout = None
+3. 用timeout的时间阻塞线程，等待I/O，期间有任何IO任务到达，马上加入ready
+   1. 如果timeout时间到达后还没有I/O任务，则重新处理一次延时队列
+4. 复制ready队列
+5. 执行复制的队列
+
+:::
+
+试一试下面的代码
+
+```python title="测试 _run_once 调度"
+import inspect
+import asyncio
+
+loop = asyncio.new_event_loop()
+
+
+# 将函数直接放入ready队列
+def my_ready_callback():
+    print("这是一个直接进入ready队列的回调函数")
+
+
+loop.call_soon(my_ready_callback)
+
+
+# 将函数放入延迟队列，1秒后进入ready队列
+def my_scheduled_callback():
+    print("这是一个延迟1秒后进入ready队列的回调函数")
+    loop.stop()  # 停止事件循环
+
+
+loop.call_later(1, my_scheduled_callback)
+
+loop.run_forever()
+
+print("事件循环已停止")
+
+```
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了事件循环的调度机制？
+
+<a href="/teach/lessons/0024-事件循环.html"><strong>👉 点击进入《事件循环互动教学课程》</strong></a>
+
+- ⏱️ 预计 10–15 分钟，9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 3 道源课程作业改编的最终考核
+- 📋 配套<a href="/teach/reference/事件循环速查表.html">《事件循环速查表》</a>，术语与 `_run_once` 五步骤一页装下，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师

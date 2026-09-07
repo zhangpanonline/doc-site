@@ -1,0 +1,298 @@
+---
+sidebar_position: 21
+title: '21. 模块化'
+---
+
+# 模块化
+
+## 包、模块、成员关系
+
+![relation.excalidraw](https://resource.duyiedu.com/yuanjin/202605251100825.svg)
+
+## 定义模块（导出）
+
+创建一个 `.py` 文件，就是在**定义**一个模块。文件顶层的所有定义（变量、函数、类）就是这个模块**导出**的内容：
+
+```python title="定义模块：my_math.py"
+# my_math.py —— 这就是一个模块，文件名叫 my_math.py，模块名就是 my_math
+
+pi: float = 3.14159  # 导出变量
+
+
+def add(a: int, b: int) -> int:  # 导出函数
+    return a + b
+
+
+class Calculator:  # 导出类
+    def multiply(self, a: int, b: int) -> int:
+        return a * b
+```
+
+**要点：**
+- 文件名即模块名（去掉 `.py`）
+- 文件顶层的**变量、函数、类**都是模块的导出成员
+- 在函数/类**内部**定义的内容不是导出成员（外部无法访问）
+
+### 私有成员约定
+
+Python 没有真正的私有机制，但用**下划线开头**表示"内部实现，外部不应直接使用"：
+
+```python title="私有成员约定"
+# my_math.py
+
+PI: float = 3.14159  # 公开
+
+
+def add(a: int, b: int) -> int:  # 公开
+    return a + b
+
+
+def _internal_helper(a: int) -> int:  # "私有"——约定外部不应使用
+    return a * 2
+```
+
+`from module import *` 时，下划线开头的成员**不会**被导入。
+
+### 使用 `__all__` 控制导出清单
+
+`__all__` 明确指定哪些成员是公开 API：
+
+```python title="使用 __all__ 控制导出清单"
+# my_math.py
+
+__all__: list[str] = ["PI", "add"]  # 只导出 PI 和 add
+
+
+PI: float = 3.14159
+E: float = 2.71828  # 没有在 __all__ 中，from import * 不会导入
+
+
+def add(a: int, b: int) -> int:
+    return a + b
+
+
+def subtract(a: int, b: int) -> int:  # 不在 __all__ 中
+    return a - b
+```
+
+**`__all__` 的作用：**
+1. 控制 `from my_math import *` 导入哪些成员
+2. **作为模块的"文档"，告诉使用者哪些是稳定 API**
+3. 和一些其他工具配合
+
+### 模块的 `__name__` 与直接运行
+
+每个模块都有一个内置属性 `__name__`：
+- 直接运行时：`__name__ == "__main__"`
+- 被导入时：`__name__ == 模块名`
+
+利用这个特性，可以在模块中写测试代码，只有直接运行时才执行：
+
+```python title="模块的 __name__ 与直接运行" {15}
+# my_math.py
+
+__all__: list[str] = ["PI", "add"]
+
+
+PI: float = 3.14159
+
+
+def add(a: int, b: int) -> int:
+    return a + b
+
+
+# 以下代码只有在 python my_math.py 直接运行时才执行
+# 作为模块被导入时不会执行
+if __name__ == "__main__":
+    print(add(3, 5))  # 8
+    print(add(-1, 1))  # 0
+```
+
+---
+
+## 导入模块
+
+Python在**运行时**动态导入
+
+### import 语句
+
+```python title="import 语句"
+import my_math  # 导入整个模块
+
+print(my_math.PI)  # 通过模块名访问
+print(my_math.add(3, 5))
+
+from my_math import PI, add  # 只导入需要的成员
+
+print(PI)
+print(add(3, 5))
+
+from my_math import *  # 导入 __all__ 中列出的成员（谨慎使用）
+
+print(PI)
+print(add(3, 5))
+# subtract 不在 __all__ 中，不会导入
+
+import my_math as mm  # 模块别名
+from my_math import add as my_add  # 成员别名
+
+print(mm.PI)
+print(my_add(3, 5))
+```
+
+### 模块的动态导入
+
+```python title="模块的动态导入"
+import importlib
+
+# 模块名来自变量
+module_name = "math"
+math = importlib.import_module(module_name)
+print(math.sqrt(16))  # 4.0
+
+# 来自用户输入
+user_input = "json"
+module = importlib.import_module(user_input)
+data = module.dumps({"key": "value"})
+
+# 动态导入子模块
+submodule = importlib.import_module("os.path")
+print(submodule.join("a", "b"))  # a/b
+```
+
+
+
+### 模块的执行与缓存
+
+模块在**首次导入**时**执行一次**，后续导入使用缓存，不会重复执行：
+
+```python title="模块的执行与缓存"
+import my_math  # 第一次导入：执行 my_math.py
+import my_math  # 第二次导入：使用缓存，不执行
+import my_math  # 第三次导入：使用缓存，不执行
+```
+
+缓存存储在 `sys.modules` 中：
+
+```python title="缓存存储在 sys.modules"
+import sys
+
+# 查看已加载的所有模块
+print("math" in sys.modules)  # True（因为 math 已被导入）
+print(my_math in sys.modules.values())  # True
+```
+
+---
+
+## 包（Package）
+
+只要一个目录中包含`__init__.py`模块，Python就会将该目录其视为一个包
+
+### `__init__.py` 的作用
+
+`__init__.py` 是包的初始化文件，它在第一次导入该包的时候会自动运行，你可以：
+1. **组织导出接口** —— 在包级别暴露子模块的成员
+2. **包级别的初始化** —— 连接数据库、加载配置等
+
+```python title="__init__.py 的作用"
+# utils/__init__.py
+
+__all__: list[str] = ["add", "subtract", "to_upper", "reverse"]
+
+from .math_ops import add, subtract
+from .string_ops import to_upper, reverse
+```
+
+---
+
+## 相对导入
+
+包内部的模块可以通过相对导入引用兄弟模块：
+
+```
+project/
+├── main.py
+└── utils/
+    ├── __init__.py
+    ├── math_ops.py
+    └── string_ops.py
+```
+
+```python title="相对导入"
+# utils/string_ops.py
+from .math_ops import add  # . 表示当前包（utils）
+
+
+def add_and_reverse(a: int, b: int) -> str:
+    result: int = add(a, b)
+    return reverse(str(result))
+```
+
+相对导入符号：
+- `.`  —— 当前包
+- `..` —— 父包
+- `...` —— 祖父包
+
+**限制：** 相对导入**不能**用于直接运行的模块，只用于包内模块被导入时。
+
+---
+
+## 搜索路径
+
+`import` 语句按以下顺序搜索模块：
+
+1. 内置模块，如：`sys`
+   ```python title="查看内置模块"
+   import sys
+   
+   print(sys.builtin_module_names) # 查看所有内置模块
+   ```
+2. `sys.path`
+
+   1. 当前脚本所在目录
+   2. `PYTHONPATH` 环境变量中的路径
+   3. Python 内置模块
+   4. 第三方包（`site-packages`）
+
+
+```python title="查看模块搜索路径"
+import sys
+
+# 查看模块搜索路径
+for path in sys.path:
+    print(path)
+```
+
+---
+
+## 循环导入问题
+
+```python title="循环导入问题"
+# a.py
+from b import bar
+
+def foo() -> str:
+    return bar()
+
+# b.py —— 此时 a.py 还没执行完，foo 还不存在
+from a import foo  # ImportError
+
+def bar() -> str:
+    return "bar"
+```
+
+**解决方案：**
+1. 将公共代码抽到第三个模块
+2. 延迟导入（在函数内部导入）
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了本章内容？
+
+<a href="/teach/lessons/0021-模块化.html"><strong>👉 点击进入《模块化互动教学课程》</strong></a>
+
+- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业（费曼复述与 __slots__ 研究）改编的最终考核
+- 📋 配套<a href="/teach/reference/模块化速查表.html">《模块化速查表》</a>，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师

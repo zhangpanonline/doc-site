@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《7.lambda表达式》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题（lambda 局限/闭包延迟绑定）">
+  <title>lambda 表达式 · 互动教学课程（第 7 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 5 课</p>
+      <h1>lambda 表达式</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python/lambda表达式/">5.Lambda表达式</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 lambda 的语法限制：<strong>单表达式、自动返回、匿名</strong></li>
+        <li>熟练使用 <code>map</code> / <code>filter</code> / <code>sorted</code> / <code>max</code> / <code>reduce</code> 与 lambda 的组合</li>
+        <li>在真实数据集上完成「排序、筛选、聚合」任务——<strong>最终考核就是源课程的产品数据练习</strong></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《7.lambda表达式》里，测验和考核会考。</p>
+
+      <h3>五个高阶函数一张表</h3>
+      <table class="cmp-table">
+        <tr><th>函数</th><th>作用</th><th>返回</th><th>典型 lambda</th></tr>
+        <tr><td><code>map(f, xs)</code></td><td>逐元素转换</td><td>迭代器（要 <code>list()</code>）</td><td><code>lambda x: x ** 2</code></td></tr>
+        <tr><td><code>filter(f, xs)</code></td><td>按条件筛选</td><td>迭代器（要 <code>list()</code>）</td><td><code>lambda x: x % 2 == 0</code></td></tr>
+        <tr><td><code>sorted(xs, key=f)</code></td><td>按 key 排序</td><td>新列表</td><td><code>lambda s: len(s)</code></td></tr>
+        <tr><td><code>max/min(xs, key=f)</code></td><td>按 key 取极值</td><td>元素本身</td><td><code>lambda s: s["score"]</code></td></tr>
+        <tr><td><code>reduce(f, xs)</code></td><td>两两累积成一个值</td><td>单个值</td><td><code>lambda x, y: x + y</code>（在 functools）</td></tr>
+      </table>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>lambda 只有一个表达式</strong>：不能写语句（赋值、if 块都不行），表达式的值自动返回。逻辑复杂就用 <code>def</code>。<a href="https://docs.python.org/3/reference/expressions.html#lambda">官方文档：Lambda</a></li>
+        <li><strong>map / filter 返回迭代器</strong>：惰性求值，必须 <code>list(...)</code> 才能看到结果；迭代器只能消费一次。</li>
+        <li><strong>key 参数接收的是「取值函数」</strong>：<code>sorted(products, key=lambda p: p["price"])</code> 是按「每个元素的 price」排序，而不是把 lambda 结果当作元素。<a href="https://docs.python.org/3/library/functions.html#sorted">官方文档：sorted</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. lambda 的函数体有什么限制？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只能有一个表达式</button>
+            <button class="quiz-option">可以有任意多条语句</button>
+            <button class="quiz-option">必须用 return 返回结果</button>
+            <button class="quiz-option">必须给函数起名字</button>
+          </div>
+          <div class="quiz-explain" hidden>lambda 只能包含<strong>一个表达式</strong>，表达式的值自动返回（不能写 return）。lambda 是匿名函数，通常即用即走。详见「基本语法」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>list(map(lambda x: x ** 2, [1, 2, 3]))</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">[1, 4, 9]</button>
+            <button class="quiz-option">map 对象本身</button>
+            <button class="quiz-option">[1, 2, 3]</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>map</code> 对每个元素执行 lambda：1→1、2→4、3→9。注意 <code>map</code> 本身返回<strong>迭代器</strong>，打印它只会看到 <code>&lt;map object...&gt;</code>——必须用 <code>list()</code> 转成列表。详见「map()」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>callable(lambda: 1)</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>lambda 本质是<strong>匿名函数</strong>，函数是可调用对象 → <code>callable</code> 返回 True。详见第 9 课「可调用对象」的前置呼应。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>list(filter(lambda x: x % 2 == 0, [1, 2, 3, 4, 5]))</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">[2, 4]</button>
+            <button class="quiz-option">[1, 3, 5]</button>
+            <button class="quiz-option">[True, False, True, False, True]</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>filter</code> <strong>保留条件为 True 的元素</strong>：<code>x % 2 == 0</code> 筛选出偶数 2、4。注意它不是把条件结果返回给你，而是用条件过滤原序列。详见「filter()」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>sorted(["banana", "pie", "Washington", "book"], key=lambda s: len(s))</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">['pie', 'book', 'banana', 'Washington']</button>
+            <button class="quiz-option">['banana', 'pie', 'Washington', 'book']</button>
+            <button class="quiz-option">['Washington', 'banana', 'book', 'pie']</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>按 <code>len(s)</code> 升序：pie(3) → book(4) → banana(6) → Washington(10)。<code>key</code> 只是「排序依据」，结果仍是原元素本身。详见「sorted()」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. <code>max(students, key=lambda s: s["score"])</code> 返回的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">分数最高的整个字典</button>
+            <button class="quiz-option">最高的分数值</button>
+            <button class="quiz-option">最高分的名字</button>
+            <button class="quiz-option">分数排序后的列表</button>
+          </div>
+          <div class="quiz-explain" hidden><code>max</code> 按 key 比较，但返回的是<strong>元素本身</strong>——分数最高的那个学生字典（如 <code>{'name': 'Bob', 'score': 92}</code>）。详见「max()/min()」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>sorted(["banana", "pie", "book"], key=lambda s: s[-1])</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">['banana', 'pie', 'book']</button>
+            <button class="quiz-option">['book', 'pie', 'banana']</button>
+            <button class="quiz-option">['pie', 'book', 'banana']</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>按<strong>最后一个字母</strong>排序：banana→a、pie→e、book→k，升序排列 → <strong>['banana', 'pie', 'book']</strong>。key 可以是任意表达式——这是「按任意维度排序」的通用套路。详见「sorted()」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 以下代码的输出是？
+<pre><code>funcs = [lambda: i for i in range(3)]
+print([f() for f in funcs])</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">[2, 2, 2]</button>
+            <button class="quiz-option">[0, 1, 2]</button>
+            <button class="quiz-option">[0, 0, 0]</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>闭包<strong>延迟绑定</strong>陷阱：lambda 捕获的是变量 <code>i</code> 本身而不是当时的值——列表推导完成后 i=2，三个函数调用时都读到 2 → <strong>[2, 2, 2]</strong>。修复：<code>lambda i=i: i</code>（默认参数绑定值）。这是真实面试高频题。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. <code>list(map(lambda x: x ** 2, filter(lambda x: x % 2 == 0, range(6))))</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">[0, 4, 16]</button>
+            <button class="quiz-option">[0, 1, 4, 9, 16, 25]</button>
+            <button class="quiz-option">[0, 2, 4]</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>由内向外读：<code>range(6)</code> → filter 留偶数 <code>[0, 2, 4]</code> → map 平方 → <strong>[0, 4, 16]</strong>。filter 与 map 可以流水线式串联，注意执行顺序是从里到外。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《7.lambda表达式》源课程作业的改编题，数据为源课程的 <code>products</code> 产品列表（41 条，折叠区可见完整数据）——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先用 lambda + 高阶函数在心里算出答案，再点击核对。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业·任务5）：找出<strong>价格最高的产品所属的公司</strong>列表（字符串列表），结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">['APPLE']</button>
+            <button class="quiz-option">['LENOVO']</button>
+            <button class="quiz-option">['DELL']</button>
+            <button class="quiz-option">['MICROSOFT']</button>
+          </div>
+          <div class="quiz-explain" hidden>先找最高价：<code>max(products, key=lambda p: p["price"])</code> → MacBook Pro，14999 元，公司 APPLE。思路：<code>max</code> 取最高价 → <code>filter</code> 出价格等于最高价的产品 → <code>map</code> 取公司 → <code>set</code> 去重 → <strong>['APPLE']</strong>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业·任务2）：按价格<strong>降序</strong>排序，前三个产品名是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">['MacBook Pro', 'Dell XPS 13', 'ThinkPad X1']</button>
+            <button class="quiz-option">['Mi Band 8', 'Vivo TWS', 'OPPO Enco']</button>
+            <button class="quiz-option">['ThinkPad X1', 'Legion Y9000', 'Surface Pro']</button>
+            <button class="quiz-option">['Dell XPS 13', 'MacBook Pro', 'ThinkPad X1']</button>
+          </div>
+          <div class="quiz-explain" hidden>价格前三：MacBook Pro 14999 → Dell XPS 13 10999 → ThinkPad X1 9999。代码：<code>sorted(products, key=lambda p: p["price"], reverse=True)[:3]</code>。注意 <code>reverse=True</code> 才是降序。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（作业·任务4）：XIAOMI 的所有产品共有几个？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">6</button>
+            <button class="quiz-option">5</button>
+            <button class="quiz-option">7</button>
+            <button class="quiz-option">4</button>
+          </div>
+          <div class="quiz-explain" hidden>XIAOMI 的产品：Xiaomi 14、Redmi K70、Mi Pad 6、Mi Band 8、Xiaomi Buds、Xiaomi Book——共 <strong>6</strong> 个。代码：<code>list(filter(lambda p: p["inc"] == "XIAOMI", products))</code> 再取 <code>len</code>（或 <code>map</code> 出名字得字符串列表）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（作业·任务7）：APPLE 公司的产品<strong>平均价格</strong>是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">6139.0</button>
+            <button class="quiz-option">5999.0</button>
+            <button class="quiz-option">7150.0</button>
+            <button class="quiz-option">4199.0</button>
+          </div>
+          <div class="quiz-explain" hidden>APPLE 有 5 款产品：(5999 + 14999 + 1899 + 4799 + 2999) / 5 = 30695 / 5 = <strong>6139.0</strong>。代码：先 <code>filter</code> 出该公司产品 → <code>map</code> 出价格列表 → <code>sum / len</code>。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（任务 3/4/5/7 核心写法）与完整数据</summary>
+<pre><code># 按库存总额升序（价格 × 库存）
+sorted(products, key=lambda p: p["price"] * p["stock"])
+
+# XIAOMI 所有产品（字符串列表）
+list(map(lambda p: p["name"], filter(lambda p: p["inc"] == "XIAOMI", products)))
+
+# 价格最高产品的公司列表
+max_price = max(products, key=lambda p: p["price"])["price"]
+list(set(map(lambda p: p["inc"], filter(lambda p: p["price"] == max_price, products))))
+
+# 每家公司平均价格
+def avg(inc):
+    inc_prices = list(map(lambda p: p["price"], filter(lambda p: p["inc"] == inc, products)))
+    return sum(inc_prices) / len(inc_prices)
+
+companies = set(map(lambda p: p["inc"], products))
+list(map(lambda inc: {"inc": inc, "avg_price": avg(inc)}, companies))
+
+# 完整 products 数据（41 条）见源课程作业；节选示例：
+products = [
+    {"name": "iPhone 15", "inc": "APPLE", "price": 5999, "stock": 3012},
+    {"name": "MacBook Pro", "inc": "APPLE", "price": 14999, "stock": 580},
+    # ... 共 41 条，字段：name / inc / price / stock
+]</code></pre>
+          </details>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握 lambda 与高阶函数的组合使用——可以继续学习《<a href="/agents/python/类和对象/">6.类和对象</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（lambda 局限·高频）：关于 lambda 的使用，下列说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只能写单表达式，适合做 sort/filter/map 的 key 或回调</button>
+            <button class="quiz-option">可以包含多行语句和赋值</button>
+            <button class="quiz-option">比 def 定义的函数更强大</button>
+            <button class="quiz-option">lambda 必须有名字才能使用</button>
+          </div>
+          <div class="quiz-explain" hidden>lambda 的局限：<strong>只能是单表达式</strong>，不能包含语句和赋值；适用场景是 sort/filter/map 的 key、简短回调。逻辑复杂或需要复用时应该用 <code>def</code>。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（函数式组合·高频）：把 <code>[1, 2, 3, 4, 5]</code> 中大于 2 的数平方，用 lambda 组合怎么写？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">list(map(lambda x: x**2, filter(lambda x: x &gt; 2, [1,2,3,4,5])))</button>
+            <button class="quiz-option">list(filter(lambda x: x &gt; 2, map(lambda x: x**2, [1,2,3,4,5])))</button>
+            <button class="quiz-option">[x**2 if x &gt; 2 for x in [1,2,3,4,5]]</button>
+            <button class="quiz-option">lambda [1,2,3,4,5]: x**2 if x &gt; 2</button>
+          </div>
+          <div class="quiz-explain" hidden>先 filter 再 map（由内向外）：<code>filter(lambda x: x &gt; 2, ...)</code> 筛出 <code>[3, 4, 5]</code>，再 <code>map(lambda x: x**2, ...)</code> → <strong>[9, 16, 25]</strong>。第二个顺序反了（先平方再筛，条件语义错）✗；第三个语法错（if 应在 for 后）✗。这是高阶函数组合的必考题。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（多级排序·高频）：产品列表要先按公司名升序、同公司内按价格升序，正确写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">sorted(products, key=lambda p: (p["inc"], p["price"]))</button>
+            <button class="quiz-option">两次 sorted：先按价格再按公司</button>
+            <button class="quiz-option">sorted(products, key=lambda p: p["inc"] + p["price"])</button>
+            <button class="quiz-option">sort 两次，先公司后价格</button>
+          </div>
+          <div class="quiz-explain" hidden>key 返回<strong>元组</strong>即可多级排序：先比第一项（公司），相同再比第二项（价格）→ <code>key=lambda p: (p["inc"], p["price"])</code>。第二个顺序反了（稳定排序下要先按次要键再按主要键，易错）✗；第三个字符串拼接没有排序语义 ✗；第四个两次 sort 顺序也需倒置 ✗。这是真实项目里字典列表排序的标配写法。<a href="https://blog.csdn.net/2301_79556402/article/details/161120355">出处：CSDN「Python 篇——常考的数据类型」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（排序稳定性·概念）：Python 的 <code>sorted</code> 是稳定排序，这个特性有什么用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">相等元素的相对顺序保持，支持「先按次要键再按主要键」的多级排序</button>
+            <button class="quiz-option">让排序速度更快</button>
+            <button class="quiz-option">让排序结果唯一</button>
+            <button class="quiz-option">没有任何实际用途</button>
+          </div>
+          <div class="quiz-explain" hidden>稳定排序保证<strong>相等元素的相对顺序不变</strong>——多级排序的经典技巧：先按次要键排序，再按主要键排序，两次稳定排序即得「主键 + 次键」的有序结果（不依赖 key 元组写法时用它）。<a href="https://blog.csdn.net/2301_79556402/article/details/161120355">出处：CSDN「Python 篇——常考的数据类型」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（迭代器一次性·深水区）：以下代码第二次 <code>list(m)</code> 的结果是？
+<pre><code>m = map(lambda x: x * 2, [1, 2, 3])
+print(list(m))
+print(list(m))</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">[2, 4, 6] 然后 []（迭代器只能消费一次）</button>
+            <button class="quiz-option">[2, 4, 6] 然后 [2, 4, 6]</button>
+            <button class="quiz-option">[2, 4, 6] 然后报错</button>
+            <button class="quiz-option">两次都报错</button>
+          </div>
+          <div class="quiz-explain" hidden>map 返回<strong>迭代器</strong>：第一次 list 消费完毕，第二次从头再取得到<strong>空列表</strong>（迭代器无回退）。需要复用结果时先 <code>list(m)</code> 存下来；需要可重复遍历用推导式。这是「惰性计算」的另一面。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（reduce 机制）：<code>reduce(f, xs, initial)</code> 的第三个参数 initial 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">指定初始累积值，空序列也能正常返回</button>
+            <button class="quiz-option">限制迭代的最大次数</button>
+            <button class="quiz-option">指定累积的方向</button>
+            <button class="quiz-option">reduce 只有两个参数，没有第三个</button>
+          </div>
+          <div class="quiz-explain" hidden><code>reduce(f, xs, initial)</code> 把 initial 作为<strong>第一个累积值</strong>参与运算：空序列时直接返回 initial（不报错），非空时 <code>f(f(initial, x1), x2)...</code>。求和、求积之外，「带初始状态的折叠」是函数式编程的通用模式。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处同专家题一</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/howto/functional.html">Functional Programming HOWTO</a>——map/filter/reduce 与 lambda 的权威讲解。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-lambda/">How to Use Python Lambda Functions</a>，把 lambda 的适用边界讲得很清楚。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/Lambda表达式速查表.html">Lambda 表达式速查表</a>——五个高阶函数与组合套路一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python/作用域/">4.作用域</a> · <a href="/agents/python/lambda表达式/">5.Lambda表达式</a> · <a href="/agents/python/类和对象/">6.类和对象</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/lambda表达式/">回到《7.lambda表达式》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

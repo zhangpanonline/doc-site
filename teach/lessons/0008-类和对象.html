@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《8.类和对象》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（腾讯面试题 MRO）+ 真实面试题">
+  <title>类和对象 · 互动教学课程（第 8 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 第 6 课</p>
+      <h1>类和对象</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python/类和对象/">6.类和对象</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>分清<strong>实例属性与类属性</strong>、实例方法/类方法/静态方法三者的区别</li>
+        <li>熟练使用 <code>type</code> / <code>isinstance</code> / <code>issubclass</code> / <code>vars</code> / <code>getattr</code> 等反射工具</li>
+        <li>预测<strong>多继承 MRO 下 <code>super()</code> 的调用链</strong>——腾讯面试题就是最终考核</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《8.类和对象》里，测验和考核会考。</p>
+
+      <h3>三种方法一张表</h3>
+      <table class="cmp-table">
+        <tr><th>方法类型</th><th>装饰器</th><th>第一个参数</th><th>访问实例属性</th><th>访问类属性</th></tr>
+        <tr><td>实例方法</td><td>无</td><td><code>self</code></td><td>✅</td><td>✅</td></tr>
+        <tr><td>类方法</td><td><code>@classmethod</code></td><td><code>cls</code></td><td>❌</td><td>✅</td></tr>
+        <tr><td>静态方法</td><td><code>@staticmethod</code></td><td>无</td><td>❌</td><td>❌</td></tr>
+      </table>
+
+      <h3>三个要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>类属性共享，实例属性独立</strong>：类属性要用 <code>类名.属性</code> 修改（<code>Dog.species = ...</code>），实例上赋值只会新建实例属性。计数器 <code>Dog.count += 1</code> 写在 <code>__init__</code> 里就是典型用法。<a href="https://docs.python.org/3/tutorial/classes.html#class-and-instance-variables">官方教程：Class and Instance Variables</a></li>
+        <li><strong>多继承的 <code>super()</code> 沿 MRO 找「下一个」</strong>：不是固定调父类，而是按 <code>__mro__</code> 顺序找下一个类。C(A, B) 里 A 的 <code>super()</code> 调到的是 B——考核一考的正是这一点。</li>
+        <li><strong>反射工具各有分工</strong>：<code>type()</code> 不看继承、<code>isinstance()</code> 看继承；<code>__bases__</code> 是全部直接父类元组、<code>__base__</code> 是第一个；<code>vars(obj)</code> 只看对象<strong>自己的</strong>属性字典。<a href="https://docs.python.org/3/library/functions.html#isinstance">官方文档：isinstance</a></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 想让所有实例都看到类属性的修改，应该怎么做？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">通过类名修改，如 Dog.species = 新值</button>
+            <button class="quiz-option">通过任一实例修改，如 dog1.species = 新值</button>
+            <button class="quiz-option">在每个实例的 __init__ 里各自修改</button>
+            <button class="quiz-option">类属性创建后无法修改</button>
+          </div>
+          <div class="quiz-explain" hidden>类属性存于类字典，要<strong>通过类名修改</strong>才能让所有实例共享变化。实例上赋值 <code>dog1.species = ...</code> 只会给 dog1 新建一个同名实例属性，别的实例不受影响。详见「实例属性与类属性」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>isinstance()</code> 与 <code>type()</code> 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">isinstance 考虑继承，type 不考虑</button>
+            <button class="quiz-option">type 考虑继承，isinstance 不考虑</button>
+            <button class="quiz-option">两者完全相同，可以互换</button>
+            <button class="quiz-option">两者都只认直接类型</button>
+          </div>
+          <div class="quiz-explain" hidden><code>isinstance(dog, Animal)</code> 为 True（Dog 继承 Animal）；<code>type(dog) == Animal</code> 为 False（type 返回精确类型 Dog）。详见「isinstance()」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>vars(dog)</code> 返回的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">实例自己的属性字典</button>
+            <button class="quiz-option">含类属性的完整属性字典</button>
+            <button class="quiz-option">所有方法的列表</button>
+            <button class="quiz-option">类字典</button>
+          </div>
+          <div class="quiz-explain" hidden><code>vars(dog)</code> 等价于 <code>dog.__dict__</code>，只包含实例<strong>自己的</strong>属性（如 <code>{'name': 'Buddy'}</code>），类属性和方法在类字典里。详见「vars()」一节。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>Dog.__base__</code> 返回的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">第一个直接父类</button>
+            <button class="quiz-option">所有直接父类组成的元组</button>
+            <button class="quiz-option">所有祖先类列表</button>
+            <button class="quiz-option">类名的字符串</button>
+          </div>
+          <div class="quiz-explain" hidden><code>__bases__</code> 是所有直接父类<strong>元组</strong>（如 <code>(B, C)</code>），<code>__base__</code> 是其中的<strong>第一个</strong>（<code>B</code>）。详见「内置属性」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 类中定义 <code>self.__password</code>，它实际存进对象字典的键是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">_BankAccount__password</button>
+            <button class="quiz-option">__password</button>
+            <button class="quiz-option">password</button>
+            <button class="quiz-option">_password</button>
+          </div>
+          <div class="quiz-explain" hidden>双下划线开头触发<strong>名称改写</strong>：<code>__password</code> 被改写为 <code>_BankAccount__password</code>（前加类名和下划线），外部直接访问 <code>obj.__password</code> 会 AttributeError。这是约定式防护，不是真正的私有。详见「访问控制」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 在 <code>__init__</code> 中写 <code>Dog.count += 1</code>（count 是类属性），效果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">类属性自增，所有实例共享计数</button>
+            <button class="quiz-option">每个实例各自维护独立的 count</button>
+            <button class="quiz-option">抛出 AttributeError</button>
+            <button class="quiz-option">只影响第一个创建的实例</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Dog.count += 1</code> 通过类名修改<strong>类属性</strong>，每创建一个实例计数 +1，所有实例共享——这是统计实例数的标准写法。详见「类方法」一节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. <code>class D(B, C)</code>，B、C 都继承 A。D 的 MRO 顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">D → B → C → A → object</button>
+            <button class="quiz-option">D → B → A → C → A → object</button>
+            <button class="quiz-option">D → A → B → C → object</button>
+            <button class="quiz-option">顺序取决于 B 和 C 的定义先后</button>
+          </div>
+          <div class="quiz-explain" hidden>菱形继承的 MRO 是 <strong>D → B → C → A → object</strong>（C3 线性化，近似广度优先）——不是直觉上的「B 走完再到 C」。A 只出现一次且在最后。详见「方法解析顺序（MRO）」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. MRO 为 D → B → C → A 时，B 的方法里写 <code>super().method()</code>，实际调用的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">C 的方法（MRO 中 B 的下一个）</button>
+            <button class="quiz-option">A 的方法（B 的直接父类）</button>
+            <button class="quiz-option">D 的方法</button>
+            <button class="quiz-option">object 的方法</button>
+          </div>
+          <div class="quiz-explain" hidden><code>super()</code> 沿<strong>当前对象实例的 MRO</strong> 找当前类的下一个——B 的下一个是 C，不是直接父类 A！这是多继承 super 与直觉最大的差异点。详见「super() 在多继承中的行为」一节。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 以下代码的输出是？
+<pre><code>class Animal:
+    kingdom = "Animalia"
+
+    def __init__(self, name):
+        self.name = name
+
+class Dog(Animal):
+    def __init__(self, name, age):
+        super().__init__(name)
+        self.age = age
+
+dog = Dog("Buddy", 3)
+print(getattr(dog, "color", "brown"))
+setattr(dog, "color", "golden")
+delattr(dog, "color")
+print(hasattr(dog, "color"))</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">brown 然后 False</button>
+            <button class="quiz-option">brown 然后 True</button>
+            <button class="quiz-option">golden 然后 False</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>反射四连：<code>getattr</code> 键不存在返回<strong>默认值</strong> brown；<code>setattr</code> 动态加属性 golden；<code>delattr</code> 删掉它；<code>hasattr</code> 再查 → <strong>False</strong>。输出：brown → False。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《8.类和对象》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（作业一·腾讯面试题）：以下代码的输出顺序是？
+<pre><code>class Base(object):
+    def __init__(self):
+        print("enter Base"); print("leave Base")
+
+class A(Base):
+    def __init__(self):
+        print("enter A"); super().__init__(); print("leave A")
+
+class B(Base):
+    def __init__(self):
+        print("enter B"); super().__init__(); print("leave B")
+
+class C(A, B):
+    def __init__(self):
+        print("enter C"); super().__init__(); print("leave C")
+
+c = C()</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">enter C → enter A → enter B → enter Base → leave Base → leave B → leave A → leave C</button>
+            <button class="quiz-option">enter C → enter A → enter Base → leave Base → leave A → enter B → enter Base → leave B → leave C</button>
+            <button class="quiz-option">enter C → enter B → enter A → enter Base → leave Base → leave A → leave B → leave C</button>
+            <button class="quiz-option">enter C → enter A → enter B → enter Base → leave A → leave B → leave Base → leave C</button>
+          </div>
+          <div class="quiz-explain" hidden><code>C(A, B)</code> 的 MRO 是 C → A → B → Base。<code>C.__init__</code> 打印 enter C 后 <code>super()</code> 调到 A；A 打印 enter A 后 <code>super()</code> 沿 MRO 调到<strong>B</strong>（不是 Base！）；B 的 <code>super()</code> 才到 Base。返回时按后进先出打印 leave。完整顺序：<strong>enter C → enter A → enter B → enter Base → leave Base → leave B → leave A → leave C</strong>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二（作业二·反射）：<code>print(type(dog1), type(Dog))</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">&lt;class 'Dog'&gt; &lt;class 'type'&gt;</button>
+            <button class="quiz-option">&lt;class 'Dog'&gt; &lt;class 'Dog'&gt;</button>
+            <button class="quiz-option">&lt;class 'type'&gt; &lt;class 'type'&gt;</button>
+            <button class="quiz-option">&lt;class 'type'&gt; &lt;class 'Dog'&gt;</button>
+          </div>
+          <div class="quiz-explain" hidden><code>type(dog1)</code> 是创建实例的类 → <code>Dog</code>；<code>type(Dog)</code> 是创建类的类（元类）→ <code>type</code>。输出：<strong>&lt;class 'Dog'&gt; &lt;class 'type'&gt;</strong>。所有类的类型都是 type。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三（作业二·属性字典）：<code>dog2 = Dog("Max", 5)</code> 后，<code>vars(dog2)</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">{'name': 'Max', 'age': 5}</button>
+            <button class="quiz-option">{'name': 'Max', 'age': 5, 'kingdom': 'Animalia'}</button>
+            <button class="quiz-option">{'name': 'Max', 'age': 5, 'count': 2, 'bark': ...}</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>vars(dog2)</code> 只看<strong>实例自己的</strong>字典：<code>name</code> 和 <code>age</code>。类属性 <code>kingdom</code>（继承来的）、<code>count</code>、方法 <code>bark</code> 都在类字典里，不会出现在 vars 结果中。→ <strong>{'name': 'Max', 'age': 5}</strong>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（作业三·链表实现）：实现 <code>LinkedList.append(value)</code>——在链表尾部添加新节点（head 为 None 时为首节点）。下列实现中<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">head 为空则 head=新节点；否则循环到 next 为 None 的节点后接上</button>
+            <button class="quiz-option">无条件把新节点放在头部，head 指向新节点</button>
+            <button class="quiz-option">无条件 head=新节点，旧链表被覆盖</button>
+            <button class="quiz-option">循环条件写为 current.next 为空，但循环体内不移动 current</button>
+          </div>
+          <div class="quiz-explain" hidden>正确的 append：链表为空时 <code>head = new_node</code>；否则从 head 出发，<code>while current.next is not None</code> 走到<strong>最后一个节点</strong>，再 <code>current.next = new_node</code>。第二个是 prepend 的行为 ✗；第三个只保留最后一个 ✗；第四个是死循环 ✗。</div>
+          <details class="quiz-explain" style="border-left-color:var(--accent)">
+            <summary>查看源课程参考答案（作业三·核心方法）</summary>
+<pre><code>class Node:
+    def __init__(self, value):
+        self.value = value
+        self.next = None
+
+class LinkedList:
+    def __init__(self, data=None):
+        self.head = None
+        self._length = 0
+        if data is not None:
+            for value in data:
+                self.append(value)
+
+    def append(self, value):
+        new_node = Node(value)
+        if self.head is None:
+            self.head = new_node
+        else:
+            current = self.head
+            while current.next is not None:
+                current = current.next
+            current.next = new_node
+        self._length += 1
+
+    def traverse(self, callback):
+        current = self.head
+        index = 0
+        while current is not None:
+            callback(index, current.value)
+            current = current.next
+            index += 1
+
+    def get_length(self):
+        return self._length
+
+# 其余方法（prepend/insert/delete/find/get/__str__/to_list/is_empty）
+# 请动手补齐，写完后回到对话里让 AI 老师帮你 review。</code></pre>
+          </details>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握类与对象的核心机制——可以继续学习《<a href="/agents/python/对象的类型/">7.对象的类型</a>》了。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（菱形继承·高频）：<code>class D(B, C)</code>，B、C 都继承 A，且四个类都有 <code>who()</code>。调用 <code>D().who()</code> 走哪个？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">按 MRO D → B → C → A 顺序找，命中 B.who</button>
+            <button class="quiz-option">按深度优先 D → B → A，命中 A.who</button>
+            <button class="quiz-option">按 D → C → B → A，命中 C.who</button>
+            <button class="quiz-option">随机选一个父类的方法</button>
+          </div>
+          <div class="quiz-explain" hidden>MRO（C3 线性化）顺序为 <strong>D → B → C → A → object</strong>，方法查找从左到右取第一个命中——所以是 <code>B.who</code>。而 B 里的 <code>super().who()</code> 会继续走到 C——这就是「super 指向 MRO 下一个」的完整体现。<a href="http://wap.mobiletrain.org/interview/python/98752.html">出处：千锋教育「Python 面试题：阅读下面的代码说出运行结果」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题二（类属性陷阱·高频）：<code>class A: items = []</code>，创建两个实例 a1、a2，执行 <code>a1.items.append(1)</code> 后 <code>a2.items</code> 是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">[1]——可变类属性被所有实例共享</button>
+            <button class="quiz-option">[]——每个实例独立一份</button>
+            <button class="quiz-option">[1] 但只有 a1 看得到</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>items = []</code> 是<strong>类属性</strong>：a1.items 沿查找链找到类字典里那个唯一的列表，append 改的是它——a2.items 同样指向它 → <strong>[1]</strong>。这就是「可变类属性的幽灵共享」，与可变默认参数陷阱同源。需要实例独立时应在 <code>__init__</code> 里 <code>self.items = []</code>。<a href="https://wenku.csdn.net/doc/6et562nus6">出处：CSDN 文库「Python 面试核心考点解析：面向对象」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（super 规范·深水区）：多继承体系中，为什么「永远不要写 <code>Animal.__init__(self, name)</code>」这种硬编码父类调用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">破坏 MRO 协作链，菱形继承下父类可能被重复调用或漏调用</button>
+            <button class="quiz-option">硬编码调用速度更慢</button>
+            <button class="quiz-option">语法上不允许这种写法</button>
+            <button class="quiz-option">硬编码调用会让子类无法重写 __init__</button>
+          </div>
+          <div class="quiz-explain" hidden>硬编码父类名会<strong>破坏 super 的 MRO 协作链</strong>：菱形继承（D(B,C)，B、C 都继承 A）中，B 里硬编码 <code>A.__init__</code> 会绕过 C 直接调 A，而 C 的初始化被跳过；若 B、C 都硬编码，A 被初始化两次。用 <code>super()</code> 才能保证「每个父类方法只执行一次、按 MRO 顺序协作」。<a href="https://blog.csdn.net/weixin_42594427/article/details/151936271">出处：CSDN「一份高质量的 Python 基础知识笔试题完整解析」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（C3 线性化·机制）：Python 3 计算 MRO 的三条准则，正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">子类先于父类；按括号顺序查父类；多选时取第一个</button>
+            <button class="quiz-option">父类先于子类；随机顺序；就近原则</button>
+            <button class="quiz-option">深度优先；只查第一个父类</button>
+            <button class="quiz-option">宽度优先；父类全部查完再查子类</button>
+          </div>
+          <div class="quiz-explain" hidden>C3 线性化的三条准则：① <strong>子类永远先于父类</strong>被检查；② 多个父类按<strong>继承括号中的顺序</strong>检查；③ 若下一个类有多个合法选择，取<strong>第一个父类</strong>。据此可手推任意继承图的 MRO——面试官常让当场推一个菱形。<a href="http://wap.mobiletrain.org/interview/python/98752.html">出处：千锋教育「Python 面试题：阅读下面的代码说出运行结果」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（super 传参·深水区）：多继承与单继承使用 super 的传参规则是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">多继承全量传参；单继承只传父类方法所需参数</button>
+            <button class="quiz-option">两种情况都全量传参</button>
+            <button class="quiz-option">两种情况都只传父类所需</button>
+            <button class="quiz-option">super 不接受任何参数</button>
+          </div>
+          <div class="quiz-explain" hidden>经典规则：<strong>多继承</strong>时 super 链上的每个 <code>__init__</code> 都可能被接力调用，所以必须<strong>全量透传参数</strong>（*args 风格，避免某个中间类因签名不匹配而崩）；<strong>单继承</strong>时只传<strong>父类方法所需</strong>的参数即可。传参规则错了是 super 深水区的高频 bug 源。<a href="https://blog.csdn.net/m0_38144883/article/details/125990040">出处：CSDN「Python 面试题——super 参数传递」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（硬编码调用·陷阱）：菱形继承 D(B, C)（B、C 都继承 A），B、C 的 <code>__init__</code> 都硬编码 <code>A.__init__(self)</code>，D 显式依次调用 B、C 的 <code>__init__</code>。A 的 <code>__init__</code> 会被执行几次？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">2 次（硬编码调用绕过 MRO 去重）</button>
+            <button class="quiz-option">1 次（super 机制自动去重）</button>
+            <button class="quiz-option">3 次</button>
+            <button class="quiz-option">0 次</button>
+          </div>
+          <div class="quiz-explain" hidden>硬编码 <code>A.__init__(self)</code> <strong>绕过 super 的 MRO 协作</strong>：B 里调一次、C 里调一次 → A 初始化<strong>两次</strong>。若用 super 协作链，A 只执行一次且按 MRO 顺序。这是「为什么必须用 super」的直接证据（面试题三的量化版）。<a href="https://blog.csdn.net/weixin_42594427/article/details/151936271">出处同面试题三</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/classes.html">9. Classes</a>——类、继承、MRO 的权威讲解。</li>
+        <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-super/">Supercharge Your Classes With Python super()</a>，把多继承 super 语义讲得很透。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/类和对象速查表.html">类和对象速查表</a>——三种方法、反射工具、MRO 一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python/lambda表达式/">5.Lambda表达式</a> · <a href="/agents/python/类和对象/">6.类和对象</a> · <a href="/agents/python/对象的类型/">7.对象的类型</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/类和对象/">回到《8.类和对象》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>
