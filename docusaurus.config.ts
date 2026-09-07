@@ -161,7 +161,7 @@ const config: Config = {
           label: title,
         })),
         {to: 'blog', label: 'Blog', position: 'left'},
-        {to: 'download', label: '资源下载', position: 'left'},
+        // {to: 'download', label: '资源下载', position: 'left'},
         {
           href: 'https://github.com/zhangpanonline/enterprise-admin/tree/main/apps/doc',
           label: 'GitHub',
@@ -195,10 +195,10 @@ const config: Config = {
               label: 'Blog',
               to: '/blog',
             },
-            {
-              label: '资源下载',
-              to: '/download',
-            },
+            // {
+            //   label: '资源下载',
+            //   to: '/download',
+            // },
           ],
         },
         {
