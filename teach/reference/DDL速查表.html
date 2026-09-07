@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DDL速查表</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>DDL速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/db-0002-DDL.html">《DDL 互动教学课程》</a>与《02.DDL》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>SQL 四分类</h2>
+      <table>
+        <thead><tr><th>分类</th><th>全称</th><th>作用</th><th>关键字</th></tr></thead>
+        <tbody>
+          <tr><td><strong>DDL</strong></td><td>Data Definition</td><td>数据定义（结构）</td><td>CREATE / ALTER / DROP / TRUNCATE</td></tr>
+          <tr><td><strong>DML</strong></td><td>Data Manipulation</td><td>数据操作（行）</td><td>INSERT / SELECT / UPDATE / DELETE</td></tr>
+          <tr><td><strong>DCL</strong></td><td>Data Control</td><td>数据控制（权限）</td><td>GRANT / REVOKE</td></tr>
+          <tr><td><strong>TCL</strong></td><td>Transaction Control</td><td>事务控制</td><td>BEGIN / COMMIT / ROLLBACK / SAVEPOINT</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>常用数据类型</h2>
+      <table>
+        <thead><tr><th>类型</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>SERIAL / BIGSERIAL</code></td><td>自增整数（INTEGER/BIGINT + 序列）</td></tr>
+          <tr><td><code>NUMERIC(m, n)</code></td><td>定点精确，m 总位 n 小数——金额</td></tr>
+          <tr><td><code>REAL / DOUBLE PRECISION</code></td><td>浮点不精确——科学计算</td></tr>
+          <tr><td><code>VARCHAR(n) / CHAR(n) / TEXT</code></td><td>变长 / 定长补空格 / 不限长</td></tr>
+          <tr><td><code>BOOLEAN / DATE / TIME</code></td><td>布尔 / 日期 / 时间</td></tr>
+          <tr><td><code>TIMESTAMP / TIMESTAMPTZ</code></td><td>不带时区 / 带时区</td></tr>
+          <tr><td><code>JSON / JSONB</code></td><td>文本存储 / 二进制、可索引、查询高效</td></tr>
+          <tr><td><code>UUID</code></td><td>通用唯一标识，常配 <code>gen_random_uuid()</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>约束</h2>
+      <table>
+        <thead><tr><th>约束</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td><code>PRIMARY KEY</code></td><td>唯一标识一行，自带 NOT NULL + UNIQUE</td></tr>
+          <tr><td><code>NOT NULL</code></td><td>不允许为空</td></tr>
+          <tr><td><code>UNIQUE</code></td><td>值唯一</td></tr>
+          <tr><td><code>DEFAULT 值</code></td><td>缺省值</td></tr>
+          <tr><td><code>CHECK (条件)</code></td><td>值须满足条件</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>ALTER 命令清单</h2>
+      <pre><code>ADD COLUMN phone VARCHAR(20)                      -- 加列
+DROP COLUMN phone                                 -- 删列
+ALTER COLUMN score TYPE NUMERIC(6,2)              -- 改类型（可隐式转换）
+ALTER COLUMN score TYPE INTEGER USING score::INTEGER  -- 显式转换
+ALTER COLUMN score SET DEFAULT 0.00 / DROP DEFAULT   -- 设/删默认值
+ALTER COLUMN email SET NOT NULL                   -- 加非空
+ADD CONSTRAINT score_check CHECK (score >= 0 AND score <= 100)  -- 加检查
+RENAME COLUMN score TO total_score                -- 列改名
+RENAME TO pupils                                  -- 表改名</code></pre>
+    </section>
+
+    <section>
+      <h2>DELETE vs TRUNCATE vs DROP</h2>
+      <table>
+        <thead><tr><th>维度</th><th>DELETE</th><th>TRUNCATE</th><th>DROP</th></tr></thead>
+        <tbody>
+          <tr><td>类型</td><td>DML</td><td>DDL</td><td>DDL</td></tr>
+          <tr><td>内容</td><td>删部分/全部行</td><td>清空全表</td><td>连表带数据删除</td></tr>
+          <tr><td>WHERE</td><td>支持</td><td>不支持</td><td>不支持</td></tr>
+          <tr><td>回滚</td><td>可</td><td>PG 中可</td><td>不可</td></tr>
+          <tr><td>结构</td><td>保留</td><td>保留</td><td>不保留</td></tr>
+          <tr><td>速度</td><td>慢（逐行+日志）</td><td>快（重置页面）</td><td>最快</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>核心要点</h2>
+      <ul class="term-grid">
+        <li><strong>SERIAL</strong>：INTEGER + 自动序列，自增主键懒人写法</li>
+        <li><strong>金额用 NUMERIC</strong>：定点精确；浮点不精确</li>
+        <li><strong>JSONB 优于 JSON</strong>：二进制、可索引、查询快</li>
+        <li><strong>主键 = 唯一 + 非空</strong>，可复合多列</li>
+        <li><strong>USING</strong>：改类型无法隐式转换时的显式规则</li>
+        <li><strong>pg_dump -s</strong>：只导结构（干干净净的建表语句）</li>
+      </ul>
+    </section>
+
+  </main>
+</body>
+</html>

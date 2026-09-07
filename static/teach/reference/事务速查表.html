@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>事务速查表</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>事务速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/db-0005-事务.html">《事务互动教学课程》</a>与《05.事务》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>事务命令</h2>
+      <pre><code>BEGIN;                      -- 开启事务
+-- …一组操作…
+COMMIT;                     -- 提交，全部永久生效
+ROLLBACK;                   -- 回滚，全部撤销
+SAVEPOINT a;                -- 事务内存档点
+ROLLBACK TO SAVEPOINT a;    -- 部分回滚（事务继续）
+SHOW transaction_isolation; -- 查看隔离级别
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;  -- 事务内设置</code></pre>
+    </section>
+
+    <section>
+      <h2>ACID</h2>
+      <table>
+        <thead><tr><th>特性</th><th>全称</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A</strong></td><td>原子性 Atomicity</td><td>要么全成功，要么全回滚</td></tr>
+          <tr><td><strong>C</strong></td><td>一致性 Consistency</td><td>前后都满足约束——<strong>最终目的</strong></td></tr>
+          <tr><td><strong>I</strong></td><td>隔离性 Isolation</td><td>并发事务「应该」互不干扰</td></tr>
+          <tr><td><strong>D</strong></td><td>持久性 Durability</td><td>提交后永久生效，崩溃不丢</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>四种并行问题</h2>
+      <table>
+        <thead><tr><th>问题</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td><strong>脏读</strong></td><td>读到别人<strong>未提交</strong>、后被回滚的数据</td></tr>
+          <tr><td><strong>不可重复读</strong></td><td>同一行两次读<strong>值变了</strong>（别人 UPDATE/DELETE 已提交）</td></tr>
+          <tr><td><strong>幻读</strong></td><td>范围查询两次<strong>行数变了</strong>（别人 INSERT 已提交）</td></tr>
+          <tr><td><strong>更新丢失</strong></td><td>后提交的修改<strong>覆盖</strong>先提交的</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>隔离级别矩阵（PostgreSQL）</h2>
+      <table>
+        <thead><tr><th>隔离级别</th><th>脏读</th><th>不可重复读</th><th>幻读</th><th>更新丢失</th></tr></thead>
+        <tbody>
+          <tr><td><code>READ COMMITTED</code>（默认）</td><td>❌</td><td>可能</td><td>可能</td><td>可能</td></tr>
+          <tr><td><code>REPEATABLE READ</code></td><td>❌</td><td>❌</td><td>❌</td><td>可能</td></tr>
+          <tr><td><code>SERIALIZABLE</code></td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+        </tbody>
+      </table>
+      <p>PG 无 READ UNCOMMITTED（设置后按 RC 处理）；PG 的 RR 基于快照防幻读（与 MySQL 不同）；MySQL/InnoDB 默认 RR。</p>
+    </section>
+
+    <section>
+      <h2>场景选型</h2>
+      <table>
+        <thead><tr><th>场景</th><th>推荐级别</th></tr></thead>
+        <tbody>
+          <tr><td>大多数 Web 应用、报表</td><td>READ COMMITTED（默认够用）</td></tr>
+          <tr><td>财务系统、对账</td><td>REPEATABLE READ</td></tr>
+          <tr><td>抢购、库存扣减、防超卖</td><td>SERIALIZABLE</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>核心要点</h2>
+      <ul class="term-grid">
+        <li><strong>事务 = 打包操作，全成功或全失败</strong></li>
+        <li><strong>转账两步必须同生共死</strong>——失败就 ROLLBACK</li>
+        <li><strong>一致性是目的</strong>，A/I/D 是手段</li>
+        <li><strong>行内值变 = 不可重复读；行数变 = 幻读</strong></li>
+        <li><strong>级别越高隔离越好、并发越差</strong></li>
+        <li><strong>pgAdmin 会自动提交</strong>——演示事务先关掉它</li>
+      </ul>
+    </section>
+
+  </main>
+</body>
+</html>

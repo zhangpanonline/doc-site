@@ -1,0 +1,502 @@
+---
+sidebar_position: 4
+title: '04. DML'
+---
+
+# DML
+
+DML（Data Manipulation Language，数据操纵语言）用于对表中的数据进行**增、删、改、查**。
+
+> 学习 DML 之前，请先确保已经完成 DDL 的学习，有了表和结构才能操作数据。
+
+---
+
+## INSERT — 增（插入）
+
+### 基本语法
+
+```sql
+INSERT INTO 表名 (列1, 列2, ...) VALUES (值1, 值2, ...);
+```
+
+### 示例
+
+假设有学生表：
+
+```sql
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    age INTEGER,
+    score NUMERIC(5,2) DEFAULT 0.00,
+    email VARCHAR(100) UNIQUE
+);
+```
+
+#### 插入完整数据
+
+```sql
+INSERT INTO students (name, age, score, email)
+VALUES ('张三', 22, 95.5, 'zhangsan@example.com');
+```
+
+#### 插入部分列
+
+省略的列会使用默认值（如果有 `DEFAULT`）或 `NULL`：
+
+```sql
+INSERT INTO students (name, email)
+VALUES ('李四', 'lisi@example.com');
+-- age → NULL，score → 0.00
+```
+
+#### 省略列名
+
+如果提供全部列的值（包括自增列），可以省略列名，但**不推荐**，可读性差：
+
+```sql
+INSERT INTO students VALUES (DEFAULT, '王五', 20, 88.0, 'wangwu@example.com');
+```
+
+---
+
+### 一次插入多行
+
+```sql
+INSERT INTO students (name, age, score, email) VALUES
+    ('赵六', 21, 92.0, 'zhaoliu@example.com'),
+    ('孙七', 23, 87.5, 'sunqi@example.com'),
+    ('周八', 22, 91.0, 'zhouba@example.com');
+```
+
+---
+
+### 查询并插入（INSERT ... SELECT）
+
+将查询结果直接插入到表中：
+
+```sql
+INSERT INTO students (name, age, score, email)
+SELECT name, age, score, email FROM backup_students WHERE age > 18;
+```
+
+---
+
+### RETURNING — 返回插入的数据
+
+PostgreSQL 特有的 `RETURNING` 子句，可以返回被插入行的数据：
+
+```sql
+INSERT INTO students (name, age, score, email)
+VALUES ('吴九', 19, 85.0, 'wujiu@example.com')
+RETURNING *;
+```
+
+只返回指定列：
+
+```sql
+INSERT INTO students (name, age, score, email)
+VALUES ('吴九', 19, 85.0, 'wujiu@example.com')
+RETURNING id, name;
+```
+
+---
+
+### ON CONFLICT — 冲突处理（UPSERT）
+
+PostgreSQL 的 `INSERT ... ON CONFLICT` 可以实现"存在则更新，不存在则插入"。
+
+```sql
+INSERT INTO students (name, age, score, email)
+VALUES ('张三', 25, 99.0, 'zhangsan@example.com')
+ON CONFLICT (email)
+DO UPDATE SET age = EXCLUDED.age, score = EXCLUDED.score;
+```
+
+> `EXCLUDED` 指代冲突时本次要插入的新值。
+
+不更新，忽略冲突：
+
+```sql
+INSERT INTO students (name, age, score, email)
+VALUES ('张三', 25, 99.0, 'zhangsan@example.com')
+ON CONFLICT (email) DO NOTHING;
+```
+
+---
+
+## DELETE — 删（删除）
+
+### 基本语法
+
+```sql
+DELETE FROM 表名 WHERE 条件;
+```
+
+> **⚠️ 一定不要忘记写 WHERE！** 不带 WHERE 会清空表。
+
+### 示例
+
+```sql
+-- 删除指定行
+DELETE FROM students WHERE name = '张三';
+
+-- 删除所有行（危险操作）
+DELETE FROM students;
+```
+
+### TRUNCATE 与 DELETE 的区别
+
+| 特性 | DELETE | TRUNCATE |
+|------|--------|----------|
+| 类型 | DML | DDL |
+| 是否可带 WHERE | 是 | 否 |
+| 速度 | 慢（逐行删除） | 快（重置存储） |
+| 可回滚 | 是（事务内） | 是（PostgreSQL 事务内） |
+| 重置自增序列 | 否 | 是 |
+| 触发 ON DELETE 触发器 | 是 | 否 |
+
+```sql
+-- DELETE 不会重置自增序列
+DELETE FROM students;
+INSERT INTO students (name) VALUES ('新学生');  -- id 继续递增
+
+-- TRUNCATE 会重置自增序列
+TRUNCATE TABLE students;
+INSERT INTO students (name) VALUES ('新学生');  -- id 从 1 重新开始
+```
+
+### RETURNING — 返回被删除的数据
+
+```sql
+DELETE FROM students WHERE score < 60
+RETURNING id, name, score;
+```
+
+---
+
+## UPDATE — 改（更新）
+
+### 基本语法
+
+```sql
+UPDATE 表名 SET 列1 = 值1, 列2 = 值2 WHERE 条件;
+```
+
+> **⚠️ 一定不要忘记写 WHERE！** 不带 WHERE 会更新所有行。
+
+### 示例
+
+```sql
+-- 更新单列
+UPDATE students SET score = 98.0 WHERE name = '张三';
+
+-- 更新多列
+UPDATE students SET age = 23, score = 96.0 WHERE name = '李四';
+
+-- 带表达式更新
+UPDATE students SET score = score + 5 WHERE age < 20;
+
+-- 更新所有行（危险操作）
+UPDATE students SET score = 0;
+```
+
+### 使用其他表的数据更新
+
+```sql
+UPDATE students s
+SET score = e.score
+FROM exam_scores e
+WHERE s.id = e.student_id;
+```
+
+### RETURNING — 返回更新后的数据
+
+```sql
+UPDATE students SET score = 100 WHERE name = '张三'
+RETURNING *;
+```
+
+---
+
+## SELECT — 查（查询）
+
+### 基本语法
+
+```sql
+SELECT 列1, 列2, ... FROM 表名;
+```
+
+### 查询所有列
+
+```sql
+SELECT * FROM students;
+```
+
+> `*` 表示所有列。开发中建议明确写出列名，避免查询不必要的字段。
+
+### 查询指定列
+
+```sql
+SELECT name, age FROM students;
+```
+
+### 列别名
+
+使用 `AS` 给列起别名（`AS` 可省略）：
+
+```sql
+SELECT name AS 姓名, score 成绩 FROM students;
+```
+
+---
+
+### WHERE — 条件过滤
+
+```sql
+-- 等值查询
+SELECT * FROM students WHERE name = '张三';
+
+-- 范围查询
+SELECT * FROM students WHERE score > 90;
+
+-- 多条件（AND / OR）
+SELECT * FROM students WHERE age >= 20 AND score >= 90;
+
+-- IN 查询
+SELECT * FROM students WHERE age IN (20, 22, 24);
+
+-- BETWEEN 区间
+SELECT * FROM students WHERE score BETWEEN 80 AND 95;
+
+-- LIKE 模糊匹配
+SELECT * FROM students WHERE name LIKE '张%';
+
+-- IS NULL / IS NOT NULL
+SELECT * FROM students WHERE email IS NOT NULL;
+```
+
+> `LIKE` 中 `%` 匹配任意多个字符，`_` 匹配单个字符。
+
+---
+
+### ORDER BY — 排序
+
+```sql
+-- 升序（默认）
+SELECT * FROM students ORDER BY score;
+
+-- 降序
+SELECT * FROM students ORDER BY score DESC;
+
+-- 多列排序
+SELECT * FROM students ORDER BY age DESC, score ASC;
+```
+
+---
+
+### LIMIT 和 OFFSET — 分页
+
+```sql
+-- 只取前 3 条
+SELECT * FROM students LIMIT 3;
+
+-- 跳过 2 条，取 3 条（第 3~5 条）
+SELECT * FROM students LIMIT 3 OFFSET 2;
+
+-- 注意：MySQL 的逗号写法 LIMIT 2, 3 在 PostgreSQL 中不支持（会报错），
+-- PostgreSQL 用 LIMIT 数量 OFFSET 偏移量 表达同样的「跳过 2 条，取 3 条」：
+SELECT * FROM students LIMIT 3 OFFSET 2;
+```
+
+> OFFSET 从 0 开始计数。第 1 条偏移量为 0。
+
+---
+
+### DISTINCT — 去重
+
+```sql
+-- 查询不重复的年龄
+SELECT DISTINCT age FROM students;
+
+-- 多列去重（组合不重复才保留）
+SELECT DISTINCT age, score FROM students;
+```
+
+---
+
+### 聚合函数
+
+| 函数 | 作用 |
+|------|------|
+| `COUNT(*)` | 统计行数 |
+| `COUNT(列名)` | 统计非 NULL 行数 |
+| `SUM(列名)` | 求和 |
+| `AVG(列名)` | 求平均值 |
+| `MAX(列名)` | 求最大值 |
+| `MIN(列名)` | 求最小值 |
+
+```sql
+SELECT COUNT(*) AS 总人数 FROM students;
+SELECT AVG(score) AS 平均分 FROM students;
+SELECT MAX(score) AS 最高分, MIN(score) AS 最低分 FROM students;
+```
+
+---
+
+### GROUP BY — 分组
+
+```sql
+-- 按年龄分组，统计每组人数
+SELECT age, COUNT(*) AS 人数 FROM students GROUP BY age;
+
+-- 按年龄分组，计算每组平均分
+SELECT age, AVG(score) AS 平均分 FROM students GROUP BY age;
+```
+
+> 使用 `GROUP BY` 时，`SELECT` 中出现的非聚合列必须出现在 `GROUP BY` 中。
+
+### HAVING — 分组后过滤
+
+`WHERE` 在分组前过滤，`HAVING` 在分组后过滤：
+
+```sql
+SELECT age, AVG(score) AS 平均分
+FROM students
+GROUP BY age
+HAVING AVG(score) >= 90;
+```
+
+> **SQL 子句执行顺序：** `FROM` → `WHERE` → `GROUP BY` → `HAVING` → `SELECT` → `ORDER BY` → `LIMIT`
+
+---
+
+### 表连接（JOIN）
+
+创建示例表：
+
+```sql
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    teacher VARCHAR(50)
+);
+
+CREATE TABLE enrollments (
+    student_id INT,
+    course_id INT,
+    enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (student_id, course_id)
+);
+```
+
+#### INNER JOIN — 内连接
+
+只返回两表中匹配的行：
+
+```sql
+SELECT s.name, c.name AS course
+FROM students s
+INNER JOIN enrollments e ON s.id = e.student_id
+INNER JOIN courses c ON e.course_id = c.id;
+```
+
+#### LEFT JOIN — 左外连接
+
+返回左表所有行，右表无匹配则补 NULL：
+
+```sql
+SELECT s.name, c.name AS course
+FROM students s
+LEFT JOIN enrollments e ON s.id = e.student_id
+LEFT JOIN courses c ON e.course_id = c.id;
+```
+
+#### RIGHT JOIN — 右外连接
+
+返回右表所有行，左表无匹配则补 NULL：
+
+```sql
+SELECT s.name, c.name AS course
+FROM students s
+RIGHT JOIN enrollments e ON s.id = e.student_id
+RIGHT JOIN courses c ON e.course_id = c.id;
+```
+
+#### 表别名
+
+使用别名简化写法：
+
+```sql
+SELECT s.name, c.name AS course
+FROM students s
+JOIN enrollments e ON s.id = e.student_id
+JOIN courses c ON e.course_id = c.id;
+```
+
+---
+
+### 子查询
+
+子查询是嵌套在另一个 SQL 中的查询，用 `()` 包裹。
+
+#### 标量子查询（返回单个值）
+
+```sql
+SELECT name, score
+FROM students
+WHERE score > (SELECT AVG(score) FROM students);
+```
+
+#### 行子查询（返回单行多列）
+
+```sql
+SELECT * FROM students
+WHERE (age, score) = (SELECT age, score FROM students WHERE name = '张三');
+```
+
+#### 表子查询（返回多行多列）
+
+```sql
+SELECT * FROM students
+WHERE age IN (SELECT DISTINCT age FROM students WHERE score > 90);
+```
+
+#### EXISTS 子查询
+
+```sql
+SELECT name FROM students s
+WHERE EXISTS (
+    SELECT 1 FROM enrollments e WHERE e.student_id = s.id
+);
+```
+
+> `EXISTS` 只关心子查询是否有返回结果，不关心具体值，通常写 `SELECT 1` 即可。
+
+---
+
+## 小结
+
+| 操作 | 关键字 | 说明 |
+|------|--------|------|
+| 插入数据（增） | `INSERT` | - 插入单行<br/>- 插入多行<br/>- 冲突时更新或忽略（`ON CONFLICT`） |
+| 删除数据（删） | `DELETE` | - 删除指定行<br/>- 删除所有行 |
+| 更新数据（改） | `UPDATE` | - 更新指定行、指定列的数据<br/>- 更新所有行、指定列的数据 |
+| 查询数据（查） | `SELECT` | - 查询指定表、指定列的数据<br/>- 可以按照条件过滤<br/>- 可以排序<br/>- 可以分页<br/>- 可以去重（行）<br/>- 可以聚合统计（求数量、和、平均、...）<br/>- 可以分组聚合（求每个性别的平均年龄、求每个商品的总销售额） |
+
+危险操作：
+
+1. **删除所有** `DELETE FROM 表名`
+2. **更新所有** `UPDATE`语句中没有`WHERE`
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了 DML？配套互动课程的最终考核是 5 道改编自源课程作业的实战 SQL 题。
+
+<a href="/teach/lessons/db-0004-DML.html"><strong>👉 点击进入《DML 互动教学课程》</strong></a>
+
+- ⏱️ 预计 15–20 分钟，9 道分级测验（初/中/高级各 3 道）+ 最终考核 + 面试实战
+- 📋 配套<a href="/teach/reference/DML速查表.html">《DML速查表》</a>，术语与命令一页装下，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DML速查表</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>DML速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/db-0004-DML.html">《DML 互动教学课程》</a>与《04.DML》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>增删改三件套</h2>
+      <pre><code>-- 增
+INSERT INTO students (name, age) VALUES ('张三', 22);
+INSERT INTO students (name, age) VALUES ('a',1),('b',2);          -- 多行
+INSERT INTO t (…) SELECT … FROM backup WHERE …;                    -- 查询并插入
+INSERT … RETURNING id, name;                                       -- PG 特有：拿回行
+INSERT … ON CONFLICT (email) DO UPDATE SET age = EXCLUDED.age;     -- UPSERT
+INSERT … ON CONFLICT (email) DO NOTHING;                           -- 忽略冲突
+
+-- 删 ⚠️ 必须写 WHERE
+DELETE FROM students WHERE name = '张三';
+DELETE FROM students WHERE score &lt; 60 RETURNING id, name;
+
+-- 改 ⚠️ 必须写 WHERE
+UPDATE students SET score = 98 WHERE name = '张三';
+UPDATE students SET score = score + 5 WHERE age &lt; 20;           -- 表达式
+UPDATE students s SET score = e.score FROM exam_scores e WHERE s.id = e.student_id;</code></pre>
+    </section>
+
+    <section>
+      <h2>SELECT 子句速查</h2>
+      <table>
+        <thead><tr><th>子句</th><th>要点</th></tr></thead>
+        <tbody>
+          <tr><td><code>WHERE</code></td><td>= &gt; AND/OR IN BETWEEN LIKE(%,_) IS NULL</td></tr>
+          <tr><td><code>ORDER BY</code></td><td>默认升序，DESC 降序，可多列</td></tr>
+          <tr><td><code>LIMIT / OFFSET</code></td><td>分页；第 N 页每页 10 条 = LIMIT 10 OFFSET (N-1)*10</td></tr>
+          <tr><td><code>DISTINCT</code></td><td>去重，可多列组合去重</td></tr>
+          <tr><td><code>GROUP BY</code></td><td>非聚合列必须分组</td></tr>
+          <tr><td><code>HAVING</code></td><td>分组后过滤，可用聚合</td></tr>
+        </tbody>
+      </table>
+      <p><strong>执行顺序</strong>：<code>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</code></p>
+    </section>
+
+    <section>
+      <h2>聚合函数</h2>
+      <table>
+        <thead><tr><th>函数</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td><code>COUNT(*)</code> / <code>COUNT(列)</code></td><td>行数 / 非 NULL 行数</td></tr>
+          <tr><td><code>SUM / AVG / MAX / MIN</code></td><td>和 / 均值 / 最大 / 最小</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>JOIN 四种</h2>
+      <table>
+        <thead><tr><th>类型</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td><code>INNER JOIN</code></td><td>只保留两边匹配的行</td></tr>
+          <tr><td><code>LEFT JOIN</code></td><td>左表全保留，右表无匹配补 NULL（最常用）</td></tr>
+          <tr><td><code>RIGHT JOIN</code></td><td>右表全保留（可改写为 LEFT）</td></tr>
+          <tr><td><code>FULL OUTER JOIN</code></td><td>两表全保留</td></tr>
+        </tbody>
+      </table>
+      <p>⚠️ LEFT JOIN 后在 WHERE 过滤右表字段 → 退化为 INNER；想连接前过滤右表，条件写 ON。</p>
+    </section>
+
+    <section>
+      <h2>子查询四类</h2>
+      <table>
+        <thead><tr><th>类型</th><th>返回</th><th>示例</th></tr></thead>
+        <tbody>
+          <tr><td>标量子查询</td><td>单个值</td><td><code>score &gt; (SELECT AVG(score) …)</code></td></tr>
+          <tr><td>行子查询</td><td>单行多列</td><td><code>(age, score) = (SELECT …)</code></td></tr>
+          <tr><td>表子查询</td><td>多行多列</td><td><code>age IN (SELECT …)</code></td></tr>
+          <tr><td>EXISTS</td><td>有无结果</td><td><code>WHERE EXISTS (SELECT 1 …)</code></td></tr>
+        </tbody>
+      </table>
+      <p>⚠️ NOT IN + NULL → 空结果，用 NOT EXISTS 替代。</p>
+    </section>
+
+    <section>
+      <h2>核心要点</h2>
+      <ul class="term-grid">
+        <li><strong>两大危险操作</strong>：DELETE 不带 WHERE、UPDATE 不带 WHERE</li>
+        <li><strong>RETURNING</strong>：PG 特有，增删改直接拿回行数据</li>
+        <li><strong>EXCLUDED</strong>：ON CONFLICT 中本次插入的新值</li>
+        <li><strong>TRUNCATE 重置自增序列</strong>，DELETE 不重置</li>
+        <li><strong>WHERE 无聚合、HAVING 有聚合</strong>——执行顺序决定</li>
+        <li><strong>保留字加引号</strong>：<code>"user"</code>、<code>"order"</code></li>
+      </ul>
+    </section>
+
+  </main>
+</body>
+</html>

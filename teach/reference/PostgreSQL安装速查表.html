@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PostgreSQL安装速查表</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>PostgreSQL安装速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/db-0001-PostgreSQL安装.html">《PostgreSQL 安装互动教学课程》</a>与《01.PostgreSQL安装》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>安装四步（Docker 方式）</h2>
+      <pre><code># ① 装 Docker Desktop → Settings → Docker Engine 加镜像加速器
+"registry-mirrors": ["https://docker.m.daocloud.io", "https://docker.1ms.run", "https://docker.aityp.com"]
+
+# ② 拉取镜像
+docker pull postgres:16
+
+# ③ 启动容器（密码必填 + 端口映射 + 数据卷持久化）
+docker run -d \
+  --name pg16 \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=123123 \
+  -p 5432:5432 \
+  -v "你的本地路径:/var/lib/postgresql/data" \
+  postgres:16
+
+# ④ 进入容器验证
+docker exec -it pg16 psql -U admin -d admin</code></pre>
+    </section>
+
+    <section>
+      <h2>docker run 参数表</h2>
+      <table>
+        <thead><tr><th>参数</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>-d</code></td><td>后台运行容器</td></tr>
+          <tr><td><code>--name pg16</code></td><td>容器命名 pg16</td></tr>
+          <tr><td><code>-e POSTGRES_USER=admin</code></td><td>超级用户名（默认 postgres）</td></tr>
+          <tr><td><code>-e POSTGRES_PASSWORD</code></td><td>超级用户密码（<strong>必填</strong>）</td></tr>
+          <tr><td><code>-p 5432:5432</code></td><td>宿主机端口:容器端口</td></tr>
+          <tr><td><code>-v 本地:容器路径</code></td><td>数据卷持久化，删容器不丢数据</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>psql 验证命令</h2>
+      <table>
+        <thead><tr><th>命令</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td><code>\conninfo</code></td><td>查看当前连接信息</td></tr>
+          <tr><td><code>\l</code></td><td>列出所有数据库</td></tr>
+          <tr><td><code>SELECT current_user;</code></td><td>查看当前用户</td></tr>
+          <tr><td><code>\q</code></td><td>退出 psql</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>pgAdmin（可选）</h2>
+      <pre><code>docker run -d \
+  --name pgadmin4 \
+  -e PGADMIN_DEFAULT_EMAIL=admin@qq.com \
+  -e PGADMIN_DEFAULT_PASSWORD=123123 \
+  -p 5050:80 \
+  dpage/pgadmin4
+# 浏览器访问 http://localhost:5050</code></pre>
+    </section>
+
+    <section>
+      <h2>核心要点</h2>
+      <ul class="term-grid">
+        <li><strong>PG 定位</strong>：开源免费 · 原生 ACID · MVCC 并发 · Extension 生态 · JSONB · 最贴近标准 SQL</li>
+        <li><strong>镜像加速器</strong>：只加快拉取镜像，与 SQL 性能无关</li>
+        <li><strong>数据持久化</strong>：不挂卷 → 删容器丢数据；挂卷 → 数据在宿主机</li>
+        <li><strong>端口映射</strong>：左宿右容（<code>-p 宿主机:容器</code>）</li>
+        <li><strong>psql</strong>：<code>\</code> 开头是元命令（客户端处理），<code>SELECT</code> 才是 SQL</li>
+      </ul>
+    </section>
+
+  </main>
+</body>
+</html>

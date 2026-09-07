@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《02.DDL》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题，15-20 分钟掌握建表、约束与结构修改">
+  <title>DDL · 互动教学课程（数据库第 2 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据库 · 第 2 节</p>
+      <h1>DDL</h1>
+      <p class="lesson-sub">配合《<a href="/common/database/DDL/">02.DDL</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 SQL 四分类（DDL/DML/DCL/TCL）各自管什么</li>
+        <li>独立建表：为每个字段选对<strong>数据类型</strong>与<strong>约束</strong>——<strong>最终考核考的就是这个</strong></li>
+        <li>用 <code>ALTER</code> / <code>DROP</code> / <code>TRUNCATE</code> 修改结构，并说清三者与 <code>DELETE</code> 的区别</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《02.DDL》里，测验和考核会考。</p>
+
+      <h3>SQL 四分类</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">CREATE / ALTER / DROP / TRUNCATE</span>
+          <span class="diagram-arrow">─ 操作结构 ─▶</span>
+          <span class="diagram-node">DDL 数据定义</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">INSERT / SELECT / UPDATE / DELETE</span>
+          <span class="diagram-arrow">─ 操作数据 ─▶</span>
+          <span class="diagram-node">DML 数据操作</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">GRANT / REVOKE · BEGIN / COMMIT / ROLLBACK</span>
+          <span class="diagram-arrow">─ 权限 / 事务 ─▶</span>
+          <span class="diagram-node">DCL / TCL</span>
+        </div>
+        <p class="diagram-note">⚙️ 学习顺序 DDL → DML：先有结构，才能装数据。</p>
+      </div>
+
+      <h3>类型与约束要点</h3>
+      <ol class="pitfall-list">
+        <li><strong>精确 vs 不精确</strong>：<code>NUMERIC(m,n)</code> 定点精确（金额用它）；<code>REAL</code> / <code>DOUBLE PRECISION</code> 浮点不精确（科学计算用）。</li>
+        <li><strong><code>SERIAL</code> = INTEGER + 自动序列</strong>：自增主键的懒人写法，<code>BIGSERIAL</code> 对应 BIGINT。</li>
+        <li><strong>字符串三兄弟</strong>：<code>VARCHAR(n)</code> 变长有上限、<code>CHAR(n)</code> 定长不足补空格、<code>TEXT</code> 不限长。</li>
+        <li><strong><code>PRIMARY KEY</code> = NOT NULL + UNIQUE</strong>：主键自带非空与唯一，无需重复声明。</li>
+        <li><strong>JSON vs JSONB</strong>：JSONB 是二进制存储，支持索引、查询更快——能选 JSONB 就不选 JSON。</li>
+      </ol>
+
+      <h3>DELETE / TRUNCATE / DROP 一句话对比</h3>
+      <pre><code>DELETE    删「行」——慢、逐行、可带 WHERE、可回滚、结构在
+TRUNCATE  清「数据」——快、整表、不可带 WHERE、PG 中可回滚、结构在
+DROP      删「表」——最快、连结构带数据一起删、不可回滚</code></pre>
+      <p>⚠️ PostgreSQL 特有：TRUNCATE 在 PG 里支持事务回滚（与 MySQL 不同）；DELETE 在 PG 的 MVCC 下只是把行标记为 dead tuple，空间要等 VACUUM 回收，大量 DELETE 后表会膨胀。</p>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
+
+      <h3>🌱 初级 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. DDL 操作的对象是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据库和表的结构（表、列、约束）</button>
+            <button class="quiz-option">表中的每一行数据</button>
+            <button class="quiz-option">用户的登录权限</button>
+            <button class="quiz-option">事务的提交与回滚</button>
+          </div>
+          <div class="quiz-explain" hidden>DDL = Data Definition Language，操作<strong>结构</strong>：CREATE/ALTER/DROP/TRUNCATE 针对数据库、表、列、约束。行数据归 DML，权限归 DCL，事务归 TCL。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. <code>id SERIAL PRIMARY KEY</code> 中 SERIAL 是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一种校验字符串格式的约束</button>
+            <button class="quiz-option">一种存储 JSON 的特殊类型</button>
+            <button class="quiz-option">自增整数：相当于 INTEGER + 自动序列</button>
+            <button class="quiz-option">浮点数的一种精确变体</button>
+          </div>
+          <div class="quiz-explain" hidden>SERIAL 不是真类型，是 <strong>INTEGER + 自动序列</strong> 的组合：插入时不给值就自动取序列的下一个数。对应大整数用 BIGSERIAL。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. PRIMARY KEY 自带哪两个特性？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">默认值和检查条件</button>
+            <button class="quiz-option">非空（NOT NULL）和唯一（UNIQUE）</button>
+            <button class="quiz-option">自增和外键关联</button>
+            <button class="quiz-option">索引和全文检索</button>
+          </div>
+          <div class="quiz-explain" hidden>主键 = <strong>唯一标识一行</strong>：值不能重复（唯一性）、不能为 NULL（非空）。声明 PRIMARY KEY 就自带这两个约束，还能用多列组合成复合主键。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>price NUMERIC(10,2)</code> 的含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">最多 10 位数字，其中 2 位小数，精确存储</button>
+            <button class="quiz-option">最多 10 位小数，其中 2 位整数</button>
+            <button class="quiz-option">10 字节存储，2 倍精度</button>
+            <button class="quiz-option">浮点近似存储，误差不超过 10^-2</button>
+          </div>
+          <div class="quiz-explain" hidden>NUMERIC(m, n)：m = 总位数（含小数），n = 小数位数。NUMERIC(10,2) 最多 10 位、2 位小数，且是<strong>定点精确存储</strong>——金额字段的标准选择。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 想把 <code>score NUMERIC(5,2)</code> 改成 INTEGER，但现有数据无法隐式转换，正确做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先 DROP 列再重建同名列</button>
+            <button class="quiz-option">直接 ALTER TYPE，报错就多试几次</button>
+            <button class="quiz-option">TRUNCATE 表后修改类型</button>
+            <button class="quiz-option">ALTER TYPE INTEGER USING score::INTEGER 显式指定转换规则</button>
+          </div>
+          <div class="quiz-explain" hidden><code>USING</code> 子句给数据库<strong>显式转换规则</strong>：<code>score::INTEGER</code> 把每个值强转成整数。没有 USING 时数据库只尝试隐式转换，失败即报错。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 存「商品信息 JSON 字段」，并且以后要按字段内容查询，选哪种类型？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">JSON：轻量，查询最快</button>
+            <button class="quiz-option">TEXT：存什么都行，最灵活</button>
+            <button class="quiz-option">JSONB：二进制存储，支持索引、查询高效</button>
+            <button class="quiz-option">VARCHAR(1000)：变长字符串即可</button>
+          </div>
+          <div class="quiz-explain" hidden>JSONB 是<strong>二进制 JSON</strong>：解析好再存储、支持 GIN 索引、按字段查询高效——代价是写入稍慢、不保留原始格式。JSON 只是原样文本存储，查询要每次解析。TEXT/VARCHAR 则完全失去结构化查询能力。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 在 PostgreSQL 中，BEGIN 事务里执行 TRUNCATE 再 ROLLBACK，数据会？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据永久清空——TRUNCATE 是 DDL 不可回滚</button>
+            <button class="quiz-option">数据恢复——PG 的 TRUNCATE 支持事务回滚</button>
+            <button class="quiz-option">只有 TRUNCATE 的一半数据被清空</button>
+            <button class="quiz-option">ROLLBACK 会报错，因为 TRUNCATE 不支持事务</button>
+          </div>
+          <div class="quiz-explain" hidden>这是 PG 与 MySQL 的重要差异：<strong>PostgreSQL 中 TRUNCATE 支持事务回滚</strong>（课件对比表专门标注了「是（PostgreSQL 中支持事务回滚）」）。DROP 则不可回滚。面试若遇到通用答案「TRUNCATE 不可回滚」，要区分数据库。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. <code>DROP TABLE students CASCADE;</code> 与不带 CASCADE 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">CASCADE 连带删除依赖该表的视图、外键等对象</button>
+            <button class="quiz-option">CASCADE 会先备份表数据再删除</button>
+            <button class="quiz-option">CASCADE 只删数据不删表结构</button>
+            <button class="quiz-option">CASCADE 删除速度更快但不可回滚</button>
+          </div>
+          <div class="quiz-explain" hidden>CASCADE = <strong>级联</strong>：把依赖这张表的对象（视图、外键约束等）一并删除。不带 CASCADE 时，若存在依赖对象，PG 会拒绝删除并报错。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. <code>code CHAR(3)</code> 存字符串 "AB" 后，读出来是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">"AB"——CHAR 和 VARCHAR 行为完全一样</button>
+            <button class="quiz-option">NULL——长度不满足 3 会报错</button>
+            <button class="quiz-option">"AB "——定长不足自动补空格</button>
+            <button class="quiz-option">"AB0"——自动补零到定长</button>
+          </div>
+          <div class="quiz-explain" hidden>CHAR(n) 是<strong>定长</strong>：不足 n 字符补<strong>空格</strong>（比较时 PG 会忽略尾部空格）。VARCHAR(n) 是变长，存多长占多长。定长换取存取速度、浪费空间——「空间换时间」。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《02.DDL》源课程作业「让 AI 帮你生成 SQL 完成建库建表 + 导出恢复」的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料，先在脑中写出语句，再点击核对。全部答对且能讲清理由，才算过关。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核一：为「学生表」选建表语句——需求：姓名、年龄、性别（作业原题）。哪条最合适？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">CREATE TABLE students (name CHAR(10), age TEXT, gender VARCHAR(1));</button>
+            <button class="quiz-option">CREATE TABLE students (name VARCHAR(50), age NUMERIC(5,2), gender JSONB);</button>
+            <button class="quiz-option">CREATE TABLE students (id SERIAL PRIMARY KEY, name VARCHAR(50) NOT NULL, age INTEGER CHECK (age &gt; 0), gender VARCHAR(10));</button>
+            <button class="quiz-option">CREATE TABLE students (id UUID PRIMARY KEY, name TEXT, age REAL, gender BOOLEAN);</button>
+          </div>
+          <div class="quiz-explain" hidden>要点：自增主键 <code>SERIAL PRIMARY KEY</code>；姓名用 VARCHAR(50) NOT NULL；年龄是整数，加 CHECK 防负数；性别短字符串 VARCHAR(10)。其他项的错误：age TEXT 类型错、age NUMERIC 类型错、gender BOOLEAN 语义错。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核二：为「课程表」选建表语句——需求：课程名称、课程描述、授课老师（作业原题）。哪条最合适？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">CREATE TABLE courses (name CHAR(3), desc TEXT, teacher VARCHAR(10));</button>
+            <button class="quiz-option">CREATE TABLE courses (id SERIAL PRIMARY KEY, name VARCHAR(100) NOT NULL, description TEXT, teacher VARCHAR(50));</button>
+            <button class="quiz-option">CREATE TABLE courses (id INT, name TEXT, description JSON, teacher SERIAL);</button>
+            <button class="quiz-option">CREATE TABLE courses (name VARCHAR(100), description VARCHAR(10), teacher TEXT);</button>
+          </div>
+          <div class="quiz-explain" hidden>课程名 VARCHAR(100) 且 NOT NULL；<strong>课程描述长文本用 TEXT</strong>（第二项里 description TEXT 正确）；老师 VARCHAR(50)。陷阱项：name CHAR(3) 放不下课程名；description VARCHAR(10) 更放不下描述；teacher SERIAL 把老师当自增数。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三：作业第 4 步「导出 courses_db 为 SQL，只要干干净净的建表语句」，应该用什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">docker exec pg16 pg_dump -U admin -s courses_db——schema-only 只导结构</button>
+            <button class="quiz-option">docker exec pg16 pg_dump -U admin courses_db——全量导出含数据</button>
+            <button class="quiz-option">COPY (SELECT * FROM pg_tables) TO STDOUT;</button>
+            <button class="quiz-option">SELECT table_name FROM information_schema.tables; 然后手动抄</button>
+          </div>
+          <div class="quiz-explain" hidden><code>pg_dump -s</code>（= <code>--schema-only</code>）只导出<strong>表结构定义</strong>（CREATE TABLE 语句），不含数据——正是「干干净净的建表语句」。不带 -s 的全量导出会把数据也打成 INSERT。pg_dump 是 PG 官方备份工具（<a href="https://www.postgresql.org/docs/16/app-pgdump.html">官方文档</a>）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核四：作业第 5 步「删除并重建干净的数据库，再用导出的 SQL 恢复」，正确顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先执行导出 SQL 再 DROP DATABASE，顺序无所谓</button>
+            <button class="quiz-option">TRUNCATE 所有表即可，不需要重建数据库</button>
+            <button class="quiz-option">把导出的 SQL 粘贴到 pgAdmin 里对旧库直接执行</button>
+            <button class="quiz-option">DROP DATABASE → CREATE DATABASE → 在 pgAdmin/psql 中执行导出 SQL → 验证表已建</button>
+          </div>
+          <div class="quiz-explain" hidden>干净恢复 = <strong>删库 → 建库 → 执行结构 SQL → 验证</strong>。注意两点：DROP DATABASE 会连数据一起销毁（这正是「干净」的目的）；导出的 SQL 只含 CREATE TABLE，执行它就把表结构原样重建出来。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（SQL 基础高频题）：DDL 与 DML 的区别是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">DDL 定义结构（CREATE/ALTER/DROP/TRUNCATE）；DML 操作数据（INSERT/SELECT/UPDATE/DELETE）</button>
+            <button class="quiz-option">DDL 操作数据；DML 定义结构</button>
+            <button class="quiz-option">两者只是叫法不同，功能完全一样</button>
+            <button class="quiz-option">DDL 是 MySQL 的语法，DML 是 PostgreSQL 的语法</button>
+          </div>
+          <div class="quiz-explain" hidden>DDL 管<strong>结构</strong>（库、表、列、约束），DML 管<strong>数据</strong>（行）。进一步可答：DDL 主要给 DBA 用、立即生效；DML 是开发日常、支持事务。部分分类把 SELECT 单独划为 DQL。<a href="https://blog.csdn.net/basketball616/article/details/161391410">出处：CSDN「SQL 基础面试考点总结」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">面试题二（牛客高频·三兄弟速记）：DELETE、TRUNCATE、DROP 谁保留表结构、谁最快？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">三者都保留表结构，DROP 最快</button>
+            <button class="quiz-option">只有 DROP 保留表结构，DELETE 最快</button>
+            <button class="quiz-option">DELETE 与 TRUNCATE 保留结构；速度 DROP ＞ TRUNCATE ＞ DELETE</button>
+            <button class="quiz-option">只有 DELETE 保留结构，TRUNCATE 最快</button>
+          </div>
+          <div class="quiz-explain" hidden>速记口诀：<strong>DELETE 删行</strong>（可 WHERE、可回滚、慢）；<strong>TRUNCATE 清数据</strong>（结构在、快）；<strong>DROP 删表</strong>（结构都没了、最快、不可恢复）。速度排序 DROP &gt; TRUNCATE &gt; DELETE。<a href="https://www.nowcoder.com/discuss/861302246330408960">出处：牛客网「DELETE、TRUNCATE 和 DROP 区别」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">面试题三（陷阱题）：关于 TRUNCATE，下列说法哪个是正确的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TRUNCATE 可以带 WHERE 条件删除指定行</button>
+            <button class="quiz-option">TRUNCATE 不能带 WHERE，且不触发 DELETE 触发器</button>
+            <button class="quiz-option">TRUNCATE 与 DELETE 逐行删除的实现方式相同</button>
+            <button class="quiz-option">TRUNCATE 是 DML 语句，需要显式 COMMIT</button>
+          </div>
+          <div class="quiz-explain" hidden>TRUNCATE 是<strong>整表清空</strong>：不能带 WHERE；实现上是重置存储而非逐行删除，因此<strong>不触发行级 DELETE 触发器</strong>；属于 DDL。想部分删除只能 DELETE + WHERE。<a href="https://blog.csdn.net/basketball616/article/details/161391410">出处：CSDN「SQL 基础面试考点总结」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（PostgreSQL 机制题）：PG 里对一张大表执行了海量 DELETE，表却没有变小，为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">MVCC 下 DELETE 只标记 dead tuple，空间要等 VACUUM 回收</button>
+            <button class="quiz-option">DELETE 在 PG 中默认只做逻辑标记，永不物理删除</button>
+            <button class="quiz-option">数据被 DELETE 触发器拦截了</button>
+            <button class="quiz-option">PG 的 DELETE 速度比 INSERT 慢导致</button>
+          </div>
+          <div class="quiz-explain" hidden>PG 基于 MVCC：DELETE 不原地删行，而是标记 <strong>dead tuple（死元组）</strong>，物理空间等 <strong>VACUUM</strong>（或 autovacuum）回收。海量 DELETE 后常见死元组堆积、索引膨胀。要快速清空大表，TRUNCATE 直接重置页面，没有这个问题。<a href="https://developer.cloud.tencent.com/article/1917703">出处：腾讯云开发者社区「[数据库]基础面试题总结」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">面试题五（存储设计题）：定长 CHAR 与变长 VARCHAR 怎么选？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一律 VARCHAR，定长早已过时</button>
+            <button class="quiz-option">一律 CHAR，存取速度永远更快</button>
+            <button class="quiz-option">长度固定且短的用 CHAR（空间换时间）；长度波动大用 VARCHAR 省空间</button>
+            <button class="quiz-option">两者无差别，看个人习惯</button>
+          </div>
+          <div class="quiz-explain" hidden>CHAR 定长：长度固定、存取快（部分场景快至 50%）、不足补空格、浪费空间——<strong>空间换时间</strong>，适合编码、固定位数 ID。VARCHAR 变长：存多长占多长，省空间，适合姓名、标题等波动大的字段。<a href="https://blog.csdn.net/javaeEEse/article/details/139613776">出处：CSDN「Java 最新面试题」· char 与 varchar 考点</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">面试题六（性能机制题）：TRUNCATE 为什么比 DELETE 快得多？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TRUNCATE 逐行删除但不写日志</button>
+            <button class="quiz-option">TRUNCATE 直接重置/销毁数据页，几乎不写行日志；DELETE 逐行删且每行写日志</button>
+            <button class="quiz-option">TRUNCATE 走索引，DELETE 不走索引</button>
+            <button class="quiz-option">TRUNCATE 是内存操作，DELETE 是磁盘操作</button>
+          </div>
+          <div class="quiz-explain" hidden>DELETE <strong>逐行删除</strong>，每行都要写事务/重做日志；TRUNCATE 不逐行操作，而是<strong>直接销毁数据页</strong>（相当于重建空表），日志量极小——所以快。DROP 更快：连结构元数据一起删，只写元数据日志。<a href="https://www.nowcoder.com/discuss/861302246330408960">出处：牛客网「DELETE、TRUNCATE 和 DROP 区别」</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固延伸</h2>
+      <ul>
+        <li><strong>动手验证</strong>：把考核一、考核二的建表语句在 pgAdmin 里执行；再分别试 DELETE（带 WHERE）/TRUNCATE/DROP，观察 <code>\d students</code> 的结构变化。</li>
+        <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/ddl.html">PostgreSQL 官方文档：数据定义</a> · <a href="https://www.postgresql.org/docs/16/app-pgdump.html">pg_dump 官方文档</a></li>
+        <li><strong>回看课程</strong>：<a href="/common/database/DDL/">02.DDL</a> · 上一节 <a href="/common/database/PostgreSQL安装/">01.PostgreSQL安装</a> · 下一节 <a href="/common/database/表间关系/">03.表间关系</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/common/database/DDL/">回到《02.DDL》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

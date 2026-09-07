@@ -1,0 +1,71 @@
+---
+sidebar_position: 6
+title: '06. 索引'
+---
+
+# 索引
+
+本节用 `EXPLAIN ANALYZE` 对比「无索引 vs 有索引」下时间范围查询的执行计划与耗时，直观感受索引的价值。
+
+```sql
+-- =============================================
+-- 索引演示：order.created_at
+-- 演示：无索引 vs 有索引（EXPLAIN ANALYZE）
+-- =============================================
+
+-- 1. 插入 50 万条测试订单（分布在 2 年内）
+INSERT INTO "order" (user_id, order_no, status, total_amount, created_at)
+SELECT
+    (random() * 24 + 1)::int,
+    'DEMO-' || LPAD(g::text, 10, '0'),
+    CASE (random() * 4)::int
+        WHEN 0 THEN 'pending'
+        WHEN 1 THEN 'paid'
+        WHEN 2 THEN 'shipped'
+        WHEN 3 THEN 'completed'
+        ELSE 'cancelled'
+    END,
+    round((random() * 5000 + 50)::numeric, 2),
+    timestamp '2024-01-01' + random() * interval '2 years'
+FROM generate_series(1, 500000) g;
+
+-- 更新统计信息
+ANALYZE "order";
+
+-- ============ 测试 1：无索引 ============
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM "order"
+WHERE created_at >= '2024-06-01'
+  AND created_at < '2024-07-01';
+
+-- ============ 创建索引 ============
+CREATE INDEX idx_order_created_at ON "order"(created_at);
+
+-- 更新统计信息（让优化器知道索引存在）
+ANALYZE "order";
+
+-- ============ 测试 2：有索引 ============
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM "order"
+WHERE created_at >= '2024-06-01'
+  AND created_at < '2024-07-01';
+
+-- ============ 清理 ============
+DROP INDEX idx_order_created_at;
+
+-- 可选：删除测试数据（恢复原始 80 条记录）
+-- DELETE FROM "order" WHERE order_no LIKE 'DEMO-%';
+-- SELECT count(id) FROM "order";
+```
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的理解了索引？
+
+<a href="/teach/lessons/db-0006-索引.html"><strong>👉 点击进入《索引互动教学课程》</strong></a>
+
+- ⏱️ 预计 15–20 分钟，9 道分级测验（初/中/高级各 3 道）+ 最终考核 + 面试实战
+- 📋 配套<a href="/teach/reference/索引速查表.html">《索引速查表》</a>，术语与命令一页装下，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师

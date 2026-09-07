@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《01.PostgreSQL安装》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题，15-20 分钟掌握 Docker 安装 PostgreSQL 全流程">
+  <title>PostgreSQL 安装 · 互动教学课程（数据库第 1 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据库 · 第 1 节</p>
+      <h1>PostgreSQL 安装</h1>
+      <p class="lesson-sub">配合《<a href="/common/database/PostgreSQL安装/">01.PostgreSQL安装</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 <strong>PostgreSQL 相对其他主流数据库的定位</strong>（开源免费、MVCC、扩展、JSONB）</li>
+        <li>独立用 Docker 拉起 PostgreSQL 容器，并解释 <code>docker run</code> 每个参数的含义——<strong>最终考核考的就是这个</strong></li>
+        <li>进入容器用 <code>psql</code> 验证连接（<code>\conninfo</code> / <code>\l</code> / <code>SELECT current_user</code>）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《01.PostgreSQL安装》里，测验和考核会考。</p>
+
+      <h3>为什么选 PostgreSQL</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">社区开发 · PostgreSQL License</span>
+          <span class="diagram-arrow">─ 定位 ─▶</span>
+          <span class="diagram-node">开源免费，无许可费</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">MVCC + 流复制/逻辑复制</span>
+          <span class="diagram-arrow">─ 并发 ─▶</span>
+          <span class="diagram-node">读写互不阻塞，复制成熟</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">Extension（PostGIS 等）+ JSONB</span>
+          <span class="diagram-arrow">─ 扩展 ─▶</span>
+          <span class="diagram-node">生态丰富，可作文档库</span>
+        </div>
+        <p class="diagram-note">⚙️ 对照 MySQL 记：MySQL 的 ACID 依赖 InnoDB、SQL 方言多、扩展少；PG 原生完整 ACID、最贴近标准 SQL。</p>
+      </div>
+
+      <h3>docker run 参数拆解</h3>
+      <ol class="pitfall-list">
+        <li><strong><code>-d</code> 后台运行</strong>：容器在后台跑，不占用当前终端；交互式进入用 <code>docker exec -it</code>。</li>
+        <li><strong><code>-e POSTGRES_PASSWORD</code> 必填</strong>：不设置这个环境变量，postgres 镜像会拒绝启动（初始化超级用户密码）。<code>POSTGRES_USER</code> 默认 <code>postgres</code>，<code>POSTGRES_DB</code> 默认取用户名。</li>
+        <li><strong><code>-p 宿主机端口:容器端口</code></strong>：<code>-p 5432:5432</code> 把宿主机 5432 转发到容器内 5432。顺序反了含义就反了。</li>
+        <li><strong><code>-v 本地路径:/var/lib/postgresql/data</code> 是数据保命的参数</strong>：容器是易失的，<code>docker rm</code> 删除容器后，没挂卷的数据随可写层一起消失；挂卷后数据落在宿主机，容器删了数据还在。</li>
+      </ol>
+
+      <h3>psql 验证三步</h3>
+      <pre><code>docker exec -it pg16 psql -U admin -d admin   # 进入容器连接数据库
+\conninfo        # 当前连接信息
+\l               # 列出所有数据库
+SELECT current_user;   # 当前用户</code></pre>
+      <p>记住：psql 里 <code>\</code> 开头的是<strong>元命令</strong>（psql 自己处理），<code>SELECT</code> 才是发给数据库的 SQL。</p>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
+
+      <h3>🌱 初级 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. PostgreSQL 的许可证是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">PostgreSQL License，开源且完全免费</button>
+            <button class="quiz-option">GPL 协议，商用需要另外购买授权</button>
+            <button class="quiz-option">社区版免费，企业版按核心数收费</button>
+            <button class="quiz-option">闭源商业软件，仅有试用版免费</button>
+          </div>
+          <div class="quiz-explain" hidden>PostgreSQL 由<strong>社区</strong>开发，使用 PostgreSQL License，开源且完全免费。GPL/商用双许可对应 MySQL；社区免费企业付费也是 MySQL 的模式。见《01.PostgreSQL安装》对比表「协议/许可」「费用」两行。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 配置 Docker 镜像加速器（registry-mirrors）的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">加快数据库 SQL 查询的执行速度</button>
+            <button class="quiz-option">加快国内拉取 Docker 镜像的速度</button>
+            <button class="quiz-option">加快 PostgreSQL 容器的启动速度</button>
+            <button class="quiz-option">加快宿主机磁盘的读写速度</button>
+          </div>
+          <div class="quiz-explain" hidden>registry-mirrors 是<strong>镜像仓库加速</strong>：把官方 Docker Hub 的拉取请求转发到国内镜像源，解决国内网络拉取镜像慢的问题。与 SQL、容器启动、磁盘都无关。配置位置：Docker Desktop → Settings → Docker Engine。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 对比表中的「MVCC」指的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一种收费的商业数据库授权模式</button>
+            <button class="quiz-option">一种把数据压缩存储的磁盘引擎</button>
+            <button class="quiz-option">多版本并发控制：读写不互相阻塞</button>
+            <button class="quiz-option">PostgreSQL 独有的安装包格式</button>
+          </div>
+          <div class="quiz-explain" hidden>MVCC = Multi-Version Concurrency Control，<strong>多版本并发控制</strong>：读操作不阻塞写、写操作不阻塞读。PG 原生支持；MySQL 依赖 InnoDB 引擎才支持——这是 PG 的并发优势。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>docker run -p 5432:5432</code> 中两个端口的含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">宿主机 5432 转发到容器内 5432</button>
+            <button class="quiz-option">容器内 5432 转发到宿主机 5432</button>
+            <button class="quiz-option">两个端口都指宿主机，容器随机选端口</button>
+            <button class="quiz-option">两个端口都指容器，宿主机无法访问</button>
+          </div>
+          <div class="quiz-explain" hidden>格式是 <code>-p 宿主机端口:容器端口</code>——<strong>左宿右容</strong>。所以 <code>-p 5432:5432</code> 是把宿主机 5432 转发到容器内 5432。想避开宿主机端口冲突可以写成 <code>-p 5433:5432</code>。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. <code>-v 本地路径:/var/lib/postgresql/data</code> 这个参数的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">给数据库查询添加加速缓存</button>
+            <button class="quiz-option">把容器端口映射到宿主机</button>
+            <button class="quiz-option">限制容器可以使用的 CPU 数量</button>
+            <button class="quiz-option">把数据目录持久化到宿主机，删容器不丢数据</button>
+          </div>
+          <div class="quiz-explain" hidden><code>-v</code> 是<strong>数据卷挂载</strong>：把宿主机路径挂到容器内的数据目录 <code>/var/lib/postgresql/data</code>。没有它，<code>docker rm</code> 删除容器后所有表数据随可写层一起消失；有它，数据在宿主机上，重建容器挂同一路径即可找回。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. <code>psql -U admin -d admin</code> 中 <code>-U</code> 参数的含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">指定要连接的数据库名</button>
+            <button class="quiz-option">指定连接使用的用户名</button>
+            <button class="quiz-option">指定数据库所在的主机地址</button>
+            <button class="quiz-option">指定 SQL 脚本文件路径</button>
+          </div>
+          <div class="quiz-explain" hidden><code>-U</code> = User，<strong>连接用户名</strong>；<code>-d</code> = database，连接数据库名；<code>-h</code> 才是主机。所以 <code>psql -U admin -d admin</code> 是用 admin 用户连接 admin 数据库。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 启动容器时<strong>没有</strong>挂任何数据卷，随后 <code>docker rm</code> 删除容器再重建一个同名容器，之前的表数据会？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">保留在镜像里，重建后自动恢复</button>
+            <button class="quiz-option">保留在宿主机缓存里，重启后恢复</button>
+            <button class="quiz-option">彻底丢失——数据在容器可写层，随容器删除</button>
+            <button class="quiz-option">自动备份到 Docker Hub 云端</button>
+          </div>
+          <div class="quiz-explain" hidden>容器是<strong>易失</strong>的：不挂卷时，数据写在容器自己的可写层，<code>docker rm</code> 删除容器即删除该层，数据彻底丢失。镜像里只有初始化的空库模板，不含你的数据。所以要持久化必须 <code>-v</code> 挂卷。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 在 psql 提示符下，<code>\l</code> 和 <code>SELECT current_user;</code> 分别输出什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据库列表；当前连接的用户</button>
+            <button class="quiz-option">当前连接的用户；数据库列表</button>
+            <button class="quiz-option">两者都是数据库列表</button>
+            <button class="quiz-option">两者都是当前连接的用户</button>
+          </div>
+          <div class="quiz-explain" hidden><code>\l</code> 是 psql 元命令，列出服务器上<strong>所有数据库</strong>；<code>SELECT current_user;</code> 是 SQL，返回<strong>当前连接用户</strong>（本例为 admin）。元命令由 psql 客户端处理，SQL 才发给服务器执行。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. pgAdmin 容器用 <code>-p 5050:80</code> 启动后，在浏览器访问 http://localhost:5050 能打开页面的原理是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">pgAdmin 默认监听宿主机 5050 端口</button>
+            <button class="quiz-option">宿主机 5050 转发到容器内 pgAdmin 监听的 80 端口</button>
+            <button class="quiz-option">必须先用 --link 才能被宿主机访问</button>
+            <button class="quiz-option">浏览器直接访问容器内部 IP</button>
+          </div>
+          <div class="quiz-explain" hidden>pgAdmin 的 Web 服务监听在容器内 <strong>80 端口</strong>，<code>-p 5050:80</code> 把宿主机 5050 转发过去——所以浏览器访问 localhost:5050。端口映射本身就是宿主机访问容器的通道，与 <code>--link</code>（容器间互通）无关。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《01.PostgreSQL安装》源课程作业「完成数据库环境搭建」的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不复制命令，先在脑中推演再点击核对。全部答对且能讲清理由，才算过关。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核一：环境搭建的正确顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">docker run 建容器 → 配置镜像加速器 → 安装 Docker → 拉镜像</button>
+            <button class="quiz-option">安装 Docker → 配置镜像加速器 → 拉 postgres 镜像 → 建容器 → psql 验证</button>
+            <button class="quiz-option">拉镜像 → 建容器 → 安装 Docker → 验证</button>
+            <button class="quiz-option">安装 Docker → 建容器 → 拉镜像 → 配置加速器</button>
+          </div>
+          <div class="quiz-explain" hidden>正确链路：<strong>安装 Docker Desktop → 配置 registry-mirrors 加速器 → docker pull postgres:16 → docker run 建容器 → docker exec psql 验证</strong>。加速器要先配好再拉镜像才有加速效果；镜像要先拉下来（或 run 时自动拉）才能建容器。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核二：下面哪条命令能正确启动 PostgreSQL 且数据可持久化？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">docker run -d --name pg16 -e POSTGRES_PASSWORD=123123 -p 5432:5432 postgres:16</button>
+            <button class="quiz-option">docker run -d --name pg16 -v data:/var/lib/postgresql/data postgres:16</button>
+            <button class="quiz-option">docker run -d --name pg16 -e POSTGRES_PASSWORD=123123 -p 5432:5432 -v "$HOME/pgdata:/var/lib/postgresql/data" postgres:16</button>
+            <button class="quiz-option">docker run -it --name pg16 -e POSTGRES_PASSWORD=123123 -v "$HOME/pgdata:/data" postgres:16</button>
+          </div>
+          <div class="quiz-explain" hidden>四个要素：<strong>① 密码必填</strong>（缺 POSTGRES_PASSWORD 镜像拒绝启动）<strong>② 端口映射</strong>（否则宿主机连不上）<strong>③ 数据卷挂载</strong>（否则删容器丢数据）<strong>④ 挂载点必须是容器数据目录</strong> <code>/var/lib/postgresql/data</code>（挂到 /data 不起作用）。第一项缺卷、第二项缺密码和端口、第四项挂错路径。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三：进入容器后，哪组命令能完整验证「连上了、能看到所有库、知道当前是谁」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">\conninfo → \l → SELECT current_user;</button>
+            <button class="quiz-option">SELECT current_user; → \q → docker info</button>
+            <button class="quiz-option">\l → docker ps → \q</button>
+            <button class="quiz-option">docker --version → docker info → \conninfo</button>
+          </div>
+          <div class="quiz-explain" hidden><code>\conninfo</code> 看当前连接（用户/库/主机），<code>\l</code> 列出所有数据库，<code>SELECT current_user;</code> 确认当前用户。三连即可确认环境就绪。docker ps / docker info 是容器层面的检查，不是数据库连接验证。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核四：不小心 <code>docker rm</code> 删掉了 pg 容器，什么情况下数据还能找回？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">镜像还在本机，数据就能自动恢复</button>
+            <button class="quiz-option">容器只是停止（docker stop）的话数据一定还在</button>
+            <button class="quiz-option">只要容器没有加 --restart 参数，数据就不会丢</button>
+            <button class="quiz-option">启动时用 -v 挂载了宿主机目录，数据在宿主机上</button>
+          </div>
+          <div class="quiz-explain" hidden>数据找回的唯一前提：<strong>启动时挂了数据卷</strong>——数据在宿主机目录里，重建容器挂同一路径即可找回。stop 只是暂停不删容器（数据仍在可写层），rm 才删除；镜像与 --restart 都与数据持久化无关。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（Docker 部署 PostgreSQL 高频题）：容器删除后数据库数据为什么会丢？正确做法是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">容器可写层随容器删除而消失；用数据卷挂载 /var/lib/postgresql/data 持久化</button>
+            <button class="quiz-option">因为镜像被删了；重新 docker pull 即可恢复</button>
+            <button class="quiz-option">因为端口映射断了；重新 -p 映射即可恢复</button>
+            <button class="quiz-option">Docker 本来就不适合跑数据库，无法持久化</button>
+          </div>
+          <div class="quiz-explain" hidden>容器是易失的：写入在容器的可写层，<code>docker rm</code> 即删除该层。正确做法是启动时挂载数据卷（named volume 或宿主机目录）到 <code>/var/lib/postgresql/data</code>。<a href="https://blog.csdn.net/cui_yonghua/article/details/145984601">出处：CSDN「【部署】Docker 指令备忘清单」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">面试题二（端口映射基础题）：部署命令写成 <code>-p 5433:5432</code>，这个写法表示什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">容器内 5433 转发到宿主机 5432</button>
+            <button class="quiz-option">宿主机随机端口转发到容器 5432</button>
+            <button class="quiz-option">宿主机 5433 转发到容器内 5432</button>
+            <button class="quiz-option">同时开放宿主机 5433 和 5432 两个端口</button>
+          </div>
+          <div class="quiz-explain" hidden>格式「宿主机:容器」：宿主机 5433 转发到容器内 5432。这样做的常见原因是宿主机 5432 已被占用，外部客户端用 <code>localhost:5433</code> 连接。<a href="https://blog.csdn.net/cui_yonghua/article/details/145984601">出处：CSDN「【部署】Docker 指令备忘清单」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">面试题三（compose 网络陷阱）：docker-compose 里 pgAdmin 连接 PostgreSQL 用 <code>localhost:5432</code> 报 connection refused，原因与改法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">PostgreSQL 没开远程访问；改 postgresql.conf 的 listen_addresses</button>
+            <button class="quiz-option">容器内 localhost 指容器自己；应改用服务名 db:5432（容器内部端口）</button>
+            <button class="quiz-option">宿主机防火墙拦截；应开放 5432 入站规则</button>
+            <button class="quiz-option">端口映射写反了；应改成 5432:5433</button>
+          </div>
+          <div class="quiz-explain" hidden>每个容器有独立网络命名空间，<strong>容器内的 localhost 就是容器自己</strong>，不是宿主机也不是相邻容器。在 compose 的自定义网络中，用<strong>服务名</strong>访问：<code>db:5432</code>（注意用容器内部端口 5432，不是宿主机映射端口 5433——5433 只给宿主机外部访问用）。<a href="https://raw.githubusercontent.com/Speri1009/data_engineering_zoomcamp_2025/refs/heads/main/Homework1.md">出处：Data Engineering Zoomcamp Homework 1（Docker & SQL）</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（数据安全陷阱）：「数据挂到 volume 就安全了」这句话对吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不对——volume 不是备份，docker compose down -v 会像 rm -rf 一样删光数据</button>
+            <button class="quiz-option">对——volume 里的数据永远无法被删除</button>
+            <button class="quiz-option">对——Docker 会自动把 volume 同步到云端</button>
+            <button class="quiz-option">不对——volume 只能存配置文件，存不了数据</button>
+          </div>
+          <div class="quiz-explain" hidden>volume 解决的是「删容器不丢数据」，不是备份。<code>docker volume rm</code> 或 <code>docker compose down -v</code> 会把卷内数据彻底删除。真正的备份需要额外手段：<code>pg_dump</code> 逻辑备份、卷快照、复制等。<a href="https://codechick.io/tutorials/interview-devops/iqdo-seti-volumes">出处：codechick「Сети, тома и данные контейнера」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">面试题五（存储方案设计）：生产环境跑 PostgreSQL，数据卷选 named volume 还是 bind mount？为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">bind mount——能看到宿主机具体路径，排查问题直观</button>
+            <button class="quiz-option">bind mount——性能比 named volume 高很多</button>
+            <button class="quiz-option">两者都一样，看个人习惯随便选</button>
+            <button class="quiz-option">named volume——不依赖宿主机目录结构，支持存储驱动，无权限/SELinux 问题</button>
+          </div>
+          <div class="quiz-explain" hidden>生产推荐 <strong>named volume</strong>：由 Docker 管理、不依赖宿主机具体目录结构、支持 NFS/云盘等驱动、避免 bind mount 常见的权限与 SELinux 标签问题。bind mount 的优势在开发场景（宿主机文件热更新、挂配置），不在数据库数据。<a href="https://codechick.io/tutorials/interview-devops/iqdo-seti-volumes">出处：codechick「Сети, тома и данные контейнера」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">面试题六（镜像环境变量机制）：postgres 镜像的四个关键环境变量 POSTGRES_PASSWORD / POSTGRES_USER / POSTGRES_DB / PGDATA 各自的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">四个都是可选参数，不设置时镜像随机生成</button>
+            <button class="quiz-option">PASSWORD 必填（超级用户密码）；USER 默认 postgres；DB 默认取用户名；PGDATA 默认 /var/lib/postgresql/data 且远程挂载需显式设置</button>
+            <button class="quiz-option">PASSWORD 必填；USER 必填；DB 必填；PGDATA 可选</button>
+            <button class="quiz-option">四个都只是连接参数，与数据初始化无关</button>
+          </div>
+          <div class="quiz-explain" hidden><code>POSTGRES_PASSWORD</code>【必填】初始化超级用户密码，缺了镜像拒绝启动；<code>POSTGRES_USER</code> 可选，默认 postgres；<code>POSTGRES_DB</code> 可选，首次启动创建该库，默认取用户名；<code>PGDATA</code> 可选，数据目录默认 <code>/var/lib/postgresql/data</code>，当卷是文件系统挂载点或无法 chown 的远程文件夹时必须显式指定子目录。<a href="https://blog.csdn.net/cui_yonghua/article/details/145984601">出处：CSDN「【部署】Docker 指令备忘清单」</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固延伸</h2>
+      <ul>
+        <li><strong>动手验证</strong>：把本课的四条命令在你自己机器上跑一遍，观察 <code>docker ps</code> 里 pg16 的状态；再故意删掉容器体会一次「数据消失」，然后挂卷重建。</li>
+        <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/index.html">PostgreSQL 16 官方文档</a> · <a href="https://hub.docker.com/_/postgres">Docker Hub postgres 镜像文档</a>（环境变量完整说明）</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/PostgreSQL安装/">01.PostgreSQL安装</a> · 下一节 <a href="/common/database/DDL/">02.DDL</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/common/database/PostgreSQL安装/">回到《01.PostgreSQL安装》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+---
+sidebar_position: 2
+title: '02. DDL'
+---
+
+# DDL
+
+## 数据库核心概念
+
+![image-20260608133054687](https://resource.duyiedu.com/yuanjin/202606081330833.png)
+
+## 什么是SQL
+
+SQL（Structured Query Language，结构化查询语言）是操作关系型数据库的标准语言。无论使用 PostgreSQL、MySQL 还是 Oracle，SQL 的语法都高度通用。
+
+SQL 主要做两件事：
+
+1. **告诉数据库做什么**（而非怎么做）—— SQL 是声明式语言
+2. **操作数据**—— 增、删、改、查
+
+---
+
+## SQL的细分
+
+| 分类 | 全称 | 作用 | 常见关键字 |
+|------|------|------|-----------|
+| **DDL** | Data Definition Language | **数据定义**，操作数据库和表结构 | `CREATE`、`ALTER`、`DROP`、`TRUNCATE` |
+| **DML** | Data Manipulation Language | **数据操作**，对表数据进行增删改查 | `INSERT`、`SELECT`、`UPDATE`、`DELETE` |
+| **DCL** | Data Control Language | **数据控制**，管理用户和权限 | `GRANT`、`REVOKE` |
+| **TCL** | Transaction Control Language | **事务控制**，管理事务 | `BEGIN`、`COMMIT`、`ROLLBACK`、`SAVEPOINT` |
+
+> 要操作数据，先得有存放数据的结构。所以学习顺序是 **DDL → DML**，先建表，再操作数据。
+
+---
+
+## DDL语言
+
+DDL 操作的是**结构**而非数据，包括：数据库的创建删除、表的创建修改删除等。
+
+### 数据库操作
+
+```sql
+-- 创建数据库
+CREATE DATABASE demo;
+
+-- 删除数据库
+DROP DATABASE demo;
+```
+
+---
+
+### CREATE — 创建表
+
+**基本语法：**
+
+```sql
+CREATE TABLE 表名 (
+    列名 数据类型 [约束],
+    列名 数据类型 [约束],
+    ...
+);
+```
+
+**示例：**
+
+```sql
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    age INTEGER CHECK (age > 0),
+    score NUMERIC(5,2) DEFAULT 0.00,
+    email VARCHAR(100) UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+#### 常见数据类型
+
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| `INTEGER` / `INT` | 整数（4字节） | `age INT` |
+| `BIGINT` | 大整数（8字节） | `views BIGINT` |
+| `SMALLINT` | 小整数（2字节） | `quantity SMALLINT` |
+| `SERIAL` | 自增整数（相当于 `INTEGER` + 自动序列） | `id SERIAL` |
+| `BIGSERIAL` | 自增大整数 | `id BIGSERIAL` |
+| `NUMERIC(m, n)` | 定点数，m总位数，n小数位，**精确存储** | `price NUMERIC(10,2)` |
+| `REAL` | 浮点数（4字节），不精确 | `rate REAL` |
+| `DOUBLE PRECISION` | 双精度浮点数（8字节） | `score DOUBLE PRECISION` |
+| `VARCHAR(n)` | 变长字符串，最大n字符 | `name VARCHAR(50)` |
+| `CHAR(n)` | 定长字符串，不足补空格 | `code CHAR(3)` |
+| `TEXT` | 不限长度字符串 | `description TEXT` |
+| `BOOLEAN` | 布尔值，true/false | `is_active BOOLEAN` |
+| `DATE` | 日期（年月日） | `birth DATE` |
+| `TIMESTAMP` | 日期+时间，不带时区 | `created_at TIMESTAMP` |
+| `TIMESTAMPTZ` | 日期+时间，**带时区** | `updated_at TIMESTAMPTZ` |
+| `TIME` | 时间（时分秒） | `start_time TIME` |
+| `JSON` | JSON 数据（文本存储） | `meta JSON` |
+| `JSONB` | **二进制** JSON，支持索引和高效查询 | `data JSONB` |
+| `UUID` | 通用唯一标识符 | `id UUID DEFAULT gen_random_uuid()` |
+
+---
+
+#### 常见约束
+
+| 约束 | 作用 |
+|------|------|
+| `PRIMARY KEY` | 主键，唯一标识一行，自带 NOT NULL + UNIQUE |
+| `NOT NULL` | 不允许为空 |
+| `UNIQUE` | 值必须唯一 |
+| `DEFAULT 值` | 不传值时使用的默认值 |
+| `CHECK (条件)` | 检查约束，值必须满足条件 |
+
+#### 主键
+
+主键（Primary Key）是表中**唯一标识每一行数据**的列或列组合。它具有两个核心特性：
+
+1. **唯一性**：主键的值在表中不能重复
+2. **非空**：主键的值不能为 NULL
+
+```sql
+-- 单列主键
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    ...
+);
+
+-- 复合主键（多列联合唯一标识一行）
+CREATE TABLE enrollments (
+    student_id INT,
+    course_id INT,
+    enrolled_at TIMESTAMP,
+    PRIMARY KEY (student_id, course_id)
+);
+```
+
+---
+
+### ALTER — 修改表结构
+
+```sql
+-- 添加列
+ALTER TABLE students ADD COLUMN phone VARCHAR(20);
+
+-- 删除列
+ALTER TABLE students DROP COLUMN phone;
+
+-- 修改列的数据类型（现有数据可隐式转换时直接用）
+ALTER TABLE students ALTER COLUMN score TYPE NUMERIC(6,2);
+
+-- 无法隐式转换时，用 USING 指定转换规则
+ALTER TABLE students ALTER COLUMN score TYPE INTEGER USING score::INTEGER;
+
+-- 设置默认值
+ALTER TABLE students ALTER COLUMN score SET DEFAULT 0.00;
+
+-- 移除默认值
+ALTER TABLE students ALTER COLUMN score DROP DEFAULT;
+
+-- 添加 NOT NULL 约束
+ALTER TABLE students ALTER COLUMN email SET NOT NULL;
+
+-- 添加 CHECK 约束
+ALTER TABLE students ADD CONSTRAINT score_check CHECK (score >= 0 AND score <= 100);
+
+-- 重命名列
+ALTER TABLE students RENAME COLUMN score TO total_score;
+
+-- 重命名表
+ALTER TABLE students RENAME TO pupils;
+```
+
+> **思考：** 修改列的数据类型时，如果已有数据，数据库会尝试做隐式转换。转换失败会报错。
+
+---
+
+### DROP — 删除表
+
+```sql
+-- 删除表（连带数据一起删除）
+DROP TABLE students;
+
+-- 如果表存在才删除，避免报错
+DROP TABLE IF EXISTS students;
+
+-- 级联删除（连依赖该表的对象一并删除）
+DROP TABLE students CASCADE;
+```
+
+---
+
+### TRUNCATE — 清空表
+
+```sql
+-- 清空表数据，但保留表结构
+TRUNCATE TABLE students;
+
+-- 清空所有关联表的数据
+TRUNCATE TABLE students, orders;
+```
+
+> **DELETE vs TRUNCATE vs DROP：**
+
+| 操作 | 类型 | 是否可回滚 | 速度 | 是否保留结构 |
+|------|------|-----------|------|------------|
+| `DELETE FROM` | DML | 是 | 慢（逐行删除，可带 WHERE） | 保留 |
+| `TRUNCATE` | DDL | 是（PostgreSQL 中支持事务回滚） | 快（直接重置存储） | 保留 |
+| `DROP` | DDL | 否 | 最快 | 不保留 |
+
+---
+
+## 小结
+
+| 操作 | 关键字 | 说明 |
+|------|--------|------|
+| 创建数据库 | `CREATE DATABASE` | 新建一个数据库 |
+| 删除数据库 | `DROP DATABASE` | 删除整个数据库，数据全丢 |
+| 创建表 | `CREATE TABLE` | 定义表结构、列和约束 |
+| 修改表 | `ALTER TABLE` | 增删列、改类型、改约束 |
+| 删除表 | `DROP TABLE` | 删除表和数据 |
+| 清空表 | `TRUNCATE TABLE` | 清空数据，保留表结构 |
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了 DDL？
+
+<a href="/teach/lessons/db-0002-DDL.html"><strong>👉 点击进入《DDL 互动教学课程》</strong></a>
+
+- ⏱️ 预计 15–20 分钟，9 道分级测验（初/中/高级各 3 道）+ 最终考核 + 面试实战
+- 📋 配套<a href="/teach/reference/DDL速查表.html">《DDL速查表》</a>，术语与命令一页装下，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>表间关系速查表</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>表间关系速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/db-0003-表间关系.html">《表间关系互动教学课程》</a>与《03.表间关系》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>三种关系与实现</h2>
+      <table>
+        <thead><tr><th>关系</th><th>实现方式</th><th>典型例子</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1:1</strong></td><td>任意一方外键 + UNIQUE</td><td>用户 ↔ 用户详情</td></tr>
+          <tr><td><strong>1:N</strong>（最常见）</td><td>「多」的一方放外键，不加 UNIQUE</td><td>部门 ↔ 员工</td></tr>
+          <tr><td><strong>M:N</strong></td><td>中间表：双外键组成联合主键，可加关系属性</td><td>学生 ↔ 课程（+成绩）</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>外键约束行为</h2>
+      <table>
+        <thead><tr><th>选项</th><th>父表被删/改时</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td><code>NO ACTION</code></td><td>有子记录则禁止</td><td><strong>PG 默认</strong>；支持延迟检查</td></tr>
+          <tr><td><code>RESTRICT</code></td><td>有子记录则禁止</td><td>不支持延迟检查</td></tr>
+          <tr><td><code>CASCADE</code></td><td>子表自动跟随（级联删/改）</td><td>方便但误删风险大</td></tr>
+          <tr><td><code>SET NULL</code></td><td>子表外键置 NULL</td><td>外键列必须允许 NULL</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>ERD 符号</h2>
+      <pre><code>矩形 = 实体（表）        连线 = 关系
+||--||    一对一
+||--o{    一对多
+}o--o{    多对多（中间表实现）
+PK 主键  FK 外键  UK 唯一键</code></pre>
+    </section>
+
+    <section>
+      <h2>外键优缺点</h2>
+      <table>
+        <thead><tr><th>优点</th><th>缺点</th></tr></thead>
+        <tbody>
+          <tr><td>保证数据完整性，防止脏数据</td><td>降低写入性能（每次写入要检查）</td></tr>
+          <tr><td>关系清晰、语义明确</td><td>分库分表、分布式场景难用</td></tr>
+          <tr><td>数据库层面自动约束</td><td>级联操作难以追踪</td></tr>
+        </tbody>
+      </table>
+      <p>⚠️ 大厂实践：高并发/分库分表/微服务 → 应用层保证完整性（应用层校验 + 事务 + 对账巡检 + 逻辑外键）；ERP/财务等单体强一致场景 → 保留外键。</p>
+    </section>
+
+    <section>
+      <h2>核心要点</h2>
+      <ul class="term-grid">
+        <li><strong>判断口诀</strong>：「一个 A 对应几个 B？一个 B 对应几个 A？」两个都 1 → 1:1；一边多 → 1:N；都多 → M:N</li>
+        <li><strong>1:N 外键放「多」边</strong>，1:1 才加 UNIQUE</li>
+        <li><strong>M:N 必经中间表</strong>，联合主键 + 关系属性</li>
+        <li><strong>PG 默认 NO ACTION</strong>，与 RESTRICT 现阶段视为等同</li>
+        <li><strong>CASCADE 慎用</strong>：误删父表连带清子表</li>
+      </ul>
+    </section>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>拓展知识速查表</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>拓展知识速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/db-0007-拓展知识.html">《拓展知识互动教学课程》</a>与《07.拓展知识》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>PG 能力「场景 → 选型」速查</h2>
+      <table>
+        <thead><tr><th>场景</th><th>用什么</th></tr></thead>
+        <tbody>
+          <tr><td>上线必须的数据安全</td><td><strong>备份与恢复</strong>（pg_dump / pg_restore）</td></tr>
+          <tr><td>简化复杂查询 / 权限控制</td><td><strong>视图</strong>（虚拟表）</td></tr>
+          <tr><td>大报表提速、可容忍延迟</td><td><strong>物化视图</strong>（结果落地 + 定时刷新）</td></tr>
+          <tr><td>审计日志、自动更新字段</td><td><strong>触发器</strong></td></tr>
+          <tr><td>嵌套 SQL 可读性、递归查询</td><td><strong>CTE</strong>（WITH）</td></tr>
+          <tr><td>站内搜索、中文分词</td><td><strong>全文检索</strong>（tsvector）</td></tr>
+          <tr><td>JSONB/数组/地理查询加速</td><td><strong>GIN / GiST 索引</strong></td></tr>
+          <tr><td>超大时间序列表范围查询</td><td><strong>BRIN 索引</strong></td></tr>
+          <tr><td>按时间淘汰的超大表</td><td><strong>表分区</strong></td></tr>
+          <tr><td>GIS / 向量检索扩展</td><td><strong>插件机制</strong>（postgis / pgvector）</td></tr>
+          <tr><td>多租户分权</td><td><strong>权限系统</strong></td></tr>
+          <tr><td>查另一个库的数据</td><td><strong>FDW 外部表</strong></td></tr>
+          <tr><td>半结构化数据</td><td><strong>JSON / JSONB</strong>（+GIN）</td></tr>
+          <tr><td>表变大、空间不释放</td><td><strong>VACUUM</strong></td></tr>
+          <tr><td>高可用 / 读写分离 / 灾备</td><td><strong>复制</strong>（流复制 / 逻辑复制）</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>数据库分类</h2>
+      <table>
+        <thead><tr><th>分类</th><th>数据模型</th><th>特点</th><th>代表作</th></tr></thead>
+        <tbody>
+          <tr><td>关系型</td><td>表（行+列）</td><td>强 ACID、JOIN</td><td>PostgreSQL / MySQL</td></tr>
+          <tr><td>文档型</td><td>JSON 文档</td><td>Schema-less</td><td>MongoDB</td></tr>
+          <tr><td>键值型</td><td>K-V</td><td>超高读写</td><td>Redis</td></tr>
+          <tr><td>列族型</td><td>列族</td><td>海量写入</td><td>HBase / Cassandra</td></tr>
+          <tr><td>图数据库</td><td>节点+边</td><td>深度关联</td><td>Neo4j</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>三范式</h2>
+      <table>
+        <thead><tr><th>范式</th><th>要求</th><th>典型反例</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1NF</strong></td><td>列原子不可再分</td><td>一列存多个电话</td></tr>
+          <tr><td><strong>2NF</strong></td><td>非主键列完全依赖主键</td><td>明细表里商品名只依赖商品ID</td></tr>
+          <tr><td><strong>3NF</strong></td><td>无传递依赖</td><td>学生表里存院系ID + 院系名</td></tr>
+        </tbody>
+      </table>
+      <p>⚠️ 工程上允许<strong>受控反范式</strong>（订单存商品快照换查询性能），关键是知道冗余在哪、谁维护。</p>
+    </section>
+
+    <section>
+      <h2>核心要点</h2>
+      <ul class="term-grid">
+        <li><strong>视图不加速</strong>（现场算），物化视图才加速（落盘+刷新）</li>
+        <li><strong>触发器</strong>：审计利器但隐蔽，慎用</li>
+        <li><strong>BRIN 给时间序列表</strong>，GIN/GiST 给 JSONB/全文/地理</li>
+        <li><strong>VACUUM = PG 保洁工</strong>，MVCC 死元组靠它回收</li>
+        <li><strong>流复制管高可用</strong>，逻辑复制管选择性同步</li>
+        <li><strong>范式是指导原则</strong>，受控冗余是工程权衡</li>
+      </ul>
+    </section>
+
+  </main>
+</body>
+</html>

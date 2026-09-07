@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《07.拓展知识》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 等效最终考核 + 真实面试题，15-20 分钟掌握 PG 能力地图与数据库选型">
+  <title>拓展知识 · 互动教学课程（数据库第 7 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据库 · 第 7 节</p>
+      <h1>拓展知识</h1>
+      <p class="lesson-sub">配合《<a href="/common/database/拓展知识/">07.拓展知识</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>对着 PG 的 18 项能力说出<strong>「它是什么 + 什么场景用它」</strong>——<strong>最终考核考的就是这个</strong></li>
+        <li>按数据模型区分五类数据库，会做基本选型</li>
+        <li>用三范式判断表设计问题并说出怎么修</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《07.拓展知识》里，测验和考核会考。</p>
+
+      <h3>PG 能力地图（高频几项）</h3>
+      <ol class="pitfall-list">
+        <li><strong>备份与恢复</strong>：pg_dump 倒出存档、pg_restore 还原——上线第一件事。</li>
+        <li><strong>视图 vs 物化视图</strong>：视图 = 存 SQL 的虚拟表（实时）；物化视图 = 把结果存成物理表（快、但需定时刷新）。</li>
+        <li><strong>触发器</strong>：插/改/删时自动执行逻辑（审计日志、自动 updated_at）。</li>
+        <li><strong>CTE</strong>：<code>WITH 名字 AS (子查询)</code> 给嵌套 SQL 命名，可读性 + 递归查询。</li>
+        <li><strong>GIN/GiST 索引</strong>：给 JSONB、数组、全文、地理位置用的特殊索引；BRIN 是超轻量块范围索引（时间序列日志）。</li>
+        <li><strong>VACUUM</strong>：回收 MVCC 死元组、释放空间、更新统计——PG 的「保洁工」。</li>
+        <li><strong>复制</strong>：流复制（高可用/备机）、逻辑复制（按表按行选择性同步）。</li>
+      </ol>
+
+      <h3>数据库分类</h3>
+      <pre><code>关系型（SQL）  表+行，强 ACID，JOIN        PostgreSQL / MySQL
+文档型          JSON 文档，Schema-less       MongoDB
+键值型         K-V，超高读写                Redis
+列族型         列族，海量写入               HBase / Cassandra
+图数据库        节点+边，深度关联            Neo4j
+（键值/列族/图 统称 NoSQL；文档型常归入 NoSQL）</code></pre>
+
+      <h3>三范式一句话</h3>
+      <pre><code>1NF  列不可再分（一个格子一个值）
+2NF  非主键列完全依赖主键（复合主键时不能只依赖一部分）
+3NF  非主键列之间无传递依赖（院系名不能跟着院系ID一起塞进学生表）</code></pre>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
+
+      <h3>🌱 初级 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 视图（View）与物化视图（Materialized View）的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者完全一样，只是名字不同</button>
+            <button class="quiz-option">视图是存 SQL 的虚拟表（实时）；物化视图把结果存成物理表（快但非实时）</button>
+            <button class="quiz-option">物化视图是视图的旧版叫法，已废弃</button>
+            <button class="quiz-option">视图存数据，物化视图存 SQL</button>
+          </div>
+          <div class="quiz-explain" hidden>视图 = <strong>虚拟表</strong>：只存查询定义，每次查都现场算（实时、慢查询也实时慢）。物化视图 = <strong>结果落地成物理表</strong>：查得快，但数据是上次刷新的快照——适合大报表、定时刷新的看板。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. VACUUM 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">给数据库做杀毒扫描</button>
+            <button class="quiz-option">压缩备份文件</button>
+            <button class="quiz-option">回收 MVCC 死元组、释放空间、更新统计——保洁工</button>
+            <button class="quiz-option">加密敏感数据列</button>
+          </div>
+          <div class="quiz-explain" hidden>MVCC 下 DELETE/UPDATE 产生 dead tuple，空间不自动回收。VACUUM 定期<strong>清理旧版本、回收磁盘、更新统计信息</strong>——频繁更新/删除的表变慢、磁盘不释放时想到它（autovacuum 会自动跑）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 图数据库最适合的场景是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">好友关系、最短路径、推荐这类深度关联查询</button>
+            <button class="quiz-option">存订单流水这类强事务数据</button>
+            <button class="quiz-option">缓存热点数据</button>
+            <button class="quiz-option">全文检索</button>
+          </div>
+          <div class="quiz-explain" hidden>图数据库 = <strong>节点 + 边</strong>，天生擅长多跳关联（几度人脉、最短路径、商品推荐）。订单流水要强 ACID 用关系型；热点缓存用 Redis；全文检索用 PG 的 tsvector 或专门引擎。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 审计日志（对某表的每次修改自动记录）最适合用哪个能力？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">CTE 表达式</button>
+            <button class="quiz-option">BRIN 索引</button>
+            <button class="quiz-option">FDW 外部表</button>
+            <button class="quiz-option">触发器——插/改/删时自动执行记录逻辑</button>
+          </div>
+          <div class="quiz-explain" hidden>触发器 = <strong>表上插/改/删时自动执行的逻辑</strong>：审计日志、数据同步、自动更新 updated_at 都是典型用法。注意它逻辑隐蔽、难调试，慎用。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. 时间序列日志（TB 级、天然按时间有序、只做范围查询），最合适的索引是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">GIN 索引</button>
+            <button class="quiz-option">B+ 树单列索引</button>
+            <button class="quiz-option">BRIN 索引——按物理块范围建索引，极小、极快</button>
+            <button class="quiz-option">Hash 索引</button>
+          </div>
+          <div class="quiz-explain" hidden>BRIN = Block Range Index：<strong>按磁盘块范围</strong>记「这块的数据范围」，占空间极小，适合「超大表 + 数据天然有序（时间序列日志）+ 范围查询」的组合。GIN/GiST 面向 JSONB/数组/全文/地理；Hash 只管等值。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 想在 PG 里直接查另一个 MySQL 库的表做临时报表，用什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">FDW 外部表——把外部数据源映射成本地表一样查</button>
+            <button class="quiz-option">表继承</button>
+            <button class="quiz-option">物化视图</button>
+            <button class="quiz-option">逻辑复制</button>
+          </div>
+          <div class="quiz-explain" hidden>FDW（Foreign Data Wrapper）= <strong>外部表</strong>：在 PG 里像查本地表一样查 MySQL/Oracle/CSV——跨库整合、数据迁移、临时报表的利器。逻辑复制是持续同步，不是「查」；表继承是父子表结构复用。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 学生表里同时存「院系ID」和「院系名称」，违反哪条范式？怎么修？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">违反 1NF：院系名称列可以再分</button>
+            <button class="quiz-option">违反 3NF：院系名称传递依赖于院系ID，应拆出院系表</button>
+            <button class="quiz-option">违反 2NF：主键不能完全确定院系名称</button>
+            <button class="quiz-option">没有违反任何范式</button>
+          </div>
+          <div class="quiz-explain" hidden>学生表主键是学号；「院系名称」不直接依赖学号，而是依赖<strong>非主键列院系ID</strong> → <strong>传递依赖 → 违反 3NF</strong>。修法：拆出「院系表（ID, 名称）」，学生表只留院系ID 外键。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 订单明细表主键 (订单ID, 商品ID)，但「商品名称」列只依赖商品ID——违反哪条？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">违反 1NF：商品名称不是原子值</button>
+            <button class="quiz-option">违反 3NF：商品名称与订单ID 有传递依赖</button>
+            <button class="quiz-option">违反 2NF：只依赖复合主键的一部分（部分依赖）</button>
+            <button class="quiz-option">没有违反，商品名称放这里很合理</button>
+          </div>
+          <div class="quiz-explain" hidden>复合主键下，<strong>非主键列必须依赖「整个」主键</strong>。商品名称只依赖 (订单ID, 商品ID) 中的商品ID → 部分依赖 → 违反 2NF。修法：商品名称放商品表，明细表只留商品ID 外键（这正是电商数据库设计里的做法）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 「一行里电话列存 138xxx, 139xxx 两个号码」违反哪条范式？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">违反 2NF</button>
+            <button class="quiz-option">违反 3NF</button>
+            <button class="quiz-option">没有违反，存逗号分隔很高效</button>
+            <button class="quiz-option">违反 1NF——列不可再分，一个格子一个值</button>
+          </div>
+          <div class="quiz-explain" hidden>1NF 要求<strong>列原子性</strong>：一个格子只存一个值，不存数组/逗号串。多电话的正确设计：拆电话子表（用户 1:N 电话）。逗号串之后按号码查询、去重都会很痛苦。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>本节源课程没有作业，下面四道题由《07.拓展知识》内容改编——<strong>这就是本课的最终考核</strong>。规则：不查资料，先在脑中作答，再点击核对。全部答对且能讲清理由，才算过关。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一（能力选配）：下列「场景 → 能力」配对，全部正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">读写分离灾备→复制；超大时间序列表→BRIN；审计日志→触发器</button>
+            <button class="quiz-option">读写分离灾备→触发器；超大时间序列表→GIN；审计日志→复制</button>
+            <button class="quiz-option">读写分离灾备→物化视图；超大时间序列表→B+树；审计日志→CTE</button>
+            <button class="quiz-option">读写分离灾备→FDW；超大时间序列表→分区；审计日志→VACUUM</button>
+          </div>
+          <div class="quiz-explain" hidden>配对：<strong>流/逻辑复制 → 读写分离与灾备</strong>；<strong>BRIN → 天然有序的巨表范围查询</strong>；<strong>触发器 → 审计日志</strong>。另两组也常用：表分区 → 按时间淘汰的超大表；物化视图 → 定时刷新的统计看板。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核二（选型）：社交 App 的「好友关系 + 二度人脉推荐」，主数据库之外应该补什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">再加一台关系型数据库做分库</button>
+            <button class="quiz-option">图数据库——多跳关系遍历正是它的主场</button>
+            <button class="quiz-option">键值数据库存好友列表</button>
+            <button class="quiz-option">列族数据库</button>
+          </div>
+          <div class="quiz-explain" hidden>「谁认识谁、几度可达」是典型的<strong>图问题</strong>（节点+边），图数据库的多跳遍历远快于关系型的多层 JOIN 递归。主库仍用关系型存用户资料；好友图放 Neo4j 类图库是业界常见组合。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核三（范式诊断）：下面哪张表设计同时违反了 2NF 和 3NF？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">users(id, username, email)——主键单列，每列都原子</button>
+            <button class="quiz-option">order_items(order_id, sku_id, quantity, price)——quantity/price 依赖整个联合主键</button>
+            <button class="quiz-option">orders(id, customer_id, customer_name)——customer_name 部分依赖非主键、传递依赖 customer_id</button>
+            <button class="quiz-option">category(id, name, description)——每列都直接依赖 id</button>
+          </div>
+          <div class="quiz-explain" hidden>orders 表里 customer_name 不直接依赖主键 id，而是依赖非主键列 customer_id → <strong>传递依赖（3NF）</strong>；若换个角度按联合主键审视也是<strong>部分依赖（2NF）</strong>。修法：customer 信息拆进 customers 表，orders 只留 customer_id。其余三项是合规设计。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核四（能力辨析）：大报表查询很慢，且业务能接受数据延迟 1 小时，最佳优化是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把报表 SQL 改成视图，查询就快了</button>
+            <button class="quiz-option">给报表 SQL 每列都加 GIN 索引</button>
+            <button class="quiz-option">用 CTE 把报表 SQL 拆小，性能自然提升</button>
+            <button class="quiz-option">物化视图 + 定时刷新——结果落地成物理表，查询直接读</button>
+          </div>
+          <div class="quiz-explain" hidden>能接受延迟 → <strong>物化视图</strong>：复杂聚合先算好存成物理表（每小时 REFRESH），查询变「读表」。普通视图每次现场算，不解决慢；CTE 只改善可读性；GIN 是 JSONB/全文索引，不是万能加速器。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（必考）：说说数据库三大范式？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">1NF 列原子；2NF 完全依赖主键；3NF 消除传递依赖</button>
+            <button class="quiz-option">1NF 主键唯一；2NF 外键关联；3NF 索引优化</button>
+            <button class="quiz-option">1NF 表要小；2NF 列要少；3NF 行要少</button>
+            <button class="quiz-option">1NF 去重；2NF 分库；3NF 分表</button>
+          </div>
+          <div class="quiz-explain" hidden>标准答案：<strong>1NF 每列原子不可再分</strong>；<strong>2NF 非主键列完全依赖主键</strong>（消除部分依赖）；<strong>3NF 非主键列无传递依赖</strong>。可再补一句：范式是减少冗余的指导原则，工程上偶尔会为了性能做反范式冗余。<a href="https://blog.csdn.net/m0_46266264/article/details/116168466">出处：CSDN「MySQL 索引、锁、三大范式一篇搞定」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">面试题二（选型）：Redis 和 PostgreSQL 的本质区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者都是关系型数据库，实现不同</button>
+            <button class="quiz-option">Redis 更快所以应该替代 PostgreSQL</button>
+            <button class="quiz-option">Redis 是键值型内存库（高读写、弱查询）；PG 是关系型磁盘库（强 ACID、JOIN）</button>
+            <button class="quiz-option">PG 只存字符串，Redis 只存数字</button>
+          </div>
+          <div class="quiz-explain" hidden>模型不同：<strong>Redis = K-V 内存库</strong>，超高读写、操作简单，但无 JOIN、数据要能放进内存；<strong>PG = 关系型磁盘库</strong>，强 ACID、SQL、事务。典型分工：Redis 做缓存/计数/会话，PG 做数据的家。<a href="https://www.nowcoder.com/issue/tutorial?tutorialId=10039&uuid=9ffd061f8c764aeab5ebc59b8d6b4427">出处：牛客专刊「数据库索引-笔面试必考点 15 讲」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">面试题三（陷阱题）：关于视图，下列说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">视图会缓存查询结果，所以查询更快</button>
+            <button class="quiz-option">视图只是存好的 SQL，每次查询现场计算——本身不加速</button>
+            <button class="quiz-option">视图不能用于权限控制</button>
+            <button class="quiz-option">视图里不能使用 JOIN</button>
+          </div>
+          <div class="quiz-explain" hidden>视图 = <strong>命名的查询定义</strong>，不存数据、不缓存结果，每次现场算——它的价值是简化复杂 SQL、权限控制（只暴露部分列/行）、接口稳定，而不是提速。<strong>要提速的是物化视图</strong>。<a href="https://blog.csdn.net/weixin_47495011/article/details/133689530">出处：CSDN「3.数据库部分面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">面试题四（场景陷阱）：JSON 数据都存 MongoDB，对吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">对——JSON 是 MongoDB 的专属格式</button>
+            <button class="quiz-option">对——关系型数据库都存不了 JSON</button>
+            <button class="quiz-option">对——PG 的 JSONB 只是存储，不能查询</button>
+            <button class="quiz-option">不对——PG 的 JSONB 支持索引与高效查询，半结构化数据也能用 PG</button>
+          </div>
+          <div class="quiz-explain" hidden>PG 原生支持 JSON/JSONB：JSONB 二进制存储、<strong>可建 GIN 索引、按字段查询高效</strong>——关系型与 NoSQL 能力可以混用（课件能力表专门列了 JSON/JSONB 与 GIN/GiST 索引）。选型看的是查询模式与一致性要求，不是「存了什么格式」。<a href="https://blog.csdn.net/weixin_47495011/article/details/133689530">出处：CSDN「3.数据库部分面试题」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">面试题五（高可用设计）：主库突然宕机，靠什么能力自动顶上？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">VACUUM 自动修复宕机</button>
+            <button class="quiz-option">触发器接管主库</button>
+            <button class="quiz-option">流复制 + 高可用组件：备机实时同步，故障时切换接管</button>
+            <button class="quiz-option">FDW 外部表自动重建</button>
+          </div>
+          <div class="quiz-explain" hidden>高可用 = <strong>流复制</strong>：主库的 WAL 实时同步到备机，主库宕机后备机提升为新主（配合 repmgr/Patroni 等做自动故障转移）。逻辑复制用于按表按行选择性地同步（数据分发/跨版本），不是故障接管。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题六（反范式权衡）：为什么实际项目里有时故意违反三范式？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">用冗余换查询性能——少 JOIN、直接读，典型如订单快照字段</button>
+            <button class="quiz-option">因为范式已经过时了</button>
+            <button class="quiz-option">因为违反范式能省磁盘</button>
+            <button class="quiz-option">因为数据库不支持范式化的设计</button>
+          </div>
+          <div class="quiz-explain" hidden>范式减少冗余但增加 JOIN（查询成本）。工程上常做<strong>受控冗余</strong>：订单表存下单时的商品名/单价<strong>快照</strong>（商品改价不影响历史订单）——这不是没学好范式，而是性能与历史可追溯性的刻意权衡。关键在「受控」：知道冗余了、谁来维护它。<a href="https://blog.csdn.net/m0_46266264/article/details/116168466">出处：CSDN「MySQL 索引、锁、三大范式一篇搞定」</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固延伸</h2>
+      <ul>
+        <li><strong>动手验证</strong>：对 04 课建好的电商库试三个能力：① 用 <code>pg_dump</code> 做一次完整备份并还原到新库；② 建一个视图封装「订单明细 JOIN」查询；③ 用 EXPLAIN 看一个 JSONB 字段查询，再给它建 GIN 索引对比。</li>
+        <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/backup.html">PostgreSQL 官方文档：备份与恢复</a> · <a href="https://www.postgresql.org/docs/16/ddl-partitioning.html">官方文档：表分区</a></li>
+        <li><strong>回看课程</strong>：<a href="/common/database/拓展知识/">07.拓展知识</a> · 上一节 <a href="/common/database/索引/">06.索引</a> · 返回 <a href="/common/">公共课程</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/common/database/拓展知识/">回到《07.拓展知识》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

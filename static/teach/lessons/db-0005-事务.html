@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《05.事务》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题，15-20 分钟掌握事务与隔离级别">
+  <title>事务 · 互动教学课程（数据库第 5 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据库 · 第 5 节</p>
+      <h1>事务</h1>
+      <p class="lesson-sub">配合《<a href="/common/database/事务/">05.事务</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>用银行转账案例说清<strong>事务的价值</strong>，会写 BEGIN / COMMIT / ROLLBACK / SAVEPOINT——<strong>最终考核考的就是这个</strong></li>
+        <li>说清 ACID 四个特性的含义与关系</li>
+        <li>区分脏读 / 不可重复读 / 幻读 / 更新丢失，并会按场景选隔离级别</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《05.事务》里，测验和考核会考。</p>
+
+      <h3>转账为什么需要事务</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">UPDATE B 加 100</span>
+          <span class="diagram-arrow">─ 若第二步失败 ─▶</span>
+          <span class="diagram-node">只加不减 = 凭空多 100</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">BEGIN → 两步 UPDATE → COMMIT</span>
+          <span class="diagram-arrow">─ 要么全成功 ─▶</span>
+          <span class="diagram-node">总金额恒为 1500</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">任何一步出错 → ROLLBACK</span>
+          <span class="diagram-arrow">─ 要么全失败 ─▶</span>
+          <span class="diagram-node">回到 500 / 1000</span>
+        </div>
+        <p class="diagram-note">⚙️ 事务 = 一组操作打包成「不可分割」的整体：全成功（COMMIT）或全撤销（ROLLBACK）。</p>
+      </div>
+
+      <h3>ACID 一句话记忆</h3>
+      <ol class="pitfall-list">
+        <li><strong>A 原子性</strong>：要么全成功、要么全回滚，不存在做一半。</li>
+        <li><strong>C 一致性</strong>：事务前后数据都满足约束（总金额不变、余额 ≥ 0）——<strong>是最终目的</strong>，另外三个特性都为它服务。</li>
+        <li><strong>I 隔离性</strong>：并发事务互不干扰「应该」——注意「应该」二字，实际由隔离级别决定能隔离到什么程度。</li>
+        <li><strong>D 持久性</strong>：COMMIT 后永久生效，断电也不丢。</li>
+      </ol>
+
+      <h3>并行问题 × 隔离级别矩阵（PG 版）</h3>
+      <pre><code>               脏读   不可重复读   幻读   更新丢失
+READ COMMITTED   ❌     可能       可能    可能     ← PG 默认，够用
+REPEATABLE READ  ❌      ❌         ❌     可能     ← 快照实现，PG 防幻读
+SERIALIZABLE     ❌      ❌         ❌      ❌      ← 抢购/库存扣减
+
+PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pre>
+      <p>记忆点：<strong>不可重复读 = 同一条数据被改（UPDATE/DELETE）；幻读 = 数据集多了/少了行（INSERT）</strong>。隔离级别越高，并发性能越差。</p>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
+
+      <h3>🌱 初级 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 事务（Transaction）是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一组操作，要么全部成功，要么全部失败</button>
+            <button class="quiz-option">一条单独的 SQL 语句</button>
+            <button class="quiz-option">数据库的备份文件</button>
+            <button class="quiz-option">一种特殊的索引类型</button>
+          </div>
+          <div class="quiz-explain" hidden>事务 = <strong>打包执行的一组操作</strong>，全成功或全失败。转账案例：加款与扣款两步必须同时生效或同时撤销，否则钱会凭空多出来。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 事务中执行了修改，最后执行 COMMIT 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">撤销所有未提交的修改</button>
+            <button class="quiz-option">提交事务，让所有修改永久生效</button>
+            <button class="quiz-option">开启一个新事务</button>
+            <button class="quiz-option">保存当前数据到备份文件</button>
+          </div>
+          <div class="quiz-explain" hidden>COMMIT = <strong>提交</strong>：事务内所有修改永久生效、对其他事务可见。ROLLBACK 才是撤销。注意 pgAdmin 默认自动提交每条 SQL——演示事务时要先关掉自动提交。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. ACID 中的 D（Durability 持久性）指的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">事务执行速度要快，避免等待</button>
+            <button class="quiz-option">事务中不能修改表结构</button>
+            <button class="quiz-option">事务之间不能互相通信</button>
+            <button class="quiz-option">提交后结果永久保存，系统崩溃也不丢失</button>
+          </div>
+          <div class="quiz-explain" hidden>持久性：<strong>COMMIT 之后</strong>的修改写进磁盘（WAL 预写日志），断电、崩溃重启后依然在。银行转账成功但系统宕机，钱不能丢。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 事务里执行了 3 条 UPDATE 后设置 SAVEPOINT a，再执行 2 条 UPDATE 后执行 ROLLBACK TO SAVEPOINT a，结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">5 条 UPDATE 全部撤销，回到事务开始前</button>
+            <button class="quiz-option">5 条 UPDATE 全部保留</button>
+            <button class="quiz-option">前 3 条保留，后 2 条撤销，事务继续</button>
+            <button class="quiz-option">事务立即结束并报错</button>
+          </div>
+          <div class="quiz-explain" hidden>SAVEPOINT = 事务内的<strong>存档点</strong>：ROLLBACK TO a 只撤销 a 之后的 2 条，之前的 3 条保留，且<strong>事务仍继续</strong>（还能再 COMMIT）。全撤销要直接 ROLLBACK。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 「事务 B 读到了事务 A 未提交、随后被回滚的修改」这是什么问题？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">脏读——读到了从未真正存在过的数据</button>
+            <button class="quiz-option">不可重复读</button>
+            <button class="quiz-option">幻读</button>
+            <button class="quiz-option">更新丢失</button>
+          </div>
+          <div class="quiz-explain" hidden><strong>脏读 = 读未提交</strong>：A 改了没提交，B 读到了；A 回滚，B 手里就是「脏数据」。PostgreSQL 不会出现脏读（最低的 READ COMMITTED 也不允许）。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. PostgreSQL 的默认事务隔离级别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">READ UNCOMMITTED（读未提交）</button>
+            <button class="quiz-option">READ COMMITTED（读已提交）</button>
+            <button class="quiz-option">REPEATABLE READ（可重复读）</button>
+            <button class="quiz-option">SERIALIZABLE（串行化）</button>
+          </div>
+          <div class="quiz-explain" hidden>PG 默认 <strong>READ COMMITTED</strong>。注意与 MySQL 对比：MySQL/InnoDB 默认 REPEATABLE READ；PG 还压根没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）。查看：<code>SHOW transaction_isolation;</code></div>
+        </div>
+      </div>
+
+      <h3>🎯 高级 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 同一事务内两次查询「余额 &gt; 500 的用户」：第二次比第一次多了一行。这是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">脏读——第二次读到了未提交的数据</button>
+            <button class="quiz-option">不可重复读——同一条记录被修改了</button>
+            <button class="quiz-option">更新丢失——修改被覆盖</button>
+            <button class="quiz-option">幻读——另一个事务插入了满足条件的新行并提交</button>
+          </div>
+          <div class="quiz-explain" hidden>区分口诀：<strong>不可重复读 = 同一行被 UPDATE/DELETE 变了值；幻读 = 范围查询的行数多了/少了（别的 INSERT）</strong>。本题是「多了一行」→ 幻读。别被「读到了新数据」迷惑成脏读——插入已提交，不是未提交。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 关于幻读，PostgreSQL 的 REPEATABLE READ 与 MySQL 有何不同？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者都允许幻读发生</button>
+            <button class="quiz-option">两者都完全防止幻读</button>
+            <button class="quiz-option">MySQL 的 RR 可能幻读；PG 的 RR 基于快照，课件矩阵中防幻读</button>
+            <button class="quiz-option">PG 的 RR 会出现脏读</button>
+          </div>
+          <div class="quiz-explain" hidden>SQL 标准里 REPEATABLE READ 允许幻读，MySQL 需靠临键锁补防；<strong>PG 的 RR 用快照隔离实现，整个事务读同一版本数据，天然防幻读</strong>——本课矩阵也标了 ❌。面试被问「RR 防不防幻读」一定要分数据库答。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 「两个事务同时读余额 1000，各扣 200/300，先提交的被后提交的覆盖，只剩 700」——哪个隔离级别能防住？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">READ COMMITTED 就可以</button>
+            <button class="quiz-option">只有 SERIALIZABLE 能完全防住（本课矩阵）</button>
+            <button class="quiz-option">REPEATABLE READ 就可以完全防住</button>
+            <button class="quiz-option">任何隔离级别都防不住，只能靠应用层</button>
+          </div>
+          <div class="quiz-explain" hidden>这是<strong>更新丢失</strong>。本课矩阵：READ COMMITTED 可能、REPEATABLE READ 可能、只有 <strong>SERIALIZABLE</strong> 标 ❌。工程上抢购/库存扣减常选 SERIALIZABLE 或改用原子 UPDATE（如 <code>balance = balance - 200</code> 的读改写）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>下面是《05.事务》源课程作业的四道复述题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料，先在心里回答，再点击核对。全部答对且能讲清理由，才算过关。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核一（作业 1）：下面哪个场景<strong>最需要</strong>用事务？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">查询一次订单列表给用户展示</button>
+            <button class="quiz-option">转账：A 减款与 B 加款必须同生共死</button>
+            <button class="quiz-option">给商品表加一列索引</button>
+            <button class="quiz-option">删除一个不再使用的数据库</button>
+          </div>
+          <div class="quiz-explain" hidden>判据：<strong>多步操作要么全成功要么全失败</strong>——转账（扣一加一）、下单（扣库存+建订单）、对账批量更新。单条查询天然原子，DDL 语句本身不可分割，都不需要事务包裹。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核二（作业 2）：转账过程中发现第二步扣款失败，正确的操作序列是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">BEGIN → UPDATE 加款 → UPDATE 扣款失败 → 继续执行其他语句</button>
+            <button class="quiz-option">BEGIN → UPDATE 加款 → COMMIT → UPDATE 扣款</button>
+            <button class="quiz-option">UPDATE 加款 → BEGIN → UPDATE 扣款 → COMMIT</button>
+            <button class="quiz-option">BEGIN → UPDATE 加款 → 扣款失败 → ROLLBACK 撤销加款</button>
+          </div>
+          <div class="quiz-explain" hidden>失败处理 = <strong>ROLLBACK</strong>：撤销事务内所有未提交修改（包括已成功的加款），账户回到初始状态。第二项把加款先 COMMIT 掉再扣款，一旦扣款失败钱就凭空多了；事务范围外的 UPDATE 不受事务保护。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核三（作业 3）：关于 ACID，下列说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">ACID 是四种数据库的缩写</button>
+            <button class="quiz-option">四个特性互相独立，互不影响</button>
+            <button class="quiz-option">一致性是目的，原子/隔离/持久都是为一致性服务</button>
+            <button class="quiz-option">性能最好的数据库可以只实现其中两个</button>
+          </div>
+          <div class="quiz-explain" hidden>ACID = 原子性 / 一致性 / 隔离性 / 持久性。<strong>一致性是最终目的</strong>（数据始终满足约束），原子性保证「不做一半」，隔离性管并发互扰，持久性管提交不丢。四条是一个整体。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（作业 4）：抢购场景「库存扣减防超卖」，推荐哪个隔离级别？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">SERIALIZABLE——极高一致性要求，防更新丢失</button>
+            <button class="quiz-option">READ COMMITTED——默认级别，性能最好</button>
+            <button class="quiz-option">READ UNCOMMITTED——PostgreSQL 支持这个级别</button>
+            <button class="quiz-option">不设事务，靠应用层随机重试</button>
+          </div>
+          <div class="quiz-explain" hidden>课件推荐表：抢购/库存扣减/防超卖 → <strong>SERIALIZABLE</strong>（唯一完全防更新丢失的级别）。日常 Web 应用默认 READ COMMITTED 就够；READ UNCOMMITTED 在 PG 中不存在。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（必考）：小明给小红转账 1000 元，为什么必须用事务？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">扣小明、加小红两步要么都成功要么都失败，防止钱凭空消失或翻倍</button>
+            <button class="quiz-option">因为转账金额超过 500 就必须用事务</button>
+            <button class="quiz-option">为了让转账速度更快</button>
+            <button class="quiz-option">为了把两条 UPDATE 压缩成一条执行</button>
+          </div>
+          <div class="quiz-explain" hidden>两步操作必须<strong>原子</strong>：只扣不加（小明亏钱）、只加不扣（小红凭空得钱）都是灾难。事务保证全成功或全回滚，账目恒平。<a href="https://blog.csdn.net/javaeEEse/article/details/139613776">出处：CSDN「Java 最新面试题」· 事务考点</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">面试题二（概念题）：ACID 四特性分别解决什么问题？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">A 提速、C 压缩、I 加密、D 备份</button>
+            <button class="quiz-option">A 权限、C 审计、I 日志、D 监控</button>
+            <button class="quiz-option">A 不做一半、C 约束始终成立、I 并发互不干扰、D 提交不丢</button>
+            <button class="quiz-option">A 排序、C 去重、I 分页、D 缓存</button>
+          </div>
+          <div class="quiz-explain" hidden>原子性 = 全成功或全回滚；一致性 = 数据始终满足约束（转账总金额不变）；隔离性 = 并发事务互不干扰；持久性 = 提交后永久生效。<strong>一致性是目的，其余三条是手段</strong>——这句是加分点。<a href="https://blog.csdn.net/sshuai131400/article/details/121297979">出处：CSDN「MySQL 数据库面试题」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">面试题三（辨析高频）：不可重复读和幻读有什么区别？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有区别，是同一种问题的两种叫法</button>
+            <button class="quiz-option">脏读就是不可重复读，幻读是脏读的别称</button>
+            <button class="quiz-option">不可重复读由 INSERT 引起，幻读由 UPDATE 引起</button>
+            <button class="quiz-option">不可重复读是同一行被改/删（值变了）；幻读是范围结果集多了少了行（别的 INSERT）</button>
+          </div>
+          <div class="quiz-explain" hidden>精确区分：<strong>不可重复读</strong>——两次读<strong>同一条</strong>记录，值变了（别人 UPDATE/DELETE 已提交）；<strong>幻读</strong>——两次<strong>范围查询</strong>，行数变了（别人 INSERT 已提交）。「行内值变 vs 行数变」。<a href="https://www.nowcoder.com/discuss/353147555200573440">出处：牛客网「【Java 春秋招】常见 MySQL 面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（跨库陷阱）：MySQL 与 PostgreSQL 的默认隔离级别分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">MySQL 默认 REPEATABLE READ；PostgreSQL 默认 READ COMMITTED</button>
+            <button class="quiz-option">两者都默认 READ COMMITTED</button>
+            <button class="quiz-option">两者都默认 REPEATABLE READ</button>
+            <button class="quiz-option">MySQL 默认 SERIALIZABLE；PG 默认 READ UNCOMMITTED</button>
+          </div>
+          <div class="quiz-explain" hidden>跨库必问：<strong>MySQL/InnoDB 默认 RR</strong>（历史原因：早期 binlog 只有 STATEMENT 格式），<strong>PG 默认 RC</strong>。另外 PG 不实现 READ UNCOMMITTED（设置后按 RC 处理），而 MySQL 有该级别。面试说到隔离级别先确认对方问的是哪个库。<a href="https://blog.csdn.net/weixin_39963192/article/details/115265159">出处：CSDN「面经汇总-数据库」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">面试题五（机制题）：事务隔离是怎么实现的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据库把所有事务排成一个队列串行执行</button>
+            <button class="quiz-option">靠操作系统文件锁实现</button>
+            <button class="quiz-option">主要靠锁机制 + MVCC 多版本并发控制</button>
+            <button class="quiz-option">靠数据库管理员人工协调</button>
+          </div>
+          <div class="quiz-explain" hidden>两大支柱：<strong>锁</strong>（行锁/表锁/间隙锁，控制写写冲突）+ <strong>MVCC</strong>（每行保留多版本，读旧快照不阻塞写、写新版本不阻塞读）。PG 的 READ COMMITTED / REPEATABLE READ 都建立在快照之上。<a href="https://blog.csdn.net/weixin_39963192/article/details/115265159">出处：CSDN「面经汇总-数据库」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">面试题六（场景设计）：互联网高并发项目普遍选 READ COMMITTED 而不是 SERIALIZABLE，为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 SERIALIZABLE 已被数据库废弃</button>
+            <button class="quiz-option">隔离级别越高并发越差：RC 无脏读、够大多数业务用，性能好得多</button>
+            <button class="quiz-option">因为 RC 能防止所有并发问题</button>
+            <button class="quiz-option">因为 RC 是唯一支持事务的级别</button>
+          </div>
+          <div class="quiz-explain" hidden>权衡：隔离级别越高、并发性能越差。RC 已防脏读，大多数 Web 业务（列表、下单、报表）不需要更高的隔离保证，<strong>用 RC 换并发吞吐</strong>；只有财务对账（RR）与防超卖（SERIALIZABLE）才升级。这正是「默认够用，按需提升」的工程哲学。<a href="https://blog.csdn.net/weixin_39963192/article/details/115265159">出处：CSDN「面经汇总-数据库」</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固延伸</h2>
+      <ul>
+        <li><strong>动手验证</strong>：在 pgAdmin 关掉自动提交，把转账案例跑一遍：① 正常 COMMIT 看总金额；② 故意失败再 ROLLBACK；③ 开两个查询窗口，用两个事务体会「另一事务提交后本事务才看得到」。再试 SAVEPOINT 部分回滚。</li>
+        <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/tutorial-transactions.html">PostgreSQL 官方文档：事务教程</a> · <a href="https://www.postgresql.org/docs/16/transaction-iso.html">官方文档：事务隔离</a></li>
+        <li><strong>回看课程</strong>：<a href="/common/database/事务/">05.事务</a> · 上一节 <a href="/common/database/DML/">04.DML</a> · 下一节 <a href="/common/database/索引/">06.索引</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/common/database/事务/">回到《05.事务》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

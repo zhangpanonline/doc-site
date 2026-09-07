@@ -1,0 +1,230 @@
+---
+sidebar_position: 5
+title: '05. 事务'
+---
+
+# 事务
+
+> pgAdmin4会自动将SQL放到事务中，为了更好的演示：请先讲其设置为不要自动提交
+
+## 经典案例 - 银行转账
+
+```sql
+DROP TABLE accounts;
+
+-- 创建账户表
+CREATE TABLE accounts (
+    id VARCHAR(10) PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    balance DECIMAL(12, 2) NOT NULL CHECK (balance >= 0)
+);
+
+-- 插入两个测试账户
+INSERT INTO accounts (id, name, balance) VALUES 
+('A', '张三', 500.00),
+('B', '李四', 1000.00);
+
+-- 查看初始余额
+SELECT * FROM accounts;
+
+-- 查看总金额（应该始终是 1500.00）
+SELECT SUM(balance) AS total_balance FROM accounts;
+
+-- ============================================
+-- 模拟转账：从 A 转 100 元给 B
+-- ============================================
+
+-- 步骤1：向 B 加款 100 元
+UPDATE accounts SET balance = balance + 100 WHERE id = 'B';
+
+-- 步骤2）：向 A 减款 100 元
+UPDATE accounts SET balance = balance - 100 WHERE id = 'A';
+```
+
+## 事务的概念
+
+事务（Transaction）是数据库管理系统中**执行的一组操作**，这组操作要么**全部成功**，要么**全部失败**。
+
+| 命令                    | 作用                                       |
+| ----------------------- | ------------------------------------------ |
+| `BEGIN`                 | 开启一个事务                               |
+| `COMMIT`                | 提交事务，使所有修改永久生效               |
+| `ROLLBACK`              | 回滚事务，撤销所有未提交的修改             |
+| `SAVEPOINT`             | 在事务内设置保存点                         |
+| `ROLLBACK TO SAVEPOINT` | 回滚到指定保存点，而不影响保存点之前的操作 |
+
+```sql
+SHOW max_connections;
+
+SELECT pg_backend_pid();
+
+BEGIN;
+-- 步骤1：向 B 加款 100 元
+UPDATE accounts SET balance = balance + 100 WHERE id = 'B';
+
+-- 步骤2）：向 A 减款 100 元
+UPDATE accounts SET balance = balance - 100 WHERE id = 'A';
+
+COMMIT;
+-- or
+ROLLBACK;
+```
+
+---
+
+## ACID 特性
+
+事务有四个核心特性，简称 **ACID**：
+
+| 特性 | 全称 | 说明 |
+|------|------|------|
+| **A** | Atomicity（原子性） | 事务中的所有操作要么全部成功，要么全部回滚，不存在部分执行 |
+| **C** | Consistency（一致性） | 事务执行前后，数据必须满足所有约束和规则 |
+| **I** | Isolation（隔离性） | 多个事务并发执行时，彼此之间**应该**互不干扰 |
+| **D** | Durability（持久性） | 事务一旦提交，其结果就是永久的，即使系统崩溃也不会丢失 |
+
+---
+
+## 并行问题
+
+当多个事务并发执行时，可能出现以下三种问题：
+
+### 脏读（Dirty Read）
+
+一个事务读到了另一个事务**未提交**的数据。
+
+```
+事务A：转账 200（未提交）
+事务B：读取到余额已减少 200
+事务A：回滚（余额恢复）
+事务B：读到了不存在的数据！
+```
+
+```sql
+-- 事务 A
+BEGIN;
+UPDATE accounts SET balance = 800 WHERE name = '张三';
+-- 未提交
+
+-- 事务 B（如果可以脏读）
+SELECT balance FROM accounts WHERE name = '张三';  -- 800（脏数据！）
+
+-- 事务 A
+ROLLBACK;  -- 余额恢复为 1000
+-- 事务 B 读到的 800 是无效数据
+```
+
+> **PostgreSQL 的不会出现脏读。**
+
+### 不可重复读（Non-repeatable Read）
+
+同一事务内，两次读取同一数据得到**不同**的结果（因为另一个事务提交了修改）。
+
+```
+事务A：第一次查询余额 = 1000
+事务B：更新余额为 800 并提交
+事务A：第二次查询余额 = 800（跟上一次不一样！）
+```
+
+```sql
+-- 事务 A
+BEGIN;
+SELECT balance FROM accounts WHERE name = '张三';  -- 1000
+
+-- 事务 B（另一个会话）
+BEGIN;
+UPDATE accounts SET balance = 800 WHERE name = '张三';
+COMMIT;
+
+-- 事务 A（再次查询，结果变了）
+SELECT balance FROM accounts WHERE name = '张三';  -- 800（不可重复读）
+COMMIT;
+```
+
+### 幻读（Phantom Read）
+
+同一事务内，两次查询同一条件的数据集，第二次**多出或少了一行**（另一个事务插入或删除了满足条件的行）。
+
+```
+事务A：查询余额 > 500 的用户，得到 2 条
+事务B：插入一个新用户，余额 600，提交
+事务A：再次查询余额 > 500 的用户，得到 3 条
+```
+
+```sql
+-- 事务 A
+BEGIN;
+SELECT * FROM accounts WHERE balance > 500;  -- 2 行
+
+-- 事务 B（另一个会话）
+BEGIN;
+INSERT INTO accounts (name, balance) VALUES ('赵六', 600);
+COMMIT;
+
+-- 事务 A（再次查询，多了一行）
+SELECT * FROM accounts WHERE balance > 500;  -- 3 行
+COMMIT;
+```
+
+### 更新丢失（Lost Update）
+
+两个事务同时读取同一数据并修改，后提交的覆盖了先提交的修改。
+
+```
+事务A：读取余额 1000，准备扣减 200
+事务B：读取余额 1000，准备扣减 300
+事务A：更新余额为 800 并提交
+事务B：更新余额为 700 并提交（覆盖了事务A的修改！）
+-- 实际应该：1000 - 200 - 300 = 500
+-- 结果：700（事务A的扣减丢失了）
+```
+
+---
+
+## 事务隔离级别
+
+| 隔离级别          | 脏读 | 不可重复读 | 幻读 | 更新丢失 |
+| ----------------- | :--: | :--------: | :--: | :------: |
+| `READ COMMITTED`  |  ❌   |    可能    | 可能 |   可能   |
+| `REPEATABLE READ` |  ❌   |     ❌      |  ❌   |   可能   |
+| `SERIALIZABLE`    |  ❌   |     ❌      |  ❌   |    ❌     |
+
+> PostgreSQL 没有实现 `READ UNCOMMITTED`。如果你设置为 `READ UNCOMMITTED`，PostgreSQL 会将其当作 `READ COMMITTED` 处理。
+
+隔离级别越高，隔离性越好，性能越低
+
+读取或设置隔离级别
+
+```sql
+-- 查看当前隔离级别
+SHOW transaction_isolation;
+
+-- 在当前事务中设置隔离级别
+BEGIN;
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+-- ...
+COMMIT;
+
+-- 也可以在事务开始前设置会话级别
+SET default_transaction_isolation = 'repeatable read';
+```
+
+| 应用场景 | 推荐隔离级别 |
+|----------|--------------|
+| 大多数 Web 应用、报表查询 | `READ COMMITTED`（默认，够用） |
+| 财务系统、对账（需要同一事务内多次读取一致） | `REPEATABLE READ` |
+| 极高一致性要求（抢购、库存扣减、防超卖） | `SERIALIZABLE` |
+
+> **大多数情况下，使用默认的 `READ COMMITTED` 就够了。** 只有在特定需求下才需要提高隔离级别。
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了事务？
+
+<a href="/teach/lessons/db-0005-事务.html"><strong>👉 点击进入《事务互动教学课程》</strong></a>
+
+- ⏱️ 预计 15–20 分钟，9 道分级测验（初/中/高级各 3 道）+ 最终考核 + 面试实战
+- 📋 配套<a href="/teach/reference/事务速查表.html">《事务速查表》</a>，术语与命令一页装下，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师

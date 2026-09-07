@@ -1,0 +1,183 @@
+---
+sidebar_position: 1
+title: '01. PostgreSQL安装'
+---
+
+# PostgreSQL安装
+
+[PostgreSQL官网](https://www.postgresql.org/)
+
+| 特性               | PostgreSQL                                                 | MySQL                           | Oracle                   | SQL Server                      |
+| ------------------ | ---------------------------------------------------------- | ------------------------------- | ------------------------ | ------------------------------- |
+| **开发机构**       | 社区                                                       | Oracle Corporation              | Oracle Corporation       | Microsoft                       |
+| **协议/许可**      | PostgreSQL License（开源免费）                             | GPL / 商用双许可                | 商用收费                 | 商用收费                        |
+| **费用**           | 完全免费                                                   | 社区版免费，企业版付费          | 高额许可费               | 按核心/用户授权收费             |
+| **ACID 合规**      | 原生完整支持                                               | 取决于存储引擎（InnoDB 支持）   | 完整支持                 | 完整支持                        |
+| **SQL 标准兼容性** | 高度兼容，最贴近标准 SQL                                   | 部分兼容，方言较多              | 高度兼容                 | 高度兼容                        |
+| **数据类型**       | 丰富（数组、JSON、JSONB、UUID、自定义类型等）              | 基础类型丰富，JSON 支持较晚     | 丰富                     | 丰富                            |
+| **扩展性**         | 支持扩展（Extension），生态丰富（PostGIS、TimescaleDB 等） | 插件较少，主要靠存储引擎        | 功能内置，扩展复杂       | 功能内置，扩展复杂              |
+| **并发控制**       | MVCC（多版本并发控制）                                     | MVCC（InnoDB）                  | MVCC                     | MVCC（快照隔离）                |
+| **复制**           | 流复制、逻辑复制，成熟稳定                                 | 主从复制、组复制                | Data Guard、GoldenGate   | Always On、镜像复制             |
+| **全文搜索**       | 内置全文搜索（tsvector/tsquery）                           | 内置全文索引                    | Oracle Text              | 内置全文搜索                    |
+| **NoSQL 能力**     | JSONB 支持，可作文档数据库                                 | JSON 支持，MongoDB 兼容（8.0+） | JSON、XML 支持           | JSON 支持                       |
+| **GIS spatial**    | PostGIS（业界最强开源 GIS 扩展）                           | 基础 Spatial 扩展               | Oracle Spatial           | SQL Server Spatial              |
+| **平台支持**       | Linux、macOS、Windows、BSD                                 | Linux、macOS、Windows           | Linux、Windows           | 仅 Windows（2017 起支持 Linux） |
+| **存储引擎**       | 仅一种（不区分引擎）                                       | 多种引擎（InnoDB、MyISAM 等）   | 内置一种                 | 内置一种                        |
+| **分区表**         | 支持声明式分区                                             | 支持分区                        | 支持分区                 | 支持分区                        |
+| **性能优化**       | 查询规划器强大，适合复杂查询                               | 简单查询快，复杂查询弱于 PG     | 优化器成熟，适合大型企业 | 优化器成熟，与微软生态集成好    |
+| **社区与生态**     | 活跃开源社区                                               | 最大用户群体                    | 企业级支持完善           | 企业级支持完善                  |
+| **典型场景**       | 地理信息、数据分析、Web 应用                               | Web 应用（搭配 LAMP/LEMP）      | 大型企业核心系统         | 微软生态企业应用                |
+
+## 安装 Docker
+
+### 安装 Docker Desktop
+
+访问 [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop) 下载 Docker Desktop
+
+⚠️注意：windows电脑均下载AMD版本的，不要下载ARM版本的，课堂上说的有误！
+
+### 配置镜像加速器
+
+由于网络原因，国内用户拉取 Docker 镜像可能很慢，需要配置镜像加速器。
+
+**打开 Docker Desktop → Settings → Docker Engine**，在配置文件中添加 `registry-mirrors`：
+
+```json
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://docker.1ms.run",
+    "https://docker.aityp.com"
+  ]
+}
+```
+
+点击 **Apply & Restart** 使配置生效。
+
+### 验证 Docker 安装
+
+打开终端（Terminal），执行：
+
+```bash
+docker --version
+```
+
+预期输出（版本号可能不同）：
+
+```
+Docker version 29.2.0, build 0b9d198
+```
+
+验证 Docker 正常运行：
+
+```bash
+docker info
+```
+
+能看到 Server 相关信息表示安装成功。
+
+---
+
+## 安装 PostgreSQL
+
+### 拉取 PostgreSQL 镜像
+
+```bash
+docker pull postgres:16
+```
+
+> 我们选择 PostgreSQL 16，这是目前最新的稳定版本。
+
+### 创建并运行 PostgreSQL 容器
+
+```bash
+docker run -d \
+  --name pg16 \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=123123 \
+  -p 5432:5432 \
+  -v "你的本地路径:/var/lib/postgresql/data" \
+  postgres:16
+```
+
+参数说明：
+
+| 参数                              | 说明                                   |
+| --------------------------------- | -------------------------------------- |
+| `-d`                              | 后台运行容器                           |
+| `--name pg16`                     | 容器命名为 pg16                        |
+| `-e POSTGRES_USER=admin`          | 设置超级用户名为 admin                 |
+| `-e POSTGRES_PASSWORD=admin123`   | 设置密码为 admin123                    |
+| `-p 5432:5432`                    | 将宿主机 5432 端口映射到容器 5432 端口 |
+| `-v ...:/var/lib/postgresql/data` | 数据持久化卷，容器删除后数据不丢失     |
+
+### 验证 PostgreSQL 容器
+
+进入容器连接 PostgreSQL
+
+```bash
+docker exec -it pg16 psql -U admin -d admin
+```
+
+参数说明：
+
+| 参数                       | 说明                               |
+| -------------------------- | ---------------------------------- |
+| `docker exec -it pg16`     | 在 pg16 容器中执行交互式命令       |
+| `psql -U admin -d demo_db` | 使用用户 admin 连接 demo_db 数据库 |
+
+连接成功后，在 `demo_db=#` 提示符下执行以下命令验证：
+
+```sql
+-- 查看当前连接信息
+\conninfo
+
+-- 列出所有数据库
+\l
+
+-- 查看当前用户
+SELECT current_user;
+
+-- 退出psql
+\q
+```
+
+---
+
+## 安装管理工具 pgAdmin
+
+官网地址：https://www.pgadmin.org/
+
+同样使用 Docker 安装：
+
+```bash
+docker run -d \
+  --name pgadmin4 \
+  -e PGADMIN_DEFAULT_EMAIL=admin@qq.com \
+  -e PGADMIN_DEFAULT_PASSWORD=123123 \
+  -p 5050:80 \
+  dpage/pgadmin4
+```
+
+参数说明：
+
+| 参数                          | 说明                               |
+| ----------------------------- | ---------------------------------- |
+| `-e PGADMIN_DEFAULT_EMAIL`    | 登录邮箱                           |
+| `-e PGADMIN_DEFAULT_PASSWORD` | 登录密码                           |
+| `-p 5050:80`                  | 宿主机 5050 端口映射到容器 80 端口 |
+| `--link pg16:pg16`            | 连接到 pg16 容器，网络互通         |
+
+接下来可以打开浏览器访问 http://localhost:5050
+
+---
+
+## 🎓 互动教学课程
+
+想检验自己是否真的掌握了 PostgreSQL 安装？
+
+<a href="/teach/lessons/db-0001-PostgreSQL安装.html"><strong>👉 点击进入《PostgreSQL 安装互动教学课程》</strong></a>
+
+- ⏱️ 预计 15–20 分钟，9 道分级测验（初/中/高级各 3 道）+ 最终考核 + 面试实战
+- 📋 配套<a href="/teach/reference/PostgreSQL安装速查表.html">《PostgreSQL安装速查表》</a>，术语与命令一页装下，可打印
+- 💬 有不理解的地方，随时可以问你的 AI 老师

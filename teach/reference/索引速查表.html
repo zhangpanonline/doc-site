@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>索引速查表</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印</p>
+      <h1>索引速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/db-0006-索引.html">《索引互动教学课程》</a>与《06.索引》使用。建议打印一份放在手边。</p>
+    </header>
+
+    <section>
+      <h2>演示流程</h2>
+      <pre><code>INSERT 50 万行 → ANALYZE → 无索引 EXPLAIN → CREATE INDEX
+→ ANALYZE → 有索引 EXPLAIN → DROP INDEX 清理
+
+CREATE INDEX idx_order_created_at ON "order"(created_at);
+DROP INDEX idx_order_created_at;
+ANALYZE "order";   -- 刷新统计信息，让优化器感知索引</code></pre>
+    </section>
+
+    <section>
+      <h2>B+ 树要点</h2>
+      <table>
+        <thead><tr><th>特性</th><th>带来的好处</th></tr></thead>
+        <tbody>
+          <tr><td>非叶子只存 key</td><td>树矮（2~4 层），磁盘 IO 少</td></tr>
+          <tr><td>叶子用双向链表相连</td><td>范围查询顺链扫描，极快</td></tr>
+          <tr><td>所有数据在叶子</td><td>查找路径稳定 O(log n)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>EXPLAIN type 等级（好 → 差）</h2>
+      <pre><code>system > const > eq_ref > ref > range > index > ALL
+ALL = 全表扫描（最差，PG 显示 Seq Scan）</code></pre>
+    </section>
+
+    <section>
+      <h2>索引失效常见场景</h2>
+      <ul class="term-grid">
+        <li><strong>对索引列做运算/函数</strong>：<code>created_at + 1 &gt; …</code> → 挪到常量侧</li>
+        <li><strong>LIKE '%xxx'</strong>：前导 % 无法用树定位</li>
+        <li><strong>最左前缀断层</strong>：(a,b) 上查 b 失效</li>
+        <li><strong>隐式类型转换</strong>：字符串列传数字</li>
+        <li><strong>OR 关联非索引列</strong></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>核心要点</h2>
+      <ul class="term-grid">
+        <li><strong>索引 = 排序好的查找结构</strong>（B+ 树），书目录的比喻</li>
+        <li><strong>代价</strong>：占空间 + 写操作变慢——不是越多越好</li>
+        <li><strong>ANALYZE 刷新统计</strong>，否则优化器可能不选索引</li>
+        <li><strong>回表</strong>：二级索引拿主键后再查聚簇索引</li>
+        <li><strong>覆盖索引</strong>：查询列全在索引里，免回表</li>
+        <li><strong>慢查询排查</strong>：EXPLAIN → type/rows/Extra → 建索引或改写</li>
+      </ul>
+    </section>
+
+  </main>
+</body>
+</html>

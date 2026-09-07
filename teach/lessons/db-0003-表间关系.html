@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="配合《03.表间关系》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 练习题改编最终考核 + 真实面试题，15-20 分钟掌握 1:1/1:N/M:N 与外键">
+  <title>表间关系 · 互动教学课程（数据库第 3 节）</title>
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据库 · 第 3 节</p>
+      <h1>表间关系</h1>
+      <p class="lesson-sub">配合《<a href="/common/database/表间关系/">03.表间关系</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>判断 1:1 / 1:N / M:N 场景，并说清每种关系的<strong>建表实现方式</strong>——<strong>最终考核考的就是这个</strong></li>
+        <li>说清外键 4 种约束行为（NO ACTION / RESTRICT / CASCADE / SET NULL）的差异</li>
+        <li>读懂 ERD 实体关系图，并能给错误的 ER 图找茬</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《03.表间关系》里，测验和考核会考。</p>
+
+      <h3>三种关系的实现口诀</h3>
+      <div class="diagram">
+        <div class="diagram-row">
+          <span class="diagram-node plain">任意一方放外键 + UNIQUE</span>
+          <span class="diagram-arrow">─ 1:1 ─▶</span>
+          <span class="diagram-node">一配一，拆表为性能</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">「多」的一方放外键，不加 UNIQUE</span>
+          <span class="diagram-arrow">─ 1:N ─▶</span>
+          <span class="diagram-node">最常见：部门↔员工</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-node plain">中间表：两个外键做联合主键</span>
+          <span class="diagram-arrow">─ M:N ─▶</span>
+          <span class="diagram-node">学生↔课程，附加选课日期</span>
+        </div>
+        <p class="diagram-note">⚙️ 判断口诀：先问「一个 A 对应几个 B，一个 B 对应几个 A」——两边都是 1 是 1:1；一边多一边 1 是 1:N；两边都多是 M:N。</p>
+      </div>
+
+      <h3>外键四种约束行为</h3>
+      <ol class="pitfall-list">
+        <li><strong><code>NO ACTION</code>（PG 默认）</strong>：有子记录就不许删/改父表，支持延迟检查（DEFERRABLE，配合事务用）。</li>
+        <li><strong><code>RESTRICT</code></strong>：与 NO ACTION 行为相同，但<strong>不支持延迟检查</strong>——立即报错。</li>
+        <li><strong><code>CASCADE</code> 级联</strong>：删父表记录，子表关联记录自动跟着删；改父表主键，子表外键自动更新。方便但误删风险大。</li>
+        <li><strong><code>SET NULL</code></strong>：父表删除/更新后，子表外键列置为 NULL——要求外键列允许 NULL（软解绑）。</li>
+      </ol>
+
+      <h3>ERD 符号速记</h3>
+      <pre><code>矩形 = 实体（表）   连线 = 关系
+||--||   一对一
+||--o{   一对多
+}o--o{   多对多（用中间表实现）
+PK 主键 / FK 外键 / UK 唯一键</code></pre>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
+
+      <h3>🌱 初级 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 一对一关系在数据库中的实现方式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">必须建立中间表，两列外键组成联合主键</button>
+            <button class="quiz-option">任意一方加外键指向对方主键，并给外键加 UNIQUE</button>
+            <button class="quiz-option">两张表各自独立建表，不需要任何关联</button>
+            <button class="quiz-option">把两张表强制合并成一张表才能表达</button>
+          </div>
+          <div class="quiz-explain" hidden>1:1 = 任意一方放外键 + <strong>UNIQUE</strong>（保证一个 B 只配一个 A）。用户与 user_profiles 就是典型。理论上可合并成一张表，为性能/权限/行大小才拆分。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 一对多关系中，外键应该放在哪边？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">「多」的一方，指向「一」的一方的主键</button>
+            <button class="quiz-option">「一」的一方，指向「多」的一方的主键</button>
+            <button class="quiz-option">两边各放一个外键互相指向</button>
+            <button class="quiz-option">必须用中间表才能表达</button>
+          </div>
+          <div class="quiz-explain" hidden>外键放<strong>「多」的一方</strong>：employees.dept_id → departments.id，且<strong>不加 UNIQUE</strong>（多个员工可同属一个部门）。放反了就成了「一个部门属于一个员工」。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 多对多关系为什么不能直接用外键实现？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为两张表都没有主键</button>
+            <button class="quiz-option">因为 PostgreSQL 不支持外键</button>
+            <button class="quiz-option">一张表的一行要对多行，反过来也一对多——必须引入中间表</button>
+            <button class="quiz-option">因为外键只能建在 VARCHAR 列上</button>
+          </div>
+          <div class="quiz-explain" hidden>M:N 是「双向一对多」：一个学生选多门课、一门课被多个学生选。任何单表外键只能表达「多对一」，所以必须用<strong>中间表</strong>：两个外键指向两张主表、组成联合主键，还可存放关系属性（如选课日期）。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. PostgreSQL 中外键不写 ON DELETE 选项时的默认行为是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">CASCADE：自动级联删除</button>
+            <button class="quiz-option">SET NULL：外键置空</button>
+            <button class="quiz-option">RESTRICT：立即禁止删除</button>
+            <button class="quiz-option">NO ACTION：有子记录则禁止删除，支持延迟检查</button>
+          </div>
+          <div class="quiz-explain" hidden>PG 默认 <strong>NO ACTION</strong>：存在关联子记录时禁止删除/更新父表，且支持 DEFERRABLE 延迟到事务提交时再检查。RESTRICT 行为相同但不支持延迟检查。现阶段可把两者视为等同。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>ON DELETE CASCADE</code> 的效果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">删除父表记录时，子表关联记录自动被删除</button>
+            <button class="quiz-option">删除子表记录时，父表记录自动被删除</button>
+            <button class="quiz-option">删除任何记录前先弹出确认对话框</button>
+            <button class="quiz-option">删除父表记录时，子表外键自动设为 NULL</button>
+          </div>
+          <div class="quiz-explain" hidden>CASCADE = <strong>级联</strong>：删部门，该部门所有员工跟着删。方向是父 → 子。想「软解绑」用 SET NULL（外键列需允许 NULL）。级联方便，但误删父表会连带清掉子表数据，生产上要慎用。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 中间表除了两个外键外，还可以放什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只能放两个外键，多一列都会报错</button>
+            <button class="quiz-option">关系本身的附加属性，如选课日期、成绩、数量</button>
+            <button class="quiz-option">另一张表的主键副本，以便三表互联</button>
+            <button class="quiz-option">随意的冗余数据，用于加速查询</button>
+          </div>
+          <div class="quiz-explain" hidden>中间表可存<strong>关系属性</strong>：student_courses 里的 enroll_date、order_items 里的 quantity/price——这些数据只属于「这段关系」。这正是中间表比两个外键更常用的原因。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 「一次挂号只对应一个医生」——医生与挂号的关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">1:N：一个医生可以接多次挂号，一次挂号只属于一个医生</button>
+            <button class="quiz-option">1:1：医生与挂号一一对应</button>
+            <button class="quiz-option">M:N：医生和挂号互相多对多</button>
+            <button class="quiz-option">没有关系：挂号不需要关联医生</button>
+          </div>
+          <div class="quiz-explain" hidden>拆成两个方向判断：「一个医生能接几次挂号」→ 多次；「一次挂号对应几个医生」→ 一个。所以医生 1:N 挂号，外键放挂号表（doctor_id）。这类「X 对 Y 的关系」判断是 ERD 设计的基本功。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 「用户可以关注其他用户」应该怎么建表？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">users 表加一列 follower_id，指向自己的主键</button>
+            <button class="quiz-option">用户表一分为二：follower 表和 followee 表</button>
+            <button class="quiz-option">自关联中间表：follows(follower_id, followee_id) 两个外键都指向 users.id</button>
+            <button class="quiz-option">用 JSONB 数组存关注列表即可</button>
+          </div>
+          <div class="quiz-explain" hidden>关注 = 用户 M:N 用户（<strong>自关联多对多</strong>）：一张 follows 中间表，follower_id 与 followee_id 都 FK → users.id，组成联合主键。单列 follower_id 只能存「一个」关注对象；JSON 数组则失去关系型约束。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. ERD 中 <code>分类 ||--o{ 商品</code> 这条线表示？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">分类与商品一对一</button>
+            <button class="quiz-option">一个分类对应多个商品（0 到多），每个商品只属一个分类</button>
+            <button class="quiz-option">商品可以属于多个分类</button>
+            <button class="quiz-option">分类与商品互不关联</button>
+          </div>
+          <div class="quiz-explain" hidden>ERD 符号：<code>||</code> = 恰好 1，<code>o{</code> = 0 到多。<code>||--o{</code> 即 1:N——分类一侧是 1、商品一侧是 0..N。含义：一个分类有多个商品，每个商品只属一个分类（category_id 外键在 product 表）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>本节源课程没有作业，下面四道题由《03.表间关系》的<strong>练习题</strong>（场景判断 + ERD 找茬）改编——<strong>这就是本课的最终考核</strong>。规则：不查资料，先自己在脑中画表，再点击核对。全部答对且能讲清理由，才算过关。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核一（场景题·选课系统）：学生与课程的关系及「选修后记录成绩」怎么实现？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">学生 1:N 课程，成绩放在学生表的一个列里</button>
+            <button class="quiz-option">课程 1:N 学生，成绩放在课程表的一个列里</button>
+            <button class="quiz-option">学生 M:N 课程，中间表放 student_id、course_id 和成绩列</button>
+            <button class="quiz-option">学生与课程 1:1，成绩放在课程表里</button>
+          </div>
+          <div class="quiz-explain" hidden>学生可选多门课、一门课被多个学生选 → <strong>M:N</strong>。中间表 = (student_id, course_id) 联合主键 + <strong>成绩列</strong>（关系属性）。另外：院系 1:N 学生、院系 1:N 老师、老师 1:N 课程。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核二（场景题·视频平台）：「用户收藏视频」的关系与实现是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">用户 1:N 视频，在视频表加 user_id 外键</button>
+            <button class="quiz-option">用户 M:N 视频，中间表 (user_id, video_id) 联合主键</button>
+            <button class="quiz-option">视频 1:N 用户，在用户表加 video_id 外键</button>
+            <button class="quiz-option">收藏是单向操作，不需要建表</button>
+          </div>
+          <div class="quiz-explain" hidden>一个用户收藏多个视频、一个视频被多个用户收藏 → <strong>M:N</strong>，用中间表收藏表实现。同场景里还有：用户 1:N 视频（上传）、分类 1:N 视频、视频 1:N 弹幕、弹幕 N:1 用户。注意「上传」与「收藏」是两段不同关系，别混在一张表。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核三（找茬题·超市收银 ERD）：下图中隐藏了一处错误关系，错在哪？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会员与小票应该是一对一，图中标成了一对多</button>
+            <button class="quiz-option">小票与小票明细应该是一对一，图中标成了一对多</button>
+            <button class="quiz-option">分类与商品应该是多对多，图中标成了一对多</button>
+            <button class="quiz-option">商品与小票明细标成了一对一，应是一对多</button>
+          </div>
+          <div class="quiz-explain" hidden>场景：每张小票记录多个商品及数量。一个商品可以出现在多张小票的明细里 → 商品与小票明细是 <strong>1:N</strong>，原图却画成 <code>||--||</code> 一对一。正确应为 <code>商品 ||--o{ 小票明细</code>。其余关系（会员 1:N 小票、小票 1:N 明细、分类 1:N 商品、供应商 1:N 商品）都是对的。</div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四（设计题）：为「多对多 + 附加属性」设计建表语句，下面哪条最合适？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">中间表：PRIMARY KEY (student_id, course_id) 双外键 + enroll_date</button>
+            <button class="quiz-option">student_courses 表只放一个外键 course_id，student_id 用 UNIQUE</button>
+            <button class="quiz-option">把课程列直接塞进 students 表的 JSONB 字段</button>
+            <button class="quiz-option">两个外键都加 UNIQUE，保证组合唯一</button>
+          </div>
+          <div class="quiz-explain" hidden>中间表标准姿势：两个外键 <strong>组成联合主键</strong>（同一组合不重复）、关系属性 enroll_date 独立成列。陷阱项：单个外键表达不了双向多；JSONB 绕开关系模型，失去外键约束与联合查询能力；给单个外键加 UNIQUE 会把关系错变成 1:N。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+
+      <h3>⚡ 中级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题一（外键基础）：外键（Foreign Key）的作用是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">指向另一张表的主键，建立表间关联并保证数据完整性</button>
+            <button class="quiz-option">给表提速的索引工具，与数据完整性无关</button>
+            <button class="quiz-option">数据库的备份恢复机制</button>
+            <button class="quiz-option">一种压缩存储大数据字段的技术</button>
+          </div>
+          <div class="quiz-explain" hidden>外键指向<strong>父表主键</strong>，作用：① 建立表间关联；② 数据库层面自动约束（防止插入不存在的父记录、防止误删被引用的父记录）。代价是每次写入都要检查、降低写性能。<a href="https://m.php.cn/faq/2165953.html">出处：php.cn「MySQL 外键使用面试题解析」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">面试题二（级联删除）：ON DELETE CASCADE 的优缺点各是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有优点，外键都应该禁用</button>
+            <button class="quiz-option">只有优点：开发最省事</button>
+            <button class="quiz-option">优点省代码；缺点误删父记录会连带清掉子数据，风险不可控</button>
+            <button class="quiz-option">优点快；缺点占磁盘</button>
+          </div>
+          <div class="quiz-explain" hidden>级联删除「方便」是真方便：删一条主记录，关联数据自动清理。但<strong>误删父表一条记录可能连带删掉订单、购买记录等关键数据</strong>，且难以追溯——所以《阿里巴巴开发手册》明确禁止使用级联。生产上慎用，宁可显式在应用层删除。<a href="https://www.cnblogs.com/2678066103hs/p/19047614">出处：博客园「为什么大厂都不推荐使用外键」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">面试题三（大厂必问）：「为什么大厂都禁止使用外键？」最核心的原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">外键有安全漏洞，容易被黑客攻击</button>
+            <button class="quiz-option">写入性能开销 + 分库分表/微服务下跨库失效 + 级联误删风险</button>
+            <button class="quiz-option">外键占用磁盘空间过大</button>
+            <button class="quiz-option">外键是过时技术，新版数据库已删除该功能</button>
+          </div>
+          <div class="quiz-explain" hidden>三座大山：① <strong>性能</strong>——每次 INSERT/UPDATE/DELETE 都要检查父表、维护关联索引，高并发下成瓶颈，死锁概率上升；② <strong>架构演进</strong>——分库分表/微服务后数据跨库，外键物理上无法生效；③ <strong>级联风险</strong>——误删连带、难以追踪。辩证收尾：单机低并发、一致性优先的项目（ERP/财务）仍可用。<a href="https://www.cnblogs.com/2678066103hs/p/19047614">出处：博客园「为什么大厂都不推荐使用外键」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">面试题四（SET NULL 细节）：外键选了 ON DELETE SET NULL，有什么前提条件？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">外键列必须是主键</button>
+            <button class="quiz-option">外键列必须带 UNIQUE 约束</button>
+            <button class="quiz-option">外键列必须使用 SERIAL 类型</button>
+            <button class="quiz-option">外键列必须允许 NULL，否则父表删除会报错</button>
+          </div>
+          <div class="quiz-explain" hidden>SET NULL 要把外键列置空，所以该列<strong>必须允许 NULL</strong>（不能带 NOT NULL）——「软解绑」场景（父记录没了、子记录保留但失去关联）用它。与之相对，RESTRICT/NO ACTION 是默认的「硬禁止」。<a href="https://m.php.cn/faq/2165953.html">出处：php.cn「MySQL 外键使用面试题解析」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">面试题五（架构设计）：不用外键后，靠什么保证数据一致性？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">什么也不做，靠运气和开发者自觉</button>
+            <button class="quiz-option">全部改用触发器模拟，一个都不能少</button>
+            <button class="quiz-option">应用层校验 + 事务 + 定时对账巡检 + 逻辑外键</button>
+            <button class="quiz-option">把关联数据合并进同一张表，从根上避免不一致</button>
+          </div>
+          <div class="quiz-explain" hidden>标准答案组合拳：<strong>① 应用层校验</strong>（写子表前查父表，配合事务保证原子性）<strong>② 定时巡检</strong>（每日 SQL 扫「孤儿记录」对账、告警）<strong>③ 逻辑外键</strong>（应用层维护字段关联）<strong>④ 事件驱动/柔性事务</strong>保证最终一致。触发器模拟不推荐：逻辑隐蔽、难调试。<a href="https://www.cnblogs.com/2678066103hs/p/19047614">出处：博客园「为什么大厂都不推荐使用外键」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">面试题六（场景权衡）：什么场景适合用外键，什么场景必须禁用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">所有场景都要用，不用外键的数据必然脏</button>
+            <button class="quiz-option">单机低并发、一致性优先的项目可用；高并发、分库分表、微服务项目禁用</button>
+            <button class="quiz-option">所有场景都禁用，外键百害无一利</button>
+            <button class="quiz-option">只有 MySQL 需要禁用，PostgreSQL 随便用</button>
+          </div>
+          <div class="quiz-explain" hidden>分场景：<strong>单体、低并发、数据量小、强一致</strong>（传统企业/ERP/财务）→ 用外键，省代码且数据库兜底；<strong>高并发、分布式、分库分表、微服务</strong> → 禁用，物理外键跨库失效且拖累性能。盲目跟风禁用和盲目使用都是错的。<a href="https://www.cnblogs.com/2678066103hs/p/19047614">出处：博客园「为什么大厂都不推荐使用外键」</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>巩固延伸</h2>
+      <ul>
+        <li><strong>动手验证</strong>：打开《电商数据库设计.sql》逐行阅读，在 pgAdmin 里建出 product_db 并查看它的 ERD；再故意删一条 category 记录，观察 NO ACTION 与 CASCADE 的行为差异。</li>
+        <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/ddl-constraints.html">PostgreSQL 官方文档：约束与外键</a></li>
+        <li><strong>回看课程</strong>：<a href="/common/database/表间关系/">03.表间关系</a> · 上一节 <a href="/common/database/DDL/">02.DDL</a> · 下一节 <a href="/common/database/DML/">04.DML</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/common/database/表间关系/">回到《03.表间关系》</a>复读对应小节。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>
