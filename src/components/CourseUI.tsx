@@ -1,5 +1,6 @@
-import Link from '@docusaurus/Link';
+import React from 'react';
 import type {ReactNode} from 'react';
+import Link from '@docusaurus/Link';
 
 export type Course = {
   emoji: string;
