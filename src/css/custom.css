@@ -228,6 +228,14 @@
   color: var(--course-fg);
   text-decoration: none;
 }
+.ai-tile-soon {
+  cursor: default;
+}
+.ai-tile-soon:hover {
+  transform: none;
+  border-color: var(--course-border);
+  box-shadow: 0 1px 3px rgba(45, 41, 38, 0.07);
+}
 .ai-tile-emoji {
   font-size: 34px;
   line-height: 1;

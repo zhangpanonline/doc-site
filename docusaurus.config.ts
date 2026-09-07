@@ -130,8 +130,8 @@ const config: Config = {
           position: 'left',
         },
         {
-          to: '/common/',
-          label: '公共',
+          to: '/jobs/',
+          label: '岗位地图',
           position: 'left',
         },
       ],

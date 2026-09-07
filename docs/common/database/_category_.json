@@ -1,5 +1,7 @@
 {
   "label": "数据库",
-  "collapsible": true,
-  "collapsed": false
+  "link": {
+    "type": "doc",
+    "id": "index"
+  }
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import type {ReactNode} from 'react';
 import Link from '@docusaurus/Link';
+import {jobs} from '@site/data/jobs';
 
 export type Course = {
   emoji: string;
@@ -38,6 +39,39 @@ export function UnitTiles(): ReactNode {
           </Link>
         ))}
       </div>
+    </div>
+  );
+}
+
+export type CourseTile = {
+  emoji: string;
+  name: string;
+  desc: string;
+  badge: string;
+  href?: string;
+};
+
+export function CourseTiles({courses, numbered}: {courses: CourseTile[]; numbered?: boolean}): ReactNode {
+  return (
+    <div className="ai-tiles">
+      {courses.map((c, idx) =>
+        c.href ? (
+          <Link key={c.name} to={c.href} className="ai-tile">
+            <span className="ai-tile-emoji">{c.emoji}</span>
+            <h3 className="ai-tile-name">{numbered ? `${String(idx + 1).padStart(2, '0')} · ${c.name}` : c.name}</h3>
+            <p className="ai-tile-desc">{c.desc}</p>
+            <span className="ai-badge">{c.badge}</span>
+            <span className="ai-enter">进入课程 →</span>
+          </Link>
+        ) : (
+          <div key={c.name} className="ai-tile ai-tile-soon">
+            <span className="ai-tile-emoji">{c.emoji}</span>
+            <h3 className="ai-tile-name">{numbered ? `${String(idx + 1).padStart(2, '0')} · ${c.name}` : c.name}</h3>
+            <p className="ai-tile-desc">{c.desc}</p>
+            <span className="ai-badge ai-badge-dim">{c.badge}</span>
+          </div>
+        ),
+      )}
     </div>
   );
 }
@@ -89,4 +123,59 @@ export function CourseRow({emoji, title, desc, note, to}: {emoji: string; title:
 
 export function PlaceholderNote({text}: {text: string}): ReactNode {
   return <div className="ai-placeholder">{text}</div>;
+}
+
+/* ===== 岗位地图 ===== */
+
+export function JobBoard({unit}: {unit: string}): ReactNode {
+  const d = jobs[unit];
+  if (!d) {
+    return null;
+  }
+  return (
+    <div className="ai-course-card">
+      <div className="ai-course-head">
+        <span className="ai-course-emoji">{d.emoji}</span>
+        <h2 className="ai-course-name">
+          第 {d.stage} 阶段 · {d.title} · 岗位地图
+        </h2>
+      </div>
+      <div className="ai-badges">
+        <span className="ai-badge">岗位方向</span>
+      </div>
+      <div className="ai-chips">
+        {d.positions.map(p => <span key={p} className="ai-chip">{p}</span>)}
+      </div>
+      <p className="ai-course-desc">本阶段新增技能要求</p>
+      <div className="ai-chips">
+        {d.skills.map(s => <span key={s} className="ai-chip">{s}</span>)}
+      </div>
+      <p className="ai-course-desc">
+        💰 常见薪资 {d.salaryRange[0]}–{d.salaryRange[1]}K/月 · 中位数约 {d.salaryMedian}K
+      </p>
+      <p className="ai-meta">
+        递进规则：本阶段岗位要求默认包含前面所有阶段的技能。
+        样本 {d.sampleSize} 份 · 更新于 {d.updatedAt}。
+        数据为 BOSS 直聘公开岗位信息的聚合统计，不含公司信息与岗位原文。
+      </p>
+    </div>
+  );
+}
+
+export function JobsTiles(): ReactNode {
+  return (
+    <div className="ai-tiles">
+      {Object.entries(jobs).map(([key, d]) => (
+        <Link key={key} to={`/jobs/${key}`} className="ai-tile">
+          <span className="ai-tile-emoji">{d.emoji}</span>
+          <h3 className="ai-tile-name">
+            {String(d.stage).padStart(2, '0')} · {d.title}
+          </h3>
+          <p className="ai-tile-desc">{d.positions.join(' / ')}</p>
+          <span className="ai-badge">{d.salaryRange[0]}–{d.salaryRange[1]}K/月</span>
+          <span className="ai-enter">查看岗位 →</span>
+        </Link>
+      ))}
+    </div>
+  );
 }

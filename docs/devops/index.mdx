@@ -4,6 +4,14 @@ displayed_sidebar: devops
 sidebar_position: 0
 ---
 
-import {PlaceholderNote} from '@site/src/components/CourseUI';
+import {CommonBanner, CourseTiles} from '@site/src/components/CourseUI';
 
-<PlaceholderNote text="☁️ 课程筹备中 —— 部署上线、容器编排、CI/CD 与云平台实践，后续课程将在此单元陆续上线。" />
+<CommonBanner title="☁️ 运维和云计算能力" desc="部署上线、容器编排、CI/CD 与云平台实践。" />
+
+<CourseTiles numbered courses={[
+  {emoji: '🐧', name: 'Linux与运维基础实战', desc: '课程筹备中', badge: '筹备中'},
+  {emoji: '🚥', name: 'Nginx与应用服务部署', desc: '课程筹备中', badge: '筹备中'},
+  {emoji: '🐳', name: 'Docker容器化与CI/CD发布', desc: '课程筹备中', badge: '筹备中'},
+  {emoji: '☁️', name: '云平台架构与安全治理', desc: '课程筹备中', badge: '筹备中'},
+  {emoji: '📈', name: '监控告警与高可用优化', desc: '课程筹备中', badge: '筹备中'},
+]} />

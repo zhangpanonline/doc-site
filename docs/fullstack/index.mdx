@@ -4,6 +4,12 @@ displayed_sidebar: fullstack
 sidebar_position: 0
 ---
 
-import {PlaceholderNote} from '@site/src/components/CourseUI';
+import {CommonBanner, CourseTiles} from '@site/src/components/CourseUI';
 
-<PlaceholderNote text="🏗️ 课程筹备中 —— 真实企业级项目实战：从需求分析到上线交付的完整闭环，后续课程将在此单元陆续上线。" />
+<CommonBanner title="🏗️ 企业级全栈项目" desc="真实企业级项目实战：从需求分析到上线交付的完整闭环。" />
+
+<CourseTiles numbered courses={[
+  {emoji: '💬', name: '智能客服与工单协同解决方案', desc: '课程筹备中', badge: '筹备中'},
+  {emoji: '📚', name: '企业知识治理与智能检索运管平台', desc: '课程筹备中', badge: '筹备中'},
+  {emoji: '🛡️', name: '多模态内容安全与智能审核治理平台', desc: '课程筹备中', badge: '筹备中'},
+]} />
