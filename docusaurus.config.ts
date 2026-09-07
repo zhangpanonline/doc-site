@@ -22,6 +22,7 @@ const config: Config = {
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
+    faster: false, // 禁用 Rspack（dev 服务器会 panic，稳定性优先）
   },
 
   // Set the production url of your site here

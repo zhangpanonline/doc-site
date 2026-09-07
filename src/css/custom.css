@@ -18,9 +18,10 @@
   --course-code-bg: #f3efe6;       /* 代码纸底 */
   --course-highlight: #fdf3e3;     /* 朱批高亮 */
 
-  /* ===== 墨块（hero/横幅）：浅色主题 = 墨底纸字 ===== */
-  --hero-bg: var(--course-fg);
-  --hero-fg: var(--course-bg);
+  /* ===== 墨块（hero/横幅）：纸面卡片，与页面同色系 ===== */
+  --hero-bg: var(--course-card);
+  --hero-fg: var(--course-fg);
+  --tile-bg: #ffffff;              /* 单元卡片：比 hero 更亮一层，浮起 */
 
   /* ===== infima 主色 → 朱砂红 ===== */
   --ifm-color-primary: #9d3b2c;
@@ -83,9 +84,10 @@
   --course-code-bg: #1b2133;       /* 代码底 */
   --course-highlight: #34232b;     /* 朱批洗染高亮 */
 
-  /* 墨块反向：暗色下 hero 变「纸块墨字」 */
-  --hero-bg: var(--course-fg);
-  --hero-fg: var(--course-bg);
+  /* 墨块：暗色下同为卡片面 */
+  --hero-bg: var(--course-card);
+  --hero-fg: var(--course-fg);
+  --tile-bg: #1f2433;              /* 暗色单元卡片：亮于卡片面一层 */
 
   --ifm-color-primary: #e07a5f;
   --ifm-color-primary-dark: #c96548;
@@ -173,8 +175,9 @@
 
 /* ===== AI 大全栈 站点外壳（纸墨版） ===== */
 .ai-hero {
-  background: var(--hero-bg);        /* 墨块：浅色=墨底纸字，暗色=纸块墨字 */
+  background: var(--hero-bg);        /* 纸面卡片，融入页面 */
   color: var(--hero-fg);
+  border: 1px solid var(--course-border);
   border-radius: 20px;
   padding: 56px 36px 44px;
   margin: 24px 0 32px;
@@ -210,16 +213,18 @@
 .ai-tile {
   display: flex;
   flex-direction: column;
-  background: var(--course-card);
+  background: var(--tile-bg);
   border: 1px solid var(--course-border);
   border-radius: 16px;
   padding: 22px;
   color: var(--course-fg);
-  transition: transform 0.15s, border-color 0.15s;
+  box-shadow: 0 1px 3px rgba(45, 41, 38, 0.07);
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 .ai-tile:hover {
   transform: translateY(-3px);
   border-color: var(--course-accent);
+  box-shadow: 0 8px 22px rgba(45, 41, 38, 0.12);
   color: var(--course-fg);
   text-decoration: none;
 }
@@ -336,8 +341,9 @@
   color: var(--course-accent);
 }
 .ai-c-banner {
-  background: var(--hero-bg);        /* 与 hero 同款墨块 */
+  background: var(--hero-bg);        /* 与 hero 同款纸面卡片 */
   color: var(--hero-fg);
+  border: 1px solid var(--course-border);
   border-radius: 14px;
   padding: 30px 28px;
   margin: 24px 0 20px;
