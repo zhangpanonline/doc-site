@@ -25,3 +25,5 @@ yarn-error.log*
 AGENTS.md
 .claude
 .scratch/
+.vercel
+.env*

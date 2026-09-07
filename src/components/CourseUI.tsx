@@ -23,6 +23,7 @@ const UNITS: {emoji: string; name: string; desc: string; courses: string; href: 
 export function UnitTiles(): ReactNode {
   return (
     <div className="ai-hero">
+      <p className="ai-hero-kicker">渡一《AI 大全栈》学习路线 · 配套课程</p>
       <h1 className="ai-hero-title">AI 大全栈 · 配套交互课程</h1>
       <p className="ai-hero-sub">六个单元 · 一条从 Agents 开发到企业级全栈交付的学习路线</p>
       <div className="ai-tiles">

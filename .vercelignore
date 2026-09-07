@@ -1,0 +1,8 @@
+build
+node_modules
+.codegraph
+.scratch
+.claude
+.history
+.DS_Store
+.git

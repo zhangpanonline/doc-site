@@ -4,14 +4,50 @@
   "outputDirectory": "build",
   "installCommand": "pnpm install --ignore-scripts",
   "redirects": [
-    {"source": "/python/安装/:path*", "destination": "/agents/python/python环境安装/:path*", "statusCode": 301},
-    {"source": "/python/语言核心/基础语法/:path*", "destination": "/agents/python/python基本语法/:path*", "statusCode": 301},
-    {"source": "/python/语言核心/Lambda表达式/:path*", "destination": "/agents/python/lambda表达式/:path*", "statusCode": 301},
-    {"source": "/python/语言核心/抽象类/:path*", "destination": "/agents/python/ABC/:path*", "statusCode": 301},
-    {"source": "/python/语言核心/协程/:path*", "destination": "/agents/python/协程-Coroutine/:path*", "statusCode": 301},
-    {"source": "/python/语言核心/多线程和多进程/:path*", "destination": "/agents/python/多线程与多进程/:path*", "statusCode": 301},
-    {"source": "/python/语言核心/Monorepo/:path*", "destination": "/agents/python/monorepo/:path*", "statusCode": 301},
-    {"source": "/python/语言核心/:path*", "destination": "/agents/python/:path*", "statusCode": 301},
-    {"source": "/python/:path*", "destination": "/agents/python/:path*", "statusCode": 301}
+    {
+      "source": "/python/%e5%ae%89%e8%a3%85/:path*",
+      "destination": "/agents/python/python%e7%8e%af%e5%a2%83%e5%ae%89%e8%a3%85/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/python/%e8%af%ad%e8%a8%80%e6%a0%b8%e5%bf%83/%e5%9f%ba%e7%a1%80%e8%af%ad%e6%b3%95/:path*",
+      "destination": "/agents/python/python%e5%9f%ba%e6%9c%ac%e8%af%ad%e6%b3%95/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/python/%e8%af%ad%e8%a8%80%e6%a0%b8%e5%bf%83/Lambda%e8%a1%a8%e8%be%be%e5%bc%8f/:path*",
+      "destination": "/agents/python/lambda%e8%a1%a8%e8%be%be%e5%bc%8f/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/python/%e8%af%ad%e8%a8%80%e6%a0%b8%e5%bf%83/%e6%8a%bd%e8%b1%a1%e7%b1%bb/:path*",
+      "destination": "/agents/python/ABC/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/python/%e8%af%ad%e8%a8%80%e6%a0%b8%e5%bf%83/%e5%8d%8f%e7%a8%8b/:path*",
+      "destination": "/agents/python/%e5%8d%8f%e7%a8%8b-Coroutine/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/python/%e8%af%ad%e8%a8%80%e6%a0%b8%e5%bf%83/%e5%a4%9a%e7%ba%bf%e7%a8%8b%e5%92%8c%e5%a4%9a%e8%bf%9b%e7%a8%8b/:path*",
+      "destination": "/agents/python/%e5%a4%9a%e7%ba%bf%e7%a8%8b%e4%b8%8e%e5%a4%9a%e8%bf%9b%e7%a8%8b/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/python/%e8%af%ad%e8%a8%80%e6%a0%b8%e5%bf%83/Monorepo/:path*",
+      "destination": "/agents/python/monorepo/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/python/%e8%af%ad%e8%a8%80%e6%a0%b8%e5%bf%83/:path*",
+      "destination": "/agents/python/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/python/:path*",
+      "destination": "/agents/python/:path*",
+      "statusCode": 301
+    }
   ]
 }
