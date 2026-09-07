@@ -18,6 +18,10 @@
   --course-code-bg: #f3efe6;       /* 代码纸底 */
   --course-highlight: #fdf3e3;     /* 朱批高亮 */
 
+  /* ===== 墨块（hero/横幅）：浅色主题 = 墨底纸字 ===== */
+  --hero-bg: var(--course-fg);
+  --hero-fg: var(--course-bg);
+
   /* ===== infima 主色 → 朱砂红 ===== */
   --ifm-color-primary: #9d3b2c;
   --ifm-color-primary-dark: #7c2d21;
@@ -67,25 +71,29 @@
   --ifm-scrollbar-thumb-hover-background-color: rgba(45, 41, 38, 0.45);
 }
 
-/* ===== 暗色：深夜墨纸 ===== */
+/* ===== 暗色：深夜蓝墨 + 朱砂 ===== */
 [data-theme='dark'] {
-  --course-bg: #211d18;
-  --course-fg: #e8e2d6;
-  --course-muted: #9a9184;
-  --course-accent: #d98270;
-  --course-accent-ink: #e5a08e;
-  --course-border: #3a352d;
-  --course-card: #29241e;
-  --course-code-bg: #2a2620;
-  --course-highlight: #33291f;
+  --course-bg: #131621;            /* 蓝黑墨底 */
+  --course-fg: #e6e1d3;            /* 暖纸色文字 */
+  --course-muted: #8b90a5;         /* 青灰次要 */
+  --course-accent: #e07a5f;        /* 朱砂（亮化） */
+  --course-accent-ink: #f2a08a;    /* 链接朱砂 */
+  --course-border: #262b3d;        /* 墨蓝边线 */
+  --course-card: #1a1f2e;          /* 卡片面 */
+  --course-code-bg: #1b2133;       /* 代码底 */
+  --course-highlight: #34232b;     /* 朱批洗染高亮 */
 
-  --ifm-color-primary: #c96c5c;
-  --ifm-color-primary-dark: #b05644;
-  --ifm-color-primary-darker: #a04c3c;
-  --ifm-color-primary-darkest: #863f31;
-  --ifm-color-primary-light: #d98270;
-  --ifm-color-primary-lighter: #e5a08e;
-  --ifm-color-primary-lightest: #eeb3a4;
+  /* 墨块反向：暗色下 hero 变「纸块墨字」 */
+  --hero-bg: var(--course-fg);
+  --hero-fg: var(--course-bg);
+
+  --ifm-color-primary: #e07a5f;
+  --ifm-color-primary-dark: #c96548;
+  --ifm-color-primary-darker: #b55740;
+  --ifm-color-primary-darkest: #93452f;
+  --ifm-color-primary-light: #e88a71;
+  --ifm-color-primary-lighter: #ef9c85;
+  --ifm-color-primary-lightest: #f5b3a1;
 
   --ifm-background-color: var(--course-bg);
   --ifm-background-surface-color: var(--course-card);
@@ -101,7 +109,7 @@
   --ifm-menu-color: var(--course-fg);
   --ifm-menu-color-active: var(--course-accent);
   --ifm-menu-color-background-active: var(--course-highlight);
-  --ifm-menu-color-background-hover: rgba(217, 130, 112, 0.08);
+  --ifm-menu-color-background-hover: rgba(224, 122, 95, 0.08);
   --ifm-toc-border-color: var(--course-border);
   --ifm-hr-border-color: var(--course-border);
   --ifm-table-border-color: var(--course-border);
@@ -109,11 +117,11 @@
   --ifm-blockquote-border-left-color: var(--course-accent);
   --ifm-color-emphasis-100: var(--course-code-bg);
   --ifm-color-emphasis-200: var(--course-border);
-  --ifm-color-emphasis-300: #4a443a;
+  --ifm-color-emphasis-300: #343b52;
   --ifm-color-emphasis-600: var(--course-muted);
-  --docusaurus-highlighted-code-line-bg: rgba(217, 130, 112, 0.12);
-  --ifm-scrollbar-thumb-background-color: rgba(232, 226, 214, 0.22);
-  --ifm-scrollbar-thumb-hover-background-color: rgba(232, 226, 214, 0.38);
+  --docusaurus-highlighted-code-line-bg: rgba(224, 122, 95, 0.12);
+  --ifm-scrollbar-thumb-background-color: rgba(230, 225, 211, 0.22);
+  --ifm-scrollbar-thumb-hover-background-color: rgba(230, 225, 211, 0.38);
 }
 
 /* ===== 导航栏：纸面 + 纸纹边线（去投影） ===== */
@@ -165,8 +173,8 @@
 
 /* ===== AI 大全栈 站点外壳（纸墨版） ===== */
 .ai-hero {
-  background: var(--course-fg);       /* 墨色块，呼应课程页页脚/计分条 */
-  color: var(--course-bg);
+  background: var(--hero-bg);        /* 墨块：浅色=墨底纸字，暗色=纸块墨字 */
+  color: var(--hero-fg);
   border-radius: 20px;
   padding: 56px 36px 44px;
   margin: 24px 0 32px;
@@ -177,20 +185,17 @@
   font-size: 0.8rem;
   letter-spacing: 0.18em;
   font-weight: 700;
-  color: var(--course-accent-lightest, #c96c5c);
-}
-[data-theme='light'] .ai-hero-kicker {
-  color: #c96c5c;
+  color: var(--course-accent);
 }
 .ai-hero-title {
-  color: var(--course-bg);
+  color: var(--hero-fg);
   font-family: var(--ifm-heading-font-family);
   font-size: 38px;
   margin-bottom: 10px;
   text-wrap: balance;
 }
 .ai-hero-sub {
-  color: rgba(250, 247, 241, 0.75);
+  color: color-mix(in srgb, var(--hero-fg) 72%, transparent);
   font-size: 16px;
   margin-bottom: 36px;
 }
@@ -198,6 +203,8 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  max-width: 960px;
+  margin: 0 auto;
   text-align: left;
 }
 .ai-tile {
@@ -329,20 +336,20 @@
   color: var(--course-accent);
 }
 .ai-c-banner {
-  background: var(--course-fg);       /* 墨色横幅，呼应课程页页脚 */
-  color: var(--course-bg);
+  background: var(--hero-bg);        /* 与 hero 同款墨块 */
+  color: var(--hero-fg);
   border-radius: 14px;
   padding: 30px 28px;
   margin: 24px 0 20px;
 }
 .ai-c-banner-title {
-  color: var(--course-bg);
+  color: var(--hero-fg);
   font-family: var(--ifm-heading-font-family);
   font-size: 26px;
   margin: 0 0 6px;
 }
 .ai-c-banner-desc {
-  color: rgba(250, 247, 241, 0.75);
+  color: color-mix(in srgb, var(--hero-fg) 72%, transparent);
   font-size: 14.5px;
   margin: 0;
 }
