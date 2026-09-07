@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 4 课</p>
       <h1>作用域</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/作用域/">4.作用域</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/作用域/">4.作用域</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -333,8 +333,9 @@ print(deposit2(10))   # 60</code></pre>
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（传参方式·高频）：Python 函数传参是值传递还是引用传递？</div>
@@ -356,6 +357,72 @@ print(deposit2(10))   # 60</code></pre>
             <button class="quiz-option">只在局部和全局两层查找</button>
           </div>
           <div class="quiz-explain" hidden><strong>LEGB</strong>：L（局部）→ E（外层函数/闭包）→ G（全局）→ B（内置）。同时注意：函数是作用域，若自己作用域没有变量就往上级查找——而<strong>赋值</strong>默认只影响当前层。追问常接：什么时候需要 global / nonlocal？<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（推导式作用域·陷阱）：Python 3 中执行 <code>[i for i in range(3)]</code> 之后，再执行 <code>print(i)</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">NameError（推导式有自己的作用域，循环变量不泄漏）</button>
+            <button class="quiz-option">打印 2</button>
+            <button class="quiz-option">打印 0</button>
+            <button class="quiz-option">打印 [0, 1, 2]</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 3 的推导式有<strong>独立作用域</strong>：循环变量 <code>i</code> 不泄漏到外层 → <code>print(i)</code> 抛 <strong>NameError</strong>。对比：普通 <code>for</code> 循环的循环变量会保留在外层作用域——面试常把两者放一起追问。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（多层 nonlocal·陷阱）：以下代码 <code>mid()</code> 的返回值是？
+<pre><code>def outer():
+    x = 1
+
+    def mid():
+        x = 2
+
+        def inner():
+            nonlocal x
+            x += 10
+
+        inner()
+        return x
+
+    return mid()
+
+print(outer())</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">12（nonlocal 修改最近的 mid 的 x）</button>
+            <button class="quiz-option">11（修改 outer 的 x）</button>
+            <button class="quiz-option">2（nonlocal 无效）</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>nonlocal x</code> 绑定<strong>最近一层</strong>定义 x 的外层函数——inner 的最近外层是 mid（x=2），所以 <code>2 + 10 = 12</code>；outer 的 x 仍是 1。多层嵌套时 nonlocal 不会「跳级」，这是闭包面试的深水区追问。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（作用域判定时机·机制）：Python 在什么时候判定一个名字是局部变量？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">编译函数时（有赋值语句即判为局部）</button>
+            <button class="quiz-option">每次调用函数时</button>
+            <button class="quiz-option">第一次访问该名字时</button>
+            <button class="quiz-option">运行时逐行动态判断</button>
+          </div>
+          <div class="quiz-explain" hidden>作用域在<strong>编译函数时</strong>就确定：函数体里只要有对某名字的<strong>赋值语句</strong>，该名字在整个函数内都是局部变量——这就是「先读后写抛 UnboundLocalError」的根因（读发生在赋值前）。面试官常追问：为什么加 global 才能修。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（设计选择·机制）：需要「带状态的函数」（计数器），闭包与类的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">闭包轻量私密；类更面向对象、可扩展方法</button>
+            <button class="quiz-option">闭包无法保存状态，只有类可以</button>
+            <button class="quiz-option">类无法实现计数器</button>
+            <button class="quiz-option">两者完全等价没有区别</button>
+          </div>
+          <div class="quiz-explain" hidden>闭包（nonlocal）与类（实例属性）都能保存状态：闭包<strong>更轻量、状态天然私有</strong>（外部拿不到变量）；类<strong>更面向对象</strong>（可加方法、可继承、可多实例管理）。工程上简单状态用闭包、复杂行为用类（或第 9 课的可调用对象）。<a href="https://blog.51cto.com/u_16213596/14796805">出处同专家题一</a></div>
         </div>
       </div>
     </section>

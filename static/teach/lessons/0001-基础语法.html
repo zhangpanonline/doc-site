@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 1 课</p>
       <h1>基础语法</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/基础语法/">1.基础语法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/基础语法/">1.基础语法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -287,8 +287,9 @@ print(f"共计 {prime_count} 个素数")</code></pre>
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（牛客·最强 Python 面试题系列）：关于「变量、对象、引用」的关系，下列说法正确的是？</div>
@@ -310,6 +311,56 @@ print(f"共计 {prime_count} 个素数")</code></pre>
             <button class="quiz-option">直接运算，Python 自动识别十六进制</button>
           </div>
           <div class="quiz-explain" hidden><code>int(x, base)</code> 的 base 参数（2~36）指定进制：<code>int("FF", 16) → 255</code>；不带 base 的 <code>int("FF")</code> 会抛 ValueError（无法按十进制解析）。这是牛客 Python 入门题库（NP 系列）的常考题。还可自测：<code>int("101", 2)</code> → 5。<a href="https://developer.aliyun.com/article/1538325">出处：牛客刷题——Python 篇（2）类型转换</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（浮点精度·高频陷阱）：<code>print(0.1 + 0.2 == 0.3)</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">False（二进制浮点无法精确表示 0.1）</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">0.30000000000000004</button>
+          </div>
+          <div class="quiz-explain" hidden><code>0.1 + 0.2</code> 实际是 <code>0.30000000000000004</code> ≠ 0.3 → <strong>False</strong>。Python 浮点是 IEEE 754 双精度，十进制小数在二进制下无法精确表示。工程实践：金额等精确场景用 <code>Decimal</code> 或按「分」存整数；浮点比较用容差 <code>abs(a - b) &lt; 1e-9</code>。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（字符串驻留·陷阱）：<code>a = "hello"; b = "hello"; print(a is b)</code> 的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">True（简短字符串会被驻留复用）</button>
+            <button class="quiz-option">False（每次赋值都新建字符串）</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">与运行环境有关，无法确定</button>
+          </div>
+          <div class="quiz-explain" hidden>类似小整数缓存，Python 对<strong>简短、只含字母数字下划线的字符串</strong>做驻留（interning）：<code>a is b → True</code>。但这是实现细节——判断字符串内容仍用 <code>==</code>，不要依赖 <code>is</code> 的结果。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（链式比较机制·深水区）：<code>a &lt; b &lt; c</code> 与 <code>a &lt; b and b &lt; c</code> 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">链式写法中间的 b 只计算一次，and 写法计算两次</button>
+            <button class="quiz-option">两者完全等价，没有任何区别</button>
+            <button class="quiz-option">链式写法会短路跳过 b 的计算</button>
+            <button class="quiz-option">链式写法只支持两个比较运算符</button>
+          </div>
+          <div class="quiz-explain" hidden>语义上等价，但<strong>求值次数不同</strong>：<code>a &lt; b &lt; c</code> 中 b <strong>只计算一次</strong>；<code>a &lt; b and b &lt; c</code> 中 b 计算两次。当 b 是带副作用的表达式（如函数调用）时，两者行为可观察地不同——这是面试官追问「区别」时的标准答案。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（内存管理·机制）：<code>del a</code> 对变量 a 做了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">解除引用；对象引用计数归零时被垃圾回收</button>
+            <button class="quiz-option">立即释放对象占用的内存</button>
+            <button class="quiz-option">把变量的值清空为 None</button>
+            <button class="quiz-option">删除变量对应的类型定义</button>
+          </div>
+          <div class="quiz-explain" hidden><code>del a</code> <strong>解除变量与对象的引用</strong>（名字从命名空间移除）；对象何时释放由<strong>引用计数</strong>决定——计数归零才回收（CPython 主机制，辅以标记清除/分代回收处理循环引用）。若还有别的引用，对象不会释放。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
         </div>
       </div>
 

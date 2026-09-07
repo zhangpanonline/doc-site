@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 3 课</p>
       <h1>函数</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/函数/">3.函数</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/函数/">3.函数</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -305,8 +305,9 @@ def merge_dicts(*dicts):
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（闭包·高频）：什么是闭包？闭包的三大要素是？</div>
@@ -334,6 +335,62 @@ print(append_to(2))</code></pre></div>
             <button class="quiz-option">[] 然后 [2]</button>
           </div>
           <div class="quiz-explain" hidden>默认参数在<strong>函数定义时只求值一次</strong>：<code>target=[]</code> 的列表在定义时创建，之后所有不传 target 的调用<strong>共享同一个列表对象</strong>——所以第二次调用追加后是 <code>[1, 2]</code>。正确写法是 None 哨兵模式：<code>target=None</code> + 函数内 <code>if target is None: target = []</code>。经验法则：默认参数慎用可变类型。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（带参装饰器·高频实现题）：实现 <code>@repeat(3)</code> 让函数重复执行 3 次，下列<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">def repeat(n) 返回 decorator(func)，wrapper 里 for 循环调用 func n 次</button>
+            <button class="quiz-option">def repeat(n, func) 两个参数，直接包装</button>
+            <button class="quiz-option">装饰器本体里直接 for 循环执行 func（定义时就执行了）</button>
+            <button class="quiz-option">wrapper 只调用一次 func，把结果乘以 n</button>
+          </div>
+          <div class="quiz-explain" hidden>带参装饰器是<strong>三层结构</strong>：外层 <code>repeat(n)</code> 收参数并返回真正的装饰器 <code>decorator</code>；decorator 返回 wrapper；wrapper 里 <code>for _ in range(n): func(*args, **kwargs)</code> 才实现重复。第二个签名错（装饰器只收函数）✗；第三个把「定义时」与「调用时」混淆，且不返回新函数 ✗；第四个语义错 ✗。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（函数一等公民·概念）：为什么函数名可以当作参数传递、可以赋值给变量？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一切皆对象，函数名是函数对象的引用</button>
+            <button class="quiz-option">函数是特殊的编译期符号</button>
+            <button class="quiz-option">只有内置函数可以传递</button>
+            <button class="quiz-option">函数传递时会自动拷贝一份</button>
+          </div>
+          <div class="quiz-explain" hidden>Python <strong>一切皆对象</strong>：函数名只是函数对象的引用——函数是「一等公民」，可赋值（<code>f2 = f1</code>）、可作参数（map/filter）、可作返回值（闭包）、可存进数据结构。这是理解装饰器、回调、高阶函数的基础。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（传参语义·深水区）：以下代码的输出是？
+<pre><code>def f(x):
+    x = 99
+
+a = 1
+f(a)
+print(a)</code></pre></div>
+          <div class="quiz-options">
+            <button class="quiz-option">1（不可变对象重新赋值不影响外部）</button>
+            <button class="quiz-option">99（函数内修改生效）</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>参数传递的是<strong>对象的引用</strong>：函数内 <code>x = 99</code> 只是让局部名字 x 指向新对象 99，<strong>不影响外部的 a</strong>（a 仍指向 1）。对比：传可变对象（list）并原地修改（append）才会影响外部——「传引用 + 不可变对象重新赋值无效」的完整理解。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（函数元信息·机制）：<code>def f(): """文档"""</code> 后，<code>f.__doc__</code> 与 <code>f.__name__</code> 分别是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">"文档" 与 "f"（函数对象携带元信息）</button>
+            <button class="quiz-option">None 与 None</button>
+            <button class="quiz-option">"文档" 与 "function"</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>函数对象携带<strong>元信息属性</strong>：<code>__doc__</code>（docstring 文档字符串）、<code>__name__</code>（函数名）等——装饰器不加 functools.wraps 会丢的正是它们（面试题二的延伸）。<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题一</a></div>
         </div>
       </div>
 

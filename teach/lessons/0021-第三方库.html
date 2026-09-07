@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 21 课</p>
       <h1>第三方库</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/第三方库/">21.第三方库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/第三方库/">21.第三方库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -260,8 +260,9 @@
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（依赖管理·高频）：项目依赖管理的基本工作流是什么？</div>
@@ -283,6 +284,56 @@
             <button class="quiz-option">排除 2.31.0</button>
           </div>
           <div class="quiz-explain" hidden><code>~=2.31.0</code> 是「兼容版本」约束：允许<strong>同系列小版本更新</strong>（&gt;=2.31.0 且 &lt;3.0），既锁定大版本又自动吸收补丁修复——介于 <code>==</code>（太死）与 <code>&gt;=</code>（太松）之间的常用选择。<a href="https://pip.pypa.io/en/stable/reference/requirement-specifiers/">出处：pip 官方文档 Requirement Specifiers（中文面试题集均有收录）</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（依赖一致性·机制）：<code>pip check</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">检查已装包之间的依赖是否冲突/缺失</button>
+            <button class="quiz-option">检查代码语法错误</button>
+            <button class="quiz-option">检查网络连通性</button>
+            <button class="quiz-option">校验包的下载来源</button>
+          </div>
+          <div class="quiz-explain" hidden><code>pip check</code> 检查<strong>当前环境所有已装包</strong>的依赖声明是否被满足（缺失/版本冲突会列出）——排查「装了一堆包后环境坏了」的第一工具。生产环境排障的标准动作。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（依赖冲突·工程）：A 需要包 X==1.0、B 需要 X==2.0，同时装会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">pip 报依赖冲突或覆盖安装，正确解法是用独立 venv</button>
+            <button class="quiz-option">pip 自动同时保留两个版本</button>
+            <button class="quiz-option">自动选择较新的版本</button>
+            <button class="quiz-option">两个项目只能二选一</button>
+          </div>
+          <div class="quiz-explain" hidden>pip 同一环境只能装一个版本：后装的<strong>覆盖</strong>先装的（或直接报冲突）——A、B 中必有一个坏掉。正确解法：<strong>两个项目各自独立的 venv</strong>（这正是虚拟环境存在的根本原因）。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（锁定策略·工程）：手写 requirements.txt（直接依赖+版本范围）与锁文件（pip freeze/uv.lock）的区别？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">锁文件记录完整依赖树的精确版本，保证环境可复现</button>
+            <button class="quiz-option">两者内容完全相同</button>
+            <button class="quiz-option">requirements.txt 比锁文件更精确</button>
+            <button class="quiz-option">锁文件只记录直接依赖</button>
+          </div>
+          <div class="quiz-explain" hidden>手写清单通常只列<strong>直接依赖</strong>（带范围），每次安装结果可能不同；锁文件记录<strong>整个依赖树</strong>（含传递依赖）的精确版本——任何机器重建出一致环境。团队实践：直接依赖手写进清单、锁文件提交进仓库保证可复现。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（隔离机制·机制）：激活 venv 后 pip 安装的包为什么不会污染全局？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">venv 有自己的 site-packages 且 PATH 优先指向它</button>
+            <button class="quiz-option">包被加密存储</button>
+            <button class="quiz-option">全局环境被自动锁定</button>
+            <button class="quiz-option">venv 会卸载全局的包</button>
+          </div>
+          <div class="quiz-explain" hidden>venv 创建了<strong>独立的解释器副本 + 独立 site-packages</strong>，激活只是把 PATH 指向 venv 的 bin——pip 装到 venv 自己的 site-packages，全局环境毫发无损。理解 PATH 与 site-packages 两级机制，才算真正懂虚拟环境。<a href="https://docs.python.org/3/library/venv.html">出处：Python 官方文档 venv（中文面试题集均有收录）</a></div>
         </div>
       </div>
     </section>

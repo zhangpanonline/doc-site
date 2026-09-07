@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 11 课</p>
       <h1>装饰器</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/装饰器/">11.装饰器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/装饰器/">11.装饰器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -284,8 +284,9 @@ hello()</code></pre></div>
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（装饰器原理·必问）：请解释装饰器的原理与作用。</div>
@@ -307,6 +308,56 @@ hello()</code></pre></div>
             <button class="quiz-option">函数的返回值类型</button>
           </div>
           <div class="quiz-explain" hidden>不加 wraps 时 <code>f.__name__</code> 变成 "wrapper"、<code>__doc__</code> 丢失——影响调试、文档生成、以及依赖 <code>__name__</code> 的工具（如路由框架按函数名注册）。所以面试会说：<strong>wraps 不是可选项</strong>。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（通用装饰器·深水区）：写一个「生产级」装饰器，要求：任意参数透传、保留返回值、保留 <code>__name__</code>/<code>__doc__</code>。下列<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">wrapper(*args, **kwargs) 内 return func(*args, **kwargs)，并用 functools.wraps</button>
+            <button class="quiz-option">wrapper 无参数签名，直接用 func()</button>
+            <button class="quiz-option">透传参数与返回值，但不用 functools.wraps</button>
+            <button class="quiz-option">用了 wraps 但 wrapper 里不 return</button>
+          </div>
+          <div class="quiz-explain" hidden>生产级装饰器三要素缺一不可：① <code>def wrapper(*args, **kwargs)</code> <strong>透明透传任意签名</strong>；② <code>return func(*args, **kwargs)</code> 保留返回值；③ <code>@functools.wraps(func)</code> 保留 <code>__name__</code>/<code>__doc__</code>（调试与路由注册依赖它）。第二个固定签名会崩 ✗；第三个元信息丢失 ✗；第四个返回值丢失 ✗。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（调用计数·实现题）：用装饰器统计函数被调用的次数，下列<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">装饰器闭包里用计数器变量，wrapper 内自增并透传调用</button>
+            <button class="quiz-option">计数器存在全局变量里，装饰器不涉及闭包</button>
+            <button class="quiz-option">在装饰器本体（非 wrapper）里自增计数</button>
+            <button class="quiz-option">计数存在函数的默认参数里</button>
+          </div>
+          <div class="quiz-explain" hidden>正确结构：装饰器函数内 <code>count = 0</code>，wrapper 里 <code>nonlocal count; count += 1</code> 再调用原函数——<strong>闭包计数器</strong>每次调用累计，且计数状态对每个被装饰函数独立。第二个全局计数会串 ✗；第三个只在定义时执行一次 ✗；第四个默认参数可被外部传入污染 ✗。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（组合等价式·机制）：<code>@a @b(3)</code> 装饰函数 f，等价于？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">f = a(b(3)(f))</button>
+            <button class="quiz-option">f = a(b(f, 3))</button>
+            <button class="quiz-option">f = a(3)(b(f))</button>
+            <button class="quiz-option">f = a(b)(3, f)</button>
+          </div>
+          <div class="quiz-explain" hidden>从下往上应用：先执行 <code>b(3)</code> 得到带参装饰器返回的装饰器，再作用于 f → <code>b(3)(f)</code>；然后 a 再包装 → <strong>f = a(b(3)(f))</strong>。装饰器叠加与带参装饰器组合时的展开顺序是深水区必考。<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题四</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（缓存装饰器·机制）：<code>functools.cache</code> / <code>lru_cache</code> 的实现要点是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">以参数为键缓存结果，命中直接返回不再执行函数</button>
+            <button class="quiz-option">让函数多线程并行执行</button>
+            <button class="quiz-option">预编译函数字节码</button>
+            <button class="quiz-option">把函数结果持久化到磁盘</button>
+          </div>
+          <div class="quiz-explain" hidden><code>functools.cache</code>（3.9+）用<strong>参数作键</strong>缓存返回值：相同参数再次调用直接命中缓存（函数体不再执行）——递归斐波那契从指数级降到线性级的关键。要求参数<strong>可哈希</strong>；lru_cache 还可限制缓存大小并查看命中统计（cache_info）。<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题四</a></div>
         </div>
       </div>
     </section>

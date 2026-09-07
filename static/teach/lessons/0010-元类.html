@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 10 课</p>
       <h1>元类</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/元类/">10.元类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/元类/">10.元类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -286,8 +286,9 @@ print(calc.add(3, 5))
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（元类概念·高频）：什么是元类？在什么场景下会用到？</div>
@@ -309,6 +310,56 @@ print(calc.add(3, 5))
             <button class="quiz-option">元类无法实现单例</button>
           </div>
           <div class="quiz-explain" hidden>元类实现单例：在元类 <code>__call__</code>（实例化入口）里按 <code>cls</code> 缓存实例——<code>cls not in cls._instance</code> 时创建并缓存，之后直接返回缓存。相比 <code>__new__</code> 方案，元类方案对「所有使用该元类的类」统一生效。<a href="https://blog.51cto.com/u_14691718/4995821">出处：51CTO「你想要的 Python 面试题都在这里了」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（元类冲突·深水区）：A 的元类是 MetaA、B 的元类是 MetaB（互不继承），执行 <code>class C(A, B): pass</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TypeError：元类冲突（metaclass conflict）</button>
+            <button class="quiz-option">自动选择 MetaA 作为元类</button>
+            <button class="quiz-option">自动选择 MetaB 作为元类</button>
+            <button class="quiz-option">C 退回默认元类 type</button>
+          </div>
+          <div class="quiz-explain" hidden>两个父类元类不同且互不继承时，Python 无法确定 C 的元类 → <strong>TypeError: metaclass conflict</strong>（类定义时就报错）。解法：<code>class CommonMeta(MetaA, MetaB): pass</code> 创建兼容元类，再 <code>class C(A, B, metaclass=CommonMeta)</code>。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处：博客园「史上最全 python 面试题详解（三）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（元类分工·机制）：元类的 <code>__new__</code> 与 <code>__init__</code> 的分工是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__new__ 创建类对象并返回；__init__ 在类创建后初始化</button>
+            <button class="quiz-option">__init__ 创建类对象，__new__ 初始化</button>
+            <button class="quiz-option">两者同时执行，没有先后</button>
+            <button class="quiz-option">元类只有 __new__ 没有 __init__</button>
+          </div>
+          <div class="quiz-explain" hidden>与普通类同构：元类 <code>__new__(mcs, name, bases, namespace)</code> <strong>创建类对象并 return</strong>（真正创建靠 <code>super().__new__</code>）；元类 <code>__init__(cls, name, bases, namespace)</code> 在类对象创建后做<strong>初始化</strong>（不返回值）。「类创建的完整生命周期」是元类深水区的基础。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处：博客园「史上最全 python 面试题详解（三）」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（元类应用·实现题）：用元类实现「方法名必须小写开头」的规范检查（违反时类定义报错），下列<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__new__ 里遍历 namespace 的方法名，违规直接 raise</button>
+            <button class="quiz-option">在 __call__（实例化时）才检查</button>
+            <button class="quiz-option">检查后静默改名，不报错</button>
+            <button class="quiz-option">在普通方法里运行时检查</button>
+          </div>
+          <div class="quiz-explain" hidden>元类 <code>__new__</code> 在<strong>类定义时</strong>执行——遍历 <code>namespace</code> 中 callable 成员的方法名，违规（如大写开头）直接 <code>raise</code> 即可在「写类的瞬间」拦截。第二个实例化才检查，太晚 ✗；第三个静默改名改变行为 ✗；第四个与元类无关 ✗。ORM/框架的命名约束正是这样做。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处同面试题四</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（查找顺序·机制）：类成员查找时，元类属性什么时候会被访问到？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">自身 MRO 链条找不到时，继续沿元类 MRO 查找</button>
+            <button class="quiz-option">元类属性优先级最高，永远先查</button>
+            <button class="quiz-option">元类属性对类不可见</button>
+            <button class="quiz-option">只有实例能访问元类属性</button>
+          </div>
+          <div class="quiz-explain" hidden>类成员查找顺序：① 自身 MRO 链条 → ② <strong>元类 MRO 链条</strong>。类自己的属性优先，找不到才落到元类——所以「在元类上放类属性」可以给一批类提供共享默认值。与实例查找（数据描述符 → 实例 → 类 MRO）对照记忆。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处同面试题四</a></div>
         </div>
       </div>
     </section>

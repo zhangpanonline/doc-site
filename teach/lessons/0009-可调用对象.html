@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 9 课</p>
       <h1>可调用对象</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/可调用对象/">9.可调用对象</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/可调用对象/">9.可调用对象</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -273,8 +273,9 @@ error_log("网络连接失败")</code></pre></div>
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（__call__·高频）：<code>__call__</code> 的作用是什么？</div>
@@ -296,6 +297,56 @@ error_log("网络连接失败")</code></pre></div>
             <button class="quiz-option">用 lambda 表达式保存状态</button>
           </div>
           <div class="quiz-explain" hidden>闭包能做的（状态保存），<strong>可调用对象也能做</strong>：<code>__init__</code> 存状态、<code>__call__</code> 执行逻辑——更面向对象、更易维护。两者是面试中「函数式 vs 面向对象」对比的经典追问。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（类装饰器·深水区）：用类实现装饰器 <code>@Timer</code>（调用函数时打印执行耗时并保留返回值），下列<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__init__ 存 func；__call__ 里计时并 return func(*args, **kwargs)</button>
+            <button class="quiz-option">__call__ 里计时但不 return 原函数结果</button>
+            <button class="quiz-option">__init__ 里直接执行 func（定义时就跑了）</button>
+            <button class="quiz-option">__call__ 不接受任何参数</button>
+          </div>
+          <div class="quiz-explain" hidden>类装饰器三要素：<code>__init__(self, func)</code> 保存原函数（<code>@Timer</code> 即 <code>f = Timer(f)</code>）；<code>__call__(self, *args, **kwargs)</code> 里计时 + <code>return self.func(*args, **kwargs)</code> 透传参数并保留返回值。第二个丢返回值 ✗；第三个混淆定义时/调用时 ✗；第四个无法透传参数 ✗。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（调用协议·陷阱）：实例 obj 的类定义了 <code>__call__</code>（返回 "class"），又执行 <code>obj.__call__ = lambda: "instance"</code>，<code>obj()</code> 返回什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">"class"（调用协议走 type(obj).__call__）</button>
+            <button class="quiz-option">"instance"（实例属性优先）</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>调用协议规定：<code>obj()</code> 永远查找 <code>type(obj).__call__(obj)</code>——<strong>类里定义的 __call__</strong>。给实例挂同名属性<strong>不影响调用</strong>（实例的 <code>__call__</code> 属性在协议中不参与）。这是可调用对象深水区的标准追问。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（partial 机制）：<code>functools.partial(func, a=1)</code> 与闭包实现「固定部分参数」，区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">partial 保留 __name__/__doc__ 等元信息，声明式更简洁</button>
+            <button class="quiz-option">partial 运行更快一个数量级</button>
+            <button class="quiz-option">两者完全等价</button>
+            <button class="quiz-option">partial 只能固定位置参数</button>
+          </div>
+          <div class="quiz-explain" hidden><code>functools.partial</code> 是标准库提供的「参数绑定」工具：返回的新可调用对象<strong>保留原函数的元信息</strong>（__name__/__doc__，可用 partial.__name__ 查看），且支持位置与关键字参数混绑；手写闭包则要自己处理元信息与参数透传。工程上优先用 partial。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（设计选择·机制）：需要「可配置的带状态函数」（如带前缀的日志器），类装饰器/可调用对象与闭包如何选？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">状态多、行为复杂用可调用对象类；逻辑简单用闭包</button>
+            <button class="quiz-option">任何场景都必须用闭包</button>
+            <button class="quiz-option">任何场景都必须用类</button>
+            <button class="quiz-option">两者都不能保存状态</button>
+          </div>
+          <div class="quiz-explain" hidden>工程选型：<strong>状态简单、逻辑一两行</strong>用闭包（轻量）；<strong>状态多、需要多个方法/继承/重用</strong>用定义了 <code>__call__</code> 的类（可配置对象模式）。两者都基于「可调用」协议，面试考察的是选型理由而非唯一答案。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同专家题一</a></div>
         </div>
       </div>
     </section>

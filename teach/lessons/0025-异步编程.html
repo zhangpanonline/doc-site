@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 25 课</p>
       <h1>异步编程</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/异步编程/">25.异步编程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/异步编程/">25.异步编程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -250,8 +250,9 @@ for r in raw_results:
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（锁的区别·高频）：<code>threading.Lock</code> 与 <code>asyncio.Lock</code> 可以互换吗？</div>
@@ -273,6 +274,56 @@ for r in raw_results:
             <button class="quiz-option">gather 会自动重试失败任务</button>
           </div>
           <div class="quiz-explain" hidden><code>gather</code>：默认任何异常立即传播（可用 return_exceptions 改）；<code>TaskGroup</code>（3.11+）：<strong>结构化并发</strong>——任一子任务异常会<strong>取消组内所有其他任务</strong>并保证退出前全部完成。选择依据：结果顺序与失败行为。<a href="https://www.skillup.host/backend/3404.html">出处：Skillup「Python 后端面试题（asyncio 高频面试题汇总）」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（异步死锁·深水区）：两个协程按相反顺序获取两把 <code>asyncio.Lock</code>，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">死锁：互相等待对方释放，事件循环整体卡住</button>
+            <button class="quiz-option">锁自动检测并报错</button>
+            <button class="quiz-option">GIL 会打破死锁</button>
+            <button class="quiz-option">后获取的协程自动让出锁</button>
+          </div>
+          <div class="quiz-explain" hidden>与线程死锁同构：<code>asyncio.Lock</code> <strong>默认无超时</strong>，两协程反向获取两把锁 → 互相等待 → 事件循环整体卡死（且没有报错）。工程实践：一致的锁顺序 + 更小临界区 + <code>await asyncio.wait_for(lock.acquire(), timeout=...)</code> 有界等待。<a href="https://blog.csdn.net/itAred/article/details/147422360">出处：CSDN「终面倒计时 5 分钟：候选人用 trio 破解 asyncio 死锁危机」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（TaskGroup 异常·机制）：<code>asyncio.TaskGroup</code> 中某个子任务抛异常，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">取消组内其他任务，异常以 ExceptionGroup 抛出</button>
+            <button class="quiz-option">其他任务继续运行不受影响</button>
+            <button class="quiz-option">异常被静默吞掉</button>
+            <button class="quiz-option">只取消抛出异常的任务</button>
+          </div>
+          <div class="quiz-explain" hidden>TaskGroup 是<strong>结构化并发</strong>：任一子任务异常 → <strong>取消组内所有其他任务</strong> → 退出后以 <code>ExceptionGroup</code>（3.11+）聚合抛出所有异常。与 gather 的「默认异常即抛、其余继续」形成对比——失败行为是两者的选择依据。<a href="https://www.skillup.host/backend/3404.html">出处：Skillup「Python 后端面试题（asyncio 高频汇总）」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（死锁诊断·工程）：生产环境异步服务疑似死锁，第一时间该做什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">PYTHONASYNCIODEBUG=1 观察 pending 任务与卡住的 await</button>
+            <button class="quiz-option">直接重启服务碰运气</button>
+            <button class="quiz-option">把 asyncio 全部改成多线程</button>
+            <button class="quiz-option">在代码里到处加 print</button>
+          </div>
+          <div class="quiz-explain" hidden>诊断异步死锁的标准动作：开 <strong>PYTHONASYNCIODEBUG</strong>（暴露「某任务长期 pending」「Event loop is closed」等静默失败），配合 <code>asyncio.all_tasks()</code> dump 各任务状态，定位卡在哪个 await（锁/网络）。「print 输出顺序不可信」是并发诊断的第一课。<a href="https://www.php.cn/faq/2586478.html">出处：PHP 中文站「如何在 Python 生产环境下调试异步死锁与任务阻塞问题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（入口规范·深水区）：生产环境为什么不推荐裸用 <code>asyncio.run</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会掩盖死锁信号并强制 cancel 未完成任务</button>
+            <button class="quiz-option">运行速度太慢</button>
+            <button class="quiz-option">语法已废弃</button>
+            <button class="quiz-option">不支持协程参数</button>
+          </div>
+          <div class="quiz-explain" hidden><code>asyncio.run</code> 退出时会<strong>强制 cancel 所有未完成任务</strong>并静默关闭循环——异常未处理时静默退出、死锁信号（哪些任务没跑完）被掩盖。生产实践：手动管理循环，退出前用 <code>asyncio.all_tasks()</code> 检查残留任务、cancel 后 gather 收尾。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处：Runebook（Python 官方文档中文版）</a></div>
         </div>
       </div>
     </section>

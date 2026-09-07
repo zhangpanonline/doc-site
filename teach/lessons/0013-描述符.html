@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 13 课</p>
       <h1>描述符</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/描述符/">13.描述符</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/描述符/">13.描述符</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -307,8 +307,9 @@ print(a.__dict__)             # ?</code></pre></div>
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（描述符应用·高频）：<code>@property</code>、<code>@classmethod</code>、<code>@staticmethod</code> 的底层机制是？</div>
@@ -330,6 +331,56 @@ print(a.__dict__)             # ?</code></pre></div>
             <button class="quiz-option">Python 无法实现属性类型检查</button>
           </div>
           <div class="quiz-explain" hidden>经典 Typed 描述符：<code>__set__</code> 里 <code>if not isinstance(value, self.expected_type): raise TypeError(...)</code>，配合 <code>__set_name__</code> 记录属性名用于报错信息——C/C++ 式的属性类型约束就是这样在 Python 里实现的。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（类型检查描述符·实现题）：实现 <code>Typed</code> 描述符（age 必须是 int，违反抛 TypeError 并报出属性名），下列<strong>正确</strong>的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">__set_name__ 记录属性名；__set__ 里 isinstance 校验，失败抛 TypeError</button>
+            <button class="quiz-option">在 __get__ 里做类型检查</button>
+            <button class="quiz-option">校验失败静默跳过赋值</button>
+            <button class="quiz-option">属性名硬编码在报错信息里</button>
+          </div>
+          <div class="quiz-explain" hidden>标准实现：<code>__set_name__(self, owner, name)</code> 记录属性名（用于报错信息）；<code>__set__</code> 里 <code>isinstance(value, self.expected_type)</code> 校验，失败 <code>raise TypeError(f"{self.name} 必须是 ...")</code>；<code>__get__</code> 从 <code>instance.__dict__</code> 取值。第二个检查时机错 ✗；第三个吞掉非法值 ✗；第四个换属性名要改代码 ✗。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（类级覆盖·陷阱）：<code>class A: x = MyDescriptor()</code>，执行 <code>A.x = 20</code> 之后，<code>a.x</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">返回 20（类属性被普通值覆盖，描述符失效）</button>
+            <button class="quiz-option">仍走描述符 __get__</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">返回 None</button>
+          </div>
+          <div class="quiz-explain" hidden><code>A.x = 20</code> 是<strong>类级赋值</strong>：直接把类属性替换成普通值 20——描述符对象被覆盖，实例读 <code>a.x</code> 得到 20，<code>__get__</code> 不再触发。这是「描述符拦截的是属性访问、管不了类级覆盖」的边界认知题。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（property 本质·机制）：<code>@property</code> 生成的 property 对象是哪种描述符？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据描述符（实现了 __get__/__set__/__delete__）</button>
+            <button class="quiz-option">非数据描述符（只有 __get__）</button>
+            <button class="quiz-option">不是描述符</button>
+            <button class="quiz-option">普通函数对象</button>
+          </div>
+          <div class="quiz-explain" hidden>property 是<strong>数据描述符</strong>：实现了 <code>__get__</code>/<code>__set__</code>/<code>__delete__</code> 三件套——所以实例字典里同名属性压不过它（这正是第 7 课查找顺序的应用）。理解了这一点，property 的「只读/验证/拦截」行为就全部可推导。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题三</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（类级访问·机制）：<code>A.x</code>（通过类访问描述符）时，<code>__get__</code> 收到的 instance 参数是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">None（通过类访问时没有实例）</button>
+            <button class="quiz-option">A 类的实例对象</button>
+            <button class="quiz-option">A 类本身</button>
+            <button class="quiz-option">描述符对象自己</button>
+          </div>
+          <div class="quiz-explain" hidden>通过<strong>类</strong>访问描述符时 instance 为 <strong>None</strong>（owner 是类本身）——所以描述符 <code>__get__</code> 要处理 <code>instance is None</code> 的分支（通常返回描述符自身，如 classmethod 的行为）。漏掉这个分支是描述符实现的高频 bug。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题三</a></div>
         </div>
       </div>
     </section>

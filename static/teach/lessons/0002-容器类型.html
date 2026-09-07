@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 2 课</p>
       <h1>容器类型</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/容器类型/">2.容器类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/容器类型/">2.容器类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -249,8 +249,9 @@ else:
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（深浅拷贝·高频必考）：<code>original = [1, [2, 3], [4, 5]]</code>，执行 <code>shallow = original[:]</code> 后 <code>shallow[1][0] = 200</code>，此时 <code>original[1][0]</code> 的值是？</div>
@@ -272,6 +273,56 @@ else:
             <button class="quiz-option">(1, [2, 3], 3)</button>
           </div>
           <div class="quiz-explain" hidden>元组的「不可变」指<strong>引用不可变</strong>：<code>t[1]</code> 指向的列表对象本身是可变类型，<code>append</code> 改的是列表的内容（引用没换）→ 合法，输出 <code>(1, [2, 3])</code>。这也是「为什么元组能作字典键」追问的伏笔：内含可变对象的元组不可哈希。<a href="https://www.cnblogs.com/MaxCalvin/articles/19258458">出处：博客园「Python 数据结构与内存管理深究——测试开发进阶笔记」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（小整数缓存·高频陷阱）：关于 Python 的小整数缓存机制，正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">启动时预缓存 [-5, 256]，该范围内 is 判等通常为 True</button>
+            <button class="quiz-option">所有整数都缓存，is 判等永远可靠</button>
+            <button class="quiz-option">只有 0 和 1 被缓存</button>
+            <button class="quiz-option">小整数缓存只在函数内部生效</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 启动时把 <strong>[-5, 256]</strong> 的小整数预创建并缓存：<code>a = 256; b = 256</code> 时 <code>a is b → True</code>（引用同一对象）；超出范围通常新建对象。注意：<strong>.py 文件里 <code>257 is 257</code> 可能因编译器常量折叠也为 True</strong>，面试要说明场景差异。经验法则：值比较用 <code>==</code>，只有 None/True/False 等单例才用 <code>is</code>。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（元组可哈希·陷阱）：<code>t = (1, [2]); hash(t)</code> 会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TypeError：含可变元素的元组不可哈希</button>
+            <button class="quiz-option">正常返回哈希值</button>
+            <button class="quiz-option">返回 0</button>
+            <button class="quiz-option">返回元组的 id</button>
+          </div>
+          <div class="quiz-explain" hidden>元组可哈希的前提是<strong>所有元素都可哈希</strong>：<code>(1, [2])</code> 内含可变列表 → <code>hash(t)</code> 抛 TypeError，不能作字典键。「元组能作键」的说法要加限定：内含可变对象的元组不行。<a href="https://www.cnblogs.com/MaxCalvin/articles/19258458">出处：博客园「Python 数据结构与内存管理深究」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（遍历中修改·深水区）：<code>for k in d: del d[k]</code>（遍历字典时删除元素）会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">RuntimeError：迭代期间字典大小改变</button>
+            <button class="quiz-option">正常删除所有元素</button>
+            <button class="quiz-option">静默跳过部分元素</button>
+            <button class="quiz-option">抛出 KeyError</button>
+          </div>
+          <div class="quiz-explain" hidden>遍历期间修改容器大小会抛 <strong>RuntimeError: dictionary changed size during iteration</strong>。安全做法：遍历<strong>键的副本</strong> <code>for k in list(d):</code>，或先收集要删的键再删——列表遍历时删除元素同理（索引错乱/漏删）。<a href="https://www.ihonker.com/archiver/tid-35131.html">出处：红客联盟「Python 面试必避 20 个代码坑」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（去重保序·工程题）：<code>list(set(nums))</code> 去重后的顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不保证与原列表一致（集合无序）</button>
+            <button class="quiz-option">永远保持原列表的顺序</button>
+            <button class="quiz-option">永远是升序</button>
+            <button class="quiz-option">永远是降序</button>
+          </div>
+          <div class="quiz-explain" hidden>集合<strong>无序</strong>：<code>list(set(nums))</code> 虽能去重但顺序不保证。要「去重且保序」，工程常用 <code>list(dict.fromkeys(nums))</code>（3.7+ 字典保序）。这是数据清洗面试的高频追问。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
         </div>
       </div>
 

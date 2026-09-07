@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 26 课</p>
       <h1>多线程和多进程</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/多线程和多进程/">26.多线程和多进程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/多线程和多进程/">26.多线程和多进程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -230,8 +230,9 @@ def withdraw(account, amount, person_name):
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（GIL·必问）：什么是 GIL？它对多线程有什么影响？如何规避？</div>
@@ -253,6 +254,56 @@ def withdraw(account, amount, person_name):
             <button class="quiz-option">并行快于并发是必然的</button>
           </div>
           <div class="quiz-explain" hidden><strong>并发</strong>：多个任务宏观上同时推进（单核靠任务切换也能实现，如协程）；<strong>并行</strong>：多个任务微观上<strong>真正同时运行</strong>（需要多核硬件，如多进程）。面试易错点：误以为多线程总能利用多核实现并行——单核上多线程只是并发。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（死锁理论·深水区）：死锁产生的四个必要条件是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">互斥、持有并等待、不可剥夺、循环等待</button>
+            <button class="quiz-option">竞态、饥饿、锁冲突、上下文切换</button>
+            <button class="quiz-option">共享内存、多线程、多进程、GIL</button>
+            <button class="quiz-option">阻塞、超时、重试、等待</button>
+          </div>
+          <div class="quiz-explain" hidden>死锁四必要条件：① <strong>互斥</strong>（资源独占）；② <strong>持有并等待</strong>（拿着 A 等 B）；③ <strong>不可剥夺</strong>（不能强抢别人的锁）；④ <strong>循环等待</strong>（A→B→A 的环）。破坏任意一个即可避免死锁——「固定锁顺序」破坏的就是循环等待。面试官常问「四个条件分别怎么破坏」。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（threading.local·机制）：<code>threading.local()</code> 解决的问题是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每个线程独立的变量副本，互不干扰</button>
+            <button class="quiz-option">让线程运行更快</button>
+            <button class="quiz-option">跨线程共享变量</button>
+            <button class="quiz-option">线程间加锁通信</button>
+          </div>
+          <div class="quiz-explain" hidden><code>threading.local()</code> 为<strong>每个线程</strong>提供独立的属性命名空间（同一属性名各线程各存各的）——典型场景：Web 框架里「当前请求上下文」每线程一份，不用显式传参。本质是按线程 id 隔离的字典。<a href="https://cloud.tencent.com/developer/article/2409986">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（GIL 边界·深水区）：为什么 numpy 的重计算在多线程下能利用多核？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">C 扩展在计算期间释放 GIL</button>
+            <button class="quiz-option">numpy 使用了多进程</button>
+            <button class="quiz-option">numpy 不受 Python 解释器管理</button>
+            <button class="quiz-option">GIL 对数值计算不生效</button>
+          </div>
+          <div class="quiz-explain" hidden>GIL 约束的是<strong>Python 字节码</strong>的执行；numpy 的重活都在 C 层完成，C 扩展可以在计算期间<strong>主动释放 GIL</strong>——所以多线程执行 numpy 运算能真正并行。这是「GIL 不是万能瓶颈」的边界认知：CPU 密集加速要么多进程、要么 C 扩展释放 GIL。<a href="https://opc.csdn.net/6a8018bc10ee7a33f29b4594.html">出处：CSDN「Python 面试突击 · 大厂高频面试题：从 GIL 锁机制到内存管理」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（锁粒度·设计）：临界区越大越安全吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不是：粒度太大会降低并发度，还易诱发死锁</button>
+            <button class="quiz-option">是的：越大越不容易出竞态</button>
+            <button class="quiz-option">粒度与安全性无关</button>
+            <button class="quiz-option">临界区必须覆盖整个函数</button>
+          </div>
+          <div class="quiz-explain" hidden>锁粒度是<strong>安全与并发的权衡</strong>：粒度太小漏掉竞态窗口；粒度太大线程串行化（并发度归零）、还容易在临界区里嵌套其他锁诱发死锁。工程原则：锁只包<strong>必须原子</strong>的最小检查+修改片段，耗时的 I/O 别放锁里。<a href="https://cloud.tencent.com/developer/article/2409986">出处同面试题三</a></div>
         </div>
       </div>
     </section>

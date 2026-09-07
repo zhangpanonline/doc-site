@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 6 课</p>
       <h1>类和对象</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/类和对象/">6.类和对象</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/类和对象/">6.类和对象</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -287,8 +287,9 @@ class LinkedList:
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（菱形继承·高频）：<code>class D(B, C)</code>，B、C 都继承 A，且四个类都有 <code>who()</code>。调用 <code>D().who()</code> 走哪个？</div>
@@ -310,6 +311,56 @@ class LinkedList:
             <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>items = []</code> 是<strong>类属性</strong>：a1.items 沿查找链找到类字典里那个唯一的列表，append 改的是它——a2.items 同样指向它 → <strong>[1]</strong>。这就是「可变类属性的幽灵共享」，与可变默认参数陷阱同源。需要实例独立时应在 <code>__init__</code> 里 <code>self.items = []</code>。<a href="https://wenku.csdn.net/doc/6et562nus6">出处：CSDN 文库「Python 面试核心考点解析：面向对象」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（super 规范·深水区）：多继承体系中，为什么「永远不要写 <code>Animal.__init__(self, name)</code>」这种硬编码父类调用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">破坏 MRO 协作链，菱形继承下父类可能被重复调用或漏调用</button>
+            <button class="quiz-option">硬编码调用速度更慢</button>
+            <button class="quiz-option">语法上不允许这种写法</button>
+            <button class="quiz-option">硬编码调用会让子类无法重写 __init__</button>
+          </div>
+          <div class="quiz-explain" hidden>硬编码父类名会<strong>破坏 super 的 MRO 协作链</strong>：菱形继承（D(B,C)，B、C 都继承 A）中，B 里硬编码 <code>A.__init__</code> 会绕过 C 直接调 A，而 C 的初始化被跳过；若 B、C 都硬编码，A 被初始化两次。用 <code>super()</code> 才能保证「每个父类方法只执行一次、按 MRO 顺序协作」。<a href="https://blog.csdn.net/weixin_42594427/article/details/151936271">出处：CSDN「一份高质量的 Python 基础知识笔试题完整解析」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（C3 线性化·机制）：Python 3 计算 MRO 的三条准则，正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">子类先于父类；按括号顺序查父类；多选时取第一个</button>
+            <button class="quiz-option">父类先于子类；随机顺序；就近原则</button>
+            <button class="quiz-option">深度优先；只查第一个父类</button>
+            <button class="quiz-option">宽度优先；父类全部查完再查子类</button>
+          </div>
+          <div class="quiz-explain" hidden>C3 线性化的三条准则：① <strong>子类永远先于父类</strong>被检查；② 多个父类按<strong>继承括号中的顺序</strong>检查；③ 若下一个类有多个合法选择，取<strong>第一个父类</strong>。据此可手推任意继承图的 MRO——面试官常让当场推一个菱形。<a href="http://wap.mobiletrain.org/interview/python/98752.html">出处：千锋教育「Python 面试题：阅读下面的代码说出运行结果」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（super 传参·深水区）：多继承与单继承使用 super 的传参规则是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">多继承全量传参；单继承只传父类方法所需参数</button>
+            <button class="quiz-option">两种情况都全量传参</button>
+            <button class="quiz-option">两种情况都只传父类所需</button>
+            <button class="quiz-option">super 不接受任何参数</button>
+          </div>
+          <div class="quiz-explain" hidden>经典规则：<strong>多继承</strong>时 super 链上的每个 <code>__init__</code> 都可能被接力调用，所以必须<strong>全量透传参数</strong>（*args 风格，避免某个中间类因签名不匹配而崩）；<strong>单继承</strong>时只传<strong>父类方法所需</strong>的参数即可。传参规则错了是 super 深水区的高频 bug 源。<a href="https://blog.csdn.net/m0_38144883/article/details/125990040">出处：CSDN「Python 面试题——super 参数传递」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（硬编码调用·陷阱）：菱形继承 D(B, C)（B、C 都继承 A），B、C 的 <code>__init__</code> 都硬编码 <code>A.__init__(self)</code>，D 显式依次调用 B、C 的 <code>__init__</code>。A 的 <code>__init__</code> 会被执行几次？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">2 次（硬编码调用绕过 MRO 去重）</button>
+            <button class="quiz-option">1 次（super 机制自动去重）</button>
+            <button class="quiz-option">3 次</button>
+            <button class="quiz-option">0 次</button>
+          </div>
+          <div class="quiz-explain" hidden>硬编码 <code>A.__init__(self)</code> <strong>绕过 super 的 MRO 协作</strong>：B 里调一次、C 里调一次 → A 初始化<strong>两次</strong>。若用 super 协作链，A 只执行一次且按 MRO 顺序。这是「为什么必须用 super」的直接证据（面试题三的量化版）。<a href="https://blog.csdn.net/weixin_42594427/article/details/151936271">出处同面试题三</a></div>
         </div>
       </div>
     </section>

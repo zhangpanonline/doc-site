@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 24 课</p>
       <h1>协程 Coroutine</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/协程/">24.协程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/协程/">24.协程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -318,8 +318,9 @@ async def test():
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（async/await 原理·必问）：<code>async</code> 与 <code>await</code> 关键字的作用？</div>
@@ -341,6 +342,56 @@ async def test():
             <button class="quiz-option">协程有 GIL 保护，不会出错</button>
           </div>
           <div class="quiz-explain" hidden><strong>协程也会有竞态</strong>：协程在 <code>await</code> 处切换，若「读共享变量 → await → 写共享变量」被打断，多个协程交错修改共享数据仍会出错（如第 25 课的 Lock 示例）。单线程只是「不会同时执行」，不是「不会交错」。<a href="https://cloud.tencent.com/developer/article/2409986">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（嵌套 run·深水区）：在已运行的事件循环里（协程内）再调 <code>asyncio.run(...)</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">RuntimeError：不能从正在运行的循环中调用</button>
+            <button class="quiz-option">正常运行，内部创建新循环</button>
+            <button class="quiz-option">自动复用当前循环</button>
+            <button class="quiz-option">静默忽略嵌套调用</button>
+          </div>
+          <div class="quiz-explain" hidden><code>asyncio.run</code> 被设计为<strong>同步代码的唯一顶层入口</strong>：协程内（或任何循环运行中）再调它抛 <strong>RuntimeError: asyncio.run() cannot be called from a running event loop</strong>。协程内要并发用 <code>await</code> 或 <code>create_task</code>——这是异步新人必踩的坑。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处：Runebook（Python 官方文档中文版）</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（GC 风险·深水区）：<code>asyncio.create_task(coro())</code> 的返回值不保存会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">任务可能被垃圾回收，协程没跑完就消失</button>
+            <button class="quiz-option">完全没有影响</button>
+            <button class="quiz-option">任务会自动被永久保留</button>
+            <button class="quiz-option">抛出异常提醒</button>
+          </div>
+          <div class="quiz-explain" hidden>事件循环只对 Task 保持<strong>弱引用</strong>：不保存返回值的 Task 可能在完成前被<strong>垃圾回收</strong>（后台任务「消失」）。官方文档明确要求：create_task 的结果一定要存进变量（并适时 await/gather）。这是并发编程的经典静默坑。<a href="https://runebook.dev/en/docs/python/library/asyncio-task/creating-tasks">出处：Runebook（Python 官方文档中文版）</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（协程归宿·机制）：协程对象的三种合法归宿是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">被 await、被 create_task 调度、被 close 关闭</button>
+            <button class="quiz-option">只能被 await，没有其他方式</button>
+            <button class="quiz-option">只能被 create_task 调度</button>
+            <button class="quiz-option">创建后自动运行</button>
+          </div>
+          <div class="quiz-explain" hidden>协程对象只有三种合法命运：<strong>被 await</strong>、<strong>被 create_task 调度</strong>、<strong>被 close() 关闭</strong>——三者都不是就触发 <code>RuntimeWarning: coroutine was never awaited</code>（debug 模式更明显）。这是「忘记 await」的官方判定标准。<a href="https://runebook.dev/en/docs/python/library/asyncio-task/creating-tasks">出处同面试题四</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（阻塞传导·机制）：协程 A 中调用了同步阻塞函数（如 <code>time.sleep(5)</code>），整个事件循环会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">全部任务卡住 5 秒（单线程被阻塞）</button>
+            <button class="quiz-option">其他协程照常运行</button>
+            <button class="quiz-option">阻塞函数自动转成异步</button>
+            <button class="quiz-option">抛异常中断循环</button>
+          </div>
+          <div class="quiz-explain" hidden>事件循环是<strong>单线程</strong>的：任何协程里的同步阻塞（time.sleep、同步网络请求）都会卡住整个循环，所有任务暂停 5 秒——阻塞具有「传导性」。规范：<code>await asyncio.sleep</code> 或 <code>await asyncio.to_thread(阻塞函数)</code>。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处同面试题三</a></div>
         </div>
       </div>
     </section>

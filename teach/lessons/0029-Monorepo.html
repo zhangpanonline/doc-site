@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 29 课</p>
       <h1>Monorepo</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/Monorepo/">29.Monorepo</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/Monorepo/">29.Monorepo</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -222,8 +222,9 @@
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（monorepo vs multirepo·工程必问）：什么场景选 Monorepo？</div>
@@ -245,6 +246,56 @@
             <button class="quiz-option">创建 shared 包</button>
           </div>
           <div class="quiz-explain" hidden>这是 uv workspace 的<strong>核心机制</strong>：声明后 <code>shared</code> 依赖从工作区内的同名成员包<strong>源码链接</strong>（本地直接引用，修改即时生效），不会去 PyPI 下载；同名冲突时 workspace 优先。<a href="https://docs.astral.sh/uv/concepts/projects/workspaces/">出处：uv 官方文档 Using workspaces（中文技术社区广泛收录）</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（循环依赖·深水区）：workspace 里 shared 与 agents 互相依赖（循环依赖），uv 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">解析时报错，提示检测到依赖环</button>
+            <button class="quiz-option">自动打破循环正常安装</button>
+            <button class="quiz-option">静默忽略其中一个依赖</button>
+            <button class="quiz-option">循环依赖没有危害</button>
+          </div>
+          <div class="quiz-explain" hidden>workspace 的依赖图是<strong>有向无环图（DAG）</strong>：成员间循环依赖会让 uv 解析<strong>报错</strong>——依赖环意味着职责划分出了问题。解法：抽出公共部分下沉（如 shared 的公共段拆成 shared-core），让依赖方向单向。<a href="https://docs.astral.sh/uv/concepts/projects/workspaces/">出处：uv 官方文档 Using workspaces</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（发布策略·工程）：monorepo 里多个包，发布策略如何选？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">按变更影响逐包发布（changed-based 发布）</button>
+            <button class="quiz-option">每次改动全量发布所有包</button>
+            <button class="quiz-option">所有包共用一个版本号</button>
+            <button class="quiz-option">monorepo 无法单独发布某个包</button>
+          </div>
+          <div class="quiz-explain" hidden>Monorepo 的最佳实践是<strong>基于变更的逐包发布</strong>：只发布本次改动实际影响的包（配合 <code>uv build --package 包名</code>），版本各自独立——全量发布会造成无谓的版本号膨胀与下游升级负担。这是「单一仓库、多包版本」的工程核心。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（同名冲突·机制）：workspace 成员包与 PyPI 上同名包都存在，如何强制用 PyPI 版本？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">sources 里写 workspace = false</button>
+            <button class="quiz-option">删除 workspace 成员包</button>
+            <button class="quiz-option">无法强制，workspace 永远优先</button>
+            <button class="quiz-option">改 PyPI 上的包名</button>
+          </div>
+          <div class="quiz-explain" hidden>同名时默认 workspace 优先；要强制走 PyPI 写 <code>[tool.uv.sources] 包名 = { workspace = false }</code>——这是「本地影子包」与「发布版」并存的开关。理解这个开关说明吃透了 sources 的解析优先级。<a href="https://docs.astral.sh/uv/concepts/projects/workspaces/">出处：uv 官方文档 Using workspaces</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（增量 CI·工程）：monorepo 的 CI 如何避免「改一个包、全量重测」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">按变更影响面检测（affected 检测），只测相关包</button>
+            <button class="quiz-option">所有包每次都全量测试</button>
+            <button class="quiz-option">CI 不跑测试</button>
+            <button class="quiz-option">只测试最后一个包</button>
+          </div>
+          <div class="quiz-explain" hidden>Monorepo CI 的关键是<strong>增量检测</strong>：通过依赖图计算本次变更<strong>影响了哪些包</strong>（本包 + 依赖它的下游包），只对这些包跑测试/构建——全量重测在包多时无法接受。这是 monorepo 选型时「统一 CI，可增量检测受影响的包」优势的具体实现。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题四</a></div>
         </div>
       </div>
     </section>

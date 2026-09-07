@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 22 课</p>
       <h1>事件循环 Event Loop</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/事件循环/">22.事件循环</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/事件循环/">22.事件循环</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -335,8 +335,9 @@ print("循环已停止")</code></pre></div>
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（并发模型·高频）：asyncio 单线程为什么能实现高并发？事件循环的作用是？</div>
@@ -358,6 +359,56 @@ print("循环已停止")</code></pre></div>
             <button class="quiz-option">随机切换</button>
           </div>
           <div class="quiz-explain" hidden>协程是<strong>协作式调度</strong>：只有在遇到 <code>await</code> 时才暂停切换；没有 await 的代码连续执行不会被打断——这与线程的「抢占式」完全不同。追问常接：<code>await asyncio.sleep(0)</code> 为什么能让出执行权。<a href="https://cloud.tencent.com/developer/article/2409986">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（回调异常·深水区）：<code>call_soon</code> 注册的回调里抛了异常，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">异常从 run_forever 向上传播，循环中止</button>
+            <button class="quiz-option">异常被静默吞掉</button>
+            <button class="quiz-option">异常只打印日志，循环继续</button>
+            <button class="quiz-option">回调被自动重试</button>
+          </div>
+          <div class="quiz-explain" hidden>回调中的未捕获异常会<strong>穿过 run_forever 抛给调用者</strong>（循环随之中止）——所以生产代码的回调必须自己 try/except，或注册异常处理器（loop.set_exception_handler）统一兜底。这是事件循环错误处理的核心机制题。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处：Runebook（Python 官方文档中文版）</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（线程安全·机制）：<code>call_soon_threadsafe</code> 与 <code>call_soon</code> 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">threadsafe 版可以从其他线程安全地向循环提交回调</button>
+            <button class="quiz-option">两者完全一样</button>
+            <button class="quiz-option">threadsafe 版只能在主线程使用</button>
+            <button class="quiz-option">call_soon 已经支持多线程</button>
+          </div>
+          <div class="quiz-explain" hidden><code>call_soon</code> 只能在<strong>事件循环所在线程</strong>调用；从其他线程提交任务必须用 <code>call_soon_threadsafe</code>（内部做线程安全的唤醒）——「异步世界」与「多线程世界」之间的标准桥梁。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（线程亲和性·机制）：在子线程里 await 主线程创建的 Task/Future 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">RuntimeError：Future/Task 绑定创建它的循环与线程</button>
+            <button class="quiz-option">正常工作，asyncio 自动协调</button>
+            <button class="quiz-option">任务自动迁移到子线程</button>
+            <button class="quiz-option">任务被静默取消</button>
+          </div>
+          <div class="quiz-explain" hidden>asyncio 的 Future/Task <strong>绑定创建它的循环与线程</strong>：跨线程 await 会抛 RuntimeError——事件循环不是线程安全的。需要跨线程协作用 <code>run_coroutine_threadsafe</code>（返回 concurrent.futures.Future 供子线程等待）。这是 asyncio 线程模型的深水区。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处：Runebook（Python 官方文档中文版）</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（调度细节·深水区）：<code>_run_once</code> 阻塞等待 I/O 期间，到期的延时任务会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">超时返回后重新处理延时队列，到期项进 ready</button>
+            <button class="quiz-option">要等 I/O 事件发生才会处理</button>
+            <button class="quiz-option">被直接丢弃</button>
+            <button class="quiz-option">立即中断阻塞提前处理</button>
+          </div>
+          <div class="quiz-explain" hidden>按 <code>_run_once</code> 五步：阻塞等待的 timeout 恰好是「最近延时任务的到期时间」——<strong>超时返回后重新处理延时队列</strong>（把到期项移入 ready），循环继续。I/O 与定时器的统一调度正是事件循环的精妙之处。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处同专家题一</a></div>
         </div>
       </div>
     </section>

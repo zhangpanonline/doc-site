@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 20 课</p>
       <h1>标准库</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/标准库/">20.标准库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/标准库/">20.标准库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -261,8 +261,9 @@ def merge_markdown(files: list[str], output: str) -> None:
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（文件操作·高频）：读写文件的标准姿势是？为什么推荐 with open？</div>
@@ -284,6 +285,56 @@ def merge_markdown(files: list[str], output: str) -> None:
             <button class="quiz-option">r"^(#+)(.+)$"</button>
           </div>
           <div class="quiz-explain" hidden><code>^(#{1,6})\s+(.+)$</code> + <code>re.MULTILINE</code>：<code>{1,6}</code> 限定井号个数、<code>\s+</code> 要求标题前有空白、两个捕获组分别拿井号与内容——这也是作业二合并器的核心正则。<a href="https://wenku.csdn.net/doc/6et562nus6">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（路径拼接陷阱·深水区）：<code>os.path.join("/a", "/b")</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">"/b"（绝对路径参数会覆盖前面的部分）</button>
+            <button class="quiz-option">"/a/b"</button>
+            <button class="quiz-option">"/a//b"</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>os.path.join 的经典陷阱：后续参数若是<strong>绝对路径</strong>，会<strong>丢弃之前拼接的所有内容</strong> → <code>"/b"</code>。工程上拼接用户输入路径前必须先检查/清洗（如去掉前导 /），否则路径穿越类 bug 由此而生。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（pathlib·机制）：<code>pathlib.Path</code> 相比 <code>os.path</code> 的优势是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">面向对象、跨平台、链式调用、原生支持 / 操作符</button>
+            <button class="quiz-option">运行速度更快</button>
+            <button class="quiz-option">是 os.path 的字符串别名</button>
+            <button class="quiz-option">只在 Windows 上可用</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Path("a") / "b" / "c.txt"</code>：面向对象（方法挂在对象上）、<strong>跨平台统一分隔符</strong>、链式可读（<code>.read_text()</code> 等一体集成）——现代 Python 代码的标准选择，os.path 字符串风格正逐步退役。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（大文件处理·工程）：处理 10GB 文本文件的正确姿势是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">逐行/分块流式处理，任意时刻内存只占一小块</button>
+            <button class="quiz-option">read() 一次性读入再处理</button>
+            <button class="quiz-option">readlines() 读入列表再逐行处理</button>
+            <button class="quiz-option">先复制成多个小文件</button>
+          </div>
+          <div class="quiz-explain" hidden>大文件必须<strong>流式处理</strong>：<code>for line in f:</code> 或 <code>f.read(块大小)</code> 分块——任意时刻内存中只有当前一行/一块；read()/readlines() 会把整个文件载入内存，10GB 直接爆掉。这是「生成器惰性思想」在文件 I/O 上的标准应用。<a href="https://cloud.tencent.com/developer/article/2409961">出处：腾讯云「Python 高级特性解析与面试应对策略」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（正则贪婪·机制）：<code>re.findall(r"&lt;p&gt;(.*)&lt;/p&gt;", "&lt;p&gt;a&lt;/p&gt;&lt;p&gt;b&lt;/p&gt;")</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">["a&lt;/p&gt;&lt;p&gt;b"]（贪婪匹配尽可能长）</button>
+            <button class="quiz-option">["a", "b"]（匹配两段）</button>
+            <button class="quiz-option">["a&lt;/p&gt;", "&lt;p&gt;b"]</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>.*</code> 是<strong>贪婪匹配</strong>：从第一个 &lt;p&gt; 一直吃到<strong>最后一个</strong> &lt;/p&gt; → <code>["a&lt;/p&gt;&lt;p&gt;b"]</code>。想要两段分别匹配用非贪婪 <code>.*?</code>（结果是 ["a", "b"]）。贪婪/惰性之分是正则面试的必考陷阱。<a href="https://wenku.csdn.net/doc/6et562nus6">出处：CSDN 文库「Python 面试核心考点解析：正则表达式」</a></div>
         </div>
       </div>
     </section>

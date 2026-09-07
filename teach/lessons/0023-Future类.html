@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 23 课</p>
       <h1>Future 类</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/Future类/">23.Future类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/Future类/">23.Future类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -232,8 +232,9 @@ print(fut.done(), fut.result())</code></pre></div>
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（Task vs Future·高频）：asyncio 中 Task 与 Future 的关系？</div>
@@ -255,6 +256,56 @@ print(fut.done(), fut.result())</code></pre></div>
             <button class="quiz-option">抛异常终止程序</button>
           </div>
           <div class="quiz-explain" hidden>async 语法<strong>不会自动让阻塞代码变非阻塞</strong>：事件循环线程上的阻塞调用（time.sleep、同步网络请求）会冻结整个循环，延迟所有任务。解法：<code>await asyncio.sleep</code>，或把阻塞函数丢给线程池（<code>asyncio.to_thread</code>）。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（状态机·深水区）：Future 已完成后再次 <code>set_result(...)</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">InvalidStateError：结果只能设置一次</button>
+            <button class="quiz-option">新结果覆盖旧结果</button>
+            <button class="quiz-option">静默忽略第二次调用</button>
+            <button class="quiz-option">返回 False 表示失败</button>
+          </div>
+          <div class="quiz-explain" hidden>Future 的状态机是<strong>单向不可逆</strong>的：完成后再次 set_result/set_exception 抛 <strong>InvalidStateError</strong>——「未来的结果」一经确定不可篡改，这保证了回调看到的终值稳定。封装异步操作时误设两次是常见 bug 源。<a href="https://www.skillup.host/backend/3404.html">出处：Skillup「Python 后端面试题（asyncio 高频汇总）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（回调隔离·机制）：一个 done 回调抛了异常，其他已注册的回调会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">继续执行，异常被记录到日志</button>
+            <button class="quiz-option">全部被跳过</button>
+            <button class="quiz-option">异常导致事件循环崩溃</button>
+            <button class="quiz-option">回调被依次重试</button>
+          </div>
+          <div class="quiz-explain" hidden>Future 的回调逐个独立调度：某个回调抛异常<strong>不影响其余回调执行</strong>，异常由事件循环的异常处理器记录（默认打印日志）。「回调之间相互隔离」是异步框架的健壮性契约。<a href="https://www.skillup.host/backend/3404.html">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（Task 异常·深水区）：Task 抛了异常但从未被 await/取回，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只出现 "Task exception was never retrieved" 警告</button>
+            <button class="quiz-option">程序立即崩溃</button>
+            <button class="quiz-option">异常自动重抛到主线程</button>
+            <button class="quiz-option">任务自动重启</button>
+          </div>
+          <div class="quiz-explain" hidden>Task 的异常若<strong>从未被取回</strong>（没人 await、没人读 result），只会打一句 <strong>Task exception was never retrieved</strong> 警告就被丢弃——静默失败极难排查。工程规范：所有 Task 都要被 await（或 gather 收拢）并处理异常。<a href="https://runebook.dev/en/docs/python/library/asyncio-task/creating-tasks">出处：Runebook（Python 官方文档中文版）</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（完成语义·机制）：Task 完成与 Future 完成的语义差异是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Task 完成意味着协程函数体执行完；Future 完成只是结果就绪</button>
+            <button class="quiz-option">两者没有任何区别</button>
+            <button class="quiz-option">Future 完成后自动创建 Task</button>
+            <button class="quiz-option">Task 完成不需要事件循环</button>
+          </div>
+          <div class="quiz-explain" hidden>Task = Future + 协程驱动：Task 完成意味着<strong>协程函数体跑完</strong>（返回值/异常/取消三态）；Future 完成只表示「结果就绪」（谁塞进来的都可以）。Task 是 Future 语义在协程上的具体化。<a href="https://www.skillup.host/backend/3404.html">出处同面试题三</a></div>
         </div>
       </div>
     </section>

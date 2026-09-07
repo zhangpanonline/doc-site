@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 7 课</p>
       <h1>对象的类型</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/对象的类型/">7.对象的类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/对象的类型/">7.对象的类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -222,8 +222,9 @@
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（is vs ==·必问）：<code>==</code> 与 <code>is</code> 的区别是？</div>
@@ -245,6 +246,56 @@
             <button class="quiz-option">isinstance 是 type 的别名</button>
           </div>
           <div class="quiz-explain" hidden><code>type(dog) == Animal</code> 为 False（精确类型是 Dog）；<code>isinstance(dog, Animal)</code> 为 True（Dog 是 Animal 的子类）。面向对象场景判断「属于某类型体系」用 isinstance 才符合继承语义。<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（类型体系·深水区）：下列四个 <code>isinstance</code> 判断，哪一组全部为 True？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">isinstance(type, type) 与 isinstance(type, object) 与 isinstance(object, type)</button>
+            <button class="quiz-option">isinstance(type, function) 与 isinstance(object, object)</button>
+            <button class="quiz-option">isinstance(function, type) 与 isinstance(function, function)</button>
+            <button class="quiz-option">isinstance(object, object) 与 isinstance(type, function)</button>
+          </div>
+          <div class="quiz-explain" hidden>逐条核对：<code>isinstance(type, type)</code>（type 是自己的实例）✓；<code>isinstance(type, object)</code>（type 继承 object）✓；<code>isinstance(object, type)</code>（object 由 type 创建）✓——<strong>第一个组合全真</strong>。<code>isinstance(type, function)</code> 是 False（type 是类不是函数）；<code>isinstance(function, function)</code> 是 False（function 类是 type 的实例）——后三个组合都混入了假命题。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（type 工厂·机制）：<code>type("Dog", (), {"x": 1})</code> 三个参数分别是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">类名、父类元组、类属性与方法字典</button>
+            <button class="quiz-option">类名、方法字典、父类元组</button>
+            <button class="quiz-option">父类、类名、实例属性</button>
+            <button class="quiz-option">模块名、类名、属性列表</button>
+          </div>
+          <div class="quiz-explain" hidden><code>type(类名, 父类元组, 命名空间字典)</code>：第三个参数是<strong>类属性与方法字典</strong>（与 class 语句收集的命名空间一致）——动态创建类的完整能力，ORM 等按配置生成类的场景常用。这也是「class 是语法糖」的直接体现。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（名称改写与继承·深水区）：<code>class A: __x = 1</code> 且 <code>class B(A): __x = 2</code>，<code>A._A__x</code> 与 <code>B._B__x</code> 分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">1 和 2（改写按各自的类名前缀，互不覆盖）</button>
+            <button class="quiz-option">2 和 2（子类覆盖父类）</button>
+            <button class="quiz-option">1 和 1</button>
+            <button class="quiz-option">运行时报错</button>
+          </div>
+          <div class="quiz-explain" hidden>名称改写按<strong>定义所在的类名</strong>加前缀：A 里的 <code>__x</code> → <code>_A__x</code>，B 里的 → <code>_B__x</code>——两个独立属性<strong>互不覆盖</strong>，这正是「私有属性不被子类意外覆盖」的机制来源。<a href="https://www.cnblogs.com/YZL2333/articles/11900518.html">出处：博客园「Python 面试题面向对象」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（继承终点·机制）：<code>class A: pass</code>，<code>A.__mro__</code> 的最后一项是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">object（所有类的 MRO 终点）</button>
+            <button class="quiz-option">type</button>
+            <button class="quiz-option">A 自己</button>
+            <button class="quiz-option">None</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 3 所有类都隐式继承 <code>object</code>——<code>A.__mro__</code> 是 <code>(A, object)</code>，<strong>object 是继承链终点</strong>（万物之根）。对应的创建链起点是 type。两条链的关系是理解元类世界的地图。<a href="https://www.cnblogs.com/YZL2333/articles/11900518.html">出处同专家题一</a></div>
         </div>
       </div>
     </section>

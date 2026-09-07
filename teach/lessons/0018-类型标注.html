@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 18 课</p>
       <h1>类型标注</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/类型标注/">18.类型标注</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/类型标注/">18.类型标注</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -254,8 +254,9 @@ class AppConfig(TypedDict):
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（类型标注·高频）：Python 的类型标注会在运行时强制吗？那它的价值在哪？</div>
@@ -277,6 +278,56 @@ class AppConfig(TypedDict):
             <button class="quiz-option">Python 做不到，只能靠运行时判断</button>
           </div>
           <div class="quiz-explain" hidden><code>T = TypeVar("T")</code> + <code>class Stack(Generic[T])</code>：检查器会追踪 <code>int_stack: Stack[int]</code> 的元素类型，<code>int_stack.push("hello")</code> 在编码期就报警——泛型让「同一份代码、多种类型」既复用又安全。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（Any vs object·深水区）：标注 <code>Any</code> 与标注 <code>object</code> 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Any 完全关闭检查；object 只允许 object 拥有的方法</button>
+            <button class="quiz-option">两者完全相同</button>
+            <button class="quiz-option">object 完全关闭检查</button>
+            <button class="quiz-option">Any 比 object 更严格</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Any</code> 是「逃生舱」——<strong>彻底关闭类型检查</strong>（任何操作都合法）；<code>object</code> 是具体类型——检查器只允许<strong>所有对象共有</strong>的操作（如 <code>str(x)</code>），调用不存在的方法会报警。所以「不确定类型」才用 Any，「确实是任意对象但只做通用操作」用 object。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（Protocol·机制）：<code>typing.Protocol</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">定义结构化接口：方法匹配即满足，无需继承</button>
+            <button class="quiz-option">定义抽象类必须继承</button>
+            <button class="quiz-option">运行时强制类型转换</button>
+            <button class="quiz-option">声明函数为异步函数</button>
+          </div>
+          <div class="quiz-explain" hidden><code>class SupportsClose(Protocol): def close(self) -&gt; None: ...</code> 定义<strong>结构化接口</strong>：任何实现了 close 的类都自动满足该协议（无需显式继承）——静态检查器的「鸭子类型」版本，约束第三方类时格外有用。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（渐进式类型化·工程）：给存量大型项目引入类型检查，正确的推进策略是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">CI 跑 mypy 对新代码强制，存量逐步补全</button>
+            <button class="quiz-option">一次性给全部代码加完标注再上线</button>
+            <button class="quiz-option">类型标注没有工程价值，不需要引入</button>
+            <button class="quiz-option">只在文档里写类型说明</button>
+          </div>
+          <div class="quiz-explain" hidden>渐进式类型化（gradual typing）标准策略：<strong>新代码强制标注 + CI 集成 mypy/pyright</strong> 拦截回归，存量模块按优先级逐步补全；对无标注第三方库用 .pyi stub 或 typed wrapper，而不是到处撒 <code>type: ignore</code>。这是「专业级 Python 开发」的面试加分回答。<a href="https://maxiom.dev/python-developer-interview-questions">出处：Maxiom「Python Developer Interview Questions（2026）」中文面试集收录</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（类型收窄·机制）：<code>isinstance</code> 检查在类型检查器中起什么作用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">收窄联合类型：分支内变量类型变具体</button>
+            <button class="quiz-option">运行时抛出类型异常</button>
+            <button class="quiz-option">自动转换变量类型</button>
+            <button class="quiz-option">对类型检查没有影响</button>
+          </div>
+          <div class="quiz-explain" hidden>类型收窄（narrowing）：<code>if isinstance(x, int):</code> 分支内检查器把 <code>x</code> 从 <code>int | str</code> <strong>收窄为 int</strong>，允许调用 int 专属方法——这是「标注 + 运行时检查」配合的典范，让静态与动态类型世界衔接起来。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处同面试题三</a></div>
         </div>
       </div>
     </section>

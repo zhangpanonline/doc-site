@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 28 课</p>
       <h1>项目管理工具</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/项目管理工具/">28.项目管理工具</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/项目管理工具/">28.项目管理工具</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -218,8 +218,9 @@
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（现代工具链·高频）：uv 相比 pip + venv 的改进是什么？</div>
@@ -241,6 +242,56 @@
             <button class="quiz-option">requirements.txt 更精确</button>
           </div>
           <div class="quiz-explain" hidden>手写 requirements.txt 通常只列<strong>直接依赖</strong>（可能带范围）；<code>uv.lock</code> 记录<strong>整个依赖树</strong>（含所有传递依赖）的精确版本——这才是「任何机器上都能复现相同环境」的保证，也是区分现代工程与「在我机器上能跑」的关键。<a href="https://cloud.tencent.cn/developer/article/2409986">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（锁文件漂移·机制）：pyproject.toml 与 uv.lock 不一致时，<code>uv sync</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">按 lock 安装并报漂移提示；用 uv lock --upgrade 更新</button>
+            <button class="quiz-option">自动忽略 lock 按 pyproject 装最新</button>
+            <button class="quiz-option">自动删除 lock 重新生成</button>
+            <button class="quiz-option">uv.lock 不存在漂移问题</button>
+          </div>
+          <div class="quiz-explain" hidden>锁文件是「可复现」的根基：<code>uv sync</code> 发现 lock 与 pyproject 不一致时会<strong>提示漂移</strong>（默认仍按 lock 装，保证环境确定），需要更新依赖时显式 <code>uv lock --upgrade</code> 或 <code>uv add</code> 重新解析。理解了漂移处理才真正理解锁文件。<a href="https://docs.astral.sh/uv/">出处：uv 官方文档（中文技术社区广泛收录）</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（CI 缓存·工程）：CI 里跑 uv，如何加速依赖安装？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">缓存 ~/.cache/uv 目录，复用下载的包</button>
+            <button class="quiz-option">每次都重新下载最新版本</button>
+            <button class="quiz-option">把 .venv 整个提交到仓库</button>
+            <button class="quiz-option">关闭 uv 的缓存功能</button>
+          </div>
+          <div class="quiz-explain" hidden>uv 的全局缓存（<code>~/.cache/uv</code>）跨项目复用下载的包——CI 中把该目录配置为<strong>缓存键</strong>，依赖没变时安装接近零成本。这是 uv 工程化的标准实践（GitHub Actions 的 cache 步骤即可）。<a href="https://docs.astral.sh/uv/">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（工具选型·设计）：uv、poetry、pip+venv 如何选？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">新项目默认 uv（快+全）；存量 pip 项目渐进迁移</button>
+            <button class="quiz-option">任何场景都必须用 poetry</button>
+            <button class="quiz-option">pip+venv 已够用，新工具没必要</button>
+            <button class="quiz-option">三者随机选一个即可</button>
+          </div>
+          <div class="quiz-explain" hidden>工程选型逻辑：新项目默认 <strong>uv</strong>（速度 10-100 倍、一站管理、锁文件可复现）；已有 poetry 项目不必强迁；存量 pip 项目可渐进迁移（uv 兼容 requirements.txt）。选型理由（速度/可复现/迁移成本）比工具名本身更重要。<a href="https://maxiom.dev/python-developer-interview-questions">出处：Maxiom「Python Developer Interview Questions（2026）」中文面试集收录</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（自动化边界·工程）：Makefile 与 CI 的职责边界是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Makefile 提供本地约定入口；CI 负责每次提交的自动验证</button>
+            <button class="quiz-option">Makefile 可以替代 CI</button>
+            <button class="quiz-option">CI 可以替代 Makefile</button>
+            <button class="quiz-option">两者只能二选一</button>
+          </div>
+          <div class="quiz-explain" hidden>Makefile 是<strong>本地统一入口</strong>（新人 make test 即可，不记底层命令）；CI 是<strong>每次提交的自动看门</strong>（隔离环境跑检查/测试/构建）——CI 里调用的正是 Makefile 的目标（make lint / make test），两者是「约定层 + 自动化层」的分工而非替代。<a href="https://docs.astral.sh/uv/">出处：uv 官方文档（中文技术社区广泛收录）</a></div>
         </div>
       </div>
     </section>

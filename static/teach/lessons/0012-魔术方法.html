@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 12 课</p>
       <h1>魔术方法</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/魔术方法/">12.魔术方法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/魔术方法/">12.魔术方法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -261,8 +261,9 @@ class Fraction:
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（__new__ 应用·高频）：继承不可变类型（如 tuple）时，想过滤元素，必须在哪里做？</div>
@@ -284,6 +285,56 @@ class Fraction:
             <button class="quiz-option">三者都是实例化时触发</button>
           </div>
           <div class="quiz-explain" hidden><code>__getattr__</code>：访问<strong>不存在</strong>的属性时；<code>__setattr__</code>：<strong>任何属性赋值</strong>时（注意防递归）；<code>__getitem__</code>：<code>obj[key]</code> 方括号索引时。三个都是属性/容器协议拦截的常考点。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（__eq__ 与 __hash__·深水区）：类只定义了 <code>__eq__</code>（没定义 <code>__hash__</code>），它的实例还能放进 set 吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不能：__hash__ 被隐式置为 None，抛 unhashable TypeError</button>
+            <button class="quiz-option">能：默认哈希不受影响</button>
+            <button class="quiz-option">能：__eq__ 自动推导出哈希</button>
+            <button class="quiz-option">只有放进 dict 才报错，set 不报错</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 3 的机制：一旦重写 <code>__eq__</code>，类的 <code>__hash__</code> 被<strong>隐式设为 None</strong> → 实例不可哈希，放入 set/作 dict 键抛 <code>TypeError: unhashable type</code>（Ruff 有专门的 eq-without-hash 规则检测）。正确契约：重写 <code>__eq__</code> 时同步定义 <code>__hash__</code>（基于同一组不可变字段），且保证「相等对象的哈希值相同」；可变对象则不应实现 <code>__hash__</code>。<a href="https://global.php.cn/zh/faq/1797063785.html">出处：PHP 中文站「如何使用 Python 的 __hash__ 和 __eq__ 实现类对象去重」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（相等传递性·深水区）：为什么不能用「浮点容差近似相等」（<code>abs(a-b) &lt; ε</code>）来实现 <code>__eq__</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">相等关系不可传递，无法设计一致的 __hash__</button>
+            <button class="quiz-option">性能太差</button>
+            <button class="quiz-option">Python 语法不允许</button>
+            <button class="quiz-option">浮点比较会抛异常</button>
+          </div>
+          <div class="quiz-explain" hidden>近似相等<strong>不满足传递性</strong>（A≈B、B≈C 但 A≠C）——而哈希契约要求「相等的对象哈希必等」，传递性缺失会让 set/dict 行为不确定（B 插入时可能命中 A 也可能命中 C）。Guido 本人就此解释过：宁可返回常量哈希，dict 行为也仍不确定。相等必须是严格的等价关系。<a href="https://global.php.cn/zh/faq/1797063785.html">出处：PHP 中文站「__hash__ 与 __eq__ 实现类对象去重」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（哈希碰撞·机制）：为什么 <code>set([True, 1])</code> 的结果是 <code>{True}</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">hash(True) == hash(1)，且 True == 1 判等成功去重</button>
+            <button class="quiz-option">set 自动丢弃布尔值</button>
+            <button class="quiz-option">Python 不允许布尔值放进 set</button>
+            <button class="quiz-option">结果是 {1} 而不是 {True}</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 3 保证 <code>hash(True) == hash(1)</code>（<code>hash(False) == hash(0)</code>），且 <code>True == 1</code> 成立——set 先比哈希再比相等，两者都命中 → 去重，保留先插入的 <strong>True</strong>。这解释了「集合里布尔值会被数字『吞掉』」的诡异现象。<a href="https://global.php.cn/zh/faq/1797063785.html">出处同面试题四</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（__repr__ 约定·机制）：<code>__repr__</code> 的「黄金约定」是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">返回的字符串应能通过 eval 重建出等价对象</button>
+            <button class="quiz-option">返回尽量短的字符串</button>
+            <button class="quiz-option">只能返回对象的内存地址</button>
+            <button class="quiz-option">__repr__ 不能包含任何数字</button>
+          </div>
+          <div class="quiz-explain" hidden>约定：<code>eval(repr(obj)) == obj</code>——<strong>repr 的输出应能重建对象</strong>（如 <code>Fraction(1, 2)</code>）。做不到时可退化为 <code>&lt;模块.类名 ...&gt;</code> 的带尖括号描述形式。这是调试与日志可读性的工程标准。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
         </div>
       </div>
     </section>

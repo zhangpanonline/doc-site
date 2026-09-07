@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 16 课</p>
       <h1>上下文管理器</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/上下文管理器/">16.上下文管理器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/上下文管理器/">16.上下文管理器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -270,8 +270,9 @@ with demo():
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（with 原理·必问）：with 语句的工作原理与好处？</div>
@@ -293,6 +294,56 @@ with demo():
             <button class="quiz-option">用 property 装饰器实现</button>
           </div>
           <div class="quiz-explain" hidden>两种方式：① 类实现——定义 <code>__enter__</code>（返回资源给 as）与 <code>__exit__</code>（清理）；② <code>@contextmanager</code> 生成器——yield 前是进入逻辑、yield 后是清理逻辑，代码更简洁。面试时要两种都会写。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题一</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（retry 设计·深水区）：为什么「失败重试」必须用装饰器实现，而上下文管理器实现不了？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">重试需要重新执行整个代码块，而 with 只能进入一次</button>
+            <button class="quiz-option">上下文管理器性能不够</button>
+            <button class="quiz-option">两者都可以实现，没有区别</button>
+            <button class="quiz-option">装饰器语法更简单而已</button>
+          </div>
+          <div class="quiz-explain" hidden>本质区别：<strong>装饰器可以在 wrapper 里循环调用函数</strong>（每次调用都是一次完整执行，失败后重来）；而 <strong>with 块只能进入一次</strong>——<code>__exit__</code> 只能决定「吞异常还是传播」，无法让代码块重新执行一遍（源课程作业三正是注明「这道题有问题，上下文管理器无法实现 retry」）。工具的职责边界本身就是考点。<a href="https://cloud.tencent.com/developer/article/2409961">出处：腾讯云「Python 高级特性解析与面试应对策略」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（吞异常代价·机制）：为什么说「<code>__exit__</code> 返回 True 压制异常」通常不推荐？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">隐藏真实错误，bug 更难排查</button>
+            <button class="quiz-option">会让程序崩溃</button>
+            <button class="quiz-option">性能开销更大</button>
+            <button class="quiz-option">语法上已废弃</button>
+          </div>
+          <div class="quiz-explain" hidden><code>__exit__</code> 返回 True 会<strong>静默吞掉异常</strong>——调用方完全不知道发生过错误，问题被埋进运行时。除非是 SuppressError 这类「明确要忽略特定异常」的场景，资源管理型上下文管理器应返回 False 让异常正常传播。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（标准工具·机制）：<code>contextlib.suppress</code> 与 <code>redirect_stdout</code> 分别做什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">忽略指定异常；把 stdout 重定向到文件</button>
+            <button class="quiz-option">忽略所有异常；重定向 stderr</button>
+            <button class="quiz-option">两者都是异常处理函数</button>
+            <button class="quiz-option">两者都是打印工具</button>
+          </div>
+          <div class="quiz-explain" hidden><code>contextlib.suppress(FileNotFoundError)</code> 忽略指定异常（比 try/except pass 更声明式）；<code>redirect_stdout(f)</code> 把 <code>print</code> 等输出临时重定向到文件（如捕获命令行输出）——contextlib 里的现成工具，面试问到说明熟悉标准库。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题三</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（职责边界·设计）：上下文管理器与装饰器的职责边界是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">上下文管理器管「进入/退出」的资源；装饰器管「函数级」行为增强</button>
+            <button class="quiz-option">两者职责完全重叠</button>
+            <button class="quiz-option">上下文管理器只能用于文件</button>
+            <button class="quiz-option">装饰器只能用于类</button>
+          </div>
+          <div class="quiz-explain" hidden>上下文管理器围绕<strong>资源的进入与退出</strong>（文件、锁、连接：with 块期间有效）；装饰器围绕<strong>函数调用的前后</strong>（计时、缓存、重试：对任意函数生效）。边界清晰：需要「块级生命周期」用 with，需要「可重复调用的包装」用装饰器。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题三</a></div>
         </div>
       </div>
     </section>

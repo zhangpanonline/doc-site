@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 19 课</p>
       <h1>模块化</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/模块化/">19.模块化</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/模块化/">19.模块化</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -239,8 +239,9 @@ q.z = 3                # 普通类可以随意添加属性</code></pre>
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（模块 vs 包·必问）：模块和包的区别？<code>__init__.py</code> 的作用？</div>
@@ -262,6 +263,56 @@ q.z = 3                # 普通类可以随意添加属性</code></pre>
             <button class="quiz-option">多 import 几遍就能解决</button>
           </div>
           <div class="quiz-explain" hidden>循环导入的成因：互相导入时一方<strong>尚未完成初始化</strong>就访问其成员。标准解法：① 重构——把共享依赖抽到第三个模块；② <strong>延迟导入</strong>——把 import 挪进函数体内（用时才导入，还能加快启动）。<a href="https://cloud.tencent.cn/developer/article/2409971">出处：腾讯云「Python 模块化编程：面试题深度解析」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（__slots__ 继承·深水区）：父类声明了 <code>__slots__</code>，子类<strong>没有</strong>声明，子类实例还有 <code>__dict__</code> 吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">有：子类未声明 slots 则自动获得 __dict__</button>
+            <button class="quiz-option">没有：__slots__ 会沿继承传递</button>
+            <button class="quiz-option">子类无法实例化</button>
+            <button class="quiz-option">子类定义会报错</button>
+          </div>
+          <div class="quiz-explain" hidden><code>__slots__</code> <strong>不自动沿继承传递</strong>：子类未声明自己的 <code>__slots__</code>（即使声明空元组也不行——空 slots 才继承父类限制）时，子类实例<strong>仍会有 <code>__dict__</code></strong>，省内存的效果在子类上失效。这是 __slots__ 深水区的经典追问：想全程省内存，每一层都要声明。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（PEP 562·机制）：模块级 <code>def __getattr__(name)</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">拦截模块属性的未定义访问（惰性导出/弃用警告）</button>
+            <button class="quiz-option">定义模块的默认属性值</button>
+            <button class="quiz-option">限制模块只能被导入一次</button>
+            <button class="quiz-option">替代 __init__.py 的功能</button>
+          </div>
+          <div class="quiz-explain" hidden>PEP 562：模块级 <code>__getattr__</code> 在<strong>访问模块中不存在的属性</strong>时被调用——用于惰性导入重依赖（首次访问才 import）、给已改名/弃用的 API 发 DeprecationWarning（如 numpy 的兼容层）。这是「模块也是对象」的高级应用。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题三</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（导入副作用·机制）：模块顶层的代码什么时候执行？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">首次导入时执行一次（顶层语句是运行时的）</button>
+            <button class="quiz-option">永远不执行，只是声明</button>
+            <button class="quiz-option">每次 import 都重新执行</button>
+            <button class="quiz-option">编译期执行</button>
+          </div>
+          <div class="quiz-explain" hidden>模块顶层的<strong>可执行语句在首次导入时运行</strong>（打印、连接数据库等都会发生），之后由 sys.modules 缓存不再重复。所以「import 有副作用」是真实风险——这也是模块级代码要克制、用 <code>if __name__ == "__main__"</code> 隔离测试代码的原因。<a href="https://cloud.tencent.cn/developer/article/2409971">出处：腾讯云「Python 模块化编程：面试题深度解析」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（导入方式·设计）：相对导入（<code>from . import x</code>）与绝对导入如何选择？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">包内部用相对导入（不依赖包名）；外部/脚本用绝对导入</button>
+            <button class="quiz-option">任何场景都用相对导入</button>
+            <button class="quiz-option">任何场景都用绝对导入</button>
+            <button class="quiz-option">两者行为完全一致</button>
+          </div>
+          <div class="quiz-explain" hidden>包<strong>内部</strong>用相对导入（<code>from . import x</code>）——包改名/移动时不受影响；包<strong>外部</strong>与直接运行的脚本用绝对导入。注意：含相对导入的模块<strong>不能作为脚本直接运行</strong>。选型理由比选型本身更被面试官看重。<a href="https://cloud.tencent.cn/developer/article/2409971">出处同专家题一</a></div>
         </div>
       </div>
     </section>

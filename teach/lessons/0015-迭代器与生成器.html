@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 15 课</p>
       <h1>迭代器与生成器</h1>
-      <p class="lesson-sub">配合《<a href="/python/语言核心/迭代器与生成器/">15.迭代器与生成器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 2 道面试实战</p>
+      <p class="lesson-sub">配合《<a href="/python/语言核心/迭代器与生成器/">15.迭代器与生成器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
     </header>
 
     <section class="lesson-goal card">
@@ -280,8 +280,9 @@ print(calc.send(20))    # ?</code></pre></div>
 
     <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。</p>
+      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
 
+      <h3>⚡ 中级面试题</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">面试题一（三者区别·必问）：可迭代对象、迭代器、生成器的区别是？</div>
@@ -303,6 +304,56 @@ print(calc.send(20))    # ?</code></pre></div>
             <button class="quiz-option">把文件先切碎成多个小文件</button>
           </div>
           <div class="quiz-explain" hidden>经典答案：<code>for line in open(f):</code> 或写生成器逐行 <code>yield</code>——惰性计算使<strong>任意时刻内存中只有一行</strong>；<code>readlines()</code>/<code>read()</code> 会把整个文件读进内存，10GB 文件直接内存爆炸。这也是「生成器什么时候用」的标准回答。<a href="https://cloud.tencent.com/developer/article/2409961">出处：腾讯云「Python 高级特性解析与面试应对策略」</a></div>
+        </div>
+      </div>
+
+      <h3>🔥 高级面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题三（可重复遍历·深水区）：为什么 list 可以 for 两次，而迭代器第二次 for 是空的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">list.__iter__ 每次返回新迭代器；迭代器返回自身且游标不回退</button>
+            <button class="quiz-option">迭代器有缓存，第二次会快进到结尾</button>
+            <button class="quiz-option">list 是特殊的可重复迭代器</button>
+            <button class="quiz-option">第二次 for 会重新创建迭代器</button>
+          </div>
+          <div class="quiz-explain" hidden>关键在 <code>__iter__</code> 的返回值：list 的 <code>__iter__</code> <strong>每次调用返回新的迭代器</strong>（重新开始）；而迭代器的 <code>__iter__</code> <strong>返回自身</strong>——游标已到末尾，第二次 for 直接空转。这也是「为什么 list 不是迭代器」的机制答案：迭代器代表一次性的数据流。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">面试题四（close 机制）：<code>g.close()</code> 内部对生成器做了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">在暂停处抛 GeneratorExit，生成器终止</button>
+            <button class="quiz-option">调用 StopIteration 正常结束</button>
+            <button class="quiz-option">从头重新启动生成器</button>
+            <button class="quiz-option">清空生成器的返回值</button>
+          </div>
+          <div class="quiz-explain" hidden><code>close()</code> 在生成器<strong>暂停处</strong>抛出 <code>GeneratorExit</code>——生成器体终止（finally 中的清理仍执行，但不能再 yield）；之后 <code>next()</code> 得到 StopIteration。理解 close/throw 协议是生成器深水区的基础。<a href="https://cloud.tencent.com/developer/article/2409961">出处：腾讯云「Python 高级特性解析与面试应对策略」</a></div>
+        </div>
+      </div>
+
+      <h3>🧠 专家面试题</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题一（send 协议·深水区）：<code>g = gen()</code> 后不先 <code>next(g)</code>，直接 <code>g.send(1)</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TypeError：send 非 None 值必须先启动生成器</button>
+            <button class="quiz-option">正常，1 成为第一个 yield 的返回值</button>
+            <button class="quiz-option">返回 None</button>
+            <button class="quiz-option">生成器自动启动</button>
+          </div>
+          <div class="quiz-explain" hidden>未启动（还没执行到第一个 yield）时 <code>send(非 None)</code> 抛 <strong>TypeError: can't send non-None value to a just-started generator</strong>——第一个值必须由 <code>next(g)</code>（等价 <code>send(None)</code>）触发，因为此时没有 yield 表达式可接收值。send 协议的边界细节是专家级考点。<a href="https://runebook.dev/zh/docs/python/library/asyncio-task/creating-tasks">出处：Runebook（Python 官方文档中文版）</a></div>
+        </div>
+
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">专家题二（惰性管道·机制）：<code>itertools.islice(itertools.count(), 5)</code> 能工作的原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">count 是惰性迭代器，islice 按需取 5 个即停</button>
+            <button class="quiz-option">count 会预生成 5 个数字</button>
+            <button class="quiz-option">islice 只支持有限序列</button>
+            <button class="quiz-option">这段代码会死循环</button>
+          </div>
+          <div class="quiz-explain" hidden><code>count()</code> 是<strong>无限惰性迭代器</strong>（每次 next 才产生下一个数）；<code>islice</code> 只取前 5 个就停止消费——两者配合可对无限序列「切片」。惰性管道（生成器/迭代器串联、按需计算）是处理大数据的核心思路。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题四</a></div>
         </div>
       </div>
     </section>
