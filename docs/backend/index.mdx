@@ -1,19 +1,23 @@
 ---
 title: 后端开发能力
-displayed_sidebar: backend
+displayed_sidebar: null
+hide_title: true
+hide_table_of_contents: true
 sidebar_position: 0
 ---
 
-import {CommonBanner, CourseTiles} from '@site/src/components/CourseUI';
+import {UnitHero, CourseTiles} from '@site/src/components/CourseUI';
 
-<CommonBanner title="⚙️ 后端开发能力" desc="服务端开发：接口设计、主流框架、微服务与工程化实践。" />
+<UnitHero kicker="渡一《AI 大全栈》学习路线 · 第 2 单元" title="⚙️ 后端开发能力" desc="服务端开发：接口设计、主流框架、微服务与工程化实践。">
 
-<CourseTiles numbered courses={[
+  <CourseTiles unit="backend" numbered courses={[
   {emoji: '☕', name: 'Java语言精讲', desc: '郑天民 · 课程筹备中', badge: '筹备中'},
-  {emoji: '🗄️', name: '数据库', desc: '各单元共用的 PostgreSQL 数据库课程：安装、DDL、表间关系、DML、事务、索引与拓展知识，每节配套互动课程与速查表。', badge: '公共课 · 7 节', href: '/backend/database/PostgreSQL安装'},
+  {emoji: '🗄️', name: '数据库', desc: '各单元共用的 PostgreSQL 数据库课程：安装、DDL、表间关系、DML、事务、索引与拓展知识，每节配套互动课程与速查表。', badge: '公共课 · 7 节', href: '/backend/database/PostgreSQL安装', courseKey: 'database'},
   {emoji: '🔐', name: 'OAuth2', desc: '郑天民 · 课程筹备中', badge: '公共课 · 筹备中'},
   {emoji: '🛡️', name: 'RBAC权限模型', desc: '郑天民 · 课程筹备中', badge: '公共课 · 筹备中'},
   {emoji: '🧱', name: '单体系统和Spring Boot', desc: '课程筹备中', badge: '筹备中'},
   {emoji: '🌐', name: '微服务架构和Spring Cloud', desc: '课程筹备中', badge: '筹备中'},
   {emoji: '🧰', name: '主流中间件与框架', desc: '课程筹备中', badge: '筹备中'},
 ]} />
+
+</UnitHero>

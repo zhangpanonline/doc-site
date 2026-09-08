@@ -1,17 +1,21 @@
 ---
 title: 运维和云计算能力
-displayed_sidebar: devops
+displayed_sidebar: null
+hide_title: true
+hide_table_of_contents: true
 sidebar_position: 0
 ---
 
-import {CommonBanner, CourseTiles} from '@site/src/components/CourseUI';
+import {UnitHero, CourseTiles} from '@site/src/components/CourseUI';
 
-<CommonBanner title="☁️ 运维和云计算能力" desc="部署上线、容器编排、CI/CD 与云平台实践。" />
+<UnitHero kicker="渡一《AI 大全栈》学习路线 · 第 3 单元" title="☁️ 运维和云计算能力" desc="部署上线、容器编排、CI/CD 与云平台实践。">
 
-<CourseTiles numbered courses={[
+  <CourseTiles unit="devops" numbered courses={[
   {emoji: '🐧', name: 'Linux与运维基础实战', desc: '课程筹备中', badge: '筹备中'},
   {emoji: '🚥', name: 'Nginx与应用服务部署', desc: '课程筹备中', badge: '筹备中'},
   {emoji: '🐳', name: 'Docker容器化与CI/CD发布', desc: '课程筹备中', badge: '筹备中'},
   {emoji: '☁️', name: '云平台架构与安全治理', desc: '课程筹备中', badge: '筹备中'},
   {emoji: '📈', name: '监控告警与高可用优化', desc: '课程筹备中', badge: '筹备中'},
 ]} />
+
+</UnitHero>

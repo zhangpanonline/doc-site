@@ -413,6 +413,60 @@
   color: var(--course-muted);
   margin: 8px 0 20px;
 }
+/* ===== 课程视图：一级菜单课程名标题 ===== */
+.menu-course-title {
+  margin: 6px 12px 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--course-border);
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--course-accent-ink);
+}
+
+/* ===== 课程卡片：「上次学到」高亮与继续学习 ===== */
+.ai-tile-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  color: var(--course-fg);
+}
+.ai-tile-main:hover {
+  color: var(--course-fg);
+  text-decoration: none;
+}
+.ai-tile-current {
+  border-color: var(--course-accent);
+}
+.ai-tile-current:hover {
+  border-color: var(--course-accent);
+}
+.ai-last-badge {
+  display: inline-block;
+  width: fit-content;
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--course-highlight);
+  color: var(--course-accent-ink);
+  margin-top: 10px;
+}
+.ai-continue {
+  display: inline-block;
+  width: fit-content;
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 8px;
+  color: var(--course-accent-ink);
+  border-bottom: 1px solid color-mix(in srgb, var(--course-accent) 40%, transparent);
+}
+.ai-continue:hover {
+  color: var(--course-accent);
+  border-bottom-color: var(--course-accent);
+  text-decoration: none;
+}
+
 @media (max-width: 996px) {
   .ai-tiles {
     grid-template-columns: 1fr 1fr;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import type {ReactNode} from 'react';
 import Link from '@docusaurus/Link';
 import {jobs} from '@site/data/jobs';
@@ -49,29 +49,90 @@ export type CourseTile = {
   desc: string;
   badge: string;
   href?: string;
+  /** 课程 key：与 data/courses.ts 的 CourseDef.key 一致，用于「上次学到」匹配 */
+  courseKey?: string;
 };
 
-export function CourseTiles({courses, numbered}: {courses: CourseTile[]; numbered?: boolean}): ReactNode {
+type LastLearned = {
+  course: string;
+  href: string;
+  index: number;
+  name: string;
+};
+
+export function CourseTiles({unit, courses, numbered}: {unit?: string; courses: CourseTile[]; numbered?: boolean}): ReactNode {
+  const [last, setLast] = useState<LastLearned | null>(null);
+
+  // 「上次学到」：读取本单元记录；用一次轻量请求校验章节仍存在（404 则清除记录）。
+  // 仅在客户端执行（useEffect），SSR 首屏不渲染高亮，避免水合不一致。
+  useEffect(() => {
+    if (!unit) {
+      return;
+    }
+    let cancelled = false;
+    try {
+      const raw = localStorage.getItem(`last-learned:${unit}`);
+      if (!raw) {
+        return;
+      }
+      const parsed = JSON.parse(raw) as LastLearned;
+      fetch(parsed.href, {cache: 'force-cache'})
+        .then(res => {
+          if (cancelled) {
+            return;
+          }
+          if (res.ok) {
+            setLast(parsed);
+          } else {
+            localStorage.removeItem(`last-learned:${unit}`);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setLast(parsed); // 网络失败不视为记录失效
+          }
+        });
+    } catch {
+      // 记录损坏或 localStorage 不可用：忽略
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [unit]);
+
   return (
     <div className="ai-tiles">
-      {courses.map((c, idx) =>
-        c.href ? (
-          <Link key={c.name} to={c.href} className="ai-tile">
-            <span className="ai-tile-emoji">{c.emoji}</span>
-            <h3 className="ai-tile-name">{numbered ? `${String(idx + 1).padStart(2, '0')} · ${c.name}` : c.name}</h3>
-            <p className="ai-tile-desc">{c.desc}</p>
-            <span className="ai-badge">{c.badge}</span>
-            <span className="ai-enter">进入课程 →</span>
-          </Link>
-        ) : (
-          <div key={c.name} className="ai-tile ai-tile-soon">
-            <span className="ai-tile-emoji">{c.emoji}</span>
-            <h3 className="ai-tile-name">{numbered ? `${String(idx + 1).padStart(2, '0')} · ${c.name}` : c.name}</h3>
-            <p className="ai-tile-desc">{c.desc}</p>
-            <span className="ai-badge ai-badge-dim">{c.badge}</span>
+      {courses.map((c, idx) => {
+        const title = numbered ? `${String(idx + 1).padStart(2, '0')} · ${c.name}` : c.name;
+        if (!c.href) {
+          return (
+            <div key={c.name} className="ai-tile ai-tile-soon">
+              <span className="ai-tile-emoji">{c.emoji}</span>
+              <h3 className="ai-tile-name">{title}</h3>
+              <p className="ai-tile-desc">{c.desc}</p>
+              <span className="ai-badge ai-badge-dim">{c.badge}</span>
+            </div>
+          );
+        }
+        const isCurrent = last !== null && last.course === c.courseKey;
+        return (
+          <div key={c.name} className={`ai-tile${isCurrent ? ' ai-tile-current' : ''}`}>
+            <Link to={c.href} className="ai-tile-main">
+              <span className="ai-tile-emoji">{c.emoji}</span>
+              <h3 className="ai-tile-name">{title}</h3>
+              <p className="ai-tile-desc">{c.desc}</p>
+              <span className="ai-badge">{c.badge}</span>
+              <span className="ai-enter">进入课程 →</span>
+            </Link>
+            {isCurrent && last && (
+              <>
+                <span className="ai-last-badge">上次学到：第 {last.index + 1} 节 · {last.name}</span>
+                <Link to={last.href} className="ai-continue">继续学习 →</Link>
+              </>
+            )}
           </div>
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }
@@ -103,6 +164,18 @@ export function CommonBanner({title, desc}: {title: string; desc: string}): Reac
     <div className="ai-c-banner">
       <h1 className="ai-c-banner-title">{title}</h1>
       <p className="ai-c-banner-desc">{desc}</p>
+    </div>
+  );
+}
+
+/** 单元首页 hero：与首页同款的大纸卡（眉题 + 大标题 + 副标题），内容（课程卡片）以 children 嵌入 */
+export function UnitHero({kicker, title, desc, children}: {kicker: string; title: string; desc: string; children?: ReactNode}): ReactNode {
+  return (
+    <div className="ai-hero">
+      <p className="ai-hero-kicker">{kicker}</p>
+      <h1 className="ai-hero-title">{title}</h1>
+      <p className="ai-hero-sub">{desc}</p>
+      {children}
     </div>
   );
 }
