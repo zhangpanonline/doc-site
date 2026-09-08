@@ -153,10 +153,22 @@ export function JobBoard({unit}: {unit: string}): ReactNode {
       <p className="ai-course-desc">
         💰 常见薪资 {d.salaryRange[0]}–{d.salaryRange[1]}K/月 · 中位数约 {d.salaryMedian}K
       </p>
+      {d.platforms.length > 0 && (
+        <>
+          <p className="ai-course-desc">各平台口径</p>
+          <div className="ai-chips">
+            {d.platforms.map(p => (
+              <span key={p.platform} className="ai-chip">
+                {p.label}：{p.sampleSize} 份 · {p.salaryRange[0]}–{p.salaryRange[1]}K · 中位数 {p.salaryMedian}K
+              </span>
+            ))}
+          </div>
+        </>
+      )}
       <p className="ai-meta">
         递进规则：本阶段岗位要求默认包含前面所有阶段的技能。
         样本 {d.sampleSize} 份 · 更新于 {d.updatedAt}。
-        数据为 BOSS 直聘公开岗位信息的聚合统计，不含公司信息与岗位原文。
+        数据为各招聘平台公开岗位信息的聚合统计，不含公司信息与岗位原文。
       </p>
     </div>
   );
