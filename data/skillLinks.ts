@@ -1,0 +1,80 @@
+/**
+ * 技术栈 → 学习路线链接映射（岗位地图统计视图用）。
+ * 规则（grilling 已决）：有内容的课进课程视图；课程筹备中退到单元首页；站内无对应内容 → null（渲染为纯文本）。
+ * 注意：MySQL 等关系型数据库在真实词频中占比高，但站内数据库课为 PostgreSQL，暂不链接（口径差异，避免误导）。
+ */
+
+export const skillLinks: Record<string, string | null> = {
+  // Agents 单元：Python 语言核心（有内容）
+  Python: '/agents/python/必看导言',
+  Django: '/agents/python/第三方库',
+  Flask: '/agents/python/第三方库',
+  Tornado: '/agents/python/第三方库',
+  FastAPI: '/agents/python/第三方库',
+  asyncio: '/agents/python/异步编程',
+  PostgreSQL: '/agents/database/PostgreSQL安装',
+  // Agents 单元：筹备中课程 → 单元首页
+  Numpy: '/agents/',
+  Pandas: '/agents/',
+  PyTorch: '/agents/',
+  TensorFlow: '/agents/',
+  LangChain: '/agents/',
+  大模型: '/agents/',
+  AI: '/agents/',
+  Agent: '/agents/',
+  // 后端单元
+  Java: '/backend/',
+  Spring: '/backend/',
+  'Spring Boot': '/backend/',
+  SpringCloud: '/backend/',
+  MyBatis: '/backend/',
+  Redis: '/backend/',
+  Kafka: '/backend/',
+  Dubbo: '/backend/',
+  JVM: '/backend/',
+  微服务: '/backend/',
+  // 运维单元
+  Linux: '/devops/',
+  Shell: '/devops/',
+  Docker: '/devops/',
+  Kubernetes: '/devops/',
+  'CI/CD': '/devops/',
+  DevOps: '/devops/',
+  SRE: '/devops/',
+  Nginx: '/devops/',
+  阿里云: '/devops/',
+  云平台: '/devops/',
+  Ansible: '/devops/',
+  Salt: '/devops/',
+  Puppet: '/devops/',
+  Jenkins: '/devops/',
+  网络基础协议: '/devops/',
+  // 企业级全栈单元
+  JavaScript: '/fullstack/',
+  TypeScript: '/fullstack/',
+  Vue: '/fullstack/',
+  React: '/fullstack/',
+  'Node.js': '/fullstack/',
+  HTML: '/fullstack/',
+  CSS: '/fullstack/',
+  HTML5: '/fullstack/',
+  前后端全栈: '/fullstack/',
+  架构设计: '/fullstack/',
+  项目管理: '/fullstack/',
+  // AI 编程单元
+  'Claude Code': '/ai-coding/',
+  提示工程: '/ai-coding/',
+  'AI 工作流': '/ai-coding/',
+  // 站内无对应内容：渲染为纯文本
+  MySQL: null,
+  Oracle: null,
+  MongoDB: null,
+  SQL: null,
+  C: null,
+  'C++': null,
+  Golang: null,
+  并行计算: null,
+  模型加速: null,
+  性能优化: null,
+  系统集成: null,
+};

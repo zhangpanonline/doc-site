@@ -37,8 +37,9 @@ export type UnitJobs = {
  * 已过滤已失效/代招/实习及非本路线岗位（硬件、销售、现场运维、培训、数据标注等）。
  * 薪资区间为样本 P10–P90，中位数为各岗位薪资中点值的中位数。
  * platforms 为按招聘平台分口径的统计；顶层 salaryRange/salaryMedian/sampleSize 为各平台合并口径。
- * ai-coding 阶段仅采「研发效能/AI 辅助开发」类工程岗（职位名须含工程信号），前程无忧侧样本较少（6 份）。
+ * ai-coding 阶段仅采「研发效能/AI 辅助开发」类工程岗（职位名须含工程信号），前程无忧侧样本较少（11 份）。
  * 递进规则：第 N 阶段岗位要求 = 本阶段新增技能 + 第 1..N-1 阶段全部技能。
+ * 分城市薪资与技能标签词频统计见 data/jobsStats.ts（由 boss-crawler 归档目录 city_stats.py 生成，勿手改）。
  */
 export const jobs: Record<string, UnitJobs> = {
   agents: {

@@ -467,6 +467,246 @@
   text-decoration: none;
 }
 
+/* ===== 岗位地图统计视图 ===== */
+.js-stats {
+  margin: 28px 0 8px;
+}
+.js-title {
+  font-family: var(--ifm-heading-font-family);
+  font-size: 24px;
+  margin: 0 0 6px;
+}
+.js-sub {
+  color: var(--course-muted);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.js-sec-title {
+  font-size: 16px;
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--course-border);
+}
+.js-note-plain {
+  display: inline-block;
+  color: var(--course-muted);
+  font-size: 12.5px;
+  margin: 4px 0;
+}
+.js-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 18px;
+}
+.js-tab {
+  border: 1px solid var(--course-border);
+  background: var(--course-card);
+  color: var(--course-fg);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.js-tab:hover {
+  border-color: var(--course-accent);
+}
+.js-tab-active {
+  background: var(--course-highlight);
+  border-color: var(--course-accent);
+  color: var(--course-accent-ink);
+  font-weight: 700;
+}
+.js-box-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.js-box-label {
+  flex: 0 0 84px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--course-accent-ink);
+  padding-top: 22px;
+}
+.js-box-cells {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  flex: 1;
+  padding-bottom: 4px;
+}
+.js-city {
+  flex: 0 0 64px;
+  text-align: center;
+}
+.js-city-name {
+  font-size: 12px;
+  color: var(--course-fg);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+.js-box {
+  position: relative;
+  height: 110px;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 26px,
+    var(--course-border) 26px,
+    var(--course-border) 27px
+  );
+  border-left: 1px solid var(--course-border);
+}
+.js-box-whisker {
+  position: absolute;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--course-muted);
+}
+.js-box-body {
+  position: absolute;
+  left: 12%;
+  width: 76%;
+  background: var(--course-accent);
+  opacity: 0.35;
+  border: 1px solid var(--course-accent);
+  border-radius: 3px;
+}
+.js-box-median {
+  position: absolute;
+  left: 8%;
+  width: 84%;
+  height: 2px;
+  background: var(--course-accent-ink);
+}
+.js-city-meta {
+  font-size: 11px;
+  color: var(--course-muted);
+  display: block;
+  margin-top: 4px;
+}
+.js-city-empty {
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  color: var(--course-muted);
+  border: 1px dashed var(--course-border);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+.js-box-scale {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--course-muted);
+  padding-top: 12px;
+  writing-mode: vertical-rl;
+}
+.js-matrix {
+  border: 1px solid var(--course-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin-bottom: 8px;
+}
+.js-matrix-head,
+.js-matrix-row {
+  display: grid;
+  grid-template-columns: 150px repeat(5, 84px);
+  gap: 6px;
+  align-items: center;
+  min-width: 700px;
+}
+.js-matrix-head {
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--course-muted);
+  margin-bottom: 8px;
+}
+.js-matrix-corner {
+  font-size: 12px;
+  color: var(--course-muted);
+}
+.js-matrix-row {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.js-matrix-cell {
+  text-align: center;
+  border-radius: 6px;
+  padding: 4px 0;
+  font-size: 12px;
+  color: var(--course-fg);
+  background: var(--course-code-bg);
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.js-matrix-new {
+  background: var(--course-accent);
+  color: #fff;
+  font-weight: 700;
+}
+.js-matrix-keep {
+  background: var(--course-highlight);
+  color: var(--course-accent-ink);
+}
+.js-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.js-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--course-border);
+  background: var(--course-card);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12.5px;
+}
+.js-chip-count {
+  color: var(--course-muted);
+  font-size: 11px;
+}
+.js-tag {
+  color: var(--course-accent-ink);
+  border-bottom: 1px solid color-mix(in srgb, var(--course-accent) 40%, transparent);
+}
+.js-tag:hover {
+  color: var(--course-accent);
+  text-decoration: none;
+  border-bottom-color: var(--course-accent);
+}
+.js-tag-plain {
+  color: var(--course-fg);
+  border-bottom: none;
+}
+.js-intersect-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.js-intersect-label {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--course-fg);
+}
+.js-intersect-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 @media (max-width: 996px) {
   .ai-tiles {
     grid-template-columns: 1fr 1fr;
