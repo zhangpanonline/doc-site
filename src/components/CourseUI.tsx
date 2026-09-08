@@ -158,7 +158,7 @@ export function JobBoard({unit}: {unit: string}): ReactNode {
           <p className="ai-course-desc">各平台口径</p>
           <div className="ai-chips">
             {d.platforms.map(p => (
-              <span key={p.platform} className="ai-chip">
+              <span key={p.platform} className="ai-chip ai-chip--platform">
                 {p.label}：{p.sampleSize} 份 · {p.salaryRange[0]}–{p.salaryRange[1]}K · 中位数 {p.salaryMedian}K
               </span>
             ))}
@@ -168,6 +168,7 @@ export function JobBoard({unit}: {unit: string}): ReactNode {
       <p className="ai-meta">
         递进规则：本阶段岗位要求默认包含前面所有阶段的技能。
         样本 {d.sampleSize} 份 · 更新于 {d.updatedAt}。
+        薪资区间为样本 P10–P90；BOSS 直聘为全国口径，前程无忧为北上深杭蓉汉六城口径。
         数据为各招聘平台公开岗位信息的聚合统计，不含公司信息与岗位原文。
       </p>
     </div>
@@ -184,7 +185,7 @@ export function JobsTiles(): ReactNode {
             {String(d.stage).padStart(2, '0')} · {d.title}
           </h3>
           <p className="ai-tile-desc">{d.positions.join(' / ')}</p>
-          <span className="ai-badge">{d.salaryRange[0]}–{d.salaryRange[1]}K/月</span>
+          <span className="ai-badge">{d.salaryRange[0]}–{d.salaryRange[1]}K/月 · {d.sampleSize} 份</span>
           <span className="ai-enter">查看岗位 →</span>
         </Link>
       ))}

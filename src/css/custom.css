@@ -337,6 +337,11 @@
   border-radius: 6px;
   padding: 3px 8px;
 }
+/* 平台分口径 chip：虚线边框弱化视觉，与岗位/技能 chip 区分 */
+.ai-chip--platform {
+  border: 1px dashed color-mix(in srgb, var(--course-muted) 45%, transparent);
+  background: transparent;
+}
 .ai-cta {
   font-weight: 600;
   font-size: 14px;
