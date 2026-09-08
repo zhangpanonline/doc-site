@@ -33,7 +33,7 @@ export type UnitJobs = {
  * 岗位地图数据（聚合统计，按学习路线递进）
  * 数据来源：各招聘平台公开岗位信息的聚合统计，不含公司信息与岗位原文。
  * - BOSS 直聘：全国口径，726 份去重样本（8 家公司定向 + 11 组岗位关键词，2026-09-07 起分批采集，09-08 换号补全）
- * - 前程无忧：6 城口径（北上深杭蓉汉，9 组岗位关键词），1080 条去重后 1015 份（2026-09-08）
+ * - 前程无忧：10 城口径（北上广深杭蓉汉宁西渝，12 组岗位关键词），2352 条去重后 1999 份（2026-09-08）
  * 已过滤已失效/代招/实习及非本路线岗位（硬件、销售、现场运维、培训、数据标注等）。
  * 薪资区间为样本 P10–P90，中位数为各岗位薪资中点值的中位数。
  * platforms 为按招聘平台分口径的统计；顶层 salaryRange/salaryMedian/sampleSize 为各平台合并口径。
@@ -47,9 +47,9 @@ export const jobs: Record<string, UnitJobs> = {
     stage: 1,
     positions: ['Python 开发工程师', 'AI Agent 开发工程师', '大模型应用开发工程师'],
     skills: ['Python', 'PostgreSQL', 'LangChain', 'FastAPI', 'asyncio'],
-    salaryRange: [7, 45],
-    salaryMedian: 18,
-    sampleSize: 374,
+    salaryRange: [6, 45],
+    salaryMedian: 17,
+    sampleSize: 662,
     updatedAt: '2026-09-08',
     platforms: [
       {
@@ -63,9 +63,9 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 285,
-        salaryRange: [8, 50],
-        salaryMedian: 19,
+        sampleSize: 573,
+        salaryRange: [6, 50],
+        salaryMedian: 18,
         updatedAt: '2026-09-08',
       },
     ],
@@ -77,8 +77,8 @@ export const jobs: Record<string, UnitJobs> = {
     positions: ['Java 开发工程师', '后端开发工程师', '微服务架构师'],
     skills: ['Java', 'Spring Boot', 'Spring Cloud', 'Redis'],
     salaryRange: [8, 30],
-    salaryMedian: 15,
-    sampleSize: 324,
+    salaryMedian: 14,
+    sampleSize: 461,
     updatedAt: '2026-09-08',
     platforms: [
       {
@@ -92,7 +92,7 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 225,
+        sampleSize: 362,
         salaryRange: [8, 30],
         salaryMedian: 15,
         updatedAt: '2026-09-08',
@@ -105,9 +105,9 @@ export const jobs: Record<string, UnitJobs> = {
     stage: 3,
     positions: ['运维工程师', 'SRE 工程师', '云平台工程师'],
     skills: ['Linux', 'Docker', 'Kubernetes', 'CI/CD'],
-    salaryRange: [6, 35],
-    salaryMedian: 14,
-    sampleSize: 228,
+    salaryRange: [6, 30],
+    salaryMedian: 12,
+    sampleSize: 305,
     updatedAt: '2026-09-08',
     platforms: [
       {
@@ -121,9 +121,9 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 164,
-        salaryRange: [6, 35],
-        salaryMedian: 14,
+        sampleSize: 241,
+        salaryRange: [6, 30],
+        salaryMedian: 12,
         updatedAt: '2026-09-08',
       },
     ],
@@ -134,9 +134,9 @@ export const jobs: Record<string, UnitJobs> = {
     stage: 4,
     positions: ['AI 辅助开发工程师', '研发效能工程师'],
     skills: ['Claude Code', '提示工程', 'AI 工作流'],
-    salaryRange: [8, 52],
-    salaryMedian: 24,
-    sampleSize: 36,
+    salaryRange: [8, 50],
+    salaryMedian: 22,
+    sampleSize: 41,
     updatedAt: '2026-09-08',
     platforms: [
       {
@@ -150,9 +150,9 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 6,
-        salaryRange: [9, 48],
-        salaryMedian: 24,
+        sampleSize: 11,
+        salaryRange: [8, 45],
+        salaryMedian: 22,
         updatedAt: '2026-09-08',
       },
     ],
@@ -163,9 +163,9 @@ export const jobs: Record<string, UnitJobs> = {
     stage: 5,
     positions: ['全栈工程师', '技术负责人'],
     skills: ['前后端全栈', '架构设计', '项目管理'],
-    salaryRange: [8, 40],
+    salaryRange: [8, 36],
     salaryMedian: 16,
-    sampleSize: 192,
+    sampleSize: 239,
     updatedAt: '2026-09-08',
     platforms: [
       {
@@ -179,9 +179,9 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 117,
-        salaryRange: [8, 35],
-        salaryMedian: 17,
+        sampleSize: 164,
+        salaryRange: [7, 35],
+        salaryMedian: 16,
         updatedAt: '2026-09-08',
       },
     ],
