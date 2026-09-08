@@ -260,8 +260,12 @@ export function JobsTiles(): ReactNode {
           <h3 className="ai-tile-name">
             {String(d.stage).padStart(2, '0')} · {d.title}
           </h3>
-          <p className="ai-tile-desc">{d.positions.join(' / ')}</p>
-          <span className="ai-badge">{d.salaryRange[0]}–{d.salaryRange[1]}K/月 · {d.sampleSize} 份</span>
+          <div className="ai-chips ai-tile-chips">
+            {d.positions.map(p => <span key={p} className="ai-chip">{p}</span>)}
+          </div>
+          <span className="ai-badge">
+            {d.salaryRange[0]}–{d.salaryRange[1]}K/月 · 中位 {d.salaryMedian}K · {d.sampleSize} 份
+          </span>
           <span className="ai-enter">查看岗位 →</span>
         </Link>
       ))}
