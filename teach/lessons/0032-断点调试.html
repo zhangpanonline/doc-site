@@ -14,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 30 课</p>
       <h1>断点调试</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/断点调试/">30.断点调试</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/断点调试/">30.断点调试</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -217,85 +217,59 @@
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握断点调试——<strong>恭喜你完成了《Python 语言核心》全部 30 章的互动课程！</strong>🎉</p>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（调试原理·高频）：Python 调试器（pdb/debugpy）是怎么「停住」程序的？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">sys.settrace 注册追踪函数，每个事件回调检查断点</button>
-            <button class="quiz-option">修改源码插入暂停语句</button>
-            <button class="quiz-option">用信号挂起整个进程</button>
-            <button class="quiz-option">编译器支持的特殊指令</button>
-          </div>
-          <div class="quiz-explain" hidden>调试器的核心机制是 <code>sys.settrace</code>：向解释器注册追踪函数后，<strong>每个执行事件</strong>（line/call/return/exception）都会回调 tracer——调试器在其中检查断点、暂停执行、读取栈帧变量。debugpy 就是在 DAP 协议之上的工业级实现。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（基础理论 + 工程实践篇）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（调试实践·追问）：线上/远程服务出问题时，你常用的排查手段？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">日志 + 远程 attach 调试 + 复现最小用例，分级排查</button>
-            <button class="quiz-option">直接在生产环境加 print</button>
-            <button class="quiz-option">重启服务看运气</button>
-            <button class="quiz-option">只靠阅读源码猜</button>
-          </div>
-          <div class="quiz-explain" hidden>工程实践的标准回答：① 完善<strong>日志</strong>（分级别、带上下文）是第一道防线；② 疑难问题用 <strong>debugpy attach</strong> 远程连接（--listen 端口）打断点排查；③ <strong>最小复现</strong>（剥离无关代码缩小范围）；④ 事后补测试防回归。「生产环境 print」会被视为不专业的信号。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（breakpoint 机制·深水区）：<code>breakpoint()</code> 与 <code>PYTHONBREAKPOINT=0</code> 环境变量的关系是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">环境变量设为 0 可全局禁用所有 breakpoint 调用</button>
-            <button class="quiz-option">breakpoint 不受环境变量控制</button>
-            <button class="quiz-option">环境变量只影响 pdb 的启动方式</button>
-            <button class="quiz-option">两者互不相关</button>
-          </div>
-          <div class="quiz-explain" hidden><code>breakpoint()</code>（3.7+）是 <code>import pdb; pdb.set_trace()</code> 的内置化：其行为由 <strong>PYTHONBREAKPOINT</strong> 环境变量控制——设为 <code>0</code> 时<strong>全局禁用</strong>所有断点（防止调试代码泄漏到生产），设为别的调用名则可替换调试器。这解释了很多团队「生产环境必须设 PYTHONBREAKPOINT=0」的规范。<a href="https://www.php.cn/faq/2494969.html">出处：PHP 中文站「为什么 Python 异步代码比同步代码难调试」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（异步调试·陷阱）：VS Code 调试 asyncio 程序，断点「看起来跳过了 await 之后的行」，为什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">默认 justMyCode=true 跳过了 asyncio 内部调度代码</button>
-            <button class="quiz-option">asyncio 不支持断点调试</button>
-            <button class="quiz-option">断点设置在了不可达行</button>
-            <button class="quiz-option">VS Code 的 bug</button>
-          </div>
-          <div class="quiz-explain" hidden>await 之后的恢复调度发生在 <strong>asyncio 库内部</strong>——VS Code 默认 <code>"justMyCode": true</code> 只调试用户代码，调度帧被跳过，看起来像「断点跳行」。解法：launch.json 里设 <code>"justMyCode": false</code>，并确认协程确实被调度（否则断点打在「幻影函数」上）。<a href="https://www.php.cn/faq/2494969.html">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（调试手段·工程）：循环跑了几百次才出问题，最快定位方式？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">条件断点：设断点条件，命中目标迭代才停</button>
-            <button class="quiz-option">从头单步执行几百次循环</button>
-            <button class="quiz-option">把循环删掉重写</button>
-            <button class="quiz-option">print 每次迭代的全部变量</button>
-          </div>
-          <div class="quiz-explain" hidden>条件断点（断点上右键设条件，如 <code>i == 500</code>）让程序<strong>只在命中条件时暂停</strong>——循环类问题的定位神器；日志断点（logpoint）则在不暂停的情况下输出变量。熟练使用它们是调试效率的专家标志。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（调试策略·设计）：生产环境问题排查，为什么「先日志后断点」？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">日志可长期留痕与复现；断点暂停会破坏生产请求</button>
-            <button class="quiz-option">断点在生产环境速度更快</button>
-            <button class="quiz-option">日志没有断点准确</button>
-            <button class="quiz-option">生产环境禁止任何调试</button>
-          </div>
-          <div class="quiz-explain" hidden>生产环境的标准策略：<strong>日志先行</strong>（分级、带上下文，可长期留痕、离线复现）；疑难问题才考虑远程 attach 断点——因为断点会<strong>暂停进程</strong>，生产请求被挂起甚至雪崩。日志是「可回放的事后证据」，断点是「交互式的事中手术」，场景决定手段。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同专家题一</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0032-断点调试',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `Python 调试器（pdb/debugpy）是怎么「停住」程序的？breakpoint() 背后发生了什么？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目」（调试原理题）· 场景改写',
+    breakdown: `断点/breakpoint() 处调用 <code>sys.settrace</code> 注入<strong>跟踪函数</strong>——解释器<strong>每执行一行字节码前</strong>回调它，跟踪函数发现「该停了」就进入交互循环（pdb 提示符）。开销即来源：跟踪期间每一行都有回调成本，所以调试态明显变慢。<code>breakpoint()</code> 就是 <code>import pdb; pdb.set_trace()</code> 的内置快捷方式（可用 PYTHONBREAKPOINT 换成其他调试器）。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `线上/远程服务出问题，你常用的排查手段有哪些？优先级怎么排？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目」（调试实践题）· 场景改写',
+    breakdown: `标准顺序：① <strong>日志</strong>（结构化、含 trace id/参数/耗时——线上第一现场）；② <strong>监控指标</strong>（CPU/内存/慢查询/错误率，定位时间点与范围）；③ <strong>错误聚合</strong>（Sentry 类，拿完整堆栈+上下文）；④ 可复现问题才上<strong>本地/远程调试器</strong>（debugpy attach）。「线上直接下断点」只在万不得已且不影响流量时做。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `VS Code 调试 asyncio 程序，断点「看起来跳过了 await 之后的行」、变量状态也不对。审查：为什么异步代码难调试？怎么设断点才对？`,
+    source: '考点来源：PHP 中文站「为什么 Python 异步代码比同步代码难调试」（异步调试题）· 场景改写',
+    breakdown: `协程是<strong>交错执行</strong>的：断点停住时，别的协程可能已在你挂起期间改过状态；await 之后「跳行」是因为执行在多个协程/回调间来回跳，不是顺序流。对策：① 单步用 <code>debugpy 的 asyncio 感知模式</code>（VS Code 支持按 Task 隔离堆栈）；② 断点打在<strong>await 之后的第一个同步行</strong>；③ 配合日志时间戳看交错顺序；④ 一次只调试一个协程（临时注释并发）。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `生产环境问题排查，为什么「先日志后断点」？什么情况下断点反而更高效？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（调试策略题）· 场景改写',
+    breakdown: `<strong>日志是事后取证</strong>：生产问题多是「已经发生了」——断点只能逮现行，日志能还原历史（谁在什么时候做了什么）。且断点会暂停服务（流量受损）、影响时序（停一下竞态就没了）。断点更高效的场景：<strong>本地可稳定复现</strong>的复杂状态推导（循环几百次才出问题的第 N 次、深递归、复杂条件）——此时条件断点秒杀 print 轰炸。原则：先日志缩小范围，断点做最后一击。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `用条件断点定位「循环第 N 次出错」（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '写一个循环 500 次、第 300 次结果异常的函数；分别演示：① 用 breakpoint()/条件断点（VS Code 条件 i==299）直接停在第 300 次；② 用日志定位的大致流程；总结两者适用场景。',
+      accept: ['条件断点能精确停在出错迭代', '能说清 sys.settrace 的调试原理', '能总结「日志先行、断点收尾」的适用边界'],
+    },
+    source: '任务基于《32.断点调试》课程知识点 · 来源层级：一手（Python 官方文档 pdb 章节）场景化',
+    breakdown: `思路：<code>for i in range(500): if i == 299: breakpoint()</code>（或 VS Code 条件断点）；日志版在出错分支打 error 日志 + i 值。坑：循环里 breakpoint 要配条件，无脑断点要按 299 次继续；异步代码里的断点注意交错状态（审查题同款）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -313,5 +287,6 @@
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

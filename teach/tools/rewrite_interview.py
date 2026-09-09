@@ -1262,6 +1262,133 @@ async def main():
     breakdown: `思路：pyproject.toml 里 [project] 元数据 + [build-system]（hatchling/setuptools）→ <code>python -m build</code> 产出 dist/ 两种产物 → 新 venv <code>pip install dist/*.whl</code> 验证入口。坑：入口点写在 [project.scripts]；构建前确认包目录结构（src 布局或平铺）；私有凭证别写进配置（审查题同款）。`,
   },
 ]'''),
+    # ——— 第八批 ———
+    ('0030-项目管理工具.html', '巩固与延伸', '0030-项目管理工具', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `uv 相比 pip + venv 的改进是什么？为什么现代项目都在迁移到 uv？`,
+    source: '考点来源：腾讯云开发者社区（Python 面试高频考点中文版）（现代工具链题）· 场景改写',
+    breakdown: `uv 是 Rust 写的<strong>一体化工具</strong>：① 装包快一个数量级（并行下载+缓存）；② <strong>uv.lock 全局依赖解析</strong>（pip 无解析，装冲突靠运气）；③ 自带 venv 管理（uv venv / uv sync）；④ 可当包管理器+运行器（uv run）。一句话：pip 时代「装对依赖」是手艺活，uv 把它变成确定性操作。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `pyproject.toml 里写 <code>requests>=2</code>、uv.lock 里锁的是 <code>requests==2.32.3</code>。两者不一致时 uv 以谁为准？为什么会出现不一致？`,
+    source: '考点来源：uv 官方文档（锁文件漂移题）· 场景改写',
+    breakdown: `<strong>uv.lock 是唯一事实源</strong>——安装永远按锁文件；pyproject 只是「意图声明」。不一致的典型原因：改了 pyproject 的依赖后<strong>忘了跑 uv lock / uv sync</strong>。识别方法：<code>uv lock --check</code> 在 CI 里验证锁文件是否过期。AI 改完依赖只改 pyproject 不重新锁定，是团队协作最常见的漂移事故。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `CI 里跑 uv，依赖安装每轮都要 2 分钟。审查：怎么加速？缓存键应该怎么设计才安全？`,
+    source: '考点来源：uv 官方文档（CI 缓存题）· 场景改写',
+    breakdown: `① CI 缓存 <code>~/.cache/uv</code>（uv 的全局包缓存）——命中的话 install 只做链接；② <strong>缓存键用 uv.lock 的哈希</strong>：锁文件变才失效缓存（用 pyproject 哈希则改一行注释也失效）；③ <code>uv sync --frozen</code>（CI 里锁死，禁止隐式改锁）；④ 自建镜像/PyPI 代理减少公网下载。缓存键设计错误（比如按日期失效）是 CI 慢且漂移的元凶。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `uv、poetry、pip + venv 怎么选？决策依据是什么？`,
+    source: '考点来源：Maxiom「Python Developer Interview Questions（2026）」（工具选型题）· 场景改写',
+    breakdown: `新项目默认 <strong>uv</strong>（快 + 现代标准 pyproject + 锁文件）；poetry 适合需要其<strong>发布工作流</strong>的团队（或存量项目已用它）；pip + venv 只在「最小依赖、不想引入新工具」时用（代价是没锁文件，自己用 pip freeze 补）。判断标准不是性能，而是<strong>团队是否需要一个权威的锁文件 + 统一的发布流程</strong>。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `把项目迁移到 uv（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: 'uv init → uv add 两个依赖（如 requests、pytest）→ 生成 uv.lock → CI 检查 uv lock --check 通过 → uv sync --frozen 在全新环境复现安装。',
+      accept: ['uv.lock 生成且包含间接依赖', '--frozen 安装与锁文件一致', '能说清 pyproject 与 lock 的关系'],
+    },
+    source: '任务基于《30.项目管理工具》课程知识点 · 来源层级：一手（uv 官方文档）场景化',
+    breakdown: `思路：<code>uv init && uv add requests pytest && uv sync</code>；CI 步骤加 <code>uv lock --check</code> 与 <code>uv sync --frozen</code>。坑：迁移老项目别丢原有 requirements 约束（先 uv add -r requirements.txt 再锁定）；--frozen 下 pyproject 与锁不一致会直接报错（这正是 CI 想要的）。`,
+  },
+]'''),
+    ('0031-monorepo.html', '巩固与延伸', '0031-monorepo', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `什么场景选 Monorepo？它解决什么问题、引入什么成本？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（monorepo vs multirepo 题）· 场景改写',
+    breakdown: `Monorepo = <strong>多包一个仓库</strong>：适合包间改动频繁、需要原子提交（改 API 同时改所有调用方）、统一 CI/依赖的场景（shared 库 + 多个服务）。成本：仓库变大、构建要增量化、发布要按包版本化。multirepo 适合包完全独立、团队边界清晰的情况。判断标准：<strong>包之间是不是经常一起改</strong>。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `uv 的 workspace 机制是什么？成员包之间怎么互相依赖？`,
+    source: '考点来源：uv 官方文档 Using workspaces（workspace 机制题）· 场景改写',
+    breakdown: `根目录 pyproject 的 <code>[tool.uv.workspace] members = [...]</code> 声明成员包；成员间用<strong>普通依赖声明</strong>（如 agents 依赖 <code>shared</code>）+ <strong>workspace 源码可编辑安装</strong>——本地解析为源码目录（改 shared 立即对 agents 生效），发布时解析为版本依赖。同仓库内不需要「发布后再安装」的流程。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `workspace 里 shared 依赖 agents、agents 又依赖 shared。审查：uv 会怎样？怎么修？`,
+    source: '考点来源：uv 官方文档 Using workspaces（循环依赖题）· 场景改写',
+    breakdown: `workspace 内<strong>禁止循环依赖</strong>——uv lock 会报错（依赖图无法排序）。修复：① 把互相需要的部分<strong>下沉到第三个包</strong>（如 contracts 包放公共接口/类型，两边都依赖它）；② 用<strong>依赖倒置</strong>：shared 只定义抽象/协议，agents 实现后注入。循环依赖是 monorepo 重构最该先治的病灶——它意味着边界设计错了。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `monorepo 里多个包，发布策略怎么选？CI 如何避免「改一个包、全量重测」？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（发布策略题）· 场景改写',
+    breakdown: `发布：<strong>各包独立版本号</strong>（semver），改动哪个发哪个；根仓库不打统一 tag。CI 增量：① 按<strong>变更检测</strong>只跑受影响包（比较依赖图，shared 变了才重跑 agents）；② 缓存按「包 + 依赖哈希」组织；③ 影响面用工具（如 nx/turborepo 的 affected 命令）自动推导。目标：提交只改 docs 时不触发任何包测试。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `搭一个 uv workspace（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '根包 + shared（工具函数）+ agents（依赖 shared）两个成员包；agents 导入 shared 的函数运行成功；uv lock 成功；改 shared 源码后 agents 立即用到新行为（无需重装）。',
+      accept: ['workspace 成员声明正确', 'agents 依赖 shared 解析为源码', 'shared 改动即时生效（能说清可编辑安装原理）'],
+    },
+    source: '任务基于《31.monorepo》课程知识点 · 来源层级：一手（uv 官方文档 Using workspaces）场景化',
+    breakdown: `思路：根 pyproject 配 <code>[tool.uv.workspace]</code> + members；shared 与 agents 各自 pyproject；agents 里 <code>dependencies = ["shared"]</code>；<code>uv sync</code> 后 uv run 验证。坑：成员包都要有 version 字段；别在 workspace 内出现循环依赖（审查题同款）。`,
+  },
+]'''),
+    ('0032-断点调试.html', '巩固与延伸', '0032-断点调试', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `Python 调试器（pdb/debugpy）是怎么「停住」程序的？breakpoint() 背后发生了什么？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目」（调试原理题）· 场景改写',
+    breakdown: `断点/breakpoint() 处调用 <code>sys.settrace</code> 注入<strong>跟踪函数</strong>——解释器<strong>每执行一行字节码前</strong>回调它，跟踪函数发现「该停了」就进入交互循环（pdb 提示符）。开销即来源：跟踪期间每一行都有回调成本，所以调试态明显变慢。<code>breakpoint()</code> 就是 <code>import pdb; pdb.set_trace()</code> 的内置快捷方式（可用 PYTHONBREAKPOINT 换成其他调试器）。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `线上/远程服务出问题，你常用的排查手段有哪些？优先级怎么排？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目」（调试实践题）· 场景改写',
+    breakdown: `标准顺序：① <strong>日志</strong>（结构化、含 trace id/参数/耗时——线上第一现场）；② <strong>监控指标</strong>（CPU/内存/慢查询/错误率，定位时间点与范围）；③ <strong>错误聚合</strong>（Sentry 类，拿完整堆栈+上下文）；④ 可复现问题才上<strong>本地/远程调试器</strong>（debugpy attach）。「线上直接下断点」只在万不得已且不影响流量时做。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `VS Code 调试 asyncio 程序，断点「看起来跳过了 await 之后的行」、变量状态也不对。审查：为什么异步代码难调试？怎么设断点才对？`,
+    source: '考点来源：PHP 中文站「为什么 Python 异步代码比同步代码难调试」（异步调试题）· 场景改写',
+    breakdown: `协程是<strong>交错执行</strong>的：断点停住时，别的协程可能已在你挂起期间改过状态；await 之后「跳行」是因为执行在多个协程/回调间来回跳，不是顺序流。对策：① 单步用 <code>debugpy 的 asyncio 感知模式</code>（VS Code 支持按 Task 隔离堆栈）；② 断点打在<strong>await 之后的第一个同步行</strong>；③ 配合日志时间戳看交错顺序；④ 一次只调试一个协程（临时注释并发）。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `生产环境问题排查，为什么「先日志后断点」？什么情况下断点反而更高效？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（调试策略题）· 场景改写',
+    breakdown: `<strong>日志是事后取证</strong>：生产问题多是「已经发生了」——断点只能逮现行，日志能还原历史（谁在什么时候做了什么）。且断点会暂停服务（流量受损）、影响时序（停一下竞态就没了）。断点更高效的场景：<strong>本地可稳定复现</strong>的复杂状态推导（循环几百次才出问题的第 N 次、深递归、复杂条件）——此时条件断点秒杀 print 轰炸。原则：先日志缩小范围，断点做最后一击。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `用条件断点定位「循环第 N 次出错」（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '写一个循环 500 次、第 300 次结果异常的函数；分别演示：① 用 breakpoint()/条件断点（VS Code 条件 i==299）直接停在第 300 次；② 用日志定位的大致流程；总结两者适用场景。',
+      accept: ['条件断点能精确停在出错迭代', '能说清 sys.settrace 的调试原理', '能总结「日志先行、断点收尾」的适用边界'],
+    },
+    source: '任务基于《32.断点调试》课程知识点 · 来源层级：一手（Python 官方文档 pdb 章节）场景化',
+    breakdown: `思路：<code>for i in range(500): if i == 299: breakpoint()</code>（或 VS Code 条件断点）；日志版在出错分支打 error 日志 + i 值。坑：循环里 breakpoint 要配条件，无脑断点要按 299 次继续；异步代码里的断点注意交错状态（审查题同款）。`,
+  },
+]'''),
 ]
 
 

@@ -14,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 28 课</p>
       <h1>项目管理工具</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/项目管理工具/">28.项目管理工具</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/项目管理工具/">28.项目管理工具</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -217,85 +217,59 @@
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握 uv 工程化——可以继续学习《<a href="/agents/python/monorepo/">29.Monorepo</a>》了。</p>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（现代工具链·高频）：uv 相比 pip + venv 的改进是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">极速 + 一站式 + uv.lock 锁定完整依赖树保证可复现</button>
-            <button class="quiz-option">只是换了名字，功能完全相同</button>
-            <button class="quiz-option">只能替代 pip 的安装功能</button>
-            <button class="quiz-option">是 Python 官方发布的新标准库</button>
-          </div>
-          <div class="quiz-explain" hidden>uv 的三大卖点：① <strong>快</strong>（Rust 实现，比 pip 快 10-100 倍）；② <strong>一站式</strong>（pip/venv/pyenv/build/twine/poetry 的功能合一）；③ <strong>可复现</strong>（<code>uv.lock</code> 锁定完整依赖树）。面试中熟悉 uv/poetry 是「知识更新及时」的信号，只靠手写 requirements.txt 且无锁文件会被视为工程能力不足。<a href="https://cloud.tencent.cn/developer/article/2409986">出处：腾讯云开发者社区（Python 面试高频考点中文版）</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（锁文件·追问）：<code>uv.lock</code> 与手写的 requirements.txt 有什么区别？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">uv.lock 锁定完整依赖树（含传递依赖）的精确版本</button>
-            <button class="quiz-option">两者完全一样，只是文件格式不同</button>
-            <button class="quiz-option">uv.lock 只记录直接依赖</button>
-            <button class="quiz-option">requirements.txt 更精确</button>
-          </div>
-          <div class="quiz-explain" hidden>手写 requirements.txt 通常只列<strong>直接依赖</strong>（可能带范围）；<code>uv.lock</code> 记录<strong>整个依赖树</strong>（含所有传递依赖）的精确版本——这才是「任何机器上都能复现相同环境」的保证，也是区分现代工程与「在我机器上能跑」的关键。<a href="https://cloud.tencent.cn/developer/article/2409986">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（锁文件漂移·机制）：pyproject.toml 与 uv.lock 不一致时，<code>uv sync</code> 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">按 lock 安装并报漂移提示；用 uv lock --upgrade 更新</button>
-            <button class="quiz-option">自动忽略 lock 按 pyproject 装最新</button>
-            <button class="quiz-option">自动删除 lock 重新生成</button>
-            <button class="quiz-option">uv.lock 不存在漂移问题</button>
-          </div>
-          <div class="quiz-explain" hidden>锁文件是「可复现」的根基：<code>uv sync</code> 发现 lock 与 pyproject 不一致时会<strong>提示漂移</strong>（默认仍按 lock 装，保证环境确定），需要更新依赖时显式 <code>uv lock --upgrade</code> 或 <code>uv add</code> 重新解析。理解了漂移处理才真正理解锁文件。<a href="https://docs.astral.sh/uv/">出处：uv 官方文档（中文技术社区广泛收录）</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（CI 缓存·工程）：CI 里跑 uv，如何加速依赖安装？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">缓存 ~/.cache/uv 目录，复用下载的包</button>
-            <button class="quiz-option">每次都重新下载最新版本</button>
-            <button class="quiz-option">把 .venv 整个提交到仓库</button>
-            <button class="quiz-option">关闭 uv 的缓存功能</button>
-          </div>
-          <div class="quiz-explain" hidden>uv 的全局缓存（<code>~/.cache/uv</code>）跨项目复用下载的包——CI 中把该目录配置为<strong>缓存键</strong>，依赖没变时安装接近零成本。这是 uv 工程化的标准实践（GitHub Actions 的 cache 步骤即可）。<a href="https://docs.astral.sh/uv/">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（工具选型·设计）：uv、poetry、pip+venv 如何选？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">新项目默认 uv（快+全）；存量 pip 项目渐进迁移</button>
-            <button class="quiz-option">任何场景都必须用 poetry</button>
-            <button class="quiz-option">pip+venv 已够用，新工具没必要</button>
-            <button class="quiz-option">三者随机选一个即可</button>
-          </div>
-          <div class="quiz-explain" hidden>工程选型逻辑：新项目默认 <strong>uv</strong>（速度 10-100 倍、一站管理、锁文件可复现）；已有 poetry 项目不必强迁；存量 pip 项目可渐进迁移（uv 兼容 requirements.txt）。选型理由（速度/可复现/迁移成本）比工具名本身更重要。<a href="https://maxiom.dev/python-developer-interview-questions">出处：Maxiom「Python Developer Interview Questions（2026）」中文面试集收录</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（自动化边界·工程）：Makefile 与 CI 的职责边界是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">Makefile 提供本地约定入口；CI 负责每次提交的自动验证</button>
-            <button class="quiz-option">Makefile 可以替代 CI</button>
-            <button class="quiz-option">CI 可以替代 Makefile</button>
-            <button class="quiz-option">两者只能二选一</button>
-          </div>
-          <div class="quiz-explain" hidden>Makefile 是<strong>本地统一入口</strong>（新人 make test 即可，不记底层命令）；CI 是<strong>每次提交的自动看门</strong>（隔离环境跑检查/测试/构建）——CI 里调用的正是 Makefile 的目标（make lint / make test），两者是「约定层 + 自动化层」的分工而非替代。<a href="https://docs.astral.sh/uv/">出处：uv 官方文档（中文技术社区广泛收录）</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0030-项目管理工具',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `uv 相比 pip + venv 的改进是什么？为什么现代项目都在迁移到 uv？`,
+    source: '考点来源：腾讯云开发者社区（Python 面试高频考点中文版）（现代工具链题）· 场景改写',
+    breakdown: `uv 是 Rust 写的<strong>一体化工具</strong>：① 装包快一个数量级（并行下载+缓存）；② <strong>uv.lock 全局依赖解析</strong>（pip 无解析，装冲突靠运气）；③ 自带 venv 管理（uv venv / uv sync）；④ 可当包管理器+运行器（uv run）。一句话：pip 时代「装对依赖」是手艺活，uv 把它变成确定性操作。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `pyproject.toml 里写 <code>requests>=2</code>、uv.lock 里锁的是 <code>requests==2.32.3</code>。两者不一致时 uv 以谁为准？为什么会出现不一致？`,
+    source: '考点来源：uv 官方文档（锁文件漂移题）· 场景改写',
+    breakdown: `<strong>uv.lock 是唯一事实源</strong>——安装永远按锁文件；pyproject 只是「意图声明」。不一致的典型原因：改了 pyproject 的依赖后<strong>忘了跑 uv lock / uv sync</strong>。识别方法：<code>uv lock --check</code> 在 CI 里验证锁文件是否过期。AI 改完依赖只改 pyproject 不重新锁定，是团队协作最常见的漂移事故。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `CI 里跑 uv，依赖安装每轮都要 2 分钟。审查：怎么加速？缓存键应该怎么设计才安全？`,
+    source: '考点来源：uv 官方文档（CI 缓存题）· 场景改写',
+    breakdown: `① CI 缓存 <code>~/.cache/uv</code>（uv 的全局包缓存）——命中的话 install 只做链接；② <strong>缓存键用 uv.lock 的哈希</strong>：锁文件变才失效缓存（用 pyproject 哈希则改一行注释也失效）；③ <code>uv sync --frozen</code>（CI 里锁死，禁止隐式改锁）；④ 自建镜像/PyPI 代理减少公网下载。缓存键设计错误（比如按日期失效）是 CI 慢且漂移的元凶。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `uv、poetry、pip + venv 怎么选？决策依据是什么？`,
+    source: '考点来源：Maxiom「Python Developer Interview Questions（2026）」（工具选型题）· 场景改写',
+    breakdown: `新项目默认 <strong>uv</strong>（快 + 现代标准 pyproject + 锁文件）；poetry 适合需要其<strong>发布工作流</strong>的团队（或存量项目已用它）；pip + venv 只在「最小依赖、不想引入新工具」时用（代价是没锁文件，自己用 pip freeze 补）。判断标准不是性能，而是<strong>团队是否需要一个权威的锁文件 + 统一的发布流程</strong>。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `把项目迁移到 uv（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: 'uv init → uv add 两个依赖（如 requests、pytest）→ 生成 uv.lock → CI 检查 uv lock --check 通过 → uv sync --frozen 在全新环境复现安装。',
+      accept: ['uv.lock 生成且包含间接依赖', '--frozen 安装与锁文件一致', '能说清 pyproject 与 lock 的关系'],
+    },
+    source: '任务基于《30.项目管理工具》课程知识点 · 来源层级：一手（uv 官方文档）场景化',
+    breakdown: `思路：<code>uv init && uv add requests pytest && uv sync</code>；CI 步骤加 <code>uv lock --check</code> 与 <code>uv sync --frozen</code>。坑：迁移老项目别丢原有 requirements 约束（先 uv add -r requirements.txt 再锁定）；--frozen 下 pyproject 与锁不一致会直接报错（这正是 CI 想要的）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -313,5 +287,6 @@
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>
