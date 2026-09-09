@@ -131,6 +131,36 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `单行为、状态简单（linear 这种只算一个公式）→ <strong>闭包</strong>，代码最少；需要<strong>再挂方法/多状态/可继承</strong>（税率对象还要 set_rate()、历史记录）→ <strong>可调用对象</strong>。给 AI 的提示词里把「是否需要后续扩展方法」说清楚，AI 就不会在两个形态间摇摆。`,
   },
 ''',
+    '0003-python基本语法': r'''  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `<code>-22 // 10</code> 在 Python 里等于几？为什么不是 -2？官方 FAQ 怎么解释这个设计？`,
+    source: '来源：Python 官方文档 FAQ「Why does -22 // 10 return -3?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `等于 <strong>-3</strong>：// 是<strong>向下取整（floor）</strong>。FAQ 的设计理由：保证 <code>i == (i // j) * j + (i % j)</code> 恒等式成立，且让 <code>i % j</code> 与 j <strong>同号</strong>——j 为正时余数非负最有用（时钟例子：现在 10 点，200 小时前是 -190 % 12 == 2 点）。C 系语言向零截断，结果是 -2——跨语言写 AI 代码时这里最容易翻车。`,
+  },
+  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `字符串怎么「原地修改」？<code>s[0] = 'x'</code> 为什么报错？真要频繁修改文本怎么办？`,
+    source: '来源：Python 官方文档 FAQ「How do I modify a string in place?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>字符串不可变</strong>——不能原地改，常规做法是<strong>拼出新字符串</strong>；确需「原地可变 Unicode 数据」用 <code>io.StringIO</code>（seek/write 后 getvalue）或 array 模块。FAQ 原例：StringIO 里 seek(7) + write("there!") 把 "Hello, world" 改成 "Hello, there!"。AI 生成的文本处理代码里「字符串 += 拼接」循环是性能坑，高频拼接让 AI 用 join 或 StringIO。`,
+  },
+''',
+    '0009-对象的类型': r'''  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `想知道一个对象有哪些属性和方法，官方 FAQ 推荐用什么？dir 返回什么？`,
+    source: '来源：Python 官方文档 FAQ「How can I find the methods or attributes of an object?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>dir(x)</code>——返回<strong>按字母排序</strong>的名字列表，含实例属性、类定义的方法与属性。进阶：想知道「哪个类定义的」用 <code>type(x)</code>，逐个深挖用 inspect 模块（getmembers/signature）。这是读 AI 生成的第三方代码、摸清对象接口的第一步。`,
+  },
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码想「获取变量的名字」当字典 key（如 <code>name_of(obj)</code> 返回 'obj'）。FAQ 说这基本不可能——为什么？`,
+    source: '来源：Python 官方文档 FAQ「How can my code discover the name of an object?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>对象没有名字</strong>：赋值只是把<strong>名字绑定到值</strong>，一个对象可以有零到多个名字（<code>B = A; a = B()</code>——a 的名字是什么？A 还是 B？无从谈起）。FAQ 原话「Generally speaking, it can't」。硬要「命名」得自己维护映射表（name → obj），别让 AI 写反射变魔术。`,
+  },
+''',
 }
 
 
