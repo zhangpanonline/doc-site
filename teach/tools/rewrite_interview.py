@@ -576,6 +576,192 @@ users = {User('张三'), User('张三')}   # TypeError!</code></pre>`,
     breakdown: `思路：__eq__ 比较 (x, y) 元组，__hash__ = hash((self.x, self.y))；__repr__ 输出 <code>Point2D(3, 4)</code> 这种可 eval 形式；近似比较做成 <code>def close_to(self, other, tol=1e-9)</code> 普通方法。坑：__hash__ 与 __eq__ 必须用同一组字段（审查题同款）；repr 里变量名要能被 eval 找到。`,
   },
 ]'''),
+    # ——— 第四批 ———
+    ('0015-描述符.html', '巩固与延伸', '0015-描述符', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `什么是描述符？property 和描述符是什么关系？一个类要实现「数据描述符」至少需要哪些方法？`,
+    source: '考点来源：CSDN 文库「Python 面试核心考点解析：面向对象」（描述符应用题）· 场景改写',
+    breakdown: `描述符 = 实现了 <code>__get__ / __set__ / __delete__</code> 之一的类，<strong>作为类属性</strong>挂载时接管该名字的访问。<code>property</code> 本质就是内置描述符（包装 getter/setter 函数）。数据描述符（有 __set__ 或 __delete__）优先级高于实例字典，非数据描述符（只有 __get__）会被实例属性遮蔽——Django 模型字段、SQLAlchemy 列都是描述符。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `想给实例属性做类型检查（age 必须是 int、name 必须是 str），用描述符怎么做？写出核心逻辑。`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（类型检查描述符题）· 场景改写',
+    breakdown: `定义一个 ValidatedField 描述符：<code>__set_name__</code> 记住字段名，<code>__set__</code> 里 <code>isinstance(value, expected_type)</code> 不通过就 raise TypeError，通过才写 <code>instance.__dict__[self.name] = value</code>；<code>__get__</code> 从实例字典读。一个描述符类可以复用到 Person.age / Person.score 等所有字段——这是「描述符解决重复校验代码」的经典案例。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一个「缓存属性」描述符（第一次访问计算结果、存进实例字典），审查这段设计：
+<pre><code>class CachedProperty:
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+        value = obj.__dict__.get(self.name)
+        if value is None:
+            value = self.compute(obj)
+            obj.__dict__[self.name] = value
+        return value
+
+class Data:
+    @CachedProperty
+    def expensive(self): ...</code></pre>
+它属于数据描述符还是非数据描述符？实例同名属性会怎么干扰它？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（类级覆盖陷阱题）· 场景改写',
+    breakdown: `只实现 __get__，是<strong>非数据描述符</strong>——查找顺序上<strong>实例字典优先</strong>：一旦缓存写进 obj.__dict__，后续访问直接命中实例属性，描述符不再执行（这正是缓存想要的）；但代价是外部可以直接 <code>obj.expensive = '假的'</code> 覆盖缓存而描述符毫无察觉。若需要拦截赋值（校验/防覆盖），必须实现 __set__ 变成数据描述符。AI 代码里非数据描述符被实例属性「意外遮蔽」是高发审查点。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `面试官问：什么时候用 property，什么时候写自定义描述符类？两者怎么选？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（property 本质题）· 场景改写',
+    breakdown: `<strong>单个属性</strong>的读写控制（校验、懒加载、只读）用 property——声明式、最少代码；<strong>多个属性共享同一套规则</strong>（类型校验、范围校验、日志审计）时把规则抽成描述符类复用，否则每个字段都要重复 getter/setter。判断标准：出现第二个需要相同逻辑的属性时，就该重构为描述符。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个 <code>ValidatedField</code> 描述符（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '一个描述符类支持类型与范围校验（如 int 且 0~150）；复用到至少两个类三个字段；违规赋值在写入瞬间抛 TypeError/ValueError 且实例状态不变。',
+      accept: ['同一描述符类复用到多个字段', '非法赋值抛错且不写入', '__set_name__ 正确记录字段名'],
+    },
+    source: '任务基于《15.描述符》课程知识点 · 来源层级：一手（Python 官方文档描述符指南）场景化',
+    breakdown: `思路：__init__ 存类型与范围；<code>__set_name__</code> 存字段名（Python 3.6+ 免手写 name 参数）；__set__ 先校验再写 instance.__dict__；__get__ 读实例字典。坑：不要用 <code>setattr(obj, self.name, value)</code>（会再次触发描述符 → 递归）；默认值要在 __get__ 里处理（属性不存在时返回默认）。`,
+  },
+]'''),
+    ('0016-异常处理.html', '巩固与延伸', '0016-异常处理', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的函数：try 里 <code>return result</code>，finally 里也写了 <code>return</code>。函数最终返回哪个？finally 里的 return 有什么危害？`,
+    source: '考点来源：腾讯云「Python 异常处理机制——Python 面试 100 道实战题目练习」（finally 题）· 场景改写',
+    breakdown: `返回 <strong>finally 里的值</strong>——finally 中的 return 会<strong>吞掉</strong> try 的返回值，甚至吞掉抛出的异常（异常被 finally 的 return 静默替换）。危害：调用方拿到错误结果还不知道出错。正确姿势：finally 只做资源清理（close/rollback），绝不 return。AI 生成的清理代码里这是高频事故。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `捕获异常后想抛出新异常、但要保留「原始异常」以便溯源，正确写法是什么？裸 raise 又是什么？`,
+    source: '考点来源：掘金「掌握 Python 异常处理：面试中的关键考点」（异常链题）· 场景改写',
+    breakdown: `<code>raise NewError('包装信息') from e</code>——原始异常存进新异常的 <code>__cause__</code>，traceback 里两条链都能看到；<code>from None</code> 则显式切断链。裸 <code>raise</code>（except 块里不接对象）是<strong>原样重抛</strong>当前异常，用于「记录日志后继续上抛」。AI 生成的网关代码里，异常链保留是排查线上问题的关键。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 在入口处写了 <code>except:</code> 想把「所有错误」都兜住。审查：它其实会吞掉哪些不该吞的东西？为什么专家建议捕获 Exception 甚至更具体的异常？`,
+    source: '考点来源：掘金「掌握 Python 异常处理：面试中的关键考点」（BaseException 题）· 场景改写',
+    breakdown: `异常体系分两支：<code>Exception</code>（常规错误）与<strong> BaseException 直属的 SystemExit / KeyboardInterrupt / GeneratorExit</strong>。裸 <code>except:</code> 连 Ctrl+C（KeyboardInterrupt）和 sys.exit 都吞——用户想停服务都停不掉。正确：<code>except Exception</code> 兜底常规错误，具体业务异常更具体地捕获；清理逻辑用 finally 而不是 except。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `上下文管理器的 <code>__exit__</code> 返回 True 会发生什么？什么时候该「吞掉」异常，什么时候必须让它传播？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（with 与异常交互题）· 场景改写',
+    breakdown: `<code>__exit__</code> 返回 True = 告诉解释器「异常已处理」，异常<strong>不再传播</strong>给调用方。必须传播：资源操作失败、业务错误——吞了调用方就不知道失败。可以吞：抑制型场景（如 <code>contextlib.suppress(FileNotFoundError)</code> 明确表达「这个错无所谓」）。设计原则：吞异常必须是显式的、有理由的，而不是默认行为。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个安全的配置读取函数（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '读取 JSON 配置：文件不存在抛 ConfigError（用 raise ... from e 保留原始异常）；解析失败同理；finally 保证句柄关闭；写测试断言 __cause__ 链完整。',
+      accept: ['两类失败都抛 ConfigError 且保留 __cause__', '文件句柄在异常路径下也关闭（finally）', 'Ctrl+C 之类的 BaseException 不被误吞'],
+    },
+    source: '任务基于《16.异常处理》课程知识点 · 来源层级：一手（Python 官方文档异常章节）场景化',
+    breakdown: `思路：<code>except FileNotFoundError as e: raise ConfigError('配置不存在') from e</code>；finally 里 close；测试里 <code>assert cm.exception.__cause__</code>。坑：捕获范围写死具体异常类型，别用裸 except（审查题同款）；finally 里别 return。`,
+  },
+]'''),
+    ('0017-迭代器与生成器.html', '巩固与延伸', '0017-迭代器与生成器', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `可迭代对象、迭代器、生成器三者的区别是什么？怎么快速判断一个对象属于哪种？`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（三者区别题）· 场景改写',
+    breakdown: `<strong>可迭代对象</strong>：有 <code>__iter__</code>（list/dict/str/文件）；<strong>迭代器</strong>：有 <code>__next__</code> 且 __iter__ 返回自身（iter(list) 的结果）；<strong>生成器</strong>：含 yield 的函数调用产物，是最常用的迭代器。判断口诀：for 得动 = 可迭代；next 得动 = 迭代器；函数里有 yield = 生成器。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `要逐行处理一个 10GB 的日志文件做统计，内存只有 2GB。你会怎么写？为什么不能 <code>readlines()</code>？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（惰性读取题）· 场景改写',
+    breakdown: `<code>for line in f:</code>——文件对象是<strong>惰性迭代器</strong>，逐行读取、每行处理完即释放，内存占用恒定；<code>readlines()</code> 会把 10GB 全部载入内存，直接 OOM。进阶：处理逻辑包成<strong>生成器管道</strong>（逐行过滤→转换→统计），保持全链路惰性。AI 写的数据处理代码最爱上 readlines() 或 read()，审查大文件处理时先看这一条。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了下面的代码，第二次统计是 0。审查：为什么 list 能 for 两遍，迭代器不能？
+<pre><code>data = (x * 2 for x in range(100))   # 生成器表达式
+print(sum(data))   # 9900
+print(sum(data))   # 0  ← ？</code></pre>`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（可重复遍历题）· 场景改写',
+    breakdown: `<strong>迭代器是单程的</strong>：迭代器的 <code>__iter__</code> 返回自身，第一次 sum 已把它耗尽，第二次从尽头继续自然为空；list 的 __iter__ 每次返回<strong>新迭代器</strong>，所以可以反复遍历。修复：结果要复用就物化成 list，或需要时重新生成。AI 代码把生成器当集合复用是数据管道里的头号 bug。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `<code>yield</code> 和 <code>yield from</code> 有什么区别？生成器的 send() 是干什么的？什么场景会用到它？`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（send 协议题）· 场景改写',
+    breakdown: `<code>yield</code> 产出一个值；<code>yield from</code> 把控制<strong>委托</strong>给子生成器（for 循环的语法糖，异常/close 也透传）。<code>send(v)</code> 让外部向<strong>挂起的 yield 表达式注入值</strong>——生成器从「只出不进」变成「双向通道」，是协程/管道的雏形。典型场景：事件流处理、Actor 模型、需要外部反馈的流水线。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个日志统计管道（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '模拟 10 万行日志（不落大文件，用生成器产出），管道内完成：过滤 error 行 → 提取错误码 → 统计 Top3；全程用生成器/迭代器惰性处理，峰值内存恒定。',
+      accept: ['全链路惰性（生成器管道，无一次性大列表）', 'Top3 统计正确', '能说出峰值内存为什么是常数级'],
+    },
+    source: '任务基于《17.迭代器与生成器》课程知识点 · 场景化',
+    breakdown: `思路：<code>def gen_logs()</code> 产出日志 → <code>(code for line in gen_logs() if 'error' in line)</code> 过滤 → Counter 增量统计。坑：过滤生成器只能消费一次（审查题同款），统计前别中途物化；Counter 本身就是 O(去重数) 内存，恰好是「惰性流 + 小聚合」的标准组合。`,
+  },
+]'''),
+    ('0018-上下文管理器.html', '巩固与延伸', '0018-上下文管理器', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `with 语句的工作原理是什么？它比「手动 open + try/finally + close」好在哪里？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（with 原理题）· 场景改写',
+    breakdown: `with 是 <strong>__enter__ / __exit__ 协议</strong>的语法糖：进入时调 __enter__（拿返回值绑到 as 变量），<strong>无论正常退出还是抛异常</strong>都调 __exit__（参数含异常信息）。好处：资源释放（close/commit/释放锁）由协议保证，不可能忘写；异常路径和正常路径同一条清理逻辑。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `自定义上下文管理器有哪两种实现方式？各自怎么用、怎么选？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（实现方式题）· 场景改写',
+    breakdown: `① <strong>类实现 __enter__ / __exit__</strong>：状态多、逻辑重、要复用方法时用；② <strong>@contextlib.contextmanager</strong> 装饰生成器函数：yield 前是 __enter__、yield 后是 __exit__，适合一次性轻量场景（计时、临时改配置）。选择原则：要多次使用/带状态 → 类；用完即弃的包装 → contextmanager。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的数据库上下文管理器，__exit__ 里 <code>return True</code>。审查：线上事务失败为什么没报警？什么场景才该吞异常？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（吞异常代价题）· 场景改写',
+    breakdown: `<code>__exit__</code> 返回 True 会把异常<strong>吞掉</strong>——事务失败静默，调用方以为成功，监控永远不响。正确：__exit__ 返回 None/False 让异常继续传播（回滚后再传播是标准姿势）；只有「显式预期中的无关紧要错误」才吞（<code>contextlib.suppress</code>）。AI 代码默认吞异常是生产事故高发写法。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `为什么「失败重试」必须用装饰器实现，而上下文管理器实现不了？两者的职责边界是什么？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（retry 设计题）· 场景改写',
+    breakdown: `with 块是<strong>一次性进入-退出</strong>：__exit__ 在退出时执行，无法「重新进入」代码块——重试需要把同一段代码<strong>循环执行</strong>，只有装饰器（包装函数、循环调用）做得到。职责边界：上下文管理器管<strong>资源生命周期</strong>（连接、锁、临时状态），装饰器管<strong>调用行为</strong>（重试、缓存、限流、日志）。判断标准：问「要不要再执行一遍？」——要 → 装饰器。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个 <code>timer</code> 上下文管理器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '分别用「类实现协议」和「@contextmanager 生成器」两种方式实现：进入记录开始时间，退出打印块耗时；块内抛异常时也要打印耗时且异常继续传播。',
+      accept: ['两种实现行为一致', '异常路径下耗时照常打印、异常不丢失', '能说清两种方式的适用场景'],
+    },
+    source: '任务基于《18.上下文管理器》课程知识点 · 来源层级：一手（Python 官方文档 contextlib 章节）场景化',
+    breakdown: `思路：类版 __enter__ 记 time.perf_counter() 返回 self，__exit__ 算差值打印并<strong>返回 None</strong>（不吞异常）；生成器版 yield 放中间、finally 里打印。坑：__exit__ 别返回 True（审查题同款）；计时用 perf_counter 不用 time.time（墙钟会被系统时间调整干扰）。`,
+  },
+]'''),
 ]
 
 

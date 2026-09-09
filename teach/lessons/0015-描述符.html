@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 13 课</p>
       <h1>描述符</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/描述符/">13.描述符</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/描述符/">13.描述符</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -306,84 +306,73 @@ print(a.__dict__)             # ?</code></pre></div>
     </section>
 
     <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0015-描述符',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `什么是描述符？property 和描述符是什么关系？一个类要实现「数据描述符」至少需要哪些方法？`,
+    source: '考点来源：CSDN 文库「Python 面试核心考点解析：面向对象」（描述符应用题）· 场景改写',
+    breakdown: `描述符 = 实现了 <code>__get__ / __set__ / __delete__</code> 之一的类，<strong>作为类属性</strong>挂载时接管该名字的访问。<code>property</code> 本质就是内置描述符（包装 getter/setter 函数）。数据描述符（有 __set__ 或 __delete__）优先级高于实例字典，非数据描述符（只有 __get__）会被实例属性遮蔽——Django 模型字段、SQLAlchemy 列都是描述符。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `想给实例属性做类型检查（age 必须是 int、name 必须是 str），用描述符怎么做？写出核心逻辑。`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（类型检查描述符题）· 场景改写',
+    breakdown: `定义一个 ValidatedField 描述符：<code>__set_name__</code> 记住字段名，<code>__set__</code> 里 <code>isinstance(value, expected_type)</code> 不通过就 raise TypeError，通过才写 <code>instance.__dict__[self.name] = value</code>；<code>__get__</code> 从实例字典读。一个描述符类可以复用到 Person.age / Person.score 等所有字段——这是「描述符解决重复校验代码」的经典案例。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一个「缓存属性」描述符（第一次访问计算结果、存进实例字典），审查这段设计：
+<pre><code>class CachedProperty:
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+        value = obj.__dict__.get(self.name)
+        if value is None:
+            value = self.compute(obj)
+            obj.__dict__[self.name] = value
+        return value
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（描述符应用·高频）：<code>@property</code>、<code>@classmethod</code>、<code>@staticmethod</code> 的底层机制是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">描述符协议（__get__/__set__/__delete__）</button>
-            <button class="quiz-option">元类的 __new__ 方法</button>
-            <button class="quiz-option">装饰器的闭包机制</button>
-            <button class="quiz-option">C 扩展的特殊语法</button>
-          </div>
-          <div class="quiz-explain" hidden>property、classmethod、staticmethod <strong>都是描述符</strong>：它们都实现了描述符协议的 <code>__get__</code>（property 还带 <code>__set__</code>/<code>__delete__</code>），通过类属性挂载拦截访问——理解了描述符，这三个「魔法」就都透明了。<a href="https://wenku.csdn.net/doc/6et562nus6">出处：CSDN 文库「Python 面试核心考点解析：面向对象」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（类型检查·高频追问）：想给实例属性做「类型检查」（如 age 必须是 int），用描述符怎么做？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">数据描述符 __set__ 里 isinstance 校验，失败抛 TypeError</button>
-            <button class="quiz-option">在 __init__ 里打印警告即可</button>
-            <button class="quiz-option">用普通类属性，靠使用者自觉</button>
-            <button class="quiz-option">Python 无法实现属性类型检查</button>
-          </div>
-          <div class="quiz-explain" hidden>经典 Typed 描述符：<code>__set__</code> 里 <code>if not isinstance(value, self.expected_type): raise TypeError(...)</code>，配合 <code>__set_name__</code> 记录属性名用于报错信息——C/C++ 式的属性类型约束就是这样在 Python 里实现的。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（类型检查描述符·实现题）：实现 <code>Typed</code> 描述符（age 必须是 int，违反抛 TypeError 并报出属性名），下列<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">__set_name__ 记录属性名；__set__ 里 isinstance 校验，失败抛 TypeError</button>
-            <button class="quiz-option">在 __get__ 里做类型检查</button>
-            <button class="quiz-option">校验失败静默跳过赋值</button>
-            <button class="quiz-option">属性名硬编码在报错信息里</button>
-          </div>
-          <div class="quiz-explain" hidden>标准实现：<code>__set_name__(self, owner, name)</code> 记录属性名（用于报错信息）；<code>__set__</code> 里 <code>isinstance(value, self.expected_type)</code> 校验，失败 <code>raise TypeError(f"{self.name} 必须是 ...")</code>；<code>__get__</code> 从 <code>instance.__dict__</code> 取值。第二个检查时机错 ✗；第三个吞掉非法值 ✗；第四个换属性名要改代码 ✗。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（类级覆盖·陷阱）：<code>class A: x = MyDescriptor()</code>，执行 <code>A.x = 20</code> 之后，<code>a.x</code> 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">返回 20（类属性被普通值覆盖，描述符失效）</button>
-            <button class="quiz-option">仍走描述符 __get__</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">返回 None</button>
-          </div>
-          <div class="quiz-explain" hidden><code>A.x = 20</code> 是<strong>类级赋值</strong>：直接把类属性替换成普通值 20——描述符对象被覆盖，实例读 <code>a.x</code> 得到 20，<code>__get__</code> 不再触发。这是「描述符拦截的是属性访问、管不了类级覆盖」的边界认知题。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（property 本质·机制）：<code>@property</code> 生成的 property 对象是哪种描述符？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">数据描述符（实现了 __get__/__set__/__delete__）</button>
-            <button class="quiz-option">非数据描述符（只有 __get__）</button>
-            <button class="quiz-option">不是描述符</button>
-            <button class="quiz-option">普通函数对象</button>
-          </div>
-          <div class="quiz-explain" hidden>property 是<strong>数据描述符</strong>：实现了 <code>__get__</code>/<code>__set__</code>/<code>__delete__</code> 三件套——所以实例字典里同名属性压不过它（这正是第 7 课查找顺序的应用）。理解了这一点，property 的「只读/验证/拦截」行为就全部可推导。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题三</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（类级访问·机制）：<code>A.x</code>（通过类访问描述符）时，<code>__get__</code> 收到的 instance 参数是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">None（通过类访问时没有实例）</button>
-            <button class="quiz-option">A 类的实例对象</button>
-            <button class="quiz-option">A 类本身</button>
-            <button class="quiz-option">描述符对象自己</button>
-          </div>
-          <div class="quiz-explain" hidden>通过<strong>类</strong>访问描述符时 instance 为 <strong>None</strong>（owner 是类本身）——所以描述符 <code>__get__</code> 要处理 <code>instance is None</code> 的分支（通常返回描述符自身，如 classmethod 的行为）。漏掉这个分支是描述符实现的高频 bug。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题三</a></div>
-        </div>
-      </div>
+class Data:
+    @CachedProperty
+    def expensive(self): ...</code></pre>
+它属于数据描述符还是非数据描述符？实例同名属性会怎么干扰它？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（类级覆盖陷阱题）· 场景改写',
+    breakdown: `只实现 __get__，是<strong>非数据描述符</strong>——查找顺序上<strong>实例字典优先</strong>：一旦缓存写进 obj.__dict__，后续访问直接命中实例属性，描述符不再执行（这正是缓存想要的）；但代价是外部可以直接 <code>obj.expensive = '假的'</code> 覆盖缓存而描述符毫无察觉。若需要拦截赋值（校验/防覆盖），必须实现 __set__ 变成数据描述符。AI 代码里非数据描述符被实例属性「意外遮蔽」是高发审查点。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `面试官问：什么时候用 property，什么时候写自定义描述符类？两者怎么选？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（property 本质题）· 场景改写',
+    breakdown: `<strong>单个属性</strong>的读写控制（校验、懒加载、只读）用 property——声明式、最少代码；<strong>多个属性共享同一套规则</strong>（类型校验、范围校验、日志审计）时把规则抽成描述符类复用，否则每个字段都要重复 getter/setter。判断标准：出现第二个需要相同逻辑的属性时，就该重构为描述符。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个 <code>ValidatedField</code> 描述符（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '一个描述符类支持类型与范围校验（如 int 且 0~150）；复用到至少两个类三个字段；违规赋值在写入瞬间抛 TypeError/ValueError 且实例状态不变。',
+      accept: ['同一描述符类复用到多个字段', '非法赋值抛错且不写入', '__set_name__ 正确记录字段名'],
+    },
+    source: '任务基于《15.描述符》课程知识点 · 来源层级：一手（Python 官方文档描述符指南）场景化',
+    breakdown: `思路：__init__ 存类型与范围；<code>__set_name__</code> 存字段名（Python 3.6+ 免手写 name 参数）；__set__ 先校验再写 instance.__dict__；__get__ 读实例字典。坑：不要用 <code>setattr(obj, self.name, value)</code>（会再次触发描述符 → 递归）；默认值要在 __get__ 里处理（属性不存在时返回默认）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -401,5 +390,6 @@ print(a.__dict__)             # ?</code></pre></div>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

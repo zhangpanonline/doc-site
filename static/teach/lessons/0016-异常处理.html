@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 14 课</p>
       <h1>异常处理</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/异常处理/">14.异常处理</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/异常处理/">14.异常处理</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -292,94 +292,59 @@ class BankAccount:
     </section>
 
     <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（finally·必考）：try 里有 return，finally 里也有 return，函数返回哪个？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">finally 的 return 覆盖 try 的返回值</button>
-            <button class="quiz-option">try 的 return 先生效，finally 的无效</button>
-            <button class="quiz-option">两个都返回</button>
-            <button class="quiz-option">语法错误</button>
-          </div>
-          <div class="quiz-explain" hidden><code>finally</code> <strong>总是执行</strong>（哪怕 try 里有 return/break/continue），而 finally 中的 return 会<strong>覆盖</strong> try 的返回值。所以规范是：finally 只做清理（关文件、释放锁），不要 return。<a href="https://cloud.tencent.cn/developer/article/2468270">出处：腾讯云「Python 异常处理机制——Python 面试 100 道实战题目练习」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（异常链·高频）：捕获异常后抛出新异常，想保留「原始异常」以便溯源，应该？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">raise 新异常 from 原异常</button>
-            <button class="quiz-option">只 raise 新异常，不用任何关联</button>
-            <button class="quiz-option">打印原异常后吞掉</button>
-            <button class="quiz-option">把原异常存进全局变量</button>
-          </div>
-          <div class="quiz-explain" hidden><code>raise KeyError("Wrapped error") from ve</code> 构造异常链，新异常的 <code>__cause__</code> 保留原始异常——打印 <code>__traceback__</code> 时可完整溯源问题源头。<a href="https://juejin.cn/post/7358709354423795747">出处：掘金「掌握 Python 异常处理：面试中的关键考点」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（嵌套 finally·深水区）：以下代码的输出是？
-<pre><code>def f():
-    try:
-        try:
-            return 1
-        finally:
-            print("内层 finally")
-    finally:
-        print("外层 finally")
-
-print(f())</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">内层 finally → 外层 finally → 1</button>
-            <button class="quiz-option">1 → 内层 finally → 外层 finally</button>
-            <button class="quiz-option">只有内层 finally → 1</button>
-            <button class="quiz-option">运行时报错</button>
-          </div>
-          <div class="quiz-explain" hidden>return 前<strong>两层 finally 都必须执行</strong>（由内到外），且 finally 无 return 时不覆盖返回值：输出「内层 finally → 外层 finally → 1」。这题同时考 finally 的必执行性与 return 的延迟生效——嵌套场景是异常处理深水区的常客。<a href="https://cloud.tencent.cn/developer/article/2468270">出处：腾讯云「Python 异常处理机制——面试 100 道实战」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（裸 raise·机制）：except 块里写 <code>raise</code>（不带异常）会发生什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">重新抛出当前异常，__context__ 保留原上下文</button>
-            <button class="quiz-option">抛出新的 RuntimeError</button>
-            <button class="quiz-option">语法错误</button>
-            <button class="quiz-option">异常被静默吞掉</button>
-          </div>
-          <div class="quiz-explain" hidden>裸 <code>raise</code> <strong>重新抛出当前正在处理的异常</strong>（保留原始类型与对象），同时 <code>__context__</code> 机制保留隐式上下文——「记录日志后继续上抛」的标准写法。与 <code>raise e</code>（重置 traceback 起点）有微妙差别。<a href="https://cloud.tencent.cn/developer/article/2409968">出处：腾讯云「掌握 Python 异常处理：面试中的关键考点」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（BaseException·深水区）：为什么写 <code>except BaseException</code> 是危险的？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">会吞掉 KeyboardInterrupt/SystemExit，Ctrl+C 与退出失效</button>
-            <button class="quiz-option">语法上不允许</button>
-            <button class="quiz-option">只是性能更差</button>
-            <button class="quiz-option">BaseException 已在新版本废弃</button>
-          </div>
-          <div class="quiz-explain" hidden><code>BaseException</code> 是异常树之根，包含 <code>KeyboardInterrupt</code>（Ctrl+C）、<code>SystemExit</code>（sys.exit）、<code>GeneratorExit</code>——捕获它会<strong>吞掉用户的强制中断与退出信号</strong>，程序杀都杀不掉。业务代码一律从 <code>Exception</code> 开始捕获。<a href="https://juejin.cn/post/7358709354423795747">出处：掘金「掌握 Python 异常处理：面试中的关键考点」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（with 与异常交互·综合）：<code>__exit__</code> 返回 False 且 with 块抛异常，外层 try/except 能捕获它吗？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">能：异常穿过 __exit__ 继续向外传播</button>
-            <button class="quiz-option">不能：with 会吞掉所有异常</button>
-            <button class="quiz-option">只有 ValueError 能传出去</button>
-            <button class="quiz-option">异常会变成 RuntimeError</button>
-          </div>
-          <div class="quiz-explain" hidden><code>__exit__</code> 返回 False/None = 「不处理异常」——异常<strong>原样继续向外传播</strong>，外层的 try/except 正常捕获（with 只是路过做清理）。若返回 True 才会吞掉。这是「资源管理型上下文管理器不吞异常」的设计依据。<a href="https://juejin.cn/post/7358709354423795747">出处同专家题一</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0016-异常处理',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的函数：try 里 <code>return result</code>，finally 里也写了 <code>return</code>。函数最终返回哪个？finally 里的 return 有什么危害？`,
+    source: '考点来源：腾讯云「Python 异常处理机制——Python 面试 100 道实战题目练习」（finally 题）· 场景改写',
+    breakdown: `返回 <strong>finally 里的值</strong>——finally 中的 return 会<strong>吞掉</strong> try 的返回值，甚至吞掉抛出的异常（异常被 finally 的 return 静默替换）。危害：调用方拿到错误结果还不知道出错。正确姿势：finally 只做资源清理（close/rollback），绝不 return。AI 生成的清理代码里这是高频事故。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `捕获异常后想抛出新异常、但要保留「原始异常」以便溯源，正确写法是什么？裸 raise 又是什么？`,
+    source: '考点来源：掘金「掌握 Python 异常处理：面试中的关键考点」（异常链题）· 场景改写',
+    breakdown: `<code>raise NewError('包装信息') from e</code>——原始异常存进新异常的 <code>__cause__</code>，traceback 里两条链都能看到；<code>from None</code> 则显式切断链。裸 <code>raise</code>（except 块里不接对象）是<strong>原样重抛</strong>当前异常，用于「记录日志后继续上抛」。AI 生成的网关代码里，异常链保留是排查线上问题的关键。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 在入口处写了 <code>except:</code> 想把「所有错误」都兜住。审查：它其实会吞掉哪些不该吞的东西？为什么专家建议捕获 Exception 甚至更具体的异常？`,
+    source: '考点来源：掘金「掌握 Python 异常处理：面试中的关键考点」（BaseException 题）· 场景改写',
+    breakdown: `异常体系分两支：<code>Exception</code>（常规错误）与<strong> BaseException 直属的 SystemExit / KeyboardInterrupt / GeneratorExit</strong>。裸 <code>except:</code> 连 Ctrl+C（KeyboardInterrupt）和 sys.exit 都吞——用户想停服务都停不掉。正确：<code>except Exception</code> 兜底常规错误，具体业务异常更具体地捕获；清理逻辑用 finally 而不是 except。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `上下文管理器的 <code>__exit__</code> 返回 True 会发生什么？什么时候该「吞掉」异常，什么时候必须让它传播？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（with 与异常交互题）· 场景改写',
+    breakdown: `<code>__exit__</code> 返回 True = 告诉解释器「异常已处理」，异常<strong>不再传播</strong>给调用方。必须传播：资源操作失败、业务错误——吞了调用方就不知道失败。可以吞：抑制型场景（如 <code>contextlib.suppress(FileNotFoundError)</code> 明确表达「这个错无所谓」）。设计原则：吞异常必须是显式的、有理由的，而不是默认行为。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个安全的配置读取函数（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '读取 JSON 配置：文件不存在抛 ConfigError（用 raise ... from e 保留原始异常）；解析失败同理；finally 保证句柄关闭；写测试断言 __cause__ 链完整。',
+      accept: ['两类失败都抛 ConfigError 且保留 __cause__', '文件句柄在异常路径下也关闭（finally）', 'Ctrl+C 之类的 BaseException 不被误吞'],
+    },
+    source: '任务基于《16.异常处理》课程知识点 · 来源层级：一手（Python 官方文档异常章节）场景化',
+    breakdown: `思路：<code>except FileNotFoundError as e: raise ConfigError('配置不存在') from e</code>；finally 里 close；测试里 <code>assert cm.exception.__cause__</code>。坑：捕获范围写死具体异常类型，别用裸 except（审查题同款）；finally 里别 return。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -397,5 +362,6 @@ print(f())</code></pre></div>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

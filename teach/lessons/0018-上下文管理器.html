@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 16 课</p>
       <h1>上下文管理器</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/上下文管理器/">16.上下文管理器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/上下文管理器/">16.上下文管理器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -269,84 +269,59 @@ with demo():
     </section>
 
     <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（with 原理·必问）：with 语句的工作原理与好处？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">进入调 __enter__，无论是否异常退出都调 __exit__，保证资源释放</button>
-            <button class="quiz-option">只是 try/finally 的语法糖，没有额外保证</button>
-            <button class="quiz-option">with 只能用于文件操作</button>
-            <button class="quiz-option">异常时不会调用 __exit__</button>
-          </div>
-          <div class="quiz-explain" hidden>with 背后是 <code>__enter__</code>/<code>__exit__</code> 协议：进入时 <code>__enter__</code>（返回值给 as），退出时<strong>无论是否异常</strong>都调 <code>__exit__</code>——资源（文件、数据库连接、锁）一定被释放，不会因中途出错而泄漏。注意 <code>__exit__</code> 返回 True 会压制异常，通常不推荐。<a href="https://cloud.tencent.com/developer/article/2409961">出处：腾讯云「Python 高级特性解析与面试应对策略」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（实现方式·高频）：自定义上下文管理器的两种实现方式？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">类实现 __enter__/__exit__，或 @contextmanager 生成器</button>
-            <button class="quiz-option">只能用类实现</button>
-            <button class="quiz-option">只能用 contextmanager 装饰器</button>
-            <button class="quiz-option">用 property 装饰器实现</button>
-          </div>
-          <div class="quiz-explain" hidden>两种方式：① 类实现——定义 <code>__enter__</code>（返回资源给 as）与 <code>__exit__</code>（清理）；② <code>@contextmanager</code> 生成器——yield 前是进入逻辑、yield 后是清理逻辑，代码更简洁。面试时要两种都会写。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（retry 设计·深水区）：为什么「失败重试」必须用装饰器实现，而上下文管理器实现不了？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">重试需要重新执行整个代码块，而 with 只能进入一次</button>
-            <button class="quiz-option">上下文管理器性能不够</button>
-            <button class="quiz-option">两者都可以实现，没有区别</button>
-            <button class="quiz-option">装饰器语法更简单而已</button>
-          </div>
-          <div class="quiz-explain" hidden>本质区别：<strong>装饰器可以在 wrapper 里循环调用函数</strong>（每次调用都是一次完整执行，失败后重来）；而 <strong>with 块只能进入一次</strong>——<code>__exit__</code> 只能决定「吞异常还是传播」，无法让代码块重新执行一遍（源课程作业三正是注明「这道题有问题，上下文管理器无法实现 retry」）。工具的职责边界本身就是考点。<a href="https://cloud.tencent.com/developer/article/2409961">出处：腾讯云「Python 高级特性解析与面试应对策略」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（吞异常代价·机制）：为什么说「<code>__exit__</code> 返回 True 压制异常」通常不推荐？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">隐藏真实错误，bug 更难排查</button>
-            <button class="quiz-option">会让程序崩溃</button>
-            <button class="quiz-option">性能开销更大</button>
-            <button class="quiz-option">语法上已废弃</button>
-          </div>
-          <div class="quiz-explain" hidden><code>__exit__</code> 返回 True 会<strong>静默吞掉异常</strong>——调用方完全不知道发生过错误，问题被埋进运行时。除非是 SuppressError 这类「明确要忽略特定异常」的场景，资源管理型上下文管理器应返回 False 让异常正常传播。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（标准工具·机制）：<code>contextlib.suppress</code> 与 <code>redirect_stdout</code> 分别做什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">忽略指定异常；把 stdout 重定向到文件</button>
-            <button class="quiz-option">忽略所有异常；重定向 stderr</button>
-            <button class="quiz-option">两者都是异常处理函数</button>
-            <button class="quiz-option">两者都是打印工具</button>
-          </div>
-          <div class="quiz-explain" hidden><code>contextlib.suppress(FileNotFoundError)</code> 忽略指定异常（比 try/except pass 更声明式）；<code>redirect_stdout(f)</code> 把 <code>print</code> 等输出临时重定向到文件（如捕获命令行输出）——contextlib 里的现成工具，面试问到说明熟悉标准库。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题三</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（职责边界·设计）：上下文管理器与装饰器的职责边界是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">上下文管理器管「进入/退出」的资源；装饰器管「函数级」行为增强</button>
-            <button class="quiz-option">两者职责完全重叠</button>
-            <button class="quiz-option">上下文管理器只能用于文件</button>
-            <button class="quiz-option">装饰器只能用于类</button>
-          </div>
-          <div class="quiz-explain" hidden>上下文管理器围绕<strong>资源的进入与退出</strong>（文件、锁、连接：with 块期间有效）；装饰器围绕<strong>函数调用的前后</strong>（计时、缓存、重试：对任意函数生效）。边界清晰：需要「块级生命周期」用 with，需要「可重复调用的包装」用装饰器。<a href="https://cloud.tencent.com/developer/article/2409961">出处同面试题三</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0018-上下文管理器',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `with 语句的工作原理是什么？它比「手动 open + try/finally + close」好在哪里？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（with 原理题）· 场景改写',
+    breakdown: `with 是 <strong>__enter__ / __exit__ 协议</strong>的语法糖：进入时调 __enter__（拿返回值绑到 as 变量），<strong>无论正常退出还是抛异常</strong>都调 __exit__（参数含异常信息）。好处：资源释放（close/commit/释放锁）由协议保证，不可能忘写；异常路径和正常路径同一条清理逻辑。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `自定义上下文管理器有哪两种实现方式？各自怎么用、怎么选？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（实现方式题）· 场景改写',
+    breakdown: `① <strong>类实现 __enter__ / __exit__</strong>：状态多、逻辑重、要复用方法时用；② <strong>@contextlib.contextmanager</strong> 装饰生成器函数：yield 前是 __enter__、yield 后是 __exit__，适合一次性轻量场景（计时、临时改配置）。选择原则：要多次使用/带状态 → 类；用完即弃的包装 → contextmanager。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的数据库上下文管理器，__exit__ 里 <code>return True</code>。审查：线上事务失败为什么没报警？什么场景才该吞异常？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（吞异常代价题）· 场景改写',
+    breakdown: `<code>__exit__</code> 返回 True 会把异常<strong>吞掉</strong>——事务失败静默，调用方以为成功，监控永远不响。正确：__exit__ 返回 None/False 让异常继续传播（回滚后再传播是标准姿势）；只有「显式预期中的无关紧要错误」才吞（<code>contextlib.suppress</code>）。AI 代码默认吞异常是生产事故高发写法。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `为什么「失败重试」必须用装饰器实现，而上下文管理器实现不了？两者的职责边界是什么？`,
+    source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（retry 设计题）· 场景改写',
+    breakdown: `with 块是<strong>一次性进入-退出</strong>：__exit__ 在退出时执行，无法「重新进入」代码块——重试需要把同一段代码<strong>循环执行</strong>，只有装饰器（包装函数、循环调用）做得到。职责边界：上下文管理器管<strong>资源生命周期</strong>（连接、锁、临时状态），装饰器管<strong>调用行为</strong>（重试、缓存、限流、日志）。判断标准：问「要不要再执行一遍？」——要 → 装饰器。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个 <code>timer</code> 上下文管理器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '分别用「类实现协议」和「@contextmanager 生成器」两种方式实现：进入记录开始时间，退出打印块耗时；块内抛异常时也要打印耗时且异常继续传播。',
+      accept: ['两种实现行为一致', '异常路径下耗时照常打印、异常不丢失', '能说清两种方式的适用场景'],
+    },
+    source: '任务基于《18.上下文管理器》课程知识点 · 来源层级：一手（Python 官方文档 contextlib 章节）场景化',
+    breakdown: `思路：类版 __enter__ 记 time.perf_counter() 返回 self，__exit__ 算差值打印并<strong>返回 None</strong>（不吞异常）；生成器版 yield 放中间、finally 里打印。坑：__exit__ 别返回 True（审查题同款）；计时用 perf_counter 不用 time.time（墙钟会被系统时间调整干扰）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -364,5 +339,6 @@ with demo():
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>
