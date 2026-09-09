@@ -122,6 +122,7 @@
       answerEl.addEventListener('input', saveAnswer);
       checkBtn.textContent = '点击核对思路拆解';
       checkBtn.hidden = false;
+      nextBtn.textContent = '下一题';
       nextBtn.hidden = true;
     }
 

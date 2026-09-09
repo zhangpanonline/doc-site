@@ -301,8 +301,9 @@ pre code { background: none; padding: 0; font-size: inherit; }
 /* ---------- 面试实战弹框（模板 v2，见 teach/INTERVIEW-TEMPLATE.md） ---------- */
 
 .interview-launch {
-  display: inline-block;
-  margin: .4rem 0 1.2rem;
+  display: block;
+  width: fit-content;
+  margin: .4rem auto 1.2rem;
   padding: .65rem 1.5rem;
   font-size: 1rem;
   font-weight: 700;
@@ -331,7 +332,7 @@ pre code { background: none; padding: 0; font-size: inherit; }
 
 .iv-dialog {
   position: relative;
-  width: min(680px, 100%);
+  width: min(840px, 100%);
   max-height: min(88vh, 900px);
   overflow-y: auto;
   background: var(--card);
