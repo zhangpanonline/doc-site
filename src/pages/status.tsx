@@ -437,7 +437,7 @@ function IpTable({ips}: {ips: IpRow[]}) {
                       <td>{geo}</td>
                       <td className="num">{fmt(r.count)}</td>
                       <td className="num">{fmt(r.last7)}</td>
-                      <td className="num">{freq.toFixed(1)}</td>
+                      <td className="num">{r.count <= 1 ? '—' : freq.toFixed(1)}</td>
                       <td className="num">{fmtClock(r.first)}</td>
                       <td className="num">{fmtClock(r.last)}</td>
                     </tr>
