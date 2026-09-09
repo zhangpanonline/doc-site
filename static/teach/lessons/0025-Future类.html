@@ -231,7 +231,7 @@ print(fut.done(), fut.result())</code></pre></div>
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经读懂 Future 与两段封装——可以继续学习《<a href="/agents/python/协程 Coroutine/">24.协程</a>》了。</p>
     </section>
 
-        <section>
+                                                                        <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -283,11 +283,55 @@ async def main():
     },
     source: '任务基于《25.Future类》课程知识点 · 场景化',
     breakdown: `思路：<code>await asyncio.wait_for(task, timeout=1)</code> 逐个包裹（或 wait+timeout 批量）；捕获 TimeoutError/CancelledError 分类；每个任务都 await/exception() 认领。坑：wait_for 超时会<strong>取消</strong>任务——任务里 finally 清理要能扛取消；被取消的任务别重复 await。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档对 <code>asyncio.create_task</code> 的定义原文是什么？它的返回值和「裸协程」有什么区别？`,
+    source: '来源：Python 官方文档 asyncio「asyncio.create_task」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：<strong>「Wrap the coro coroutine into a Task and schedule its execution. Return the Task object.」</strong>——把协程包成 Task、交给事件循环调度、返回 Task 句柄。与裸协程的区别：Task 被循环<strong>持有引用并立即调度</strong>，可以 cancel/查状态/挂回调；裸协程没人 await 就是「从未执行 + RuntimeWarning」。签名里还有 name（调试命名）与 eager_start（是否立即执行到首个 await）参数。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `你用 <code>wait_for(task, timeout=5)</code> 给任务限时，但超时后不想让它被取消（比如它是共享的后台清理任务）。官方文档给的解法是什么？`,
+    source: '来源：Python 官方文档 asyncio「asyncio.wait_for」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：<strong>超时发生时 wait_for 会取消 aw 并抛 TimeoutError</strong>；「To prevent aw from being cancelled, <strong>wrap it in shield()</strong>」——<code>await wait_for(asyncio.shield(task), timeout=5)</code>：超时只取消 shield 外壳，里面的任务继续跑；wait_for 还会等任务真正取消完才返回（原文：waits until the future is actually cancelled）。AI 写限时逻辑时不知道 shield，超时把不该停的任务一并杀了。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

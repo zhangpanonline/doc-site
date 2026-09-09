@@ -373,6 +373,36 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `文档原文：return_exceptions=False 时首个异常立即传播，但 <strong>aws 里其他任务不会被取消、继续运行</strong>——gather 不搞连坐。要「失败也把结果/异常全收回来」：<code>await gather(*aws, return_exceptions=True)</code>——返回列表里成功项是结果、失败项是<strong>异常对象</strong>，逐个 isinstance(x, Exception) 分类。AI 写的批量任务收集代码默认忘了这个参数，第一个失败就丢了其余结果。`,
   },
 ''',
+    '0025-Future类': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档对 <code>asyncio.create_task</code> 的定义原文是什么？它的返回值和「裸协程」有什么区别？`,
+    source: '来源：Python 官方文档 asyncio「asyncio.create_task」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：<strong>「Wrap the coro coroutine into a Task and schedule its execution. Return the Task object.」</strong>——把协程包成 Task、交给事件循环调度、返回 Task 句柄。与裸协程的区别：Task 被循环<strong>持有引用并立即调度</strong>，可以 cancel/查状态/挂回调；裸协程没人 await 就是「从未执行 + RuntimeWarning」。签名里还有 name（调试命名）与 eager_start（是否立即执行到首个 await）参数。`,
+  },
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `你用 <code>wait_for(task, timeout=5)</code> 给任务限时，但超时后不想让它被取消（比如它是共享的后台清理任务）。官方文档给的解法是什么？`,
+    source: '来源：Python 官方文档 asyncio「asyncio.wait_for」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：<strong>超时发生时 wait_for 会取消 aw 并抛 TimeoutError</strong>；「To prevent aw from being cancelled, <strong>wrap it in shield()</strong>」——<code>await wait_for(asyncio.shield(task), timeout=5)</code>：超时只取消 shield 外壳，里面的任务继续跑；wait_for 还会等任务真正取消完才返回（原文：waits until the future is actually cancelled）。AI 写限时逻辑时不知道 shield，超时把不该停的任务一并杀了。`,
+  },
+''',
+    '0027-异步编程': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档给 <code>asyncio.TaskGroup</code> 的定义是什么？它和 gather 的本质差别在哪？`,
+    source: '来源：Python 官方文档 asyncio「class asyncio.TaskGroup」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：TaskGroup 是<strong>「An asynchronous context manager holding a group of tasks」</strong>——async with 块内用 tg.create_task 加任务，<strong>退出上下文时全部任务被 await</strong>（3.11 新增）。与 gather 的差别：gather 一次性收一批、失败语义靠 return_exceptions 调；TaskGroup 提供<strong>块级生命周期管理</strong>——组内任务随 with 块开始/结束，结构化管理长生命周期任务更自然。`,
+  },
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 写的代码在 <code>async with TaskGroup() as tg</code> 块<strong>退出之后</strong>又调用了 <code>tg.create_task(coro)</code>。会发生什么？`,
+    source: '来源：Python 官方文档 asyncio「TaskGroup.create_task」条目（3.13 起明确未激活语义）· 检索 2026-09-09 · 层级：一手（结论经 CPython 3.14 实测校准）',
+    breakdown: `文档（3.13 起）：组处于<strong>未激活状态</strong>时会<strong>关闭传入的协程</strong>（不执行）。但 <strong>3.14 实测</strong>：未进入抛 <code>RuntimeError: has not been entered</code>、已结束抛 <code>RuntimeError: is finished</code>——行为随版本演进，共同点是<strong>块外 create_task 一律不可用</strong>（要么报错、要么协程被静默关闭）。AI 把组句柄存下来在别处复用，任务要么炸要么凭空消失——规则：TaskGroup 只在 async with 块内有效。`,
+  },
+''',
 }
 
 

@@ -249,7 +249,7 @@ for r in raw_results:
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经能用官方 API 高效开发异步程序——可以继续学习《<a href="/agents/python/多线程与多进程/">26.多线程和多进程</a>》了。</p>
     </section>
 
-        <section>
+                                                                    <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -300,11 +300,53 @@ for r in raw_results:
     },
     source: '任务基于《27.异步编程》课程知识点（锁小节）· 场景化',
     breakdown: `思路：<code>for acct in sorted([a, b], key=id): async with locks[acct]</code> 按序拿锁；转账体在锁内无 await 的同步操作；异常用 finally/with 保证释放。坑：锁内不要再 await 无谓的 sleep（扩大临界区）；余额检查与扣减要在同一临界区内完成。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档给 <code>asyncio.TaskGroup</code> 的定义是什么？它和 gather 的本质差别在哪？`,
+    source: '来源：Python 官方文档 asyncio「class asyncio.TaskGroup」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：TaskGroup 是<strong>「An asynchronous context manager holding a group of tasks」</strong>——async with 块内用 tg.create_task 加任务，<strong>退出上下文时全部任务被 await</strong>（3.11 新增）。与 gather 的差别：gather 一次性收一批、失败语义靠 return_exceptions 调；TaskGroup 提供<strong>块级生命周期管理</strong>——组内任务随 with 块开始/结束，结构化管理长生命周期任务更自然。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 写的代码在 <code>async with TaskGroup() as tg</code> 块<strong>退出之后</strong>又调用了 <code>tg.create_task(coro)</code>。会发生什么？`,
+    source: '来源：Python 官方文档 asyncio「TaskGroup.create_task」条目（3.13 起明确未激活语义）· 检索 2026-09-09 · 层级：一手（结论经 CPython 3.14 实测校准）',
+    breakdown: `文档（3.13 起）：组处于<strong>未激活状态</strong>时会<strong>关闭传入的协程</strong>（不执行）。但 <strong>3.14 实测</strong>：未进入抛 <code>RuntimeError: has not been entered</code>、已结束抛 <code>RuntimeError: is finished</code>——行为随版本演进，共同点是<strong>块外 create_task 一律不可用</strong>（要么报错、要么协程被静默关闭）。AI 把组句柄存下来在别处复用，任务要么炸要么凭空消失——规则：TaskGroup 只在 async with 块内有效。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
