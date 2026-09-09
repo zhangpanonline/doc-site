@@ -80,6 +80,7 @@ export default function Root({children}: {children: React.ReactNode}): React.JSX
   return (
     <OriginalRoot>
       <ProgressRecorder />
+      <ImmersiveToggle />
       {children}
     </OriginalRoot>
   );
