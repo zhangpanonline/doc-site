@@ -1130,6 +1130,138 @@ async def main():
     breakdown: `思路：<code>sem = asyncio.Semaphore(5)</code>，任务内 <code>async with sem:</code> 限流；失败逐任务捕获；阻塞函数 <code>await loop.run_in_executor(None, sync_work)</code>。坑：Semaphore 要在<strong>任务内</strong>获取（gather 前批量 acquire 会把并发上限变成 0）；executor 默认线程池，CPU 密集要传进程池。`,
   },
 ]'''),
+    # ——— 第七批 ———
+    ('0027-异步编程.html', '巩固与延伸', '0027-异步编程', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `asyncio.Lock 与 threading.Lock 有什么区别？为什么协程里用 threading.Lock 是坑？`,
+    source: '考点来源：腾讯云「Python 并发编程模型：面试中的重点考察点」（锁的区别题）· 场景改写',
+    breakdown: `<code>asyncio.Lock</code> 的等待是<strong>异步的</strong>——拿不到锁时 await 挂起、让出事件循环，其他协程照常跑；<code>threading.Lock</code> 的等待是<strong>同步阻塞</strong>——在单线程事件循环里拿不到锁会把<strong>整个循环卡死</strong>（连解锁的协程都跑不了，直接死锁）。AI 在 asyncio 代码里混用线程锁是高发事故。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `<code>gather</code> 与 <code>TaskGroup</code> 都能并发运行协程，失败处理有什么不同？`,
+    source: '考点来源：Skillup「Python 后端面试题（asyncio 高频面试题汇总）」（gather vs TaskGroup 题）· 场景改写',
+    breakdown: `gather 默认<strong>一个失败全部取消</strong>（且异常推迟到 await 时抛，部分结果拿不到，除非 return_exceptions）；<code>TaskGroup</code>（3.11+）任一任务失败会<strong>取消组内所有任务并立刻把异常抛给 with 块</strong>——失败语义更严格、资源清理更可靠。需要「部分成功也算成功」用 gather(return_exceptions=True)；需要「一组任务要么全成要么全失败」用 TaskGroup。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码：协程 A 先锁 L1 再等 L2，协程 B 先锁 L2 再等 L1——服务跑着跑着卡死。审查：这是什么问题？如何修复？
+<pre><code>async def transfer(a, b, amount):
+    async with locks[a]:
+        await asyncio.sleep(0)      # 模拟 IO 让出
+        async with locks[b]:        # ← 反向获取时死锁
+            ...</code></pre>`,
+    source: '考点来源：CSDN「终面倒计时 5 分钟：候选人用 trio 破解 asyncio 死锁危机」（异步死锁题）· 场景改写',
+    breakdown: `<strong>锁顺序反转导致死锁</strong>：A 持 L1 等 L2、B 持 L2 等 L1，互相等待永不释放（asyncio.Lock 无超时会永远挂起）。修复：① 所有协程按<strong>固定顺序</strong>获取锁（如按账户 id 排序）；② 单次原子获取（asyncio.gather 两把锁一起拿，拿不到全释放）；③ 加超时 + 重试/回滚。AI 生成的转账/资源分配代码，锁顺序是死锁审查的第一检查点。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `生产环境的异步服务疑似死锁，第一时间该做什么？`,
+    source: '考点来源：PHP 中文站「如何在 Python 生产环境下调试异步死锁与任务阻塞问题」（死锁诊断题）· 场景改写',
+    breakdown: `① <strong>开启 asyncio debug</strong>（PYTHONASYNCIODEBUG=1 或 loop.set_debug）——<strong>慢回调日志</strong>会打印超过 100ms 的阻塞协程与堆栈，直指嫌疑人；② 打印<strong>所有 Task 的堆栈</strong>（asyncio.all_tasks + get_stack），看谁在等什么锁；③ 检查锁获取顺序与超时缺失。先定位「卡在哪个 await」，再谈修复——别急着重启丢现场。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个防死锁的账户转账函数（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '多账户并发转账：锁按账户 id 排序后按序获取（避免顺序反转）；转账余额不足抛异常并释放锁；并发跑 20 笔互逆转账不死锁、余额守恒。',
+      accept: ['锁按固定顺序获取（排序）', '20 笔并发转账无死锁', '结束后总余额守恒、异常路径锁已释放'],
+    },
+    source: '任务基于《27.异步编程》课程知识点（锁小节）· 场景化',
+    breakdown: `思路：<code>for acct in sorted([a, b], key=id): async with locks[acct]</code> 按序拿锁；转账体在锁内无 await 的同步操作；异常用 finally/with 保证释放。坑：锁内不要再 await 无谓的 sleep（扩大临界区）；余额检查与扣减要在同一临界区内完成。`,
+  },
+]'''),
+    ('0028-多线程与多进程.html', '巩固与延伸', '0028-多线程与多进程', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `什么是 GIL？它对多线程有什么影响？如何规避？`,
+    source: '考点来源：CSDN「Python 面试突击 · 大厂高频面试题：从 GIL 锁机制到内存管理」（GIL 题）· 场景改写',
+    breakdown: `GIL = <strong>全局解释器锁</strong>：同一时刻只有一个线程执行 Python 字节码。影响：<strong>CPU 密集</strong>多线程不但不加速反而因锁切换更慢；<strong>IO 密集</strong>不受影响（等待 IO 时释放 GIL）。规避：CPU 密集用<strong>多进程</strong>（multiprocessing 各进程独立 GIL）、C 扩展（numpy 内部释放 GIL）、IO 密集用线程或 asyncio。AI 时代这题的新问法：你的 Agent 服务里哪部分该用进程池——答案：模型推理/重计算。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `并发与并行的区别是什么？用「一个人煮面」打个比方。`,
+    source: '考点来源：腾讯云「Python 并发编程模型」（并发 vs 并行题）· 场景改写',
+    breakdown: `<strong>并发</strong>：任务交替执行、逻辑上同时（一个人同时煮面、接电话——快速切换）；<strong>并行</strong>：任务真正同时执行（两个人各煮一碗）。单核 CPU 只能并发不能并行；多核才谈得上并行。对应 Python：多线程/协程是<strong>并发</strong>（GIL 下单核干活），多进程是<strong>并行</strong>。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码两个线程互相等对方的锁，服务卡死。审查：死锁产生的四个必要条件是什么？破坏哪一个都能避免死锁——通常最划算的是破坏哪个？`,
+    source: '考点来源：腾讯云「Python 并发编程模型」（死锁理论题）· 场景改写',
+    breakdown: `① <strong>互斥</strong>（资源独占）；② <strong>持有并等待</strong>（拿着 A 等 B）；③ <strong>不可剥夺</strong>（别人抢不走你手里的锁）；④ <strong>循环等待</strong>（A 等 B、B 等 A）。破坏任一即免死锁；工程上最划算的是破坏<strong>④</strong>——<strong>全局固定加锁顺序</strong>（按锁对象 id 排序获取），改动最小、无需超时回滚逻辑。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `为什么 numpy 的重计算在多线程下能利用多核，而纯 Python 循环不能？`,
+    source: '考点来源：CSDN「Python 面试突击 · 大厂高频面试题」（GIL 边界题）· 场景改写',
+    breakdown: `GIL 只锁<strong> Python 字节码</strong>：numpy 的重计算发生在 <strong>C 扩展内部</strong>，C 代码在执行前主动<strong>释放 GIL</strong>，多线程各自跑各自的 C 代码 → 真并行。纯 Python 循环全程持 GIL → 单核。推论：判断「多线程有没有用」看<strong>耗时在不在 Python 字节码里</strong>——在 C 扩展里（numpy/加密/hash）就有用，在 Python 循环里就没用。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个线程安全计数器 + GIL 对比实验（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '① threading.Lock 保护的计数器：20 线程各加 1 万次，结果恰好 20 万；② 纯 Python 循环 vs numpy 向量计算的多线程耗时对比，验证「C 扩展释放 GIL」结论。',
+      accept: ['计数器结果精确 20 万（无竞态丢失）', 'numpy 版多线程明显快于单线程、纯 Python 版没有', '能解释两组实验差异的原因'],
+    },
+    source: '任务基于《28.多线程与多进程》课程知识点（GIL 小节）· 场景化',
+    breakdown: `思路：计数器<code>with lock: count += 1</code>（裸 += 会竞态丢更新）；对比实验用小矩阵 dot 循环足够次数。坑：numpy 可能未安装（pip install numpy）；线程数取 CPU 核数即可，别开 100 个线程自找调度开销。`,
+  },
+]'''),
+    ('0029-构建发布.html', '巩固与延伸', '0029-构建发布', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `如何把一个带依赖的服务发布到生产环境，保证「在我机器上能跑」？完整链路是什么？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（工程可复现题）· 场景改写',
+    breakdown: `完整链路：<strong>pyproject.toml 声明依赖 → 锁文件（uv.lock）固定全树 → venv/容器隔离 → 构建产物（wheel/镜像）→ CI 构建 → 生产按锁文件安装</strong>。可复现三件套：锁文件（版本一致）、隔离环境（不依赖全局）、构建一次发布多次（不在生产现场跑 pip install 源码）。AI 给的「生产环境 pip install -r requirements.txt 就行」是事故配方。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `sdist 与 wheel 的区别是什么？现代 Python 安装为什么都走 wheel？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（sdist vs wheel 题）· 场景改写',
+    breakdown: `<strong>sdist</strong>（源码分发包）：打包源码 + 元数据，安装时现场编译——需要编译器和依赖环境，慢且易失败；<strong>wheel</strong>（二进制分发包）：预编译好的成品，pip 直接解压安装，<strong>快、无需编译器、字节级可复现</strong>。现代发布标准：sdist 留作源码归档，<strong>安装走 wheel</strong>；带 C 扩展的包按平台标签（cp312-macosx_arm64 等）发布对应 wheel。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了个安装脚本：pip install 时它把密码明文传给了私有源。审查：私有仓库/发布凭证的正确做法是什么？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（凭证安全题）· 场景改写',
+    breakdown: `正确姿势：① 用<strong> token</strong> 代替密码（可最小权限、可单独吊销）；② token 只进<strong>环境变量/密钥管理</strong>（CI secret、.env 不入库），绝不写进 requirements 或脚本；③ 发布前检查 <code>.gitignore</code> 覆盖 .env/.pypirc；④ 定期轮换 + 最小权限（只读发布权限不要给 admin）。AI 生成脚本最爱把凭证内嵌——审查时 grep 密码/token 关键字。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `可编辑安装（pip install -e .）为什么「改源码即时生效」？它靠什么机制实现？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（.pth 机制题）· 场景改写',
+    breakdown: `可编辑安装不复制源码，而是在 site-packages 里放一个 <strong>.pth 文件</strong>——Python 启动时逐行读 .pth，把里面列出的<strong>源码目录路径追加进 sys.path</strong>。于是 import 直接命中你的源码目录，改什么立刻生效什么。适合本地开发；发布部署绝不能用 -e（生产依赖源码目录存在，删了源码服务就起不来）。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `把你的小工具做成可发布的包（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '写 pyproject.toml（声明元数据+依赖）→ 构建 sdist 与 wheel → 新建 venv 安装 wheel → 命令行入口可用 → pip install -e . 验证可编辑安装改源码生效。',
+      accept: ['sdist 与 wheel 都构建成功', '新环境按 wheel 安装后入口命令可用', '-e 安装下改源码即时生效（能说清 .pth 原理）'],
+    },
+    source: '任务基于《29.构建发布》课程知识点 · 来源层级：一手（Python 官方文档 packaging 章节）场景化',
+    breakdown: `思路：pyproject.toml 里 [project] 元数据 + [build-system]（hatchling/setuptools）→ <code>python -m build</code> 产出 dist/ 两种产物 → 新 venv <code>pip install dist/*.whl</code> 验证入口。坑：入口点写在 [project.scripts]；构建前确认包目录结构（src 布局或平铺）；私有凭证别写进配置（审查题同款）。`,
+  },
+]'''),
 ]
 
 

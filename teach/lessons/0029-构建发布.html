@@ -14,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 27 课</p>
       <h1>构建发布</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/构建发布/">27.构建发布</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/构建发布/">27.构建发布</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -220,85 +220,59 @@
       <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握构建发布——可以继续学习《<a href="/agents/python/项目管理工具/">28.项目管理工具</a>》了。</p>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（工程可复现·高频）：如何把一个带依赖的服务发布到生产环境，保证「在我机器上能跑」？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">锁文件 + 构建 wheel + pyproject.toml 声明，实现可复现构建</button>
-            <button class="quiz-option">把 .venv 目录整个打包上传</button>
-            <button class="quiz-option">只靠 requirements.txt 手写版本号</button>
-            <button class="quiz-option">生产环境现装最新版本即可</button>
-          </div>
-          <div class="quiz-explain" hidden>可复现的关键：<strong>pyproject.toml</strong>（现代配置标准）声明依赖 → <strong>锁文件</strong>（如 uv.lock）锁定完整依赖树 → 构建 <strong>wheel</strong> 发布。没有锁文件的团队就会遇到「在我机器上能跑」的经典问题。带 C 扩展的包还要注意 wheel 的平台标签。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（可编辑安装·追问）：<code>pip install -e .</code> 适合什么场景？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">本地开发公共库：改源码立即生效，无需重复构建安装</button>
-            <button class="quiz-option">生产环境部署的推荐方式</button>
-            <button class="quiz-option">代替 requirements.txt 管理依赖</button>
-            <button class="quiz-option">把包发布到 PyPI 的快捷方式</button>
-          </div>
-          <div class="quiz-explain" hidden>可编辑安装（开发模式）适合<strong>本地联调</strong>：一个项目里开发公共库、另一个项目导入实时测试，改码即生效，不用反复 <code>pip install</code>/构建。生产部署应使用构建产物（wheel）而不是 -e 模式。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（sdist vs wheel·机制）：源码分发包（sdist）与 wheel 的区别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">sdist 是源码包（安装需构建）；wheel 是预构建产物（直接安装）</button>
-            <button class="quiz-option">两者都是源码包，没有区别</button>
-            <button class="quiz-option">wheel 只能用于 Windows</button>
-            <button class="quiz-option">sdist 安装比 wheel 更快</button>
-          </div>
-          <div class="quiz-explain" hidden>sdist（.tar.gz）是<strong>源码分发包</strong>：安装时需要本机构建后端参与编译；wheel（.whl）是<strong>预构建产物</strong>：pip 直接解压安装，无需构建工具链——所以发布时两者都提供（有对应 wheel 就用 wheel，没有则回退 sdist）。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（平台标签·机制）：<code>my_pkg-1.0-py3-none-any.whl</code> 中的 <code>py3-none-any</code> 表示？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">纯 Python 包，任意平台可用</button>
-            <button class="quiz-option">仅 Windows 可用</button>
-            <button class="quiz-option">仅 Linux 可用</button>
-            <button class="quiz-option">需要 Python 3.10 以上</button>
-          </div>
-          <div class="quiz-explain" hidden>wheel 文件名编码兼容性：<code>py3</code>（Python 3 通用）、<code>none</code>（不依赖 ABI）、<code>any</code>（任意平台）——纯 Python 包一个 wheel 走天下；含 C 扩展的包则有平台/ABI 标签（如 cp312-cp312-macosx_arm64），需要按平台分别构建。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（.pth 机制·深水区）：可编辑安装为什么「改源码即时生效」？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">site-packages 里是 .pth 链接，import 直接命中源码路径</button>
-            <button class="quiz-option">pip 实时监控源码变化</button>
-            <button class="quiz-option">每次 import 都重新安装</button>
-            <button class="quiz-option">源码被复制进了 site-packages</button>
-          </div>
-          <div class="quiz-explain" hidden>可编辑安装只在 site-packages 放一个 <code>.pth</code> 文件，把<strong>源码目录加入 sys.path</strong>——import 时直接命中原路径（没有拷贝），所以改动立即生效；同时要注意：.pth 的路径优先级会影响同名模块的解析顺序。这是「开发模式」与「部署模式」的本质区别。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题三</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（凭证安全·工程）：发布到 PyPI 用 token 而不是密码，工程上还应注意什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">token 存环境变量/CI 密钥，绝不进仓库</button>
-            <button class="quiz-option">token 写进 pyproject.toml 方便复用</button>
-            <button class="quiz-option">token 提交到 git 以便团队共享</button>
-            <button class="quiz-option">token 与密码混合使用更安全</button>
-          </div>
-          <div class="quiz-explain" hidden>凭证安全铁律：token <strong>只存在环境变量或 CI 的 Secrets</strong>（如 UV_PUBLISH_TOKEN），永远不进代码仓库；权限最小化（能发布即止）、定期轮换。把密钥写进配置/提交 git 是安全事故的第一大来源。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题三</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0029-构建发布',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `如何把一个带依赖的服务发布到生产环境，保证「在我机器上能跑」？完整链路是什么？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（工程可复现题）· 场景改写',
+    breakdown: `完整链路：<strong>pyproject.toml 声明依赖 → 锁文件（uv.lock）固定全树 → venv/容器隔离 → 构建产物（wheel/镜像）→ CI 构建 → 生产按锁文件安装</strong>。可复现三件套：锁文件（版本一致）、隔离环境（不依赖全局）、构建一次发布多次（不在生产现场跑 pip install 源码）。AI 给的「生产环境 pip install -r requirements.txt 就行」是事故配方。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `sdist 与 wheel 的区别是什么？现代 Python 安装为什么都走 wheel？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（sdist vs wheel 题）· 场景改写',
+    breakdown: `<strong>sdist</strong>（源码分发包）：打包源码 + 元数据，安装时现场编译——需要编译器和依赖环境，慢且易失败；<strong>wheel</strong>（二进制分发包）：预编译好的成品，pip 直接解压安装，<strong>快、无需编译器、字节级可复现</strong>。现代发布标准：sdist 留作源码归档，<strong>安装走 wheel</strong>；带 C 扩展的包按平台标签（cp312-macosx_arm64 等）发布对应 wheel。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了个安装脚本：pip install 时它把密码明文传给了私有源。审查：私有仓库/发布凭证的正确做法是什么？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（凭证安全题）· 场景改写',
+    breakdown: `正确姿势：① 用<strong> token</strong> 代替密码（可最小权限、可单独吊销）；② token 只进<strong>环境变量/密钥管理</strong>（CI secret、.env 不入库），绝不写进 requirements 或脚本；③ 发布前检查 <code>.gitignore</code> 覆盖 .env/.pypirc；④ 定期轮换 + 最小权限（只读发布权限不要给 admin）。AI 生成脚本最爱把凭证内嵌——审查时 grep 密码/token 关键字。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `可编辑安装（pip install -e .）为什么「改源码即时生效」？它靠什么机制实现？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（.pth 机制题）· 场景改写',
+    breakdown: `可编辑安装不复制源码，而是在 site-packages 里放一个 <strong>.pth 文件</strong>——Python 启动时逐行读 .pth，把里面列出的<strong>源码目录路径追加进 sys.path</strong>。于是 import 直接命中你的源码目录，改什么立刻生效什么。适合本地开发；发布部署绝不能用 -e（生产依赖源码目录存在，删了源码服务就起不来）。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `把你的小工具做成可发布的包（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '写 pyproject.toml（声明元数据+依赖）→ 构建 sdist 与 wheel → 新建 venv 安装 wheel → 命令行入口可用 → pip install -e . 验证可编辑安装改源码生效。',
+      accept: ['sdist 与 wheel 都构建成功', '新环境按 wheel 安装后入口命令可用', '-e 安装下改源码即时生效（能说清 .pth 原理）'],
+    },
+    source: '任务基于《29.构建发布》课程知识点 · 来源层级：一手（Python 官方文档 packaging 章节）场景化',
+    breakdown: `思路：pyproject.toml 里 [project] 元数据 + [build-system]（hatchling/setuptools）→ <code>python -m build</code> 产出 dist/ 两种产物 → 新 venv <code>pip install dist/*.whl</code> 验证入口。坑：入口点写在 [project.scripts]；构建前确认包目录结构（src 布局或平铺）；私有凭证别写进配置（审查题同款）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -316,5 +290,6 @@
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>
