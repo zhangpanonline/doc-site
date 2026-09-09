@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 11 课</p>
       <h1>装饰器</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/装饰器/">11.装饰器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/装饰器/">11.装饰器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -283,84 +283,70 @@ hello()</code></pre></div>
     </section>
 
     <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0013-装饰器',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `<code>@deco</code> 放在函数头上，等价于什么？装饰器的原理与作用一句话讲清楚。`,
+    source: '考点来源：博客园「Python 面试基础」（装饰器原理题）· 场景改写',
+    breakdown: `等价式：<code>@deco\ndef f(): ...</code> == <code>f = deco(f)</code>——装饰器就是<strong>接收函数、返回新函数</strong>的高阶函数，作用是把横切关注点（日志/计时/权限/重试/缓存）从业务逻辑里剥离。AI 时代的新问法：Agent 工具注册、限流、埋点全用它，是「函数一等公民」最直接的应用。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `装饰器什么时候执行？两个装饰器叠加 <code>@d1\n@d2\ndef f()</code>，执行顺序是怎样的？`,
+    source: '考点来源：博客园「Python 面试基础」（装饰器时机题）· 场景改写',
+    breakdown: `装饰<strong>发生在函数定义时</strong>（模块导入/类体执行时跑一次），之后每次调用跑的是 wrapper。叠加顺序：<strong>自下而上</strong>执行装饰（f = d1(d2(f))），所以离函数近的 @d2 先包、@d1 再包外层——调用时则先过 d1 的 wrapper。理解顺序是写多层装饰器（先鉴权后限流再日志）的前提。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一个「生产级」装饰器，审查问题并给出修复版：
+<pre><code>def timer(fn):
+    def wrapper(*args, **kwargs):
+        import time
+        t0 = time.perf_counter()
+        fn(*args, **kwargs)          # ← 三个问题
+        print(f'耗时 {time.perf_counter() - t0:.4f}s')
+    return wrapper
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（装饰器原理·必问）：请解释装饰器的原理与作用。</div>
-          <div class="quiz-options">
-            <button class="quiz-option">高阶函数+闭包：不改原代码地扩展功能（开放封闭原则）</button>
-            <button class="quiz-option">编译期改写函数字节码的技术</button>
-            <button class="quiz-option">Python 的注释语法，仅作标记</button>
-            <button class="quiz-option">只能用于类方法上的特殊语法</button>
-          </div>
-          <div class="quiz-explain" hidden>装饰器本质是<strong>高阶函数 + 闭包</strong>：接收函数、返回 wrapper（前置操作 → 调用原函数 → 后置操作），<code>@</code> 只是语法糖。作用：在不修改原函数代码的前提下动态增加功能（日志、计时、权限校验、缓存、事务），完美遵循<strong>开放封闭原则</strong>（对扩展开放、对修改封闭）。<a href="https://www.cnblogs.com/LittlePanger/p/12626394.html">出处：博客园「Python 面试基础」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（wraps·高频追问）：不加 <code>functools.wraps</code> 的装饰器会丢失什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">__name__、__doc__ 等元信息变成 wrapper 的</button>
-            <button class="quiz-option">函数的执行结果</button>
-            <button class="quiz-option">函数的参数列表</button>
-            <button class="quiz-option">函数的返回值类型</button>
-          </div>
-          <div class="quiz-explain" hidden>不加 wraps 时 <code>f.__name__</code> 变成 "wrapper"、<code>__doc__</code> 丢失——影响调试、文档生成、以及依赖 <code>__name__</code> 的工具（如路由框架按函数名注册）。所以面试会说：<strong>wraps 不是可选项</strong>。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（通用装饰器·深水区）：写一个「生产级」装饰器，要求：任意参数透传、保留返回值、保留 <code>__name__</code>/<code>__doc__</code>。下列<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">wrapper(*args, **kwargs) 内 return func(*args, **kwargs)，并用 functools.wraps</button>
-            <button class="quiz-option">wrapper 无参数签名，直接用 func()</button>
-            <button class="quiz-option">透传参数与返回值，但不用 functools.wraps</button>
-            <button class="quiz-option">用了 wraps 但 wrapper 里不 return</button>
-          </div>
-          <div class="quiz-explain" hidden>生产级装饰器三要素缺一不可：① <code>def wrapper(*args, **kwargs)</code> <strong>透明透传任意签名</strong>；② <code>return func(*args, **kwargs)</code> 保留返回值；③ <code>@functools.wraps(func)</code> 保留 <code>__name__</code>/<code>__doc__</code>（调试与路由注册依赖它）。第二个固定签名会崩 ✗；第三个元信息丢失 ✗；第四个返回值丢失 ✗。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（调用计数·实现题）：用装饰器统计函数被调用的次数，下列<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">装饰器闭包里用计数器变量，wrapper 内自增并透传调用</button>
-            <button class="quiz-option">计数器存在全局变量里，装饰器不涉及闭包</button>
-            <button class="quiz-option">在装饰器本体（非 wrapper）里自增计数</button>
-            <button class="quiz-option">计数存在函数的默认参数里</button>
-          </div>
-          <div class="quiz-explain" hidden>正确结构：装饰器函数内 <code>count = 0</code>，wrapper 里 <code>nonlocal count; count += 1</code> 再调用原函数——<strong>闭包计数器</strong>每次调用累计，且计数状态对每个被装饰函数独立。第二个全局计数会串 ✗；第三个只在定义时执行一次 ✗；第四个默认参数可被外部传入污染 ✗。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（组合等价式·机制）：<code>@a @b(3)</code> 装饰函数 f，等价于？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">f = a(b(3)(f))</button>
-            <button class="quiz-option">f = a(b(f, 3))</button>
-            <button class="quiz-option">f = a(3)(b(f))</button>
-            <button class="quiz-option">f = a(b)(3, f)</button>
-          </div>
-          <div class="quiz-explain" hidden>从下往上应用：先执行 <code>b(3)</code> 得到带参装饰器返回的装饰器，再作用于 f → <code>b(3)(f)</code>；然后 a 再包装 → <strong>f = a(b(3)(f))</strong>。装饰器叠加与带参装饰器组合时的展开顺序是深水区必考。<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题四</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（缓存装饰器·机制）：<code>functools.cache</code> / <code>lru_cache</code> 的实现要点是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">以参数为键缓存结果，命中直接返回不再执行函数</button>
-            <button class="quiz-option">让函数多线程并行执行</button>
-            <button class="quiz-option">预编译函数字节码</button>
-            <button class="quiz-option">把函数结果持久化到磁盘</button>
-          </div>
-          <div class="quiz-explain" hidden><code>functools.cache</code>（3.9+）用<strong>参数作键</strong>缓存返回值：相同参数再次调用直接命中缓存（函数体不再执行）——递归斐波那契从指数级降到线性级的关键。要求参数<strong>可哈希</strong>；lru_cache 还可限制缓存大小并查看命中统计（cache_info）。<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题四</a></div>
-        </div>
-      </div>
+@timer
+def fetch(url):
+    return 'data'</code></pre>`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（通用装饰器题）· 场景改写',
+    breakdown: `三个问题：① <strong>返回值丢失</strong>——fn 的结果没 return，被装饰的 fetch 变 None；② 没加 <code>@functools.wraps(fn)</code>，元信息（__name__/__doc__）丢失；③ 异常照样计时但行为没说明（可选择记录后 re-raise）。修复版：wrapper 里 <code>result = fn(*args, **kwargs); return result</code> + wraps + try/finally 计时。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `面试官问缓存装饰器：<code>functools.lru_cache</code> 的机制是什么？哪些函数不能用它缓存？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（缓存装饰器题）· 场景改写',
+    breakdown: `机制：<strong>参数作 key</strong>（LRU 淘汰）缓存返回值，命中直接返回。不能用的情况：① 参数<strong>不可哈希</strong>（list/dict 传参会直接 TypeError）；② 函数有<strong>副作用</strong>或返回可变对象被外部修改（缓存会被污染）；③ 依赖外部状态（时间、DB 实时数据）的函数——缓存会让结果过期。AI 给代码随手加缓存是线上事故高发区。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个生产级通用装饰器 <code>@log_calls</code>（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '装饰任意函数：打印调用次数、参数与返回值（可配置开关）；任意参数透传（*args/**kwargs）；返回值原样返回；functools.wraps 保留元信息。',
+      accept: ['任意签名函数都能装饰（含关键字参数）', '返回值不被吞掉', '__name__ / __doc__ 保留', '调用计数准确'],
+    },
+    source: '任务基于《13.装饰器》课程知识点 · 来源层级：一手（Python 官方文档 functools 章节）场景化',
+    breakdown: `思路：外层工厂接配置，内层 wrapper 用 *args/**kwargs 透传并 return 原结果；计数放闭包或函数属性。坑：审查题的三件套（返回值 / wraps / 异常）一个都不能漏；多个被装饰函数要各自独立计数（计数挂函数属性而非全局变量）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -378,5 +364,6 @@ hello()</code></pre></div>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

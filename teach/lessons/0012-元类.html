@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 10 课</p>
       <h1>元类</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/元类/">10.元类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/元类/">10.元类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -285,84 +285,62 @@ print(calc.add(3, 5))
     </section>
 
     <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（元类概念·高频）：什么是元类？在什么场景下会用到？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">创建类的类（默认 type），用于控制类的创建过程</button>
-            <button class="quiz-option">一种特殊装饰器，只能装饰函数</button>
-            <button class="quiz-option">类的子类，用于继承</button>
-            <button class="quiz-option">Python 2 的遗留语法，Python 3 已废弃</button>
-          </div>
-          <div class="quiz-explain" hidden>元类是<strong>创建类的类</strong>（默认 type），<code>class</code> 语句底层就是调用元类创建类。应用场景：命名检查、自动注册、方法增强（日志）、ORM、单例——凡是「要在类创建时统一做手脚」的需求。面试建议顺带说出一个自己写过的真实例子。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处：博客园「史上最全 python 面试题详解（三）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（单例元类·高频追问）：单例模式的「元类实现」核心思路是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">重写元类 __call__，按类缓存实例，命中即返回旧实例</button>
-            <button class="quiz-option">重写元类 __new__，创建类时把实例存起来</button>
-            <button class="quiz-option">用全局字典手动保存实例，与元类无关</button>
-            <button class="quiz-option">元类无法实现单例</button>
-          </div>
-          <div class="quiz-explain" hidden>元类实现单例：在元类 <code>__call__</code>（实例化入口）里按 <code>cls</code> 缓存实例——<code>cls not in cls._instance</code> 时创建并缓存，之后直接返回缓存。相比 <code>__new__</code> 方案，元类方案对「所有使用该元类的类」统一生效。<a href="https://blog.51cto.com/u_14691718/4995821">出处：51CTO「你想要的 Python 面试题都在这里了」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（元类冲突·深水区）：A 的元类是 MetaA、B 的元类是 MetaB（互不继承），执行 <code>class C(A, B): pass</code> 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">TypeError：元类冲突（metaclass conflict）</button>
-            <button class="quiz-option">自动选择 MetaA 作为元类</button>
-            <button class="quiz-option">自动选择 MetaB 作为元类</button>
-            <button class="quiz-option">C 退回默认元类 type</button>
-          </div>
-          <div class="quiz-explain" hidden>两个父类元类不同且互不继承时，Python 无法确定 C 的元类 → <strong>TypeError: metaclass conflict</strong>（类定义时就报错）。解法：<code>class CommonMeta(MetaA, MetaB): pass</code> 创建兼容元类，再 <code>class C(A, B, metaclass=CommonMeta)</code>。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处：博客园「史上最全 python 面试题详解（三）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（元类分工·机制）：元类的 <code>__new__</code> 与 <code>__init__</code> 的分工是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">__new__ 创建类对象并返回；__init__ 在类创建后初始化</button>
-            <button class="quiz-option">__init__ 创建类对象，__new__ 初始化</button>
-            <button class="quiz-option">两者同时执行，没有先后</button>
-            <button class="quiz-option">元类只有 __new__ 没有 __init__</button>
-          </div>
-          <div class="quiz-explain" hidden>与普通类同构：元类 <code>__new__(mcs, name, bases, namespace)</code> <strong>创建类对象并 return</strong>（真正创建靠 <code>super().__new__</code>）；元类 <code>__init__(cls, name, bases, namespace)</code> 在类对象创建后做<strong>初始化</strong>（不返回值）。「类创建的完整生命周期」是元类深水区的基础。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处：博客园「史上最全 python 面试题详解（三）」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（元类应用·实现题）：用元类实现「方法名必须小写开头」的规范检查（违反时类定义报错），下列<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">__new__ 里遍历 namespace 的方法名，违规直接 raise</button>
-            <button class="quiz-option">在 __call__（实例化时）才检查</button>
-            <button class="quiz-option">检查后静默改名，不报错</button>
-            <button class="quiz-option">在普通方法里运行时检查</button>
-          </div>
-          <div class="quiz-explain" hidden>元类 <code>__new__</code> 在<strong>类定义时</strong>执行——遍历 <code>namespace</code> 中 callable 成员的方法名，违规（如大写开头）直接 <code>raise</code> 即可在「写类的瞬间」拦截。第二个实例化才检查，太晚 ✗；第三个静默改名改变行为 ✗；第四个与元类无关 ✗。ORM/框架的命名约束正是这样做。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处同面试题四</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（查找顺序·机制）：类成员查找时，元类属性什么时候会被访问到？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">自身 MRO 链条找不到时，继续沿元类 MRO 查找</button>
-            <button class="quiz-option">元类属性优先级最高，永远先查</button>
-            <button class="quiz-option">元类属性对类不可见</button>
-            <button class="quiz-option">只有实例能访问元类属性</button>
-          </div>
-          <div class="quiz-explain" hidden>类成员查找顺序：① 自身 MRO 链条 → ② <strong>元类 MRO 链条</strong>。类自己的属性优先，找不到才落到元类——所以「在元类上放类属性」可以给一批类提供共享默认值。与实例查找（数据描述符 → 实例 → 类 MRO）对照记忆。<a href="https://www.cnblogs.com/xuechaojun/p/10132709.html">出处同面试题四</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0012-元类',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `什么是元类？<code>type(int)</code> 等于什么？什么场景下会真的用到元类？`,
+    source: '考点来源：博客园「史上最全 python 面试题详解（三）」（元类概念题）· 场景改写',
+    breakdown: `元类 = <strong>类的类</strong>：创建类的工厂，默认是 type（<code>type(int)</code> 就是 <code>type</code> 自己）。真实场景：ORM 的模型生成、类定义时的规范检查（命名/抽象方法）、自动注册表（把子类收集进 registry）、给类批量加属性。其余时候别用——元类难读难调试，AI 生成框架代码里常见，能看懂才能审查。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `面试官追问单例：用元类实现单例的核心思路是什么？为什么它比 __new__ 方案更「干净」？`,
+    source: '考点来源：51CTO「你想要的 Python 面试题都在这里了」（单例元类题）· 场景改写',
+    breakdown: `在元类的 <code>__call__</code> 里拦实例化：<code>class SingletonMeta(type): def __call__(cls, *a, **kw): if not cls._instance: cls._instance = super().__call__(*a, **kw); return cls._instance</code>。比 __new__ 干净：① __init__ 只在首次创建时执行（因为后续根本不再走实例化）；② 单例逻辑与业务类解耦，<code>class DB(metaclass=SingletonMeta)</code> 一行接入。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 把两个带不同元类的库混用，运行时报 <code>TypeError: metaclass conflict</code>。审查：为什么会冲突？怎么解决？
+<pre><code>class A(metaclass=MetaA): pass
+class B(metaclass=MetaB): pass
+class C(A, B): pass   # TypeError!</code></pre>`,
+    source: '考点来源：博客园「史上最全 python 面试题详解（三）」（元类冲突题）· 场景改写',
+    breakdown: `C 的元类必须是 A、B 元类的<strong>共同子类</strong>（派生关系链中最具体者）；MetaA、MetaB 互不继承 → 找不到合法元类 → TypeError。修复：让 <code>MetaB(MetaA)</code>（元类沿继承方向派生），或显式 <code>class C(A, B, metaclass=Common)</code>（Common 继承两者）。审查库混用代码时这个错误是红灯信号。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `元类的 <code>__new__</code>、<code>__init__</code>、<code>__call__</code> 分别在什么时候触发？各自适合干什么？`,
+    source: '考点来源：博客园「史上最全 python 面试题详解（三）」（元类分工题）· 场景改写',
+    breakdown: `<code>__new__</code>：<strong>类对象创建时</strong>（定义 class 语句即触发）——适合改类结构（收集方法、加属性）；<code>__init__</code>：类对象初始化时——适合校验类定义；<code>__call__</code>：<strong>实例化时</strong>（每次 Obj() 触发）——适合拦实例化（单例元类就是它）。记法：元类管类的三件事 = 创建、初始化、实例化。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `用元类实现两个约束（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '① 类定义时检查：所有方法名必须小写开头（如 get_user 合法、GetUser 报错）；② 所有被该元类管理的类自动注册进全局 registry（类名 → 类）。',
+      accept: ['违规命名在类定义时立刻报错（不是实例化时）', 'registry 里能找到全部子类', '元类对业务代码零侵入（class 一行接入）'],
+    },
+    source: '任务基于《12.元类》课程知识点 · 来源层级：一手（Python 官方文档 3.3.3 自定义类创建）场景化',
+    breakdown: `思路：<code>class CheckMeta(type): def __new__(mcs, name, bases, ns): 遍历 ns 检查 callable 成员名 islower()；super().__new__ 建类后写 registry[name] = cls</code>。坑：检查要在建类<strong>之前</strong>（__new__ 里，raise 阻断创建）；django 风格方法名要放行（__xxx__ 与 _ 开头）；registry 用类属性挂在元类上避免子类覆盖。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -380,5 +358,6 @@ print(calc.add(3, 5))
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

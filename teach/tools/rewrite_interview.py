@@ -380,6 +380,202 @@ print(isinstance(int, int))        # ?</code></pre>`,
     breakdown: `思路：类属性 <code>_instance</code> + <code>_lock = threading.Lock()</code>；__new__ 里先无锁判空，未命中再 with lock 二次判空后创建。坑：忘记类属性放锁（每个实例一把锁就失效）；__init__ 每次仍会执行（陷阱题同款），把初始化幂等化或用标志位跳过。`,
   },
 ]'''),
+    # ——— 第三批 ———
+    ('0011-可调用对象.html', '巩固与延伸', '0011-可调用对象', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写了一个 <code>class Logger</code>，里面定义了 <code>def __call__(self, msg)</code>，然后 <code>log = Logger()</code>、<code>log('开始任务')</code>——实例居然能当函数调用。这个机制叫什么？哪些内置对象也是可调用的？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）：魔法方法、闭包/自省、装饰器/生成器」· 场景改写',
+    breakdown: `定义了 <code>__call__</code> 的类，其实例就是<strong>可调用对象</strong>——<code>obj(...)</code> 等价于 <code>type(obj).__call__(obj, ...)</code>。常见可调用对象：函数、类（调用即实例化）、带 __call__ 的实例、partial 对象。它在 Agent 工具系统里很常见（工具注册的往往就是可调用对象而非裸函数）。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `面试官追问：需要「带状态的函数」（计数器、带前缀的日志回调），除了闭包，还有哪些实现方式？各有什么特点？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（场景选择题）· 场景改写',
+    breakdown: `① <strong>可调用对象</strong>：状态存实例属性，行为在 __call__，可继承、可加方法——最工程化；② <strong>偏函数</strong>：<code>functools.partial(log, prefix='[A]')</code> 固定部分参数，适合「同一函数不同配置」的轻量场景；③ <strong>闭包</strong>：最轻但难扩展。面试加分点：能说出三者取舍（可扩展性 / 简洁性 / 固定参数）。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 想给一个实例「挂上 __call__ 方法」让它可调用，审查这段代码：
+<pre><code>class Task:
+    pass
+
+t = Task()
+t.__call__ = lambda: 'called'
+print(t())   # TypeError: 'Task' object is not callable</code></pre>
+为什么失败？特殊方法的查找规则是什么？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（调用协议题）· 场景改写',
+    breakdown: `<strong>特殊方法在类型上查找，不在实例字典上</strong>：t() 调用的是 type(t).__call__，实例属性里的 __call__ 被忽略（也更快——免去每次查找实例字典）。修复：在类里定义 <code>__call__</code>。同理 __getattr__、__len__ 等都不能往实例上挂。AI 经常犯这种「动态打补丁」的错。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要让 AI 实现一个「带前缀的日志器」：每个模块一个实例，前缀可配置、可以再挂新方法。闭包、可调用对象、类装饰器，你让它用哪个？为什么？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（设计选择题）· 场景改写',
+    breakdown: `首选<strong>可调用对象</strong>：前缀存 <code>self.prefix</code>（实例间隔离），行为在 <code>__call__</code>，后续要加 <code>set_level()</code> 等方法直接加——闭包做不到「再加方法」这一条。类装饰器适合「装饰器本身要带复杂状态」的场景。原则：状态 + 多行为 → 对象；单行为轻状态 → 闭包。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个可调用的 <code>RetryClient</code>（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '类实现 __call__(url)：内部带重试次数、日志前缀属性；调用时打印 [前缀] 尝试第 N 次，失败按配置重试后抛出；两个实例前缀互不干扰。',
+      accept: ['实例可直接像函数一样调用', '重试与日志前缀都来自实例属性', '两个实例状态隔离'],
+    },
+    source: '任务基于《11.可调用对象》课程知识点（__call__ 小节）· 场景化',
+    breakdown: `思路：<code>__init__</code> 里存 <code>self.prefix / self.retries</code>；<code>__call__</code> 里循环重试并打印。坑：实例属性与类属性别混用（幽灵共享同款坑）；__call__ 的返回值要正常透传，重试耗尽后 raise 而不是返回 None。`,
+  },
+]'''),
+    ('0012-元类.html', '巩固与延伸', '0012-元类', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `什么是元类？<code>type(int)</code> 等于什么？什么场景下会真的用到元类？`,
+    source: '考点来源：博客园「史上最全 python 面试题详解（三）」（元类概念题）· 场景改写',
+    breakdown: `元类 = <strong>类的类</strong>：创建类的工厂，默认是 type（<code>type(int)</code> 就是 <code>type</code> 自己）。真实场景：ORM 的模型生成、类定义时的规范检查（命名/抽象方法）、自动注册表（把子类收集进 registry）、给类批量加属性。其余时候别用——元类难读难调试，AI 生成框架代码里常见，能看懂才能审查。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `面试官追问单例：用元类实现单例的核心思路是什么？为什么它比 __new__ 方案更「干净」？`,
+    source: '考点来源：51CTO「你想要的 Python 面试题都在这里了」（单例元类题）· 场景改写',
+    breakdown: `在元类的 <code>__call__</code> 里拦实例化：<code>class SingletonMeta(type): def __call__(cls, *a, **kw): if not cls._instance: cls._instance = super().__call__(*a, **kw); return cls._instance</code>。比 __new__ 干净：① __init__ 只在首次创建时执行（因为后续根本不再走实例化）；② 单例逻辑与业务类解耦，<code>class DB(metaclass=SingletonMeta)</code> 一行接入。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 把两个带不同元类的库混用，运行时报 <code>TypeError: metaclass conflict</code>。审查：为什么会冲突？怎么解决？
+<pre><code>class A(metaclass=MetaA): pass
+class B(metaclass=MetaB): pass
+class C(A, B): pass   # TypeError!</code></pre>`,
+    source: '考点来源：博客园「史上最全 python 面试题详解（三）」（元类冲突题）· 场景改写',
+    breakdown: `C 的元类必须是 A、B 元类的<strong>共同子类</strong>（派生关系链中最具体者）；MetaA、MetaB 互不继承 → 找不到合法元类 → TypeError。修复：让 <code>MetaB(MetaA)</code>（元类沿继承方向派生），或显式 <code>class C(A, B, metaclass=Common)</code>（Common 继承两者）。审查库混用代码时这个错误是红灯信号。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `元类的 <code>__new__</code>、<code>__init__</code>、<code>__call__</code> 分别在什么时候触发？各自适合干什么？`,
+    source: '考点来源：博客园「史上最全 python 面试题详解（三）」（元类分工题）· 场景改写',
+    breakdown: `<code>__new__</code>：<strong>类对象创建时</strong>（定义 class 语句即触发）——适合改类结构（收集方法、加属性）；<code>__init__</code>：类对象初始化时——适合校验类定义；<code>__call__</code>：<strong>实例化时</strong>（每次 Obj() 触发）——适合拦实例化（单例元类就是它）。记法：元类管类的三件事 = 创建、初始化、实例化。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `用元类实现两个约束（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '① 类定义时检查：所有方法名必须小写开头（如 get_user 合法、GetUser 报错）；② 所有被该元类管理的类自动注册进全局 registry（类名 → 类）。',
+      accept: ['违规命名在类定义时立刻报错（不是实例化时）', 'registry 里能找到全部子类', '元类对业务代码零侵入（class 一行接入）'],
+    },
+    source: '任务基于《12.元类》课程知识点 · 来源层级：一手（Python 官方文档 3.3.3 自定义类创建）场景化',
+    breakdown: `思路：<code>class CheckMeta(type): def __new__(mcs, name, bases, ns): 遍历 ns 检查 callable 成员名 islower()；super().__new__ 建类后写 registry[name] = cls</code>。坑：检查要在建类<strong>之前</strong>（__new__ 里，raise 阻断创建）；django 风格方法名要放行（__xxx__ 与 _ 开头）；registry 用类属性挂在元类上避免子类覆盖。`,
+  },
+]'''),
+    ('0013-装饰器.html', '巩固与延伸', '0013-装饰器', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `<code>@deco</code> 放在函数头上，等价于什么？装饰器的原理与作用一句话讲清楚。`,
+    source: '考点来源：博客园「Python 面试基础」（装饰器原理题）· 场景改写',
+    breakdown: `等价式：<code>@deco\ndef f(): ...</code> == <code>f = deco(f)</code>——装饰器就是<strong>接收函数、返回新函数</strong>的高阶函数，作用是把横切关注点（日志/计时/权限/重试/缓存）从业务逻辑里剥离。AI 时代的新问法：Agent 工具注册、限流、埋点全用它，是「函数一等公民」最直接的应用。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `装饰器什么时候执行？两个装饰器叠加 <code>@d1\n@d2\ndef f()</code>，执行顺序是怎样的？`,
+    source: '考点来源：博客园「Python 面试基础」（装饰器时机题）· 场景改写',
+    breakdown: `装饰<strong>发生在函数定义时</strong>（模块导入/类体执行时跑一次），之后每次调用跑的是 wrapper。叠加顺序：<strong>自下而上</strong>执行装饰（f = d1(d2(f))），所以离函数近的 @d2 先包、@d1 再包外层——调用时则先过 d1 的 wrapper。理解顺序是写多层装饰器（先鉴权后限流再日志）的前提。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一个「生产级」装饰器，审查问题并给出修复版：
+<pre><code>def timer(fn):
+    def wrapper(*args, **kwargs):
+        import time
+        t0 = time.perf_counter()
+        fn(*args, **kwargs)          # ← 三个问题
+        print(f'耗时 {time.perf_counter() - t0:.4f}s')
+    return wrapper
+
+@timer
+def fetch(url):
+    return 'data'</code></pre>`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（通用装饰器题）· 场景改写',
+    breakdown: `三个问题：① <strong>返回值丢失</strong>——fn 的结果没 return，被装饰的 fetch 变 None；② 没加 <code>@functools.wraps(fn)</code>，元信息（__name__/__doc__）丢失；③ 异常照样计时但行为没说明（可选择记录后 re-raise）。修复版：wrapper 里 <code>result = fn(*args, **kwargs); return result</code> + wraps + try/finally 计时。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `面试官问缓存装饰器：<code>functools.lru_cache</code> 的机制是什么？哪些函数不能用它缓存？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（缓存装饰器题）· 场景改写',
+    breakdown: `机制：<strong>参数作 key</strong>（LRU 淘汰）缓存返回值，命中直接返回。不能用的情况：① 参数<strong>不可哈希</strong>（list/dict 传参会直接 TypeError）；② 函数有<strong>副作用</strong>或返回可变对象被外部修改（缓存会被污染）；③ 依赖外部状态（时间、DB 实时数据）的函数——缓存会让结果过期。AI 给代码随手加缓存是线上事故高发区。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个生产级通用装饰器 <code>@log_calls</code>（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '装饰任意函数：打印调用次数、参数与返回值（可配置开关）；任意参数透传（*args/**kwargs）；返回值原样返回；functools.wraps 保留元信息。',
+      accept: ['任意签名函数都能装饰（含关键字参数）', '返回值不被吞掉', '__name__ / __doc__ 保留', '调用计数准确'],
+    },
+    source: '任务基于《13.装饰器》课程知识点 · 来源层级：一手（Python 官方文档 functools 章节）场景化',
+    breakdown: `思路：外层工厂接配置，内层 wrapper 用 *args/**kwargs 透传并 return 原结果；计数放闭包或函数属性。坑：审查题的三件套（返回值 / wraps / 异常）一个都不能漏；多个被装饰函数要各自独立计数（计数挂函数属性而非全局变量）。`,
+  },
+]'''),
+    ('0014-魔术方法.html', '巩固与延伸', '0014-魔术方法', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `继承不可变类型 <code>tuple</code> 时想过滤掉空串，为什么必须改写 __new__ 而不是 __init__？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（__new__ 应用题）· 场景改写',
+    breakdown: `不可变对象在 <code>__new__</code> 返回时<strong>内容就已定型</strong>，__init__ 里改不动。正确姿势：<code>def __new__(cls, items): items = [i for i in items if i]; return super().__new__(cls, items)</code>。AI 生成的「过滤后的元组」子类常在这里翻车——审查时看到继承 str/tuple/frozenset 的类就要检查 __new__。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `<code>__getattr__</code> 和 <code>__getattribute__</code> 有什么区别？实现 __getattribute__ 最容易踩的坑是什么？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（属性拦截题）· 场景改写',
+    breakdown: `<code>__getattr__</code> 是<strong>兜底</strong>：常规查找找不到属性时才被调用；<code>__getattribute__</code> 是<strong>总闸</strong>：每次属性访问都先过它。坑：__getattribute__ 里再访问 self.xxx 会<strong>无限递归</strong>——必须用 <code>super().__getattribute__('xxx')</code>。AI 写属性代理类（lazy 加载、动态属性）时递归爆炸是标配 bug。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一个「可去重」的数据类：只定义了 <code>__eq__</code>，放进 set 立刻报错。审查并修复：
+<pre><code>class User:
+    def __init__(self, name): self.name = name
+    def __eq__(self, other):
+        return self.name == other.name
+
+users = {User('张三'), User('张三')}   # TypeError!</code></pre>`,
+    source: '考点来源：PHP 中文站「如何使用 Python 的 __hash__ 和 __eq__ 实现类对象去重」· 场景改写',
+    breakdown: `定义了 <code>__eq__</code> 后，Python 把 <code>__hash__</code> 置为 <strong>None</strong>（相等的对象哈希必须一致，默认哈希已不可信）——放进 set/dict 就报 unhashable。修复：同时定义 <code>__hash__ = lambda self: hash(self.name)</code>（与 __eq__ 用同一组字段），或声明 __hash__ = None 明确不可哈希。AI 生成 dataclass 时不传 frozen/eq 参数也会踩这个。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `为什么不能用「浮点容差近似相等」来实现 __eq__（比如 abs(a.x - b.x) < 1e-9 就算相等）？`,
+    source: '考点来源：PHP 中文站「__hash__ 与 __eq__ 实现类对象去重」（相等传递性题）· 场景改写',
+    breakdown: `近似相等<strong>不满足传递性</strong>：a≈b、b≈c 推不出 a≈c——而 == 的契约（和 set 的哈希逻辑）要求相等关系是等价关系（自反/对称/传递）。破坏传递性后，set 去重、dict 键、in 判断都会出现「幽灵行为」（同一个集合里两个「相等」元素并存）。正确做法：值比较用 isclose（不定义 __eq__），或给坐标做定点化（Decimal/整数分）再精确比较。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个 <code>Point2D</code> 类（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '实现 __eq__ / __hash__ / __repr__：set 去重可用；repr(p) 能被 eval 还原成相等对象；同时给一个「容差比较」方法（isclose 风格，不碰 __eq__）。',
+      accept: ['set 去重正确（__eq__/__hash__ 同字段）', 'eval(repr(p)) == p 成立', '容差比较不影响 == 语义'],
+    },
+    source: '任务基于《14.魔术方法》课程知识点 · 来源层级：一手（Python 官方文档 datamodel 章节）场景化',
+    breakdown: `思路：__eq__ 比较 (x, y) 元组，__hash__ = hash((self.x, self.y))；__repr__ 输出 <code>Point2D(3, 4)</code> 这种可 eval 形式；近似比较做成 <code>def close_to(self, other, tol=1e-9)</code> 普通方法。坑：__hash__ 与 __eq__ 必须用同一组字段（审查题同款）；repr 里变量名要能被 eval 找到。`,
+  },
+]'''),
 ]
 
 

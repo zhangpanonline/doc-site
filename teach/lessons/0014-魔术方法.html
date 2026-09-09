@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 12 课</p>
       <h1>魔术方法</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/魔术方法/">12.魔术方法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/魔术方法/">12.魔术方法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -260,84 +260,65 @@ class Fraction:
     </section>
 
     <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0014-魔术方法',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `继承不可变类型 <code>tuple</code> 时想过滤掉空串，为什么必须改写 __new__ 而不是 __init__？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（__new__ 应用题）· 场景改写',
+    breakdown: `不可变对象在 <code>__new__</code> 返回时<strong>内容就已定型</strong>，__init__ 里改不动。正确姿势：<code>def __new__(cls, items): items = [i for i in items if i]; return super().__new__(cls, items)</code>。AI 生成的「过滤后的元组」子类常在这里翻车——审查时看到继承 str/tuple/frozenset 的类就要检查 __new__。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `<code>__getattr__</code> 和 <code>__getattribute__</code> 有什么区别？实现 __getattribute__ 最容易踩的坑是什么？`,
+    source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（属性拦截题）· 场景改写',
+    breakdown: `<code>__getattr__</code> 是<strong>兜底</strong>：常规查找找不到属性时才被调用；<code>__getattribute__</code> 是<strong>总闸</strong>：每次属性访问都先过它。坑：__getattribute__ 里再访问 self.xxx 会<strong>无限递归</strong>——必须用 <code>super().__getattribute__('xxx')</code>。AI 写属性代理类（lazy 加载、动态属性）时递归爆炸是标配 bug。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一个「可去重」的数据类：只定义了 <code>__eq__</code>，放进 set 立刻报错。审查并修复：
+<pre><code>class User:
+    def __init__(self, name): self.name = name
+    def __eq__(self, other):
+        return self.name == other.name
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（__new__ 应用·高频）：继承不可变类型（如 tuple）时，想过滤元素，必须在哪里做？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">__new__ 里（不可变对象 __init__ 里改不了内容）</button>
-            <button class="quiz-option">__init__ 里（初始化时过滤）</button>
-            <button class="quiz-option">随便哪个方法都行</button>
-            <button class="quiz-option">不可变类型不能继承</button>
-          </div>
-          <div class="quiz-explain" hidden>经典 IntTuple 面试题：tuple 等不可变对象在 <code>__init__</code> 里<strong>无法修改内容</strong>（内容在 <code>__new__</code> 分配时就固定了），所以过滤逻辑必须写在 <code>__new__</code> 中，处理完再 <code>return super().__new__(cls, 处理后的序列)</code>。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）：魔法方法、闭包/自省、装饰器/生成器」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（属性拦截·高频）：<code>__getattr__</code>、<code>__setattr__</code>、<code>__getitem__</code> 的触发时机分别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">属性不存在时 / 属性赋值时 / 用 [] 索引时</button>
-            <button class="quiz-option">任何属性访问 / 属性删除 / 函数调用</button>
-            <button class="quiz-option">类定义时 / 实例销毁时 / 打印时</button>
-            <button class="quiz-option">三者都是实例化时触发</button>
-          </div>
-          <div class="quiz-explain" hidden><code>__getattr__</code>：访问<strong>不存在</strong>的属性时；<code>__setattr__</code>：<strong>任何属性赋值</strong>时（注意防递归）；<code>__getitem__</code>：<code>obj[key]</code> 方括号索引时。三个都是属性/容器协议拦截的常考点。<a href="https://cloud.tencent.cn/developer/article/1410462">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（__eq__ 与 __hash__·深水区）：类只定义了 <code>__eq__</code>（没定义 <code>__hash__</code>），它的实例还能放进 set 吗？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">不能：__hash__ 被隐式置为 None，抛 unhashable TypeError</button>
-            <button class="quiz-option">能：默认哈希不受影响</button>
-            <button class="quiz-option">能：__eq__ 自动推导出哈希</button>
-            <button class="quiz-option">只有放进 dict 才报错，set 不报错</button>
-          </div>
-          <div class="quiz-explain" hidden>Python 3 的机制：一旦重写 <code>__eq__</code>，类的 <code>__hash__</code> 被<strong>隐式设为 None</strong> → 实例不可哈希，放入 set/作 dict 键抛 <code>TypeError: unhashable type</code>（Ruff 有专门的 eq-without-hash 规则检测）。正确契约：重写 <code>__eq__</code> 时同步定义 <code>__hash__</code>（基于同一组不可变字段），且保证「相等对象的哈希值相同」；可变对象则不应实现 <code>__hash__</code>。<a href="https://global.php.cn/zh/faq/1797063785.html">出处：PHP 中文站「如何使用 Python 的 __hash__ 和 __eq__ 实现类对象去重」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（相等传递性·深水区）：为什么不能用「浮点容差近似相等」（<code>abs(a-b) &lt; ε</code>）来实现 <code>__eq__</code>？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">相等关系不可传递，无法设计一致的 __hash__</button>
-            <button class="quiz-option">性能太差</button>
-            <button class="quiz-option">Python 语法不允许</button>
-            <button class="quiz-option">浮点比较会抛异常</button>
-          </div>
-          <div class="quiz-explain" hidden>近似相等<strong>不满足传递性</strong>（A≈B、B≈C 但 A≠C）——而哈希契约要求「相等的对象哈希必等」，传递性缺失会让 set/dict 行为不确定（B 插入时可能命中 A 也可能命中 C）。Guido 本人就此解释过：宁可返回常量哈希，dict 行为也仍不确定。相等必须是严格的等价关系。<a href="https://global.php.cn/zh/faq/1797063785.html">出处：PHP 中文站「__hash__ 与 __eq__ 实现类对象去重」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（哈希碰撞·机制）：为什么 <code>set([True, 1])</code> 的结果是 <code>{True}</code>？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">hash(True) == hash(1)，且 True == 1 判等成功去重</button>
-            <button class="quiz-option">set 自动丢弃布尔值</button>
-            <button class="quiz-option">Python 不允许布尔值放进 set</button>
-            <button class="quiz-option">结果是 {1} 而不是 {True}</button>
-          </div>
-          <div class="quiz-explain" hidden>Python 3 保证 <code>hash(True) == hash(1)</code>（<code>hash(False) == hash(0)</code>），且 <code>True == 1</code> 成立——set 先比哈希再比相等，两者都命中 → 去重，保留先插入的 <strong>True</strong>。这解释了「集合里布尔值会被数字『吞掉』」的诡异现象。<a href="https://global.php.cn/zh/faq/1797063785.html">出处同面试题四</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（__repr__ 约定·机制）：<code>__repr__</code> 的「黄金约定」是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">返回的字符串应能通过 eval 重建出等价对象</button>
-            <button class="quiz-option">返回尽量短的字符串</button>
-            <button class="quiz-option">只能返回对象的内存地址</button>
-            <button class="quiz-option">__repr__ 不能包含任何数字</button>
-          </div>
-          <div class="quiz-explain" hidden>约定：<code>eval(repr(obj)) == obj</code>——<strong>repr 的输出应能重建对象</strong>（如 <code>Fraction(1, 2)</code>）。做不到时可退化为 <code>&lt;模块.类名 ...&gt;</code> 的带尖括号描述形式。这是调试与日志可读性的工程标准。<a href="https://cloud.tencent.cn/developer/article/1410462">出处：腾讯云「剖析 Python 面试知识点（一）」</a></div>
-        </div>
-      </div>
+users = {User('张三'), User('张三')}   # TypeError!</code></pre>`,
+    source: '考点来源：PHP 中文站「如何使用 Python 的 __hash__ 和 __eq__ 实现类对象去重」· 场景改写',
+    breakdown: `定义了 <code>__eq__</code> 后，Python 把 <code>__hash__</code> 置为 <strong>None</strong>（相等的对象哈希必须一致，默认哈希已不可信）——放进 set/dict 就报 unhashable。修复：同时定义 <code>__hash__ = lambda self: hash(self.name)</code>（与 __eq__ 用同一组字段），或声明 __hash__ = None 明确不可哈希。AI 生成 dataclass 时不传 frozen/eq 参数也会踩这个。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `为什么不能用「浮点容差近似相等」来实现 __eq__（比如 abs(a.x - b.x) < 1e-9 就算相等）？`,
+    source: '考点来源：PHP 中文站「__hash__ 与 __eq__ 实现类对象去重」（相等传递性题）· 场景改写',
+    breakdown: `近似相等<strong>不满足传递性</strong>：a≈b、b≈c 推不出 a≈c——而 == 的契约（和 set 的哈希逻辑）要求相等关系是等价关系（自反/对称/传递）。破坏传递性后，set 去重、dict 键、in 判断都会出现「幽灵行为」（同一个集合里两个「相等」元素并存）。正确做法：值比较用 isclose（不定义 __eq__），或给坐标做定点化（Decimal/整数分）再精确比较。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个 <code>Point2D</code> 类（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '实现 __eq__ / __hash__ / __repr__：set 去重可用；repr(p) 能被 eval 还原成相等对象；同时给一个「容差比较」方法（isclose 风格，不碰 __eq__）。',
+      accept: ['set 去重正确（__eq__/__hash__ 同字段）', 'eval(repr(p)) == p 成立', '容差比较不影响 == 语义'],
+    },
+    source: '任务基于《14.魔术方法》课程知识点 · 来源层级：一手（Python 官方文档 datamodel 章节）场景化',
+    breakdown: `思路：__eq__ 比较 (x, y) 元组，__hash__ = hash((self.x, self.y))；__repr__ 输出 <code>Point2D(3, 4)</code> 这种可 eval 形式；近似比较做成 <code>def close_to(self, other, tol=1e-9)</code> 普通方法。坑：__hash__ 与 __eq__ 必须用同一组字段（审查题同款）；repr 里变量名要能被 eval 找到。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -355,5 +336,6 @@ class Fraction:
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>
