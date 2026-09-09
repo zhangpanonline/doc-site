@@ -220,7 +220,7 @@
       <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握构建发布——可以继续学习《<a href="/agents/python/项目管理工具/">28.项目管理工具</a>》了。</p>
     </section>
 
-        <section>
+                                                                                    <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -266,11 +266,61 @@
     },
     source: '任务基于《29.构建发布》课程知识点 · 来源层级：一手（Python 官方文档 packaging 章节）场景化',
     breakdown: `思路：pyproject.toml 里 [project] 元数据 + [build-system]（hatchling/setuptools）→ <code>python -m build</code> 产出 dist/ 两种产物 → 新 venv <code>pip install dist/*.whl</code> 验证入口。坑：入口点写在 [project.scripts]；构建前确认包目录结构（src 布局或平铺）；私有凭证别写进配置（审查题同款）。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方打包教程怎么区分 sdist 与 wheel？pip 安装时的优先级是什么？`,
+    source: '来源：PyPA 官方打包教程《Packaging Python Projects》「Uploading the distribution archives」节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `教程原文：tar.gz 是 <strong>source distribution（源码分发包）</strong>，.whl 是 <strong>built distribution（构建产物）</strong>；<strong>新版 pip 优先装 built distribution</strong>，没有合适的才回退源码包。发布建议原文：<strong>「You should always upload a source distribution and provide built distributions for the platforms your project is compatible with」</strong>——sdist 兜底 + 各平台 wheel 主打。`,
   },
-],
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要发布一个纯 Python 包和一个带 C 扩展的包。按官方打包教程的建议，两者各要准备哪些产物？为什么？`,
+    source: '来源：PyPA 官方打包教程《Packaging Python Projects》「Uploading the distribution archives」节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `纯 Python 包：一个通用 wheel（py3-none-any）+ sdist 兜底；带 C 扩展的包：<strong>每个目标平台一个 wheel</strong>（按平台标签 cpXXX-platform 区分）——教程原文「provide built distributions for the platforms your project is compatible with」。原因：C 扩展在目标平台现场编译又慢又易失败（缺编译器/依赖），wheel 是预编译成品。审查 AI 的发布脚本：只见 sdist 不见对应平台 wheel = 生产环境要现场编译，直接打回。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

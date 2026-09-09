@@ -463,6 +463,21 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `<code>python -m pdb script.py</code>（崩溃后自动停在异常现场）或 except 块里 <code>pdb.pm()</code>——<strong>进入崩溃时刻的栈帧</strong>，用 p 查看当时变量、w 看栈、u/d 切换帧。适合：异常已发生、想<strong>事后取证</strong>而无法复现的场景（AI 生成的服务代码崩溃排查首选）；常规断点适合可稳定复现、要单步推演的场景。两者结合 = 生产排障的「断点收尾」策略。`,
   },
 ''',
+    '0029-构建发布': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方打包教程怎么区分 sdist 与 wheel？pip 安装时的优先级是什么？`,
+    source: '来源：PyPA 官方打包教程《Packaging Python Projects》「Uploading the distribution archives」节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `教程原文：tar.gz 是 <strong>source distribution（源码分发包）</strong>，.whl 是 <strong>built distribution（构建产物）</strong>；<strong>新版 pip 优先装 built distribution</strong>，没有合适的才回退源码包。发布建议原文：<strong>「You should always upload a source distribution and provide built distributions for the platforms your project is compatible with」</strong>——sdist 兜底 + 各平台 wheel 主打。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要发布一个纯 Python 包和一个带 C 扩展的包。按官方打包教程的建议，两者各要准备哪些产物？为什么？`,
+    source: '来源：PyPA 官方打包教程《Packaging Python Projects》「Uploading the distribution archives」节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `纯 Python 包：一个通用 wheel（py3-none-any）+ sdist 兜底；带 C 扩展的包：<strong>每个目标平台一个 wheel</strong>（按平台标签 cpXXX-platform 区分）——教程原文「provide built distributions for the platforms your project is compatible with」。原因：C 扩展在目标平台现场编译又慢又易失败（缺编译器/依赖），wheel 是预编译成品。审查 AI 的发布脚本：只见 sdist 不见对应平台 wheel = 生产环境要现场编译，直接打回。`,
+  },
+''',
 }
 
 
