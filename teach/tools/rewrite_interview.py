@@ -177,6 +177,51 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `<strong>字典分发</strong>：<code>dispatch = {'go': a, 'stop': b}</code>（注意存函数不带括号），调用 <code>dispatch[get_input()]()</code>。FAQ 指出两大优势：字符串不必与函数同名（可读的键名映射任意函数）+ 天然充当 switch-case。eval/exec 执行任意字符串有注入风险，功能上也更笨重。Agent 工具注册表就是这个模式。`,
   },
 ''',
+    '0010-对象的创建过程': r'''  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `官方文档说：__new__ 返回什么，__init__ 才一定会被调用？什么情况下 __init__ 会被跳过？这对写单例/缓存的 AI 代码意味着什么？`,
+    source: '来源：Python 官方文档 datamodel「Basic customization」object.__new__ 条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文规则：<strong>__new__ 返回 cls 的实例 → 该实例的 __init__ 被调用</strong>（self = 新实例，其余参数照传）；<strong>返回的不是 cls 实例 → __init__ 不被调用</strong>。所以单例里 __new__ 返回缓存的旧实例时，初始化会「悄悄不执行」——AI 写的单例/对象池代码依赖 __init__ 做初始化就是踩这条规则。初始化要么放 __new__ 成功后，要么显式幂等保护。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `面试官问：__new__ 存在的主要目的是什么？官方文档怎么定位它的用途？`,
+    source: '来源：Python 官方文档 datamodel「Basic customization」object.__new__ 条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：__new__ <strong>intended mainly to allow subclasses of immutable types</strong>（主要是让不可变类型的子类化成为可能）——如 int/str/tuple/frozenset 的内容在创建时就定型，必须赶在 __init__ 之前（__new__ 里）过滤/调整。其余场景（缓存实例、单例）是「顺手能做的扩展用途」，不是它的设计主场。`,
+  },
+''',
+    '0012-元类': r'''  {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `官方文档描述 class 语句背后发生了什么？元类（metaclass）在哪一步介入？`,
+    source: '来源：Python 官方文档 datamodel「Metaclasses」小节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：<strong>类体在一个新命名空间中执行，类名被绑定到 type(name, bases, namespace) 的结果</strong>。所以：① 类体里的代码在 class 语句执行时就<strong>真正运行</strong>（可以 print、可以算）；② 元类 = 定制这一步——用 metaclass 参数（或继承带元类的类）替换 type 的调用，从而拦下「类对象诞生」的瞬间。`,
+  },
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `既然 <code>MyClass = type('MyClass', (Base,), ns)</code> 与 class 语句等价，AI 写动态建类代码时这两者可以随便互换吗？有什么区别？`,
+    source: '来源：Python 官方文档 datamodel「Metaclasses」小节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `等价但不完全互换：type() 调用<strong>跳过了类体执行</strong>——ns 里的方法/属性要手动用 dict 组装（没有语句、装饰器、注解的自动执行）；class 语句则完整走「执行类体 → 交给元类」。且 class 语句里 <code>__qualname__</code>、模块归属等自动填充，type() 建类这些要手填（影响 pickle/日志）。动态建类适合「配置驱动生成」，写死 class 适合正常业务代码。`,
+  },
+''',
+    '0015-描述符': r'''  {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `官方文档给「描述符」的严格定义是什么？判定一个对象是不是描述符的标准是什么？`,
+    source: '来源：Python 官方文档 datamodel「Implementing Descriptors」小节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：描述符 = <strong>属性访问被描述符协议方法覆盖的对象</strong>——定义了 <code>__get__() / __set__() / __delete__()</code> 中<strong>任意一个</strong>，它就是描述符。默认属性访问是「从实例字典取/改/删」（文档原话：get, set, or delete the attribute from an object's dictionary）——描述符就是在这个默认行为<strong>之前</strong>插进来的协议钩子。property、classmethod、staticmethod 全是内置描述符。`,
+  },
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `面试官追问：<code>a.x</code> 的查找链是什么？数据描述符和非数据描述符在哪一步介入？`,
+    source: '来源：Python 官方文档 datamodel「Invoking Descriptors」小节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `查找链：<strong>① 数据描述符</strong>（有 __set__/__delete__）在类上定义时优先于实例字典 → ② <strong>实例字典</strong>（默认行为）→ ③ <strong>非数据描述符</strong>（只有 __get__）与类属性 → ④ __getattr__ 兜底。所以「只写 __get__ 的缓存描述符」会被实例同名属性遮蔽（复习审查题），而 property（数据描述符）永远拦在实例字典前面——这就是两个坑的机制根源。`,
+  },
+''',
 }
 
 

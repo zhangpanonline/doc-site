@@ -306,7 +306,7 @@ print(a.__dict__)             # ?</code></pre></div>
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握描述符——可以继续学习《<a href="/agents/python/异常处理/">14.异常处理</a>》了。</p>
     </section>
 
-            <section>
+                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -366,11 +366,41 @@ class Data:
     },
     source: '任务基于《15.描述符》课程知识点 · 来源层级：一手（Python 官方文档描述符指南）场景化',
     breakdown: `思路：__init__ 存类型与范围；<code>__set_name__</code> 存字段名（Python 3.6+ 免手写 name 参数）；__set__ 先校验再写 instance.__dict__；__get__ 读实例字典。坑：不要用 <code>setattr(obj, self.name, value)</code>（会再次触发描述符 → 递归）；默认值要在 __get__ 里处理（属性不存在时返回默认）。`,
+  }, {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `官方文档给「描述符」的严格定义是什么？判定一个对象是不是描述符的标准是什么？`,
+    source: '来源：Python 官方文档 datamodel「Implementing Descriptors」小节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：描述符 = <strong>属性访问被描述符协议方法覆盖的对象</strong>——定义了 <code>__get__() / __set__() / __delete__()</code> 中<strong>任意一个</strong>，它就是描述符。默认属性访问是「从实例字典取/改/删」（文档原话：get, set, or delete the attribute from an object's dictionary）——描述符就是在这个默认行为<strong>之前</strong>插进来的协议钩子。property、classmethod、staticmethod 全是内置描述符。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `面试官追问：<code>a.x</code> 的查找链是什么？数据描述符和非数据描述符在哪一步介入？`,
+    source: '来源：Python 官方文档 datamodel「Invoking Descriptors」小节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `查找链：<strong>① 数据描述符</strong>（有 __set__/__delete__）在类上定义时优先于实例字典 → ② <strong>实例字典</strong>（默认行为）→ ③ <strong>非数据描述符</strong>（只有 __get__）与类属性 → ④ __getattr__ 兜底。所以「只写 __get__ 的缓存描述符」会被实例同名属性遮蔽（复习审查题），而 property（数据描述符）永远拦在实例字典前面——这就是两个坑的机制根源。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

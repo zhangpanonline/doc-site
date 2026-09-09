@@ -269,7 +269,7 @@ print(pool1 is pool2, pool1 is pool3)</code></pre></div>
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握对象的创建过程——可以继续学习《<a href="/agents/python/可调用对象/">9.可调用对象</a>》了。</p>
     </section>
 
-                                            <section>
+                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -315,11 +315,25 @@ print(pool1 is pool2, pool1 is pool3)</code></pre></div>
     },
     source: '任务基于《10.对象的创建过程》课程知识点（__new__/单例小节）· 场景化',
     breakdown: `思路：类属性 <code>_instance</code> + <code>_lock = threading.Lock()</code>；__new__ 里先无锁判空，未命中再 with lock 二次判空后创建。坑：忘记类属性放锁（每个实例一把锁就失效）；__init__ 每次仍会执行（陷阱题同款），把初始化幂等化或用标志位跳过。`,
+  }, {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `官方文档说：__new__ 返回什么，__init__ 才一定会被调用？什么情况下 __init__ 会被跳过？这对写单例/缓存的 AI 代码意味着什么？`,
+    source: '来源：Python 官方文档 datamodel「Basic customization」object.__new__ 条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文规则：<strong>__new__ 返回 cls 的实例 → 该实例的 __init__ 被调用</strong>（self = 新实例，其余参数照传）；<strong>返回的不是 cls 实例 → __init__ 不被调用</strong>。所以单例里 __new__ 返回缓存的旧实例时，初始化会「悄悄不执行」——AI 写的单例/对象池代码依赖 __init__ 做初始化就是踩这条规则。初始化要么放 __new__ 成功后，要么显式幂等保护。`,
   },
-],
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `面试官问：__new__ 存在的主要目的是什么？官方文档怎么定位它的用途？`,
+    source: '来源：Python 官方文档 datamodel「Basic customization」object.__new__ 条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：__new__ <strong>intended mainly to allow subclasses of immutable types</strong>（主要是让不可变类型的子类化成为可能）——如 int/str/tuple/frozenset 的内容在创建时就定型，必须赶在 __init__ 之前（__new__ 里）过滤/调整。其余场景（缓存实例、单例）是「顺手能做的扩展用途」，不是它的设计主场。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 

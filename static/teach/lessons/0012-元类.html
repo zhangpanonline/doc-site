@@ -285,7 +285,7 @@ print(calc.add(3, 5))
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握元类的核心玩法——可以继续学习《<a href="/agents/python/装饰器/">11.装饰器</a>》了。</p>
     </section>
 
-            <section>
+                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -334,11 +334,41 @@ class C(A, B): pass   # TypeError!</code></pre>`,
     },
     source: '任务基于《12.元类》课程知识点 · 来源层级：一手（Python 官方文档 3.3.3 自定义类创建）场景化',
     breakdown: `思路：<code>class CheckMeta(type): def __new__(mcs, name, bases, ns): 遍历 ns 检查 callable 成员名 islower()；super().__new__ 建类后写 registry[name] = cls</code>。坑：检查要在建类<strong>之前</strong>（__new__ 里，raise 阻断创建）；django 风格方法名要放行（__xxx__ 与 _ 开头）；registry 用类属性挂在元类上避免子类覆盖。`,
+  }, {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `官方文档描述 class 语句背后发生了什么？元类（metaclass）在哪一步介入？`,
+    source: '来源：Python 官方文档 datamodel「Metaclasses」小节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：<strong>类体在一个新命名空间中执行，类名被绑定到 type(name, bases, namespace) 的结果</strong>。所以：① 类体里的代码在 class 语句执行时就<strong>真正运行</strong>（可以 print、可以算）；② 元类 = 定制这一步——用 metaclass 参数（或继承带元类的类）替换 type 的调用，从而拦下「类对象诞生」的瞬间。`,
   },
-],
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `既然 <code>MyClass = type('MyClass', (Base,), ns)</code> 与 class 语句等价，AI 写动态建类代码时这两者可以随便互换吗？有什么区别？`,
+    source: '来源：Python 官方文档 datamodel「Metaclasses」小节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `等价但不完全互换：type() 调用<strong>跳过了类体执行</strong>——ns 里的方法/属性要手动用 dict 组装（没有语句、装饰器、注解的自动执行）；class 语句则完整走「执行类体 → 交给元类」。且 class 语句里 <code>__qualname__</code>、模块归属等自动填充，type() 建类这些要手填（影响 pickle/日志）。动态建类适合「配置驱动生成」，写死 class 适合正常业务代码。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
