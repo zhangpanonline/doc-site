@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 6 节</p>
       <h1>索引</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/索引/">06.索引</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/common/database/索引/">06.索引</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -219,87 +219,70 @@
     </section>
 
     <section>
+    <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'db-0006-索引',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `你用 AI 写了一条高频搜索：<code>SELECT * FROM users WHERE name LIKE '%明%'</code>，name 列上有 B+ 树索引，但 EXPLAIN 显示 Seq Scan（全表扫）。为什么索引没生效？怎么改？`,
+              source: '考点来源：牛客专刊「数据库索引-笔面试必考点 15 讲」（索引失效题）· PostgreSQL 场景改写（答案以 PG16 实测执行计划为准）',
+              breakdown: `前导 % 破坏了 B+ 树的字典序定位——「任意位置含『明』」无法用树缩小范围，只能全表扫（左模糊连 text_pattern_ops 索引也无能为力）。改法：① 前缀匹配改成右模糊 <code>name LIKE '明%'</code>，注意 PG 默认排序规则下<strong>普通 btree 索引不服务 LIKE</strong>——需要 C 排序规则或 <code>text_pattern_ops</code> 索引（实测：建 pattern_ops 索引后走 Bitmap Index Scan，Index Cond 落在「明」到「昏」的区间）；② 中缀/模糊搜索用 pg_trgm 的 GIN 三元组索引或全文检索（tsvector + GIN）。同类失效还包括：对索引列做运算/函数、隐式类型转换、OR 关联非索引列。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `面试官连问：为什么 B+ 树索引能加快查询？二级索引不是直接拿到数据了吗，为什么还要「回表」？`,
+              source: '考点来源：CSDN「MySQL 索引、锁、三大范式一篇搞定」+ 牛客网回表考点 · PostgreSQL 口径改写',
+              breakdown: `B+ 树是排好序的查找结构：树高 2~4 层，几次 IO 就能定位（O(log n)），替代逐行比对的全表扫（O(n)）——就像书的目录。二级索引叶子只存<strong>索引键 + 行指针（PG 的 TID）</strong>，整行数据在表（heap）里；要拿索引外的列，必须再按 TID 查一次表——这次再查就是「回表」。若查询列全在索引里（覆盖索引 / Index Only Scan），可免回表。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 生成了订单表联合索引和四条查询，你在代码审查。逐条判断：用得上这个索引吗（全部 / 部分 / 完全不行）？
+<pre><code>CREATE INDEX idx_orders ON orders(user_id, status, created_at);
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题一（必考）：为什么索引能加快查询？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">索引把数据压缩得更小</button>
-            <button class="quiz-option">索引改变了数据的物理存储顺序</button>
-            <button class="quiz-option">索引是排序好的查找结构（B+ 树），把 O(n) 全表扫变成 O(log n) 定位</button>
-            <button class="quiz-option">索引让 SQL 解析更快</button>
-          </div>
-          <div class="quiz-explain" hidden>索引 = 「排好序的快速查找数据结构」（B+ 树）：树高 2~4 层、几次 IO 定位到行，替代逐行比对。比喻成书的目录。<a href="https://blog.csdn.net/m0_46266264/article/details/116168466">出处：CSDN「MySQL 索引、锁、三大范式一篇搞定」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（回表概念）：二级索引查到主键后，为什么还要「回表」？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">二级索引叶子只存主键值，整行数据在主键索引（聚簇）里</button>
-            <button class="quiz-option">为了给查询结果重新排序</button>
-            <button class="quiz-option">为了刷新二级索引的缓存</button>
-            <button class="quiz-option">PG 的机制，MySQL 没有回表</button>
-          </div>
-          <div class="quiz-explain" hidden>InnoDB/PG 类似：<strong>二级索引叶子存的是主键（或行指针）</strong>，要拿整行数据得再查一次主键索引（聚簇）——这次「再查」就是回表。若查询列全在索引里（覆盖索引，EXPLAIN Extra=using index），则可免回表。<a href="https://www.nowcoder.com/discuss/353157104326352896">出处：牛客网「秋招结束，回馈牛客」· 索引考点</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题三（最左前缀）：联合索引 (a, b, c)，哪条查询能用上索引？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">WHERE b = 1 AND c = 2</button>
-            <button class="quiz-option">WHERE a = 1 AND b = 2（从最左列开始，连续匹配）</button>
-            <button class="quiz-option">WHERE c = 2</button>
-            <button class="quiz-option">WHERE b = 1</button>
-          </div>
-          <div class="quiz-explain" hidden>联合索引按 a → b → c 依次排序，查询必须<strong>从最左列开始连续匹配</strong>。a=1 AND b=2 ✓；跳到 b、c 或中间断层都不行。注意：a 上的范围查询会「中断」后续列匹配（a&gt;1 AND b=2 里 b 用不上）。<a href="https://blog.csdn.net/m0_46266264/article/details/116168466">出处：CSDN「MySQL 索引、锁、三大范式一篇搞定」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">面试题四（失效场景）：以下哪条 SQL 会导致索引失效？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">WHERE name = '张三'</button>
-            <button class="quiz-option">WHERE id IN (1, 2, 3)</button>
-            <button class="quiz-option">ORDER BY created_at DESC</button>
-            <button class="quiz-option">WHERE name LIKE '%张%'——左模糊，索引无法定位</button>
-          </div>
-          <div class="quiz-explain" hidden>LIKE '%张%'（前导 %）索引失效：B+ 树按前缀有序，「任意位置含张」无法用树定位。此外：对列运算、隐式类型转换、OR 关联非索引列、范围后断最左前缀等都会失效。LIKE '张%' 则可以用索引。<a href="https://www.nowcoder.com/issue/tutorial?tutorialId=10039&uuid=9ffd061f8c764aeab5ebc59b8d6b4427">出处：牛客专刊「数据库索引-笔面试必考点 15 讲」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题五（结构对比）：B+ 树相比 B 树的优势是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">B+ 树节点里存更多数据，单次能返回更多行</button>
-            <button class="quiz-option">B+ 树不需要磁盘 IO</button>
-            <button class="quiz-option">非叶子只存 key 树更矮；叶子链表使范围查询极快</button>
-            <button class="quiz-option">B+ 树能自动压缩数据</button>
-          </div>
-          <div class="quiz-explain" hidden>两大优势：① <strong>非叶子只存 key</strong> → 同页容更多 key → 树更矮 → IO 更少；② <strong>叶子用双向链表相连</strong> → 范围查询定位起点后顺链扫，反向遍历也方便。B 树数据散在各级节点、叶子无链。<a href="https://www.nowcoder.com/discuss/353157104326352896">出处：牛客网「秋招结束，回馈牛客」· B+ 树考点</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题六（慢查询治理）：一条慢 SQL 的排查路径是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">EXPLAIN 看执行计划：type 是否 ALL、有无 using filesort/temporary，再对症建索引或改写</button>
-            <button class="quiz-option">直接给所有列都建上索引</button>
-            <button class="quiz-option">重启数据库看是否恢复</button>
-            <button class="quiz-option">把查询改成 SELECT * 减少列数</button>
-          </div>
-          <div class="quiz-explain" hidden>标准路径：<strong>EXPLAIN 分析</strong> → 看 type（至少到 range、最好 ref）、rows 估算、Extra（using filesort 要优化排序、using temporary 用了临时表）→ 针对 WHERE/ORDER BY/GROUP BY/JOIN 列建合适索引或改写 SQL（覆盖索引、避免列运算、避免前导 %）。无脑全列建索引是典型反面答案。<a href="https://leetcode.cn/discuss/post/860235/mysql-gao-pin-mian-shi-ti-ying-gang-mian-d0r8/">出处：力扣「MySQL 高频面试题，硬 gang 面试官」</a></div>
-        </div>
-      </div>
+-- ①
+SELECT * FROM orders WHERE user_id = 1 AND status = 'paid';
+-- ②
+SELECT * FROM orders WHERE status = 'paid' AND created_at > now() - interval '7 days';
+-- ③
+SELECT * FROM orders WHERE user_id = 1 AND created_at > now() - interval '7 days';
+-- ④
+SELECT * FROM orders WHERE user_id = 1 ORDER BY created_at DESC LIMIT 20;</code></pre>`,
+              source: '考点来源：CSDN「MySQL 索引、锁、三大范式一篇搞定」（最左前缀题）· PostgreSQL 场景改写（答案以 PG16 + 100 万行实测执行计划为准）',
+              breakdown: `联合索引按 user_id → status → created_at 排序（PG16 + 100 万行实测）：① 从最左列连续命中，user_id、status 都进入 Index Cond，索引范围定位 ✓；② 跳过最左列，索引无法定位起点 → Parallel Seq Scan，完全用不上；③ user_id 定位到子树，created_at 因中间 status 断层只能作为<strong>索引内过滤</strong>（逐条检查而非范围 seek，选择性大打折扣）——注意：MySQL 经典答案说「范围后断最左前缀」，PG 里它仍会进 Index Cond，但只是过滤器；④ 索引序是 (status, created_at)，ORDER BY created_at 缺 status 等式 → 出现 Sort 节点；补上 <code>AND status = 'paid'</code> 后变成 Index Only Scan Backward，免排序。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `团队要做一个 RAG 问答系统，AI 提议「文档全放向量库就够了」。你坚持保留 PostgreSQL。向量索引和 B+ 树索引各解决什么问题？混合检索为什么离不开关系库？`,
+              source: '来源层级：一手（PostgreSQL 官方文档 pgvector / indexes 章节）+ 场景化改写',
+              breakdown: `向量索引（如 pgvector 的 HNSW）解决<strong>相似度召回</strong>（语义相近的文档块），B+ 树解决<strong>结构化精确查询</strong>（用户、权限、元数据、状态过滤）。RAG 实际要的是混合检索：先按 user_id/权限/时间做结构化过滤，再向量召回，还要事务（计费、去重）与一致性——这些是关系库的标配。pgvector 让向量与 B+ 树共存一个库，避免两套系统同步的复杂度。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `用 Claude Code 完成一次慢查询排查（任务与验收点见任务卡）。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: 'orders 表 100 万行、建有联合索引，某高频查询 EXPLAIN 显示 Seq Scan。诊断索引为什么没生效，写出修正 SQL，并用 EXPLAIN 验证执行计划改变。',
+                accept: ['能指出失效原因（列上运算 / 左模糊 / 跳过最左列等）', '修正后的 SQL 执行计划出现 Index Scan（或 Index Only Scan）', '能说出新计划的代价变化'],
+              },
+              source: '任务基于《06.索引》课程知识点 · 来源层级：一手（PostgreSQL 官方文档 EXPLAIN 章节）场景化',
+              breakdown: `思路：先 <code>EXPLAIN (ANALYZE, BUFFERS)</code> 看计划与代价；对照 WHERE/ORDER BY 检查最左前缀、列上是否有函数/运算/类型转换、是否左模糊；修正后再次 EXPLAIN 对比。坑：统计信息过期时计划可能仍不走索引——先 <code>ANALYZE orders;</code> 再验证。`,
+            },
+          ],
+        };
+      </script>
     </section>
 
-    <section>
-      <h2>巩固延伸</h2>
+巩固延伸</h2>
       <ul>
         <li><strong>动手验证</strong>：把《06.索引》演示脚本完整跑一遍，对比两次 EXPLAIN 的 Execution Time；再试一个「索引失效」写法（如 WHERE created_at + interval '1 day' &gt; …）观察执行计划退回 Seq Scan。</li>
         <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/indexes.html">PostgreSQL 官方文档：索引</a> · <a href="https://www.postgresql.org/docs/16/sql-explain.html">官方文档：EXPLAIN</a></li>
@@ -313,5 +296,6 @@
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>
