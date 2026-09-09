@@ -317,7 +317,7 @@ async def test():
       <p style="margin-top:1.2rem">三道考核全部答对，说明你已经把协程、Task、Future 串成了整体——可以继续学习《<a href="/agents/python/异步编程/">25.异步编程</a>》了。</p>
     </section>
 
-        <section>
+                                                    <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -366,11 +366,38 @@ async def test():
     },
     source: '任务基于《26.协程-Coroutine》课程知识点 · 场景化',
     breakdown: `思路：<code>sem = asyncio.Semaphore(5)</code>，任务内 <code>async with sem:</code> 限流；失败逐任务捕获；阻塞函数 <code>await loop.run_in_executor(None, sync_work)</code>。坑：Semaphore 要在<strong>任务内</strong>获取（gather 前批量 acquire 会把并发上限变成 0）；executor 默认线程池，CPU 密集要传进程池。`,
-  },
-],
+  }, {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码把同一个协程对象用了两次：<code>coro = fetch(); await coro; await coro</code>。运行时会怎样？官方文档从哪个版本开始明确这是错误？`,
+    source: '来源：Python 官方文档 datamodel「Coroutines」条目（Changed in version 3.5.2）· 检索 2026-09-09 · 层级：一手',
+    breakdown: `第二次 await 抛 <code>RuntimeError: cannot reuse already awaited coroutine</code>——文档明确「It is a RuntimeError to await on a coroutine more than once」（3.5.2 起）。协程对象是<strong>一次性执行体</strong>：每次需要执行就<strong>重新调用 async 函数</strong>拿新协程（或每次 create_task）。AI 生成代码把协程当「可复用句柄」存起来是最常见的 asyncio 错误之一。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

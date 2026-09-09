@@ -252,6 +252,37 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `print(obj) 走 <code>type(obj).__str__</code>——实例字典里的 __str__ 被<strong>无视</strong>，print 输出照旧。正确做法：① 类上定义（设计时就该有）；② 临时需求用 <code>type(obj).__str__ = ...</code> 猴子补丁（改的是类型，会生效但影响所有实例，慎用）；③ 换协议函数显式调用（自己调 obj.attr 而不是依赖隐式协议）。审查规则：看到「实例上挂 dunder」直接判无效。`,
   },
 ''',
+    '0017-迭代器与生成器': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档对 <code>__iter__</code> 的要求原文是什么？这解释了为什么 list 能 for 两遍、迭代器只能一遍。`,
+    source: '来源：Python 官方文档 datamodel「object.__iter__」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：__iter__ <strong>should return a new iterator object</strong>——每次调用返回<strong>新</strong>迭代器（list 的 __iter__ 每次新建 → 可反复遍历）；而迭代器自身的 __iter__ 返回 self（旧的那一个、已被耗尽 → 第二遍为空）。原文还补充：对映射（dict），迭代的是<strong>键</strong>。这条规则是「为什么能/不能重复遍历」的官方答案。`,
+  },
+''',
+    '0018-上下文管理器': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档定义的 <code>__exit__</code> 签名与语义是什么？三个异常参数什么时候会是 None？`,
+    source: '来源：Python 官方文档 datamodel「With Statement Context Managers」object.__exit__ 条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `签名 <code>__exit__(self, exc_type, exc_value, traceback)</code>——参数描述<strong>导致退出上下文的异常</strong>；<strong>无异常退出时三者全为 None</strong>。若异常存在且方法想<strong>抑制</strong>（阻止传播），<strong>返回真值</strong>；返回 None/假值则异常照常向上传播。这就是 with 块异常语义的完整官方定义。`,
+  },
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 写的上下文管理器 __exit__ 里无条件 <code>return True</code>，想「保证不崩」。审查：官方语义下这会怎样？只想抑制特定异常该怎么写？`,
+    source: '来源：Python 官方文档 datamodel「With Statement Context Managers」object.__exit__ 条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `return True = <strong>抑制一切异常</strong>——业务错误、程序员 bug 全部静默，调用方永远以为成功（线上事故标配）。正确写法：<code>if exc_type is 目标异常: 处理; return True</code>——<strong>只对明确预期的异常返回真值</strong>，其余返回 None 让异常传播。无异常时（三个参数 None）别去 return True 做多余事。`,
+  },
+''',
+    '0026-协程-Coroutine': r'''  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码把同一个协程对象用了两次：<code>coro = fetch(); await coro; await coro</code>。运行时会怎样？官方文档从哪个版本开始明确这是错误？`,
+    source: '来源：Python 官方文档 datamodel「Coroutines」条目（Changed in version 3.5.2）· 检索 2026-09-09 · 层级：一手',
+    breakdown: `第二次 await 抛 <code>RuntimeError: cannot reuse already awaited coroutine</code>——文档明确「It is a RuntimeError to await on a coroutine more than once」（3.5.2 起）。协程对象是<strong>一次性执行体</strong>：每次需要执行就<strong>重新调用 async 函数</strong>拿新协程（或每次 create_task）。AI 生成代码把协程当「可复用句柄」存起来是最常见的 asyncio 错误之一。`,
+  },
+''',
 }
 
 

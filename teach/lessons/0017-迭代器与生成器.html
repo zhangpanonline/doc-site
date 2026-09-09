@@ -279,7 +279,7 @@ print(calc.send(20))    # ?</code></pre></div>
       <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握迭代器与生成器——可以继续学习《<a href="/agents/python/上下文管理器/">16.上下文管理器</a>》了。</p>
     </section>
 
-                                                    <section>
+                                                        <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -328,11 +328,18 @@ print(sum(data))   # 0  ← ？</code></pre>`,
     },
     source: '任务基于《17.迭代器与生成器》课程知识点 · 场景化',
     breakdown: `思路：<code>def gen_logs()</code> 产出日志 → <code>(code for line in gen_logs() if 'error' in line)</code> 过滤 → Counter 增量统计。坑：过滤生成器只能消费一次（审查题同款），统计前别中途物化；Counter 本身就是 O(去重数) 内存，恰好是「惰性流 + 小聚合」的标准组合。`,
-  },
-],
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档对 <code>__iter__</code> 的要求原文是什么？这解释了为什么 list 能 for 两遍、迭代器只能一遍。`,
+    source: '来源：Python 官方文档 datamodel「object.__iter__」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：__iter__ <strong>should return a new iterator object</strong>——每次调用返回<strong>新</strong>迭代器（list 的 __iter__ 每次新建 → 可反复遍历）；而迭代器自身的 __iter__ 返回 self（旧的那一个、已被耗尽 → 第二遍为空）。原文还补充：对映射（dict），迭代的是<strong>键</strong>。这条规则是「为什么能/不能重复遍历」的官方答案。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 
