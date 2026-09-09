@@ -244,7 +244,7 @@ products = [
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握 lambda 与高阶函数的组合使用——可以继续学习《<a href="/agents/python/类和对象/">6.类和对象</a>》了。</p>
     </section>
 
-                                <section>
+                                    <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -295,11 +295,25 @@ print(list(evens))   # []  ← 为什么？</code></pre>`,
     },
     source: '任务基于《7.lambda表达式》课程知识点（排序与函数式小节）· 场景化',
     breakdown: `思路：<code>filter(lambda p: p['stock'] > 0, ...)</code> 过滤 → <code>sorted(key=lambda p: (p['company'], p['price']))</code> 两级排序 → 切片取前 N。坑：filter 迭代器不能复用（审查题同款）；取前 N 用切片 <code>[:n]</code> 而不是 sort 之后再 filter。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方 FAQ 说高阶函数有哪两种实现方式？以「生成 y = a*x + b 的函数」为例说明。`,
+    source: '来源：Python 官方文档 FAQ「How do you make a higher order function in Python?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `① <strong>嵌套函数/闭包</strong>：<code>def linear(a, b): def result(x): return a*x + b; return result</code>；② <strong>可调用对象</strong>：类里存 a、b，实现 __call__。两者都能 <code>taxes = linear(0.3, 2)</code> 后像函数一样调用。FAQ 的取舍提示：可调用对象能放更多方法与状态——多行为选类、单行为选闭包。`,
   },
-],
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要让 AI 实现一个「函数工厂」：生成带配置的回调（如按税率计算税费）。什么时候让它用闭包、什么时候用可调用对象？`,
+    source: '来源：Python 官方文档 FAQ「How do you make a higher order function in Python?」· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `单行为、状态简单（linear 这种只算一个公式）→ <strong>闭包</strong>，代码最少；需要<strong>再挂方法/多状态/可继承</strong>（税率对象还要 set_rate()、历史记录）→ <strong>可调用对象</strong>。给 AI 的提示词里把「是否需要后续扩展方法」说清楚，AI 就不会在两个形态间摇摆。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 

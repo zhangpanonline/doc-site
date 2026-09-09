@@ -248,7 +248,7 @@ else:
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握容器类型的核心操作——可以继续学习《<a href="/agents/python/函数/">3.函数</a>》了。</p>
     </section>
 
-                                <section>
+                                    <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -302,11 +302,25 @@ print(drop_evens([1, 2, 4, 5, 8]))  # 结果不对</code></pre>
     },
     source: '任务基于《4.容器类型》课程知识点（去重保序/元组可哈希小节）· 场景化',
     breakdown: `思路：遍历时用 dict 记录每个订单首次位置和出现次数（元组可哈希，直接当 key）；输出按首次位置排序。坑：不要把「顺序」交给 set；用 <code>dict.fromkeys</code> 一行去重虽然简洁，但统计次数需要额外一趟遍历——两件事可以合并成一次遍历。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `面试官问：复制对象有哪些姿势？各自的深浅语义是什么？`,
+    source: '来源：Python 官方文档 FAQ「How do I copy an object in Python?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `官方 FAQ 给三法：① <strong>通用</strong> <code>copy.copy()</code>（浅）/ <code>copy.deepcopy()</code>（深）——大多数对象都可用；② <strong>字典</strong>自带 <code>olddict.copy()</code>；③ <strong>序列</strong>切片 <code>new_l = l[:]</code>。后两者都是<strong>浅拷贝</strong>（内层可变对象仍共享）。FAQ 也提醒「Not all objects can be copied」——含锁/文件句柄的对象拷贝会失败或行为异常。`,
   },
-],
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码用 <code>dict.copy()</code> 复制了配置，改嵌套值却把原配置也改了。为什么？什么时候必须上 deepcopy？`,
+    source: '来源：Python 官方文档 FAQ「How do I copy an object in Python?」· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `<code>dict.copy()</code> 与切片都是<strong>浅拷贝</strong>：外层容器新了，内层可变对象（嵌套 dict/list）还是原引用——改嵌套即改原对象。规则：<strong>只有一层</strong>用 copy()/切片；嵌套结构要完全独立必须 <code>copy.deepcopy()</code>（性能更贵，按需用）。审查 AI 的「复制后修改」代码先看嵌套层级。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 

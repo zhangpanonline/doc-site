@@ -332,7 +332,7 @@ print(deposit2(10))   # 60</code></pre>
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握作用域与闭包——可以继续学习《<a href="/agents/python/lambda表达式/">5.Lambda表达式</a>》了。</p>
     </section>
 
-                                <section>
+                                    <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -385,11 +385,25 @@ print(add(5))</code></pre>`,
     },
     source: '任务基于《6.作用域》课程知识点（nonlocal 小节）· 场景化',
     breakdown: `思路：<code>def make_counter(step): count = 0; def counter(): nonlocal count; count += step; return count; ...</code>——count 是外层函数的局部变量，靠 nonlocal 在闭包里修改。坑：忘写 nonlocal 会 UnboundLocalError（参考审查题）；reset 要记得把闭包里的 count 归零而不是重开一个。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `多个模块要共享同一份配置，官方 FAQ 推荐的规范做法是什么？原理是什么？`,
+    source: '来源：Python 官方文档 FAQ「How do I share global variables across modules?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>专用 config 模块模式</strong>：config.py 里定义默认值，各模块 <code>import config</code> 后通过属性读写 <code>config.x = 1</code>。原理：<strong>模块是单例</strong>（每个模块对象全局只有一份），对模块对象的改动处处可见。这是比「真全局变量」干净得多的共享方式——有命名空间、可追踪赋值点。`,
   },
-],
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码用 <code>from config import x</code> 引入配置，然后在别的模块里改 x，改动却没生效。为什么？正确姿势是什么？`,
+    source: '来源：Python 官方文档 FAQ「How do I share global variables across modules?」· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `<code>from config import x</code> 把<strong>当前值拷贝</strong>成局部名字——之后改 x 改的是自己的副本，config.x 纹丝不动（FAQ 的规范姿势是「import 模块、改模块属性」）。正确：<code>import config; config.x = 1</code>；需要热生效的配置对象（如 dict）同理——from 导入的引用改内部内容生效、重新赋值不生效，别混。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 

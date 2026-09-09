@@ -86,6 +86,51 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `① <strong>表达式索引</strong>：不改列类型、存量数据不动，查询处写 lower(email) 即可命中——<strong>侵入最小</strong>，首选；② <strong>citext</strong>：列类型换成大小写不敏感文本，查询零改动，但改类型要迁移数据、扩展依赖；③ 应用层统一：最弱——历史数据/多入口（API、后台、导入脚本）总有一处漏小写。结论：默认 ①，类型可控的新表可选 ②，③ 只做最后兜底不依赖。`,
   },
 ''',
+    '0004-容器类型': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `面试官问：复制对象有哪些姿势？各自的深浅语义是什么？`,
+    source: '来源：Python 官方文档 FAQ「How do I copy an object in Python?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `官方 FAQ 给三法：① <strong>通用</strong> <code>copy.copy()</code>（浅）/ <code>copy.deepcopy()</code>（深）——大多数对象都可用；② <strong>字典</strong>自带 <code>olddict.copy()</code>；③ <strong>序列</strong>切片 <code>new_l = l[:]</code>。后两者都是<strong>浅拷贝</strong>（内层可变对象仍共享）。FAQ 也提醒「Not all objects can be copied」——含锁/文件句柄的对象拷贝会失败或行为异常。`,
+  },
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码用 <code>dict.copy()</code> 复制了配置，改嵌套值却把原配置也改了。为什么？什么时候必须上 deepcopy？`,
+    source: '来源：Python 官方文档 FAQ「How do I copy an object in Python?」· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `<code>dict.copy()</code> 与切片都是<strong>浅拷贝</strong>：外层容器新了，内层可变对象（嵌套 dict/list）还是原引用——改嵌套即改原对象。规则：<strong>只有一层</strong>用 copy()/切片；嵌套结构要完全独立必须 <code>copy.deepcopy()</code>（性能更贵，按需用）。审查 AI 的「复制后修改」代码先看嵌套层级。`,
+  },
+''',
+    '0006-作用域': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `多个模块要共享同一份配置，官方 FAQ 推荐的规范做法是什么？原理是什么？`,
+    source: '来源：Python 官方文档 FAQ「How do I share global variables across modules?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>专用 config 模块模式</strong>：config.py 里定义默认值，各模块 <code>import config</code> 后通过属性读写 <code>config.x = 1</code>。原理：<strong>模块是单例</strong>（每个模块对象全局只有一份），对模块对象的改动处处可见。这是比「真全局变量」干净得多的共享方式——有命名空间、可追踪赋值点。`,
+  },
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码用 <code>from config import x</code> 引入配置，然后在别的模块里改 x，改动却没生效。为什么？正确姿势是什么？`,
+    source: '来源：Python 官方文档 FAQ「How do I share global variables across modules?」· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `<code>from config import x</code> 把<strong>当前值拷贝</strong>成局部名字——之后改 x 改的是自己的副本，config.x 纹丝不动（FAQ 的规范姿势是「import 模块、改模块属性」）。正确：<code>import config; config.x = 1</code>；需要热生效的配置对象（如 dict）同理——from 导入的引用改内部内容生效、重新赋值不生效，别混。`,
+  },
+''',
+    '0007-lambda表达式': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方 FAQ 说高阶函数有哪两种实现方式？以「生成 y = a*x + b 的函数」为例说明。`,
+    source: '来源：Python 官方文档 FAQ「How do you make a higher order function in Python?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `① <strong>嵌套函数/闭包</strong>：<code>def linear(a, b): def result(x): return a*x + b; return result</code>；② <strong>可调用对象</strong>：类里存 a、b，实现 __call__。两者都能 <code>taxes = linear(0.3, 2)</code> 后像函数一样调用。FAQ 的取舍提示：可调用对象能放更多方法与状态——多行为选类、单行为选闭包。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要让 AI 实现一个「函数工厂」：生成带配置的回调（如按税率计算税费）。什么时候让它用闭包、什么时候用可调用对象？`,
+    source: '来源：Python 官方文档 FAQ「How do you make a higher order function in Python?」· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `单行为、状态简单（linear 这种只算一个公式）→ <strong>闭包</strong>，代码最少；需要<strong>再挂方法/多状态/可继承</strong>（税率对象还要 set_rate()、历史记录）→ <strong>可调用对象</strong>。给 AI 的提示词里把「是否需要后续扩展方法」说清楚，AI 就不会在两个形态间摇摆。`,
+  },
+''',
 }
 
 
