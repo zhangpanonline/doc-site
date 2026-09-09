@@ -227,7 +227,7 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
       </div>
     </section>
 
-                                                                                <section>
+                                                                                        <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -277,11 +277,27 @@ WHERE d.active = true;   -- ← 把未匹配行滤掉了</code></pre>`,
     },
     source: '任务基于《04.DML》课程知识点 · 来源层级：一手（PostgreSQL 官方文档查询章节）场景化',
     breakdown: `思路：① <code>LEFT JOIN ... ON e.dept_id = d.id AND d.active</code> + <code>GROUP BY ... HAVING count(*) > 1</code>；② NOT IN 空集复现后改 <code>WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE t2.x = t1.x)</code>。坑：HAVING 里用聚合别名（PG 允许 SELECT 别名，MySQL 不允许——以目标库为准）。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方教程用 weather 与 cities 两表演示 LEFT OUTER JOIN——这个例子说明了什么语义？`,
+    source: '来源：PostgreSQL 官方教程《3.5. Joins Between Tables》「LEFT OUTER JOIN」小节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>weather LEFT OUTER JOIN cities ON ...</code>：<strong>左表所有行全部保留</strong>——例子里 Hayward 一行在 cities 里没有匹配，城市字段全部为空照样出现（San Francisco 两行正常匹配）。教程原话：之所以叫 left，因为<strong>「the table mentioned on the left」</strong>的行全部输出。这是「保留未匹配行」语义的官方出处。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `基于官方教程的 LEFT JOIN 语义：在 WHERE 里过滤右表字段，为什么未匹配的行会消失（LEFT JOIN 变成内连接）？`,
+    source: '来源：PostgreSQL 官方教程《3.5. Joins Between Tables》· 检索 2026-09-09 · 层级：一手（场景化改写，结论 pg16 实测）',
+    breakdown: `LEFT JOIN 未匹配行的右表列是 <strong>NULL</strong>（官方例子里 Hayward 的城市字段为空）；WHERE 里任何对右表列的比较（如 <code>cities.population > 100</code>）对 NULL 判<strong>unknown → 行被滤掉</strong>。修复：过滤条件写进 <strong>ON</strong>（连接时过滤、保留左表行），或 WHERE 加 <code>OR 右表主键 IS NULL</code>。这条是 LEFT JOIN 相关面试题的第一高频坑。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
 
 
 

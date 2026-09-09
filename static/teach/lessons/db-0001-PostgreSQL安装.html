@@ -231,7 +231,7 @@ SELECT current_user;   # 当前用户</code></pre>
       </div>
     </section>
 
-        <section>
+                                                                                        <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -277,11 +277,63 @@ SELECT current_user;   # 当前用户</code></pre>
     },
     source: '任务基于《01.PostgreSQL安装》课程知识点 · 来源层级：一手（Docker 官方文档 volumes 章节）场景化',
     breakdown: `思路：compose 里 <code>volumes: - pgdata:/var/lib/postgresql/data</code> + 顶层 volumes: 声明；环境变量配 POSTGRES_PASSWORD/USER/DB（镜像首次初始化时生效）。坑：数据目录挂载路径写错（要挂目录本身不是父目录）；改环境变量对已初始化卷不生效。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `Docker 官方说容器数据持久化的首选机制是什么？与 bind mount 相比，核心理由是什么？`,
+    source: '来源：Docker 官方文档《Storage》「Volumes」节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `官方原文：<strong>「Volumes are the preferred mechanism for persisting data」</strong>；理由对比：<strong>bind mount 依赖宿主机的目录结构与操作系统</strong>，而 <strong>volume 完全由 Docker 管理</strong>——官方还明确列出优势：<strong>「easier to back up or migrate」</strong>（备份/迁移更省心）、可用 Docker CLI/API 管理、多容器共享、支持远程存储驱动。`,
   },
-],
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `生产 PostgreSQL 数据目录用 volume；开发时想直接看数据文件、改配置用 bind mount。按 Docker 官方文档，这个分工的依据是什么？`,
+    source: '来源：Docker 官方文档《Storage》「Volumes」节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `官方依据：volume <strong>与宿主机目录结构/OS 解耦</strong>（跨机器迁移、备份、团队协作行为一致）——生产首选；bind mount 直接映射宿主机路径——<strong>文件位置可预期、可现场编辑</strong>，适合开发调试，但依赖宿主机环境（官方原文：dependent on the directory structure and OS of the host machine）。口诀：<strong>数据归 volume，开发看文件用 bind</strong>。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

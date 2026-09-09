@@ -217,7 +217,7 @@
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握 uv 工程化——可以继续学习《<a href="/agents/python/monorepo/">29.Monorepo</a>》了。</p>
     </section>
 
-                                                                                    <section>
+                                                                                            <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -263,11 +263,27 @@
     },
     source: '任务基于《30.项目管理工具》课程知识点 · 来源层级：一手（uv 官方文档）场景化',
     breakdown: `思路：<code>uv init && uv add requests pytest && uv sync</code>；CI 步骤加 <code>uv lock --check</code> 与 <code>uv sync --frozen</code>。坑：迁移老项目别丢原有 requirements 约束（先 uv add -r requirements.txt 再锁定）；--frozen 下 pyproject 与锁不一致会直接报错（这正是 CI 想要的）。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `PEP 621 定义了 pyproject.toml 里的什么？dependencies 字段是什么？为什么它是现代 Python 打包的地基？`,
+    source: '来源：PEP 621「Storing project metadata in pyproject.toml」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `PEP 621 把<strong>项目元数据标准化进 pyproject.toml 的 [project] 表</strong>：name/version/<strong>dependencies</strong>（必需依赖列表）/optional-dependencies（可选依赖组）等。意义：元数据从此<strong>单一来源</strong>——pip/uv/poetry/hatchling 读同一份声明，告别 setup.py/setup.cfg/requirements.txt 各写一遍的散装时代；锁文件（uv.lock）则在它的基础上做版本解析。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `老项目同时有 setup.py、setup.cfg、requirements.txt，AI 建议「再补一个 pyproject.toml 就现代化了」。审查：多份依赖声明的真正风险是什么？`,
+    source: '来源：PEP 621「Storing project metadata in pyproject.toml」· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `PEP 621 的核心动机就是<strong>消除元数据分散</strong>：多份声明并存时，<strong>哪个文件说了算</strong>随工具而变（pip 读 setup.py、uv 优先 pyproject、部署脚本可能还看 requirements.txt）——改依赖只改一处，另一处悄悄过期，装出来的环境跟预期不同。正确迁移：以 pyproject [project] 为唯一真源，删掉其余声明（保留 requirements 只用于特殊锁定场景），用 uv sync 重建锁文件。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
 
 
 
