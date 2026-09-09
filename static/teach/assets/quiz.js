@@ -15,7 +15,8 @@
    </div>
 
    data-correct 是正确选项的下标（从 0 开始）。
-   选项顺序由课程作者在创作时打乱，组件运行时保持原样。
+   选项顺序：每次页面加载与「重新挑战」时由组件随机洗牌（正确选项随内容移动，
+   data-correct 同步更新），避免答案位置可被记忆。
    ============================================================ */
 
 (function () {
@@ -28,6 +29,22 @@
       const ex = q.querySelector('.quiz-explain');
       if (ex) ex.dataset.text = ex.textContent;
     });
+
+    // 运行时随机洗牌：每次加载/重新挑战时选项位置都不同（正确选项随内容移动）
+    function shuffleOptions(q) {
+      const options = Array.from(q.querySelectorAll('.quiz-option'));
+      if (options.length < 2) return;
+      const correctIdx = Number(q.dataset.correct);
+      const order = options.map((_, i) => i);
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      const box = q.querySelector('.quiz-options');
+      order.forEach(i => box.appendChild(options[i]));
+      q.dataset.correct = String(order.indexOf(correctIdx));
+    }
+    questions.forEach(shuffleOptions);
 
     // 计分栏
     const scorebar = document.createElement('div');
@@ -55,7 +72,7 @@
         finale.textContent =
           pct === 1 ? '🎉 全部答对！'
           : pct >= 0.75 ? `💪 答对 ${correct} 题，掌握得不错！`
-          : pct >= 0.5 ? `📖 答对 ${correct} 题，建议回看《24.协程》再挑战一次`
+          : pct >= 0.5 ? `📖 答对 ${correct} 题，建议回看课程文档再挑战一次`
           : `🌱 答对 ${correct} 题，先回读一遍文档再来吧`;
       } else {
         finale.textContent = '';
@@ -63,23 +80,24 @@
     }
 
     questions.forEach(q => {
-      const idx = Number(q.dataset.correct);
-      const options = Array.from(q.querySelectorAll('.quiz-option'));
       const explain = q.querySelector('.quiz-explain');
 
-      options.forEach((btn, i) => {
+      q.querySelectorAll('.quiz-option').forEach(btn => {
         btn.addEventListener('click', () => {
           if (q.classList.contains('answered')) return;
           q.classList.add('answered');
           answered++;
 
-          const isRight = i === idx;
+          // 洗牌后正确下标可能变化：点击时实时查询当前 DOM 顺序
+          const opts = Array.from(q.querySelectorAll('.quiz-option'));
+          const idx = Number(q.dataset.correct);
+          const isRight = opts.indexOf(btn) === idx;
           if (isRight) {
             btn.classList.add('correct');
             correct++;
           } else {
             btn.classList.add('wrong');
-            options[idx].classList.add('correct');
+            opts[idx].classList.add('correct');
           }
 
           if (explain) {
@@ -95,6 +113,7 @@
     reset.addEventListener('click', () => {
       answered = 0;
       correct = 0;
+      questions.forEach(shuffleOptions);   // 重新挑战：选项位置再次随机
       questions.forEach(q => {
         q.classList.remove('answered');
         q.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('correct', 'wrong'));
