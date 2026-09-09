@@ -86,8 +86,28 @@ const config: Config = {
       tagName: 'meta',
       attributes: {
         name: 'twitter:card',
-        content: 'summary',
+        content: 'summary_large_image',
       },
+    },
+    {
+      // 结构化数据：WebSite + 站内搜索，帮助搜索引擎理解站点、争取富摘要
+      tagName: 'script',
+      attributes: { type: 'application/ld+json' },
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'AI 大全栈 · 配套交互课程',
+        alternateName: 'ZP 课程站',
+        url: 'https://doc.zhangpan.online/',
+        description:
+          'AI 大全栈学习路线配套交互课程站：Agents 应用开发 / 后端 / 运维云 / 高效 AI 编程 / 企业级全栈项目 / 就业指导六大单元，每课配套文档、互动测验与实战作业。',
+        inLanguage: 'zh-CN',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: 'https://doc.zhangpan.online/search?q={search_term_string}',
+          'query-input': 'required name=search_term_string',
+        },
+      }),
     },
   ],
 
@@ -112,8 +132,8 @@ const config: Config = {
       minHeadingLevel: 2,
       maxHeadingLevel: 6,
     },
-    // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    // 社交分享卡片（微信/朋友圈/社交平台链接预览图，1200×630 纸墨风格）
+    image: 'img/social-card.png',
     navbar: {
       title: 'ZP',
       logo: {

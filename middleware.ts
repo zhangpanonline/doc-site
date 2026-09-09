@@ -41,6 +41,8 @@ const ALLOWED_UA = [
   'pingdom',
   'betteruptime',
   'vercel-bot',
+  // 搜索引擎的附属抓取器（Bing 抓 favicon/预览图用 BingPreview，须放行否则搜索结果无图标）
+  'bingpreview',
 ];
 
 const COOKIE_NAME = 'zg_js';
@@ -116,6 +118,13 @@ export default function middleware(request: Request) {
 
   // 白名单直通（搜索引擎收录、微信分享、社交预览、监控探活）
   if (ua && isAllowedBot(ua)) return next();
+
+  // iframe/embed 嵌入式导航直接放行：第三方 iframe 里 cookie 常被浏览器拦截，
+  // 挑战页会死循环（fuel-records App 依赖此行为）。Sec-Fetch-Dest 是浏览器
+  // 自动附加的请求元数据（JS 无法伪造），脚本用 curl 伪造也过不了前面的
+  // Bot Protection 挑战层，因此不损失防护。
+  const secFetchDest = request.headers.get('sec-fetch-dest');
+  if (secFetchDest === 'iframe' || secFetchDest === 'embed') return next();
 
   // 已有有效 cookie → 放行
   if (hasValidCookie(request)) return next();

@@ -10,7 +10,7 @@
 |---|---|---|
 | 君子协定 | `static/robots.txt` | 逐条 `Disallow` 已知 AI 训练爬虫（GPTBot/ClaudeBot/CCBot/Bytespider/Google-Extended 等）与营销抓取器；搜索引擎默认放行 |
 | WAF | `vercel.json` → `routes`+`mitigate` | ① UA 命中脚本库黑名单（curl/wget/python-requests/scrapy/headlesschrome 等）→ challenge；② 无 UA 请求 → challenge |
-| 路由 | `middleware.ts` | 文档页必须持 `zg_js` cookie（JS 设置，7 天有效）才放行；无 JS 执行能力的客户端拿不到正文。搜索引擎/微信/社交预览/监控探活 UA 白名单直通；`/api/*` 与静态资源跳过 |
+| 路由 | `middleware.ts` | 文档页必须持 `zg_js` cookie（JS 设置，7 天有效）才放行；无 JS 执行能力的客户端拿不到正文。搜索引擎/微信/社交预览/监控探活 UA 白名单直通；iframe/embed 嵌入式导航直通（第三方 iframe 会被浏览器拦截 cookie，挑战会死循环——fuel-records App 依赖此行为）；`/api/*` 与静态资源跳过 |
 
 ## 控制台手动项（vercel.json 不支持，需在 Vercel Dashboard 操作，立即生效）
 
