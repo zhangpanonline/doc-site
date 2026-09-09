@@ -231,7 +231,7 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
       </div>
     </section>
 
-                                                                            <section>
+                                                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -277,11 +277,25 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
     },
     source: '任务基于《03.表间关系》课程知识点 · 来源层级：一手（PostgreSQL 官方文档 DDL 约束章节）场景化',
     breakdown: `思路：<code>REFERENCES orders(id) ON DELETE CASCADE</code>；孤儿行对账 <code>SELECT ... LEFT JOIN parent p ON ... WHERE p.id IS NULL</code>。坑：外键列类型要与父表主键完全一致；CASCADE 会穿透多级（A→B→C 删 A 把 C 也删了）。`,
+  }, {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `官方文档说外键对被引用的列有什么硬性要求？这个要求带来什么连锁效应？`,
+    source: '来源：PostgreSQL 官方文档「Foreign Keys」小节（ddl-constraints）· 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：外键必须引用<strong>主键、唯一约束列、或非部分唯一索引列</strong>——因此被引用列<strong>总是有索引</strong>（高效判断引用行是否存在）。连锁效应：父表 <strong>DELETE 行 / UPDATE 被引用列</strong>时，需要<strong>扫描引用表</strong>找匹配行——引用表的外键列若没索引，删一条父行就会<strong>全表扫子表</strong>，大表下删除变成灾难。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 建的 order_items 表有外键列 order_id，但忘了给它建索引。审查：哪些操作会变慢？官方文档的哪句话解释了原因？`,
+    source: '来源：PostgreSQL 官方文档「Foreign Keys」小节（ddl-constraints）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `官方原文：「a DELETE of a row from the referenced table or an UPDATE of a referenced column will require <strong>a scan of the referencing table</strong>」——删订单、改订单 id 时都要在 order_items 里找匹配行；外键列没索引 → 每次都是<strong>顺序全表扫</strong>。修复：<code>CREATE INDEX ON order_items(order_id)</code>——外键列建索引是 PG 建表清单里的标准项，AI 生成 schema 十有八九漏。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 

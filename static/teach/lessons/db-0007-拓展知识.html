@@ -220,7 +220,7 @@
       </div>
     </section>
 
-        <section>
+                                                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -266,11 +266,59 @@
     },
     source: '任务基于《07.拓展知识》课程知识点 · 来源层级：一手（PostgreSQL 官方文档视图章节）场景化',
     breakdown: `思路：<code>CREATE VIEW v_orders AS SELECT ...</code>；范式分析对照「非主键列是否依赖主键、是否传递依赖」。坑：视图上的写入有限制（多表视图不可直接 UPDATE）；视图引用底层表结构变更要重验。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档说视图是「物化」的吗？每次引用视图时数据库做什么？`,
+    source: '来源：PostgreSQL 官方文档 SQL 命令参考「CREATE VIEW」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：<strong>「The view is not physically materialized. Instead, the query is run every time the view is referenced in a query.」</strong>——视图只是<strong>保存的查询</strong>，每次引用都重新执行底层 SQL。推论：视图不是缓存、不是性能优化手段——视图套视图时查询会层层展开，复杂视图的代价是实打实的。要「物化」用 MATERIALIZED VIEW（另需 REFRESH）。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 想给视图加一列，用了 <code>CREATE OR REPLACE VIEW</code>。官方文档说这能成功吗？约束是什么？`,
+    source: '来源：PostgreSQL 官方文档 SQL 命令参考「CREATE VIEW」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `不能随便改：原文要求新查询<strong>「must generate the same columns」——列名、列顺序、数据类型必须与旧视图完全一致</strong>，否则报错。改结构正确姿势：<code>DROP VIEW ... ; CREATE VIEW ...</code>（注意级联依赖，下游视图/函数会失效）。AI 生成 schema 迁移脚本时拿 OR REPLACE 当「万能更新」，是视图结构变更的头号坑。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

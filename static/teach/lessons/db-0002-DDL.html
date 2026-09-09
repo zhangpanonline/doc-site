@@ -231,7 +231,7 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
       </div>
     </section>
 
-        <section>
+                                                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -277,11 +277,59 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
     },
     source: '任务基于《02.DDL》课程知识点 · 来源层级：一手（PostgreSQL 官方文档 DDL 章节）场景化',
     breakdown: `思路：<code>CREATE TABLE orders(...); INSERT ...; DELETE WHERE ...; TRUNCATE orders;</code> 对比；DELETE 大表后查 pg_stat_user_tables 的 n_dead_tup 再 VACUUM。坑：TRUNCATE 在事务里可回滚但不可带 WHERE；VACUUM 不是 VACUUM FULL（后者锁表重写，生产慎用）。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档说 TRUNCATE 比 DELETE 快的机制原因是什么？磁盘空间回收上有什么区别？`,
+    source: '来源：PostgreSQL 官方文档 SQL 命令参考「TRUNCATE」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文两句话：① <strong>「it does not actually scan the tables」</strong>——不做逐行扫描（DELETE 逐行生成死元组），所以快；② <strong>「reclaims disk space immediately, rather than requiring a subsequent VACUUM operation」</strong>——磁盘空间<strong>立即回收</strong>，而 DELETE 后要等 VACUUM。语义上等价于<strong>无 WHERE 的 DELETE</strong>（原文：same effect as an unqualified DELETE）。`,
   },
-],
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 想「清理 90 天前的日志」写了 <code>TRUNCATE logs</code>。审查：按官方定义，这个命令实际做了什么？问题在哪？`,
+    source: '来源：PostgreSQL 官方文档 SQL 命令参考「TRUNCATE」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `TRUNCATE 等价于<strong>无 WHERE 的 DELETE</strong>——不带任何过滤条件，<strong>整表瞬间清空</strong>，90 天前的没删、昨天的全没了，而且空间立即回收意味着<strong>更难恢复</strong>。正确姿势：按时间过滤的 DELETE 分批删（配 VACUUM），或用<strong>分区表</strong>按月滚删（DROP PARTITION）。审查 AI 的清理脚本：见到 TRUNCATE 先确认「整表清空」确实是意图。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

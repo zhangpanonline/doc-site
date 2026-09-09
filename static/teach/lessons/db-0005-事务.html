@@ -233,7 +233,7 @@ PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pr
       </div>
     </section>
 
-        <section>
+                                                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -279,11 +279,59 @@ PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pr
     },
     source: '任务基于《05.事务》课程知识点 · 来源层级：一手（PostgreSQL 官方文档事务隔离章节）场景化',
     breakdown: `思路：两个 psql 会话（或用 docker exec 开两个）——A 里 <code>BEGIN; SELECT balance...;</code>，B 里 <code>UPDATE ...; COMMIT;</code>，A 再 SELECT。坑：PG 的 BEGIN 是 READ COMMITTED（语句级快照），REPEATABLE READ 要显式 BEGIN ISOLATION LEVEL REPEATABLE READ；顺序不对会看不到差异。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档对 READ COMMITTED（PG 默认隔离级别）的原文定义是什么？SELECT 能看到什么、看不到什么？`,
+    source: '来源：PostgreSQL 官方文档「Transaction Isolation」13.2.1 节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：READ COMMITTED 是 PG 默认级别；一条 SELECT <strong>只看到「查询开始前」已提交的数据</strong>——<strong>看不到未提交数据，也看不到查询执行期间其他事务提交的变更</strong>。原文结语：SELECT 看到的是<strong>查询开始那一刻的数据库快照</strong>——这是「语句级快照」的官方表述，也是 PG 与 MySQL（默认 RR）隔离模型的根本差异。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 写的代码在事务里「先 SELECT 检查余额、再 UPDATE 扣款」，认为「在同一个事务里所以是安全的」。按官方对 READ COMMITTED 的定义，哪里错了？`,
+    source: '来源：PostgreSQL 官方文档「Transaction Isolation」13.2.1 节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `每条 SELECT 取<strong>各自开始时刻的快照</strong>——检查用的 SELECT 与之后的 UPDATE 之间，别的事务可以提交并改变数据（<strong>不可重复读</strong>是 READ COMMITTED 的官方已知现象）。「同一事务 = 看到同一份数据」只在 REPEATABLE READ 及以上成立。修复：① 检查+扣款合并成单条条件 UPDATE（<code>UPDATE ... WHERE balance >= x</code>，用行锁）；② 或显式 <code>SELECT ... FOR UPDATE</code> 锁住检查行。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
