@@ -58,13 +58,13 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
 
       <h3>🌱 初级 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. <code>INSERT INTO students (name, email) VALUES ('李四', 'lisi@example.com')</code>——省略的 age 和 score 会怎样？</div>
           <div class="quiz-options">
             <button class="quiz-option">插入报错：列数必须与表结构完全一致</button>
-            <button class="quiz-option">age 取 NULL，score 取 DEFAULT 值 0.00</button>
             <button class="quiz-option">都取 0，与列类型无关</button>
             <button class="quiz-option">随机生成一个值填入</button>
+            <button class="quiz-option">age 取 NULL，score 取 DEFAULT 值 0.00</button>
           </div>
           <div class="quiz-explain" hidden>省略的列：有 <code>DEFAULT</code> 用默认值（score → 0.00），没有则 NULL（age → NULL）。前提是这些列没有 NOT NULL 且无默认值。</div>
         </div>
@@ -73,20 +73,20 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
           <div class="quiz-prompt">2. PostgreSQL 特有的 <code>RETURNING</code> 子句的作用是？</div>
           <div class="quiz-options">
             <button class="quiz-option">让 INSERT/UPDATE/DELETE 直接返回受影响的行数据</button>
-            <button class="quiz-option">把 SQL 执行时间返回给客户端</button>
-            <button class="quiz-option">回滚上一条 SQL 语句</button>
             <button class="quiz-option">导出查询结果为 CSV 文件</button>
+            <button class="quiz-option">回滚上一条 SQL 语句</button>
+            <button class="quiz-option">把 SQL 执行时间返回给客户端</button>
           </div>
           <div class="quiz-explain" hidden>RETURNING 是 PG 特有的：<code>INSERT … RETURNING id, name</code> 插入后立刻拿回该行的 id 和 name（省一次 SELECT），DELETE/UPDATE 同样支持。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">3. 执行 <code>DELETE FROM students;</code> 会发生什么？</div>
           <div class="quiz-options">
             <button class="quiz-option">删除表结构和全部数据</button>
             <button class="quiz-option">语法错误：DELETE 必须带 WHERE</button>
-            <button class="quiz-option">删除最后一行数据</button>
             <button class="quiz-option">清空表中所有行，结构保留</button>
+            <button class="quiz-option">删除最后一行数据</button>
           </div>
           <div class="quiz-explain" hidden>不带 WHERE 的 DELETE = <strong>清空全表数据</strong>（结构还在）——正是课件点名的两大危险操作之一。想删结构用 DROP，想快速清空考虑 TRUNCATE。</div>
         </div>
@@ -94,13 +94,13 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
 
       <h3>🌿 中级 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. <code>ON CONFLICT (email) DO UPDATE SET age = EXCLUDED.age</code> 中 EXCLUDED 指什么？</div>
           <div class="quiz-options">
+            <button class="quiz-option">email 冲突的其他所有用户</button>
             <button class="quiz-option">被冲突排除掉的那条旧记录</button>
             <button class="quiz-option">冲突时数据库自动生成的错误码</button>
             <button class="quiz-option">本次 INSERT 想写入的新值（冲突的那一行）</button>
-            <button class="quiz-option">email 冲突的其他所有用户</button>
           </div>
           <div class="quiz-explain" hidden><code>EXCLUDED</code> 指代<strong>本次要插入的新行</strong>：<code>EXCLUDED.age</code> = 新 age 值。所以「SET age = EXCLUDED.age」= 把旧行 age 更新为新插入值，实现 UPSERT。</div>
         </div>
@@ -109,19 +109,19 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
           <div class="quiz-prompt">5. <code>SELECT age, COUNT(*) FROM students GROUP BY age</code>——为什么 SELECT 里只能出现 age 和聚合？</div>
           <div class="quiz-options">
             <button class="quiz-option">分组后每组只剩一个 age，其他列可能有多值无法确定取哪个</button>
-            <button class="quiz-option">PostgreSQL 语法规定 SELECT 最多两列</button>
             <button class="quiz-option">COUNT 会吞掉其他列的数据</button>
             <button class="quiz-option">这是性能优化建议，不是硬性规则</button>
+            <button class="quiz-option">PostgreSQL 语法规定 SELECT 最多两列</button>
           </div>
           <div class="quiz-explain" hidden>GROUP BY 把行折叠成组：<strong>非聚合列必须出现在 GROUP BY 里</strong>，否则一组内有多个不同值，数据库不知道取哪个（PG 会直接报错）。这是 SQL 标准的硬性规则。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">6. LEFT JOIN 与 INNER JOIN 的结果差异是？</div>
           <div class="quiz-options">
             <button class="quiz-option">LEFT JOIN 只返回右表所有行</button>
-            <button class="quiz-option">LEFT JOIN 保留左表所有行，右表无匹配补 NULL；INNER 只保留两边匹配的</button>
             <button class="quiz-option">两者结果完全一样，写法不同而已</button>
+            <button class="quiz-option">LEFT JOIN 保留左表所有行，右表无匹配补 NULL；INNER 只保留两边匹配的</button>
             <button class="quiz-option">INNER JOIN 保留左表所有行，LEFT 只保留匹配的</button>
           </div>
           <div class="quiz-explain" hidden>LEFT JOIN = <strong>左表全保留</strong>：没匹配的右表列补 NULL（比如找出「从未下单的用户」就靠它 + WHERE IS NULL）。INNER JOIN 两边都只要匹配行。工程上 LEFT JOIN 占九成。</div>
@@ -130,13 +130,13 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
 
       <h3>🎯 高级 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 想在 WHERE 里写 <code>COUNT(score) &gt; 3</code> 筛选行，结果会怎样？</div>
           <div class="quiz-options">
-            <button class="quiz-option">正常执行，逐行统计后再过滤</button>
             <button class="quiz-option">PG 会自动把它改写成 HAVING</button>
-            <button class="quiz-option">报错——聚合函数不能出现在 WHERE，应改用 HAVING</button>
+            <button class="quiz-option">正常执行，逐行统计后再过滤</button>
             <button class="quiz-option">只过滤掉 NULL 行</button>
+            <button class="quiz-option">报错——聚合函数不能出现在 WHERE，应改用 HAVING</button>
           </div>
           <div class="quiz-explain" hidden>执行顺序 <code>WHERE → GROUP BY → HAVING</code>：WHERE 阶段还没有分组，聚合函数无从计算 → 报错。对分组结果过滤必须用 <strong>HAVING</strong>（如 HAVING COUNT(*) &gt; 3）。</div>
         </div>
@@ -152,13 +152,13 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
           <div class="quiz-explain" hidden>「按品牌分组后，组的数量满足条件」= <strong>分组后过滤</strong> → HAVING。WHERE 只能过滤分组前的原始行（比如先 WHERE 掉下架商品）。这正是作业第 17 题的原型。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">9. DELETE 清空全表后插入新行，与 TRUNCATE 清空后插入新行，id 分别是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">两者都从 1 重新开始</button>
             <button class="quiz-option">两者都接着之前的序号继续</button>
-            <button class="quiz-option">DELETE 后从 1 开始，TRUNCATE 后继续递增</button>
             <button class="quiz-option">DELETE 后继续递增，TRUNCATE 后从 1 重新开始</button>
+            <button class="quiz-option">DELETE 后从 1 开始，TRUNCATE 后继续递增</button>
+            <button class="quiz-option">两者都从 1 重新开始</button>
           </div>
           <div class="quiz-explain" hidden><strong>DELETE 不重置自增序列</strong>（序列是独立对象，逐行删除不碰它）；<strong>TRUNCATE 重置</strong>（直接重置存储，序列归零）。这是 04 课件对比表里 DELETE vs TRUNCATE 的关键差异。</div>
         </div>
@@ -170,24 +170,24 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
       <p>下面是《04.DML》源课程作业 35 题中挑出的 5 道改编题——<strong>这就是本课的最终考核</strong>（表结构：电商数据库，category / product / sku / "order" / order_items）。规则：不查资料，先在脑中写出完整 SQL，再点击核对。全部答对且能讲清理由，才算过关。答案均已在本课程的 scratch 数据库上实际运行验证。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核一（作业 16·分组统计）：「统计每个分类下有多少个商品」，哪条 SQL 正确？</div>
           <div class="quiz-options">
-            <button class="quiz-option">SELECT c.name, COUNT(p.id) FROM category c, product p;</button>
             <button class="quiz-option">SELECT c.name, COUNT(p.id) FROM product p JOIN category c ON p.category_id = c.id WHERE COUNT(p.id) &gt; 0;</button>
             <button class="quiz-option">SELECT c.name, COUNT(p.id) AS 商品数 FROM category c LEFT JOIN product p ON p.category_id = c.id GROUP BY c.name ORDER BY c.name;</button>
+            <button class="quiz-option">SELECT c.name, COUNT(p.id) FROM category c, product p;</button>
             <button class="quiz-option">SELECT name, COUNT(*) FROM category GROUP BY name;</button>
           </div>
           <div class="quiz-explain" hidden>正确姿势：<strong>category LEFT JOIN product + GROUP BY</strong>。LEFT JOIN 保证没有商品的分类也出现（商品数 0）；GROUP BY c.name 后 COUNT(p.id) 数每组的非空商品。第一项漏 JOIN 条件成笛卡尔积；第二项 WHERE 里用聚合报错；第四项数的是分类自身行数。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核二（作业 25·分页 JOIN）：「订单明细，显示订单编号、商品名称、SKU 规格、数量、单价，每页 10 条显示第 3 页」，哪条正确？</div>
           <div class="quiz-options">
-            <button class="quiz-option">…FROM order_items oi JOIN "order" o ON o.id = oi.order_id JOIN sku s ON s.id = oi.sku_id JOIN product p ON p.id = s.product_id ORDER BY o.order_no LIMIT 10 OFFSET 20;</button>
-            <button class="quiz-option">…FROM "order" o LIMIT 10 OFFSET 30;</button>
-            <button class="quiz-option">…FROM order_items oi LIMIT 30 OFFSET 10;</button>
             <button class="quiz-option">…FROM product p LIMIT 10 OFFSET 3;</button>
+            <button class="quiz-option">…FROM order_items oi JOIN "order" o ON o.id = oi.order_id JOIN sku s ON s.id = oi.sku_id JOIN product p ON p.id = s.product_id ORDER BY o.order_no LIMIT 10 OFFSET 20;</button>
+            <button class="quiz-option">…FROM order_items oi LIMIT 30 OFFSET 10;</button>
+            <button class="quiz-option">…FROM "order" o LIMIT 10 OFFSET 30;</button>
           </div>
           <div class="quiz-explain" hidden>四表串联：明细 → 订单（拿 order_no）→ SKU（拿 sku_code）→ 商品（拿 name）。第 3 页每页 10 条 = <strong>OFFSET 20</strong>（前 20 条属于前两页）。陷阱：LIMIT 10 OFFSET 30 是第 4 页；只查一张表拿不到跨表字段。</div>
         </div>
@@ -195,10 +195,10 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核三（作业 27·子查询）：「哪些商品从未被任何订单购买过」，哪条思路正确？</div>
           <div class="quiz-options">
-            <button class="quiz-option">SELECT p.name FROM product p JOIN order_items oi ON oi.sku_id = p.id;</button>
+            <button class="quiz-option">SELECT p.name FROM product p WHERE p.id NOT IN (SELECT p.id FROM product p);</button>
             <button class="quiz-option">SELECT p.name FROM product p WHERE NOT EXISTS (SELECT 1 FROM sku s JOIN order_items oi ON oi.sku_id = s.id WHERE s.product_id = p.id);</button>
             <button class="quiz-option">SELECT p.name FROM product p WHERE stock = 0;</button>
-            <button class="quiz-option">SELECT p.name FROM product p WHERE p.id NOT IN (SELECT p.id FROM product p);</button>
+            <button class="quiz-option">SELECT p.name FROM product p JOIN order_items oi ON oi.sku_id = p.id;</button>
           </div>
           <div class="quiz-explain" hidden>「从未被购买」= 该商品的任何 SKU 都不在 order_items 里 → <strong>NOT EXISTS</strong>（相关子查询：product → sku → order_items 层层探测）。第一项 JOIN 出的恰恰是「被买过的」；stock 是库存与购买无关；第四项逻辑自相矛盾。</div>
         </div>
@@ -206,21 +206,21 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（作业 30·标量子查询）：「价格高于所有 SKU 平均价格的 SKU」，哪条正确？</div>
           <div class="quiz-options">
+            <button class="quiz-option">SELECT sku_code, price FROM sku WHERE price &gt; (SELECT MAX(price) FROM sku);</button>
             <button class="quiz-option">SELECT sku_code, price FROM sku WHERE price &gt; AVG(price);</button>
             <button class="quiz-option">SELECT sku_code, price FROM sku HAVING price &gt; AVG(price);</button>
-            <button class="quiz-option">SELECT sku_code, price FROM sku WHERE price &gt; (SELECT MAX(price) FROM sku);</button>
             <button class="quiz-option">SELECT sku_code, price FROM sku WHERE price &gt; (SELECT AVG(price) FROM sku);</button>
           </div>
           <div class="quiz-explain" hidden><strong>标量子查询</strong>返回单个值：先把 AVG(price) 算出来，再逐行比较。第一、二项把聚合直接放 WHERE/HAVING 里不行（WHERE 阶段无聚合；无 GROUP BY 的 HAVING 语义不符）；第三项是「高于最高价」（恒空）。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核五（作业 33·时间分组）：「每个月的订单数量和总金额」，哪条正确？</div>
           <div class="quiz-options">
             <button class="quiz-option">SELECT MONTH(created_at), COUNT(*) FROM "order" GROUP BY created_at;</button>
-            <button class="quiz-option">SELECT created_at, COUNT(*), SUM(total_amount) FROM "order" GROUP BY 1;</button>
             <button class="quiz-option">SELECT to_char(created_at, 'YYYY-MM') AS 月份, COUNT(*) AS 订单数, SUM(total_amount) AS 总金额 FROM "order" GROUP BY 1 ORDER BY 1;</button>
             <button class="quiz-option">SELECT EXTRACT(YEAR FROM created_at), COUNT(*) FROM "order";</button>
+            <button class="quiz-option">SELECT created_at, COUNT(*), SUM(total_amount) FROM "order" GROUP BY 1;</button>
           </div>
           <div class="quiz-explain" hidden>按月分组：<code>to_char(created_at, 'YYYY-MM')</code> 把时间戳格式化成月份字符串，再 GROUP BY。注意 <code>"order"</code> 是保留字要加双引号。第一项 GROUP BY created_at 按「每秒」分组没意义；第二项同病；第四项漏了 SUM 且按整年取。</div>
         </div>

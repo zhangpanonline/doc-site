@@ -73,35 +73,35 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
 
       <h3>🌱 初级 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 一对一关系在数据库中的实现方式是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">把两张表强制合并成一张表才能表达</button>
             <button class="quiz-option">必须建立中间表，两列外键组成联合主键</button>
             <button class="quiz-option">任意一方加外键指向对方主键，并给外键加 UNIQUE</button>
             <button class="quiz-option">两张表各自独立建表，不需要任何关联</button>
-            <button class="quiz-option">把两张表强制合并成一张表才能表达</button>
           </div>
           <div class="quiz-explain" hidden>1:1 = 任意一方放外键 + <strong>UNIQUE</strong>（保证一个 B 只配一个 A）。用户与 user_profiles 就是典型。理论上可合并成一张表，为性能/权限/行大小才拆分。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">2. 一对多关系中，外键应该放在哪边？</div>
           <div class="quiz-options">
-            <button class="quiz-option">「多」的一方，指向「一」的一方的主键</button>
             <button class="quiz-option">「一」的一方，指向「多」的一方的主键</button>
             <button class="quiz-option">两边各放一个外键互相指向</button>
+            <button class="quiz-option">「多」的一方，指向「一」的一方的主键</button>
             <button class="quiz-option">必须用中间表才能表达</button>
           </div>
           <div class="quiz-explain" hidden>外键放<strong>「多」的一方</strong>：employees.dept_id → departments.id，且<strong>不加 UNIQUE</strong>（多个员工可同属一个部门）。放反了就成了「一个部门属于一个员工」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">3. 多对多关系为什么不能直接用外键实现？</div>
           <div class="quiz-options">
-            <button class="quiz-option">因为两张表都没有主键</button>
-            <button class="quiz-option">因为 PostgreSQL 不支持外键</button>
-            <button class="quiz-option">一张表的一行要对多行，反过来也一对多——必须引入中间表</button>
             <button class="quiz-option">因为外键只能建在 VARCHAR 列上</button>
+            <button class="quiz-option">一张表的一行要对多行，反过来也一对多——必须引入中间表</button>
+            <button class="quiz-option">因为 PostgreSQL 不支持外键</button>
+            <button class="quiz-option">因为两张表都没有主键</button>
           </div>
           <div class="quiz-explain" hidden>M:N 是「双向一对多」：一个学生选多门课、一门课被多个学生选。任何单表外键只能表达「多对一」，所以必须用<strong>中间表</strong>：两个外键指向两张主表、组成联合主键，还可存放关系属性（如选课日期）。</div>
         </div>
@@ -109,35 +109,35 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
 
       <h3>🌿 中级 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. PostgreSQL 中外键不写 ON DELETE 选项时的默认行为是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">CASCADE：自动级联删除</button>
-            <button class="quiz-option">SET NULL：外键置空</button>
             <button class="quiz-option">RESTRICT：立即禁止删除</button>
             <button class="quiz-option">NO ACTION：有子记录则禁止删除，支持延迟检查</button>
+            <button class="quiz-option">CASCADE：自动级联删除</button>
+            <button class="quiz-option">SET NULL：外键置空</button>
           </div>
           <div class="quiz-explain" hidden>PG 默认 <strong>NO ACTION</strong>：存在关联子记录时禁止删除/更新父表，且支持 DEFERRABLE 延迟到事务提交时再检查。RESTRICT 行为相同但不支持延迟检查。现阶段可把两者视为等同。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">5. <code>ON DELETE CASCADE</code> 的效果是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">删除任何记录前先弹出确认对话框</button>
             <button class="quiz-option">删除父表记录时，子表关联记录自动被删除</button>
             <button class="quiz-option">删除子表记录时，父表记录自动被删除</button>
-            <button class="quiz-option">删除任何记录前先弹出确认对话框</button>
             <button class="quiz-option">删除父表记录时，子表外键自动设为 NULL</button>
           </div>
           <div class="quiz-explain" hidden>CASCADE = <strong>级联</strong>：删部门，该部门所有员工跟着删。方向是父 → 子。想「软解绑」用 SET NULL（外键列需允许 NULL）。级联方便，但误删父表会连带清掉子表数据，生产上要慎用。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">6. 中间表除了两个外键外，还可以放什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">只能放两个外键，多一列都会报错</button>
             <button class="quiz-option">关系本身的附加属性，如选课日期、成绩、数量</button>
-            <button class="quiz-option">另一张表的主键副本，以便三表互联</button>
+            <button class="quiz-option">只能放两个外键，多一列都会报错</button>
             <button class="quiz-option">随意的冗余数据，用于加速查询</button>
+            <button class="quiz-option">另一张表的主键副本，以便三表互联</button>
           </div>
           <div class="quiz-explain" hidden>中间表可存<strong>关系属性</strong>：student_courses 里的 enroll_date、order_items 里的 quantity/price——这些数据只属于「这段关系」。这正是中间表比两个外键更常用的原因。</div>
         </div>
@@ -145,35 +145,35 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
 
       <h3>🎯 高级 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 「一次挂号只对应一个医生」——医生与挂号的关系是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">1:N：一个医生可以接多次挂号，一次挂号只属于一个医生</button>
             <button class="quiz-option">1:1：医生与挂号一一对应</button>
-            <button class="quiz-option">M:N：医生和挂号互相多对多</button>
+            <button class="quiz-option">1:N：一个医生可以接多次挂号，一次挂号只属于一个医生</button>
             <button class="quiz-option">没有关系：挂号不需要关联医生</button>
+            <button class="quiz-option">M:N：医生和挂号互相多对多</button>
           </div>
           <div class="quiz-explain" hidden>拆成两个方向判断：「一个医生能接几次挂号」→ 多次；「一次挂号对应几个医生」→ 一个。所以医生 1:N 挂号，外键放挂号表（doctor_id）。这类「X 对 Y 的关系」判断是 ERD 设计的基本功。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">8. 「用户可以关注其他用户」应该怎么建表？</div>
           <div class="quiz-options">
-            <button class="quiz-option">users 表加一列 follower_id，指向自己的主键</button>
-            <button class="quiz-option">用户表一分为二：follower 表和 followee 表</button>
             <button class="quiz-option">自关联中间表：follows(follower_id, followee_id) 两个外键都指向 users.id</button>
             <button class="quiz-option">用 JSONB 数组存关注列表即可</button>
+            <button class="quiz-option">users 表加一列 follower_id，指向自己的主键</button>
+            <button class="quiz-option">用户表一分为二：follower 表和 followee 表</button>
           </div>
           <div class="quiz-explain" hidden>关注 = 用户 M:N 用户（<strong>自关联多对多</strong>）：一张 follows 中间表，follower_id 与 followee_id 都 FK → users.id，组成联合主键。单列 follower_id 只能存「一个」关注对象；JSON 数组则失去关系型约束。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">9. ERD 中 <code>分类 ||--o{ 商品</code> 这条线表示？</div>
           <div class="quiz-options">
+            <button class="quiz-option">分类与商品互不关联</button>
             <button class="quiz-option">分类与商品一对一</button>
             <button class="quiz-option">一个分类对应多个商品（0 到多），每个商品只属一个分类</button>
             <button class="quiz-option">商品可以属于多个分类</button>
-            <button class="quiz-option">分类与商品互不关联</button>
           </div>
           <div class="quiz-explain" hidden>ERD 符号：<code>||</code> = 恰好 1，<code>o{</code> = 0 到多。<code>||--o{</code> 即 1:N——分类一侧是 1、商品一侧是 0..N。含义：一个分类有多个商品，每个商品只属一个分类（category_id 外键在 product 表）。</div>
         </div>
@@ -188,19 +188,19 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核一（场景题·选课系统）：学生与课程的关系及「选修后记录成绩」怎么实现？</div>
           <div class="quiz-options">
-            <button class="quiz-option">学生 1:N 课程，成绩放在学生表的一个列里</button>
+            <button class="quiz-option">学生与课程 1:1，成绩放在课程表里</button>
             <button class="quiz-option">课程 1:N 学生，成绩放在课程表的一个列里</button>
             <button class="quiz-option">学生 M:N 课程，中间表放 student_id、course_id 和成绩列</button>
-            <button class="quiz-option">学生与课程 1:1，成绩放在课程表里</button>
+            <button class="quiz-option">学生 1:N 课程，成绩放在学生表的一个列里</button>
           </div>
           <div class="quiz-explain" hidden>学生可选多门课、一门课被多个学生选 → <strong>M:N</strong>。中间表 = (student_id, course_id) 联合主键 + <strong>成绩列</strong>（关系属性）。另外：院系 1:N 学生、院系 1:N 老师、老师 1:N 课程。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">考核二（场景题·视频平台）：「用户收藏视频」的关系与实现是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">用户 1:N 视频，在视频表加 user_id 外键</button>
             <button class="quiz-option">用户 M:N 视频，中间表 (user_id, video_id) 联合主键</button>
+            <button class="quiz-option">用户 1:N 视频，在视频表加 user_id 外键</button>
             <button class="quiz-option">视频 1:N 用户，在用户表加 video_id 外键</button>
             <button class="quiz-option">收藏是单向操作，不需要建表</button>
           </div>
@@ -210,8 +210,8 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（找茬题·超市收银 ERD）：下图中隐藏了一处错误关系，错在哪？</div>
           <div class="quiz-options">
-            <button class="quiz-option">会员与小票应该是一对一，图中标成了一对多</button>
             <button class="quiz-option">小票与小票明细应该是一对一，图中标成了一对多</button>
+            <button class="quiz-option">会员与小票应该是一对一，图中标成了一对多</button>
             <button class="quiz-option">分类与商品应该是多对多，图中标成了一对多</button>
             <button class="quiz-option">商品与小票明细标成了一对一，应是一对多</button>
           </div>

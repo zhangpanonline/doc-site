@@ -63,31 +63,31 @@
           <div class="quiz-prompt">1. 一个类实现了下面哪个方法就可以叫描述符类？</div>
           <div class="quiz-options">
             <button class="quiz-option">__get__/__set__/__delete__ 任意一个</button>
-            <button class="quiz-option">必须是三个方法全部实现</button>
             <button class="quiz-option">只认 __set__ 一个方法</button>
+            <button class="quiz-option">必须是三个方法全部实现</button>
             <button class="quiz-option">只认 __get__ 一个方法</button>
           </div>
           <div class="quiz-explain" hidden>描述符协议规定：实现 <code>__get__</code>、<code>__set__</code>、<code>__delete__</code> <strong>任意一个</strong>实例方法的类就是描述符类。详见「认识术语」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">2. 数据型描述符的判定条件是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">实现了全部三个方法</button>
             <button class="quiz-option">实现了 __set__ 或 __delete__ 任意一个</button>
             <button class="quiz-option">只实现了 __get__</button>
-            <button class="quiz-option">实现了全部三个方法</button>
             <button class="quiz-option">描述符带数据属性</button>
           </div>
           <div class="quiz-explain" hidden>实现了 <code>__set__</code> 或 <code>__delete__</code> 的描述符对象是<strong>数据型</strong>描述符；只实现 <code>__get__</code> 的是非数据型。详见「认识术语」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">3. 描述符对象放在哪里才有意义？</div>
           <div class="quiz-options">
-            <button class="quiz-option">作为类属性</button>
             <button class="quiz-option">作为实例属性</button>
-            <button class="quiz-option">作为函数内局部变量</button>
             <button class="quiz-option">作为模块级变量</button>
+            <button class="quiz-option">作为函数内局部变量</button>
+            <button class="quiz-option">作为类属性</button>
           </div>
           <div class="quiz-explain" hidden>描述符对象只有作为<strong>类属性</strong>时才会触发 <code>__get__</code>/<code>__set__</code> 拦截；实例属性不经过描述符协议。详见「认识术语」一节。</div>
         </div>
@@ -95,33 +95,33 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 实例成员查找的优先级顺序是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">数据描述符 → 实例属性 → 普通类属性</button>
             <button class="quiz-option">实例属性 → 数据描述符 → 普通类属性</button>
+            <button class="quiz-option">数据描述符 → 实例属性 → 普通类属性</button>
             <button class="quiz-option">普通类属性 → 数据描述符 → 实例属性</button>
             <button class="quiz-option">三者同级，随机</button>
           </div>
           <div class="quiz-explain" hidden>访问实例成员：<strong>① 数据型描述符（类属性）→ ② 实例属性 → ③ 普通类属性 → ④ 父类</strong>。数据描述符会「压过」实例字典。详见「访问顺序」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">5. <code>__set_name__(self, owner, name)</code> 的作用是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">拦截属性删除</button>
             <button class="quiz-option">让描述符知道被赋给了哪个类的哪个属性名</button>
             <button class="quiz-option">给描述符设置初始值</button>
             <button class="quiz-option">修改类名</button>
-            <button class="quiz-option">拦截属性删除</button>
           </div>
           <div class="quiz-explain" hidden><code>__set_name__</code> 钩子（3.6+）在类体完成赋值后触发，告诉描述符「你在 X 类的 Y 属性上」——类型检查描述符用它记录属性名。详见「钩子函数」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">6. <code>@property</code> 与描述符的关系是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">property 本身就是描述符的语法糖</button>
             <button class="quiz-option">两者完全无关</button>
+            <button class="quiz-option">property 本身就是描述符的语法糖</button>
             <button class="quiz-option">property 比描述符优先级更高</button>
             <button class="quiz-option">property 只在运行时生效</button>
           </div>
@@ -136,8 +136,8 @@
           <div class="quiz-options">
             <button class="quiz-option">描述符 __get__ 的结果（数据描述符优先）</button>
             <button class="quiz-option">"instance"（实例字典优先）</button>
-            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">None</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>查找顺序：<strong>数据描述符 → 实例属性</strong>——即使 "instance" 被塞进实例字典，读 <code>a.x</code> 仍走描述符的 <code>__get__</code>。实例字典里的值被「压住」了（考核四思考题的完整推演）。</div>
         </div>
@@ -147,8 +147,8 @@
           <div class="quiz-options">
             <button class="quiz-option">实例属性（非数据型优先级低于实例字典）</button>
             <button class="quiz-option">描述符 __get__ 的结果</button>
-            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">两者都返回</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>只有 <code>__get__</code> 的非数据型描述符<strong>排不过实例字典</strong>：实例 <code>__dict__</code> 里有同名键时优先返回实例属性。惰性计算描述符正是利用这一点——首次计算后把结果写回实例字典「缓存」。</div>
         </div>
@@ -171,12 +171,12 @@
       <p>下面是《15.描述符》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核一（作业一·只读属性）：ImmutablePoint 创建后 <code>p.x = 10</code> 要抛 AttributeError。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">用 @property 只定义 getter，不提供 setter</button>
             <button class="quiz-option">直接定义公开属性 self.x = x</button>
             <button class="quiz-option">定义 __set__ 但不定义 __get__</button>
+            <button class="quiz-option">用 @property 只定义 getter，不提供 setter</button>
             <button class="quiz-option">用 @property 定义 getter，setter 里静默忽略</button>
           </div>
           <div class="quiz-explain" hidden>只定义 getter 的 property 是<strong>只读属性</strong>：赋值 <code>p.x = 10</code> 时找不到 setter，抛 <code>AttributeError: can't set attribute</code>。第二个随便改 ✗；第三个读不到值 ✗；第四个不报错，不符合题意 ✗。</div>
@@ -201,12 +201,12 @@ print(p.x)   # 3
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核二（作业二·范围验证）：Temperature 的 celsius 必须在 -273.15～1000 之间，fahrenheit/kelvin 只读自动计算。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">setter 里超范围抛 ValueError；fahrenheit/kelvin 用只读 property 计算</button>
             <button class="quiz-option">setter 里超范围静默截断到边界值</button>
             <button class="quiz-option">只有 getter 没有 setter，温度无法修改</button>
+            <button class="quiz-option">setter 里超范围抛 ValueError；fahrenheit/kelvin 用只读 property 计算</button>
             <button class="quiz-option">把范围检查放在 __init__ 里，setter 不检查</button>
           </div>
           <div class="quiz-explain" hidden>正确实现：<code>@celsius.setter</code> 里 <code>value &lt; -273.15</code> 或 <code>&gt; 1000</code> 时 <code>raise ValueError</code>；fahrenheit（<code>c × 9/5 + 32</code>）与 kelvin（<code>c + 273.15</code>）是只读 property，自动计算。第二个静默截断不符合「抛 ValueError」要求 ✗；第三个没法设初值 ✗；第四个绕过 setter 赋值就漏检 ✗。</div>
@@ -238,13 +238,13 @@ print(p.x)   # 3
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核三（作业三·访问计数器）：描述符 AccessCounter 统计某类属性被访问/修改的次数（<code>obj.value</code> 3 次读 + 1 次写 → 访问 3、修改 1）。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">__get__ 里访问计数 +1 并返回存储值；__set__ 里修改计数 +1 并存值</button>
-            <button class="quiz-option">__get__ 里修改计数 +1，__set__ 里访问计数 +1（两个计反了）</button>
             <button class="quiz-option">计数存在实例上，不同实例计数互相隔离</button>
             <button class="quiz-option">只在 __set__ 里计数，读操作不统计</button>
+            <button class="quiz-option">__get__ 里访问计数 +1 并返回存储值；__set__ 里修改计数 +1 并存值</button>
+            <button class="quiz-option">__get__ 里修改计数 +1，__set__ 里访问计数 +1（两个计反了）</button>
           </div>
           <div class="quiz-explain" hidden>正确实现：<code>__get__</code> 里 <code>_access_count += 1</code> 并返回 <code>self._value</code>；<code>__set__</code> 里 <code>_modify_count += 1</code> 并存值。计数器必须是<strong>类属性</strong>，所有实例共享（3 次读跨两个 print 累计）。第二个计反 ✗；第三个按实例隔离，总数对不上 ✗；第四个读操作漏计 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -274,7 +274,7 @@ print(p.x)   # 3
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核四（作业四·思考题）：以下代码最后两行的输出是？
 <pre><code>class Descriptor:
     def __get__(self, instance, owner):
@@ -294,10 +294,10 @@ a.__dict__["x"] = "instance"  # 直接塞进实例字典
 print(a.x)                    # ?
 print(a.__dict__)             # ?</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">仍触发 __get__ 返回 42；字典是 {'x': 'instance'}</button>
-            <button class="quiz-option">返回 'instance'；字典是 {'x': 'instance'}</button>
-            <button class="quiz-option">返回 100；字典是 {'x': 100}</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">仍触发 __get__ 返回 42；字典是 {'x': 'instance'}</button>
+            <button class="quiz-option">返回 100；字典是 {'x': 100}</button>
+            <button class="quiz-option">返回 'instance'；字典是 {'x': 'instance'}</button>
           </div>
           <div class="quiz-explain" hidden>这是数据型描述符的<strong>优先级</strong>体现：虽然 <code>"instance"</code> 被塞进了实例字典，但读 <code>a.x</code> 时查找顺序是「数据描述符 → 实例属性」——<code>__get__</code> 仍被触发，返回 <strong>42</strong>；而 <code>a.__dict__</code> 直接看实例字典，就是 <strong>{'x': 'instance'}</strong>。实例属性被数据描述符「压住」了。</div>
         </div>

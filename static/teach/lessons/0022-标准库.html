@@ -53,13 +53,13 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. <code>os.path.abspath("test.txt")</code> 返回什么？</div>
           <div class="quiz-options">
+            <button class="quiz-option">test.txt 的后缀名</button>
             <button class="quiz-option">test.txt 的绝对路径</button>
             <button class="quiz-option">test.txt 文件名本身</button>
             <button class="quiz-option">test.txt 的目录部分</button>
-            <button class="quiz-option">test.txt 的后缀名</button>
           </div>
           <div class="quiz-explain" hidden><code>abspath</code> 把相对路径转成<strong>绝对路径</strong>（拼上当前工作目录）。相对/绝对路径统一处理的第一步。</div>
         </div>
@@ -69,19 +69,19 @@
           <div class="quiz-options">
             <button class="quiz-option">"c.txt"</button>
             <button class="quiz-option">"/a/b"</button>
-            <button class="quiz-option">"/a/b/c.txt"</button>
             <button class="quiz-option">"txt"</button>
+            <button class="quiz-option">"/a/b/c.txt"</button>
           </div>
           <div class="quiz-explain" hidden><code>basename</code> 取路径<strong>最后一段</strong>（文件或目录名）；目录部分是 <code>os.path.dirname</code>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">3. <code>os.listdir(path)</code> 返回什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">目录内文件/子目录的名称列表</button>
-            <button class="quiz-option">目录内文件的内容</button>
             <button class="quiz-option">目录的绝对路径</button>
+            <button class="quiz-option">目录内文件/子目录的名称列表</button>
             <button class="quiz-option">递归的全部文件列表</button>
+            <button class="quiz-option">目录内文件的内容</button>
           </div>
           <div class="quiz-explain" hidden><code>listdir</code> 返回该目录下<strong>直接</strong>子项的<strong>名称列表</strong>（字符串），不含递归内容、无序——树形展示时要自己 sort 并递归子目录。</div>
         </div>
@@ -94,18 +94,18 @@
           <div class="quiz-options">
             <button class="quiz-option">^(#{1,6})\s+(.+)$</button>
             <button class="quiz-option">^#(.*)$</button>
-            <button class="quiz-option">^##\s+(.+)$</button>
             <button class="quiz-option">#{1,6}(.+)#</button>
+            <button class="quiz-option">^##\s+(.+)$</button>
           </div>
           <div class="quiz-explain" hidden><code>^(#{1,6})\s+(.+)$</code>：行首 1-6 个井号 + 至少一个空白 + 标题内容。组 1 是井号（判断级数），组 2 是标题文字。第二个只匹配一级标题 ✗；第三个只匹配二级 ✗。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">5. <code>open(path, encoding="utf-8")</code> 显式指定编码的原因？</div>
           <div class="quiz-options">
-            <button class="quiz-option">避免不同平台默认编码不同导致乱码</button>
-            <button class="quiz-option">让文件读取速度更快</button>
             <button class="quiz-option">语法上必须写这个参数</button>
+            <button class="quiz-option">让文件读取速度更快</button>
+            <button class="quiz-option">避免不同平台默认编码不同导致乱码</button>
             <button class="quiz-option">让文件变成二进制模式</button>
           </div>
           <div class="quiz-explain" hidden>默认编码随平台/环境变化（Windows 上可能是 GBK），处理中文 Markdown 时显式 <code>encoding="utf-8"</code> 才稳。</div>
@@ -115,8 +115,8 @@
           <div class="quiz-prompt">6. 模块里 <code>__all__: list[str] = ["show_tree"]</code> 的作用？</div>
           <div class="quiz-options">
             <button class="quiz-option">声明公开 API，控制 import * 的导入清单</button>
-            <button class="quiz-option">限制函数只能被调用一次</button>
             <button class="quiz-option">给函数加类型检查</button>
+            <button class="quiz-option">限制函数只能被调用一次</button>
             <button class="quiz-option">标记模块为包</button>
           </div>
           <div class="quiz-explain" hidden>同第 19 课：<code>__all__</code> 是模块的公开 API 清单，只影响 <code>from x import *</code>。源答案 p1 就用它导出 <code>show_tree</code>。</div>
@@ -125,13 +125,13 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 目录结构 dir1 下有两个文件 a.txt、b.txt，树形输出中子目录项 a.txt 应打印为？</div>
           <div class="quiz-options">
-            <button class="quiz-option">├── a.txt（后面还有兄弟 b.txt）</button>
-            <button class="quiz-option">└── a.txt（默认最后一项）</button>
-            <button class="quiz-option">│ a.txt</button>
             <button class="quiz-option">a.txt（不带前缀）</button>
+            <button class="quiz-option">│ a.txt</button>
+            <button class="quiz-option">└── a.txt（默认最后一项）</button>
+            <button class="quiz-option">├── a.txt（后面还有兄弟 b.txt）</button>
           </div>
           <div class="quiz-explain" hidden>树形规则：非最后一项用 <code>├──</code>、最后一项用 <code>└──</code>——a.txt 后面还有 b.txt，所以是 <strong>├── a.txt</strong>；b.txt 才是 └──。判断依据是 <code>i == len(entries) - 1</code>。</div>
         </div>
@@ -140,20 +140,20 @@
           <div class="quiz-prompt">8. Markdown 合并规则中，原文件里的 <code>###### 小标题</code>（六级）在合并结果里变成？</div>
           <div class="quiz-options">
             <button class="quiz-option">**小标题**（六级降为加粗正文）</button>
-            <button class="quiz-option">####### 小标题（七级标题）</button>
-            <button class="quiz-option">保持不变</button>
             <button class="quiz-option">被删除</button>
+            <button class="quiz-option">保持不变</button>
+            <button class="quiz-option">####### 小标题（七级标题）</button>
           </div>
           <div class="quiz-explain" hidden>降级规则的特例：一级到五级各加一个井号；<strong>六级没有第七级</strong>，按题意降为正文并<strong>加粗</strong>——<code>**小标题**</code>。这是 merge_markdown 最容易漏的边界。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">9. <code>show_tree(dir, show_hidden=False)</code>，目录里同时有 <code>.env</code> 文件与 <code>.git/</code> 子目录，输出会包含它们吗？</div>
           <div class="quiz-options">
-            <button class="quiz-option">两者都不显示（. 开头全部过滤）</button>
             <button class="quiz-option">都显示</button>
-            <button class="quiz-option">只显示 .env 不显示 .git</button>
             <button class="quiz-option">只显示 .git 不显示 .env</button>
+            <button class="quiz-option">只显示 .env 不显示 .git</button>
+            <button class="quiz-option">两者都不显示（. 开头全部过滤）</button>
           </div>
           <div class="quiz-explain" hidden>隐藏判断只看 basename 是否以 <code>.</code> 开头——<strong>文件与目录一视同仁</strong>：.env 与 .git 都被过滤。传 <code>show_hidden=True</code> 才全部显示。</div>
         </div>
@@ -165,12 +165,12 @@
       <p>下面是《22.标准库》源课程作业的两道实现题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核一（作业一·树形目录展示）：<code>show_tree(dir_path, show_hidden=False)</code> 输出 tree 风格的目录树（隐藏项 = 以 . 开头；目录递归；最后一项用 └──，其余用 ├──）。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">隐藏过滤条件写反（show_hidden=True 时过滤）</button>
             <button class="quiz-option">递归 + _prefix 缩进：兄弟未完用 │，最后一个用空格，目录继续递归</button>
             <button class="quiz-option">只打印第一层，不递归子目录</button>
-            <button class="quiz-option">隐藏过滤条件写反（show_hidden=True 时过滤）</button>
             <button class="quiz-option">所有层级前缀相同，不区分是否最后一个</button>
           </div>
           <div class="quiz-explain" hidden>正确实现三要素：① <code>show_hidden=False</code> 时过滤 <code>basename.startswith(".")</code> 的项；② 按 <code>is_last</code> 选 <code>└──</code>/<code>├──</code>；③ 递归子目录时前缀追加 <code>"    "</code>（该项是最后一个）或 <code>"│   "</code>（还有兄弟）。第二个没有树 ✗；第三个该显示的没显示 ✗；第四个竖线连不到底 ✗。</div>
@@ -199,13 +199,13 @@ def show_tree(dir_path: str, show_hidden: bool = False, _prefix: str = "") -> No
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核二（作业二·Markdown 合并）：<code>merge_markdown(files, output)</code>——首行固定 <code># 合并结果</code>，所有原文件标题降一级（一级→二级…六级→加粗正文）。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">正则 ^(#{1,6})\s+(.+)$：1-5 级加一个井号，6 级改成 **加粗**</button>
-            <button class="quiz-option">只把一级标题降为二级，其他不动</button>
-            <button class="quiz-option">所有标题都降一级，六级直接丢弃</button>
             <button class="quiz-option">不降级，直接拼接文件内容</button>
+            <button class="quiz-option">正则 ^(#{1,6})\s+(.+)$：1-5 级加一个井号，6 级改成 **加粗**</button>
+            <button class="quiz-option">所有标题都降一级，六级直接丢弃</button>
+            <button class="quiz-option">只把一级标题降为二级，其他不动</button>
           </div>
           <div class="quiz-explain" hidden>正确实现：<code>HEADING_RE.sub</code> 回调里 <code>level &lt; 6</code> → 井号 +1；<code>level == 6</code> → <code>**内容**</code>（题目规定六级降为正文加粗）。第二个只处理一级 ✗；第三个丢了六级内容 ✗；第四个标题没降级 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -234,24 +234,24 @@ def merge_markdown(files: list[str], output: str) -> None:
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核三（合并结果预测）：a.md 内容为 <code># 标题一</code> 与正文「你好」；b.md 内容为 <code>## 标题二</code>。用正确实现合并后，b.md 的标题在结果中是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">### 标题二（二级降为三级）</button>
             <button class="quiz-option">## 标题二（保持不变）</button>
-            <button class="quiz-option">**标题二**（二级降为加粗）</button>
             <button class="quiz-option"># 标题二（升为一级）</button>
+            <button class="quiz-option">### 标题二（二级降为三级）</button>
+            <button class="quiz-option">**标题二**（二级降为加粗）</button>
           </div>
           <div class="quiz-explain" hidden>降级规则：一级 → 二级、二级 → 三级……所以 <code>## 标题二</code> 变成 <strong>### 标题二</strong>；只有六级才会变成加粗正文。首行固定是 <code># 合并结果</code>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（隐藏过滤预测）：目录里有 <code>.env</code>（文件）与 <code>app.py</code>。<code>show_tree(dir, show_hidden=False)</code> 的输出包含？</div>
           <div class="quiz-options">
-            <button class="quiz-option">只有 app.py，.env 被过滤</button>
-            <button class="quiz-option">两者都显示</button>
             <button class="quiz-option">只有 .env，app.py 被过滤</button>
+            <button class="quiz-option">两者都显示</button>
             <button class="quiz-option">两者都不显示</button>
+            <button class="quiz-option">只有 app.py，.env 被过滤</button>
           </div>
           <div class="quiz-explain" hidden><code>show_hidden=False</code> 时，<code>basename.startswith(".")</code> 的项被过滤——<code>.env</code> 不显示，<code>app.py</code> 显示。传 <code>show_hidden=True</code> 才全部显示。</div>
         </div>

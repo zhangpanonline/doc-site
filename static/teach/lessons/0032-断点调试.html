@@ -57,13 +57,13 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 调试的三大组件是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">调试客户端、调试适配器、调试协议</button>
             <button class="quiz-option">编译器、链接器、解释器</button>
-            <button class="quiz-option">断点、单步、变量查看</button>
             <button class="quiz-option">编辑器、终端、浏览器</button>
+            <button class="quiz-option">调试客户端、调试适配器、调试协议</button>
+            <button class="quiz-option">断点、单步、变量查看</button>
           </div>
           <div class="quiz-explain" hidden>客户端（VSCode）通过<strong>调试协议</strong>（DAP）与<strong>适配器</strong>（debugpy）通信，由适配器控制被调试程序。详见「调试组件」图。</div>
         </div>
@@ -79,13 +79,13 @@
           <div class="quiz-explain" hidden><code>"type": "debugpy"</code> 指定使用 debugpy 调试适配器；<code>"program": "${file}"</code> 用当前打开的文件。详见「单文件调试」配置。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">3. tracer 回调的 frame 参数有什么用？</div>
           <div class="quiz-options">
-            <button class="quiz-option">当前栈帧，可读 f_lineno 拿到正在执行的行号</button>
+            <button class="quiz-option">调试器的配置对象</button>
             <button class="quiz-option">当前函数的返回值</button>
             <button class="quiz-option">浏览器的页面框架</button>
-            <button class="quiz-option">调试器的配置对象</button>
+            <button class="quiz-option">当前栈帧，可读 f_lineno 拿到正在执行的行号</button>
           </div>
           <div class="quiz-explain" hidden><code>frame.f_lineno</code> 是当前执行到的行号——适配器核心逻辑就是打印「事件 + 行号」来观察程序执行轨迹。详见「调试适配器的核心逻辑」。</div>
         </div>
@@ -93,33 +93,33 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. launch 与 attach 调试模式的区别是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">launch 由调试器启动程序，attach 连接已运行的程序</button>
             <button class="quiz-option">attach 由调试器启动程序，launch 连接已运行的程序</button>
-            <button class="quiz-option">两者完全一样</button>
             <button class="quiz-option">attach 只能用于网页</button>
+            <button class="quiz-option">两者完全一样</button>
+            <button class="quiz-option">launch 由调试器启动程序，attach 连接已运行的程序</button>
           </div>
           <div class="quiz-explain" hidden><code>request: "launch"</code> 是调试器拉起程序；<code>request: "attach"</code> 是程序先跑起来（debugpy 监听端口），调试器再连上去。工程调试用 attach。详见「工程调试」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">5. <code>--wait-for-client</code> 参数的作用是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">跳过调试直接运行</button>
             <button class="quiz-option">程序启动后暂停，等调试客户端连接再继续</button>
             <button class="quiz-option">让程序更快启动</button>
-            <button class="quiz-option">跳过调试直接运行</button>
             <button class="quiz-option">限制客户端的连接数</button>
           </div>
           <div class="quiz-explain" hidden><code>--wait-for-client</code> 让被调试程序<strong>等待</strong>客户端 attach（否则程序可能已跑完，断点都来不及命中）。详见「配置调试器」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">6. <code>sys.settrace(my_tracer)</code> 中 tracer 的 event 参数不会出现哪个值？</div>
           <div class="quiz-options">
-            <button class="quiz-option">click（鼠标事件）</button>
             <button class="quiz-option">line</button>
+            <button class="quiz-option">click（鼠标事件）</button>
             <button class="quiz-option">call</button>
             <button class="quiz-option">return</button>
           </div>
@@ -133,9 +133,9 @@
           <div class="quiz-prompt">7. 用 settrace 追踪 <code>exec(code)</code>，tracer 打印的第一条记录是？</div>
           <div class="quiz-options">
             <button class="quiz-option">call 事件，行号 0（exec 触发）</button>
+            <button class="quiz-option">没有任何输出</button>
             <button class="quiz-option">line 事件，行号 1（从第一行开始）</button>
             <button class="quiz-option">return 事件（函数先返回）</button>
-            <button class="quiz-option">没有任何输出</button>
           </div>
           <div class="quiz-explain" hidden>实测第一条是 <strong>call 事件（行号 0）</strong>——<code>exec(code)</code> 本身触发 call 事件；随后才是逐行 line 事件，调用函数时穿插 call、函数结束有 return。事件顺序：call → line → call（函数）→ line → return。</div>
         </div>
@@ -144,20 +144,20 @@
           <div class="quiz-prompt">8. 工程调试——debugpy 已监听 5678 端口，客户端 attach 配置正确的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">request="attach"，connect 里 host="localhost"、port=5678</button>
-            <button class="quiz-option">request="launch"，program 指向 main.py</button>
             <button class="quiz-option">request="attach"，但不写 connect 信息</button>
+            <button class="quiz-option">request="launch"，program 指向 main.py</button>
             <button class="quiz-option">request="launch" 且 port 随意填</button>
           </div>
           <div class="quiz-explain" hidden>attach 配置：<code>"request": "attach"</code> + <code>"connect": {"host": "localhost", "port": 5678}</code>——与 debugpy 的 <code>--listen 5678</code> 对应。launch 会试图自己启动程序（重复启动）✗。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">9. monorepo 里给 web-service 配调试，Makefile 目标正确的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">uv run --package web-service python -m debugpy --listen 5678 --wait-for-client app/web-service/main.py</button>
-            <button class="quiz-option">python -m debugpy app/web-service/main.py（不带监听参数）</button>
-            <button class="quiz-option">uv run --package web-service app/web-service/main.py（不经过 debugpy）</button>
             <button class="quiz-option">debugpy 监听 80 端口（HTTP 端口）</button>
+            <button class="quiz-option">uv run --package web-service python -m debugpy --listen 5678 --wait-for-client app/web-service/main.py</button>
+            <button class="quiz-option">uv run --package web-service app/web-service/main.py（不经过 debugpy）</button>
+            <button class="quiz-option">python -m debugpy app/web-service/main.py（不带监听参数）</button>
           </div>
           <div class="quiz-explain" hidden>工程调试命令三要素：<code>--package web-service</code> 用成员依赖环境；<code>python -m debugpy --listen 5678 --wait-for-client</code> 启动适配器并等客户端；最后是被调试入口。第二个不监听无法 attach ✗；第三个没经过调试器 ✗；第四个端口随意且不是调试器用法 ✗。</div>
         </div>
@@ -169,34 +169,34 @@
       <p>下面是《32.断点调试》源课程作业（复现 monorepo 工程的调试）的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出答案，再点击核对。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核一（settrace 预测）：用 settrace 追踪 <code>demo.py</code>（三行函数 + 调用 + print），tracer 打印的第一条记录是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">call 事件（exec 本身触发）</button>
             <button class="quiz-option">line 事件，行号 1（从第一行开始）</button>
             <button class="quiz-option">return 事件（函数先返回）</button>
             <button class="quiz-option">没有任何输出</button>
+            <button class="quiz-option">call 事件（exec 本身触发）</button>
           </div>
           <div class="quiz-explain" hidden>实测第一条是 <strong>call 事件</strong>——<code>exec(code)</code> 本身触发 call 事件（源课程 demo 中行号为 0）；随后才是逐行 line 事件，调用 main() 时穿插 call、函数结束有 return 事件。事件顺序：call → line → call（main）→ line → return。关键点：首事件是 call 而不是 line。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核二（launch.json 配置）：调试「当前打开的文件」，正确的 launch.json 配置是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">type="debugpy"，request="launch"，program="${file}"</button>
-            <button class="quiz-option">type="python"，request="attach"，program="${file}"</button>
             <button class="quiz-option">type="debugpy"，request="launch"，不写 program</button>
+            <button class="quiz-option">type="debugpy"，request="launch"，program="${file}"</button>
             <button class="quiz-option">type="pdb"，request="launch"</button>
+            <button class="quiz-option">type="python"，request="attach"，program="${file}"</button>
           </div>
           <div class="quiz-explain" hidden>单文件调试：<code>"type": "debugpy"</code> + <code>"request": "launch"</code> + <code>"program": "${file}"</code>（当前打开的文件）。type 写 python/pdb 都不是 VSCode debugpy 扩展的名字 ✗；不写 program 不知道调谁 ✗。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核三（attach 配置）：工程调试——debugpy 已监听 5678 端口，客户端 attach 配置正确的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">request="attach"，connect 里 host="localhost"、port=5678</button>
             <button class="quiz-option">request="launch"，program 指向 main.py</button>
             <button class="quiz-option">request="attach"，但不写 connect 信息</button>
+            <button class="quiz-option">request="attach"，connect 里 host="localhost"、port=5678</button>
             <button class="quiz-option">request="launch" 且 port 随意填</button>
           </div>
           <div class="quiz-explain" hidden>attach 配置：<code>"request": "attach"</code> + <code>"connect": {"host": "localhost", "port": 5678}</code>——与 debugpy 的 <code>--listen 5678</code> 对应。launch 会试图自己启动程序（重复启动）✗。</div>

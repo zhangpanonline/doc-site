@@ -69,30 +69,30 @@
           <div class="quiz-prompt">1. <code>callable([1, 2])</code> 的结果是？</div>
           <div class="quiz-options">
             <button class="quiz-option">False</button>
-            <button class="quiz-option">True</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">True</button>
             <button class="quiz-option">None</button>
           </div>
           <div class="quiz-explain" hidden>列表没有 <code>__call__</code> 方法，不可调用 → <code>False</code>。对比：<code>callable(len)</code>、<code>callable(int)</code>、<code>callable(lambda: 1)</code> 都是 True。详见「如何判断对象是否可调用」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">2. 定义 <code>__call__</code> 方法，让哪个对象变得可调用？</div>
           <div class="quiz-options">
-            <button class="quiz-option">类的实例</button>
             <button class="quiz-option">类本身</button>
-            <button class="quiz-option">模块</button>
+            <button class="quiz-option">类的实例</button>
             <button class="quiz-option">内置类型</button>
+            <button class="quiz-option">模块</button>
           </div>
           <div class="quiz-explain" hidden>在类中定义 <code>__call__</code>，<strong>实例</strong>就变成可调用对象：<code>add_5(10) → 15</code>。详见「让对象变成可调用对象」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">3. <code>add_5 = Adder(5); add_5(10)</code> 等效于？</div>
           <div class="quiz-options">
-            <button class="quiz-option">Adder.__call__(add_5, 10)</button>
-            <button class="quiz-option">add_5.__call__(10)</button>
             <button class="quiz-option">Adder(5)(10)</button>
+            <button class="quiz-option">add_5.__call__(10)</button>
+            <button class="quiz-option">Adder.__call__(add_5, 10)</button>
             <button class="quiz-option">callable(add_5, 10)</button>
           </div>
           <div class="quiz-explain" hidden>实例调用时 <code>self</code> 自动传入：<code>add_5(10)</code> 即 <code>Adder.__call__(add_5, 10)</code>。注意实例自己的 <code>__call__</code> 属性不会被调用——走的始终是<strong>类里</strong>的 <code>__call__</code>。</div>
@@ -105,31 +105,31 @@
           <div class="quiz-prompt">4. 类（如 Dog）可以被调用，是因为？</div>
           <div class="quiz-options">
             <button class="quiz-option">元类 type 实现了 __call__ 完成实例化</button>
-            <button class="quiz-option">类内部自动定义了 __call__</button>
-            <button class="quiz-option">类继承了 function 类型</button>
             <button class="quiz-option">所有 Python 对象都可调用</button>
+            <button class="quiz-option">类继承了 function 类型</button>
+            <button class="quiz-option">类内部自动定义了 __call__</button>
           </div>
           <div class="quiz-explain" hidden><code>Dog()</code> 走调用协议 <code>type(Dog).__call__(Dog)</code>——<code>type(Dog)</code> 是 type，<code>type.__call__</code> 内部执行 <code>__new__</code> + <code>__init__</code> 完成实例化。详见「类也是可调用对象」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">5. <code>double = Multiplier(2); double(5)</code> 的结果是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">10</button>
             <button class="quiz-option">7</button>
-            <button class="quiz-option">25</button>
             <button class="quiz-option">2</button>
+            <button class="quiz-option">10</button>
+            <button class="quiz-option">25</button>
           </div>
           <div class="quiz-explain" hidden><code>__init__</code> 保存了 <code>factor=2</code>，<code>__call__</code> 返回 <code>self.factor * value</code> → <code>2 × 5 = 10</code>。这就是「可配置的函数对象」。详见「实现可配置的函数对象」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">6. <code>error_log = Logger("ERROR")</code> 调用两次后，<code>log_count</code> 是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">2</button>
             <button class="quiz-option">1</button>
-            <button class="quiz-option">0</button>
+            <button class="quiz-option">2</button>
             <button class="quiz-option">每次调用都会重置</button>
+            <button class="quiz-option">0</button>
           </div>
           <div class="quiz-explain" hidden><code>__call__</code> 里 <code>self.log_count += 1</code>，状态保存在<strong>实例属性</strong>中，两次调用后为 2——「状态保持的回调」正是可调用对象的优势。详见「实现状态保持的回调函数」一节。</div>
         </div>
@@ -137,35 +137,35 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 调用协议规定：<code>x()</code> 永远查找什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">type(x).__call__(x)</button>
+            <button class="quiz-option">globals()["__call__"](x)</button>
             <button class="quiz-option">x.__call__(x)</button>
             <button class="quiz-option">x.__init__(x)</button>
-            <button class="quiz-option">globals()["__call__"](x)</button>
+            <button class="quiz-option">type(x).__call__(x)</button>
           </div>
           <div class="quiz-explain" hidden>统一规则：<code>x()</code> 查找 <code>type(x).__call__(x)</code>——函数走 function 类型的 __call__，类走 type 的 __call__，实例走类里定义的 __call__。实例自身的 <code>__call__</code> 属性<strong>不参与</strong>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">8. <code>class B(A)</code>，两者都定义 <code>__call__</code>，B 里 <code>super().__call__()</code> 调用的是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">object 的 __call__（直接父类）</button>
             <button class="quiz-option">A 的 __call__（沿 MRO 找下一个）</button>
             <button class="quiz-option">B 自己的 __call__（递归调用）</button>
-            <button class="quiz-option">object 的 __call__（直接父类）</button>
-            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>与普通方法一样，<code>super().__call__()</code> 沿 MRO 调用<strong>下一个类</strong>的 <code>__call__</code>——B(A) 中即 A 的 <code>__call__</code>。这是源作业思考题的核心：先打印 B called 再打印 A called。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">9. 下列哪一组 <code>callable()</code> 结果全部正确？</div>
           <div class="quiz-options">
-            <button class="quiz-option">len→True，int→True，[1,2]→False，lambda→True</button>
-            <button class="quiz-option">len→False，int→True，[1,2]→False，lambda→True</button>
-            <button class="quiz-option">len→True，int→False，[1,2]→False，lambda→True</button>
             <button class="quiz-option">len→True，int→True，[1,2]→True，lambda→False</button>
+            <button class="quiz-option">len→True，int→True，[1,2]→False，lambda→True</button>
+            <button class="quiz-option">len→True，int→False，[1,2]→False，lambda→True</button>
+            <button class="quiz-option">len→False，int→True，[1,2]→False，lambda→True</button>
           </div>
           <div class="quiz-explain" hidden>逐项核对：<code>len</code> 是内置函数 → True；<code>int</code> 是类（type.__call__ 实例化）→ True；<code>[1, 2]</code> 列表无 <code>__call__</code> → False；<code>lambda: 1</code> 是函数 → True。<strong>第一个组合全部正确</strong>。</div>
         </div>
@@ -177,13 +177,13 @@
       <p>下面是《11.可调用对象》源课程作业的两道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核一（作业一·计数器）：实现 Counter 类——实例化时指定起始值，每次调用实例值加 1，支持 reset() 与 get()。要求 <code>c = Counter(10); c() → 11</code>。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">__call__ 中 value 自增并返回；reset 恢复初始值；get 返回当前值</button>
-            <button class="quiz-option">__call__ 中 value 自增但不 return，依赖 get 取当前值</button>
             <button class="quiz-option">reset 把 value 重置为 0 而不是初始值</button>
+            <button class="quiz-option">__call__ 中 value 自增并返回；reset 恢复初始值；get 返回当前值</button>
             <button class="quiz-option">get 返回起始值 start 而不是当前值</button>
+            <button class="quiz-option">__call__ 中 value 自增但不 return，依赖 get 取当前值</button>
           </div>
           <div class="quiz-explain" hidden>正确实现：<code>__init__</code> 同时存 <code>start</code> 和 <code>value</code>；<code>__call__</code> 里 <code>self.value += 1; return self.value</code>；<code>reset</code> 恢复 <code>self.value = self.start</code>；<code>get</code> 返回 <code>self.value</code>。第二个调用 <code>c()</code> 返回 None，题目要求输出 11 ✗；第三个重置错目标 ✗；第四个拿到的是旧值 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -212,7 +212,7 @@ print(c.get())  # 10</code></pre>
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核二（作业二·思考题）：以下代码的输出是？
 <pre><code>class A:
     def __call__(self):
@@ -226,10 +226,10 @@ class B(A):
 b = B()
 b()</code></pre></div>
           <div class="quiz-options">
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">只输出 A called</button>
             <button class="quiz-option">先 B called，再 A called</button>
             <button class="quiz-option">只输出 B called</button>
-            <button class="quiz-option">只输出 A called</button>
-            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>b()</code> 调 <code>B.__call__(b)</code>：先打印 B called，然后 <code>super().__call__()</code> 沿 MRO 调到父类 A 的 <code>__call__</code>，打印 A called。顺序：<strong>B called → A called</strong>。与第 6 课 MRO 知识呼应。</div>
         </div>
@@ -257,13 +257,13 @@ error_log("网络连接失败")</code></pre></div>
           <div class="quiz-explain" hidden><code>log_count</code> 是实例属性，第一次调用后为 1，第二次 <code>+= 1</code> 后为 2 → <strong>[ERROR] #2: 网络连接失败</strong>。实例「记住」了调用历史，这是闭包之外的另一种状态保存方式。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核四（callable 判断组合）：下列哪一组 <code>callable()</code> 结果全部正确？</div>
           <div class="quiz-options">
-            <button class="quiz-option">len→True，int→True，[1,2]→False，lambda→True</button>
-            <button class="quiz-option">len→False，int→True，[1,2]→False，lambda→True</button>
             <button class="quiz-option">len→True，int→False，[1,2]→False，lambda→True</button>
+            <button class="quiz-option">len→True，int→True，[1,2]→False，lambda→True</button>
             <button class="quiz-option">len→True，int→True，[1,2]→True，lambda→False</button>
+            <button class="quiz-option">len→False，int→True，[1,2]→False，lambda→True</button>
           </div>
           <div class="quiz-explain" hidden>逐项核对：<code>len</code> 是内置函数 → True；<code>int</code> 是类（type.__call__ 实例化）→ True；<code>[1, 2]</code> 列表无 <code>__call__</code> → False；<code>lambda: 1</code> 是函数 → True。<strong>第一个组合全部正确</strong>。</div>
         </div>

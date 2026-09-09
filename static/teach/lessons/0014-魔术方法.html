@@ -56,13 +56,13 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. <code>__str__</code> 与 <code>__repr__</code> 的分工是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">__str__ 面向用户，__repr__ 面向开发者</button>
             <button class="quiz-option">__str__ 面向开发者，__repr__ 面向用户</button>
-            <button class="quiz-option">两者完全一样，实现一个即可</button>
             <button class="quiz-option">__repr__ 只用于文件输出</button>
+            <button class="quiz-option">__str__ 面向用户，__repr__ 面向开发者</button>
+            <button class="quiz-option">两者完全一样，实现一个即可</button>
           </div>
           <div class="quiz-explain" hidden><code>__str__</code> 给 <code>print()</code> 用（友好格式）；<code>__repr__</code> 给 <code>repr()</code> 和交互式显示用（精确重建格式）。只实现 <code>__repr__</code> 时 <code>__str__</code> 会回退到它。详见「字符串表示」一节。</div>
         </div>
@@ -71,9 +71,9 @@
           <div class="quiz-prompt">2. <code>alice == bob</code> 会自动调用哪个方法？</div>
           <div class="quiz-options">
             <button class="quiz-option">alice 的 __eq__(bob)</button>
-            <button class="quiz-option">alice 的 __add__(bob)</button>
-            <button class="quiz-option">bob 的 __str__()</button>
             <button class="quiz-option">对象的 __init__()</button>
+            <button class="quiz-option">bob 的 __str__()</button>
+            <button class="quiz-option">alice 的 __add__(bob)</button>
           </div>
           <div class="quiz-explain" hidden><code>==</code> 触发 <code>__eq__</code>：<code>alice == bob</code> 即 <code>alice.__eq__(bob)</code>。默认（不实现时）比较的是身份（is）。详见「比较操作」一节。</div>
         </div>
@@ -82,9 +82,9 @@
           <div class="quiz-prompt">3. 只实现 <code>__eq__</code> 和 <code>__lt__</code>，想让 <code>&gt;、&lt;=、&gt;=、!=</code> 自动可用，用什么？</div>
           <div class="quiz-options">
             <button class="quiz-option">@functools.total_ordering 装饰器</button>
-            <button class="quiz-option">@staticmethod 装饰器</button>
             <button class="quiz-option">@property 装饰器</button>
             <button class="quiz-option">必须逐个实现所有比较方法</button>
+            <button class="quiz-option">@staticmethod 装饰器</button>
           </div>
           <div class="quiz-explain" hidden><code>@total_ordering</code> 只需 <code>__eq__</code> 加一个比较方法（如 <code>__lt__</code>），其余自动推导。详见「简化方案」提示框。</div>
         </div>
@@ -97,30 +97,30 @@
           <div class="quiz-options">
             <button class="quiz-option">v1 的 __rmul__，右操作数逆运算</button>
             <button class="quiz-option">int 的 __mul__ 正常计算</button>
-            <button class="quiz-option">直接报 TypeError</button>
             <button class="quiz-option">v1 的 __mul__</button>
+            <button class="quiz-option">直接报 TypeError</button>
           </div>
           <div class="quiz-explain" hidden>int 无法处理 Vector，<code>int.__mul__(2, v1)</code> 返回 NotImplemented，Python 转而调用右操作数的 <code>v1.__rmul__(2)</code>——「右乘」逆运算。详见「算术运算」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">5. <code>__setattr__</code> 内部要设置属性，正确的做法是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">用 object.__setattr__ 绕过拦截</button>
-            <button class="quiz-option">直接写 self.xxx = value</button>
             <button class="quiz-option">用 delattr 代替</button>
             <button class="quiz-option">在 __init__ 外设置</button>
+            <button class="quiz-option">用 object.__setattr__ 绕过拦截</button>
+            <button class="quiz-option">直接写 self.xxx = value</button>
           </div>
           <div class="quiz-explain" hidden><code>__setattr__</code> 拦截<strong>所有</strong>赋值，内部再写 <code>self.xxx = v</code> 会再次触发它 → 无限递归。必须 <code>object.__setattr__(self, name, value)</code>。详见「属性访问拦截」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">6. <code>__getattr__</code> 与 <code>__getattribute__</code> 的区别是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">__getattr__ 只在属性不存在时触发，__getattribute__ 每次都触发</button>
-            <button class="quiz-option">__getattribute__ 只在属性不存在时触发</button>
             <button class="quiz-option">两者都只在属性不存在时触发</button>
             <button class="quiz-option">两者没有区别</button>
+            <button class="quiz-option">__getattr__ 只在属性不存在时触发，__getattribute__ 每次都触发</button>
+            <button class="quiz-option">__getattribute__ 只在属性不存在时触发</button>
           </div>
           <div class="quiz-explain" hidden><code>__getattribute__</code> 拦截<strong>一切</strong>属性访问（优先级最高）；<code>__getattr__</code> 只在常规查找<strong>失败</strong>（属性不存在）时才被调用。详见「__getattr__ vs __getattribute__」一节。</div>
         </div>
@@ -128,24 +128,24 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. <code>__mul__</code> 遇到不认识的类型返回 <code>NotImplemented</code> 后，Python 会做什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">转而调用右操作数的 __rmul__；都不行才 TypeError</button>
+            <button class="quiz-option">忽略该操作返回原对象</button>
             <button class="quiz-option">立即抛 TypeError</button>
             <button class="quiz-option">把结果当作 None</button>
-            <button class="quiz-option">忽略该操作返回原对象</button>
+            <button class="quiz-option">转而调用右操作数的 __rmul__；都不行才 TypeError</button>
           </div>
           <div class="quiz-explain" hidden><code>NotImplemented</code> 是「我处理不了，换人试试」的信号：Python 转调右操作数的 <code>__rmul__</code>；若两边都不支持，才抛 TypeError。<code>NotImplemented</code>（单例信号）≠ <code>NotImplementedError</code>（异常类）。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">8. <code>1/2 + 1/3</code>（Fraction 实现）的运算过程是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">直接拼接字符串 "1/2+1/3"</button>
+            <button class="quiz-option">先转小数 0.5+0.33 再还原</button>
             <button class="quiz-option">通分：(1×3 + 2×1) / (2×3) = 5/6</button>
             <button class="quiz-option">分子分母各自相加 = 2/5</button>
-            <button class="quiz-option">先转小数 0.5+0.33 再还原</button>
-            <button class="quiz-option">直接拼接字符串 "1/2+1/3"</button>
           </div>
           <div class="quiz-explain" hidden>分数加法必须<strong>通分</strong>：<code>a/b + c/d = (a×d + c×b) / (b×d)</code>——(1×3 + 1×2) / (2×3) = 5/6。第二个是经典错误（2/5）✗。这是考核一的核心。</div>
         </div>
@@ -154,9 +154,9 @@
           <div class="quiz-prompt">9. <code>class Money</code> 实现了 <code>__bool__</code>（<code>return self.amount != 0</code>），<code>bool(Money(0))</code> 与 <code>bool(Money(100.5))</code> 分别是？</div>
           <div class="quiz-options">
             <button class="quiz-option">False 和 True</button>
+            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">True 和 True</button>
             <button class="quiz-option">False 和 False</button>
-            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>__bool__</code> 定义对象的真假值：amount 为 0 时 False，非 0 时 True——不实现 <code>__bool__</code> 时对象<strong>默认恒为 True</strong>（即使属性为空）。这就是「为什么默认所有实例都是真值」的来源。</div>
         </div>
@@ -168,13 +168,13 @@
       <p>下面是《14.魔术方法》源课程作业（实现 Fraction 分数类）的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核一（Fraction.__add__）：<code>1/2 + 1/3 = 5/6</code>。实现 <code>__add__</code>，下列<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">分子 = a*d + b*c，分母 = b*d，返回 Fraction(新分子, 新分母)</button>
-            <button class="quiz-option">分子相加、分母相加，返回 Fraction(a+c, b+d)</button>
-            <button class="quiz-option">分子相加、分母不变，返回 Fraction(a+c, b)</button>
             <button class="quiz-option">直接返回两个分数的元组</button>
+            <button class="quiz-option">分子 = a*d + b*c，分母 = b*d，返回 Fraction(新分子, 新分母)</button>
+            <button class="quiz-option">分子相加、分母不变，返回 Fraction(a+c, b)</button>
+            <button class="quiz-option">分子相加、分母相加，返回 Fraction(a+c, b+d)</button>
           </div>
           <div class="quiz-explain" hidden>分数加法要<strong>通分</strong>：<code>a/b + c/d = (a*d + b*c) / (b*d)</code>——1/2 + 1/3 = (1×3 + 2×1)/(2×3) = 5/6 ✓。第二个是典型错误（1/2 + 1/3 ≠ 2/5）✗；第三个分母不对 ✗；第四个不返回 Fraction ✗。</div>
         </div>
@@ -183,31 +183,31 @@
           <div class="quiz-prompt">考核二（Fraction.__eq__）：判断 <code>f1 == f2</code>，下列<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">交叉相乘比较：a*d == c*b，非 Fraction 返回 NotImplemented</button>
+            <button class="quiz-option">比较字符串表示是否相等</button>
             <button class="quiz-option">直接比较两个 Fraction 对象的内存地址</button>
             <button class="quiz-option">比较两个分数的分子是否相等</button>
-            <button class="quiz-option">比较字符串表示是否相等</button>
           </div>
           <div class="quiz-explain" hidden>交叉相乘：<code>a/b == c/d ⟺ a*d == c*b</code>——1/2 与 2/4 不约分也能判等。先 <code>isinstance(other, Fraction)</code> 检查，不符返回 <code>NotImplemented</code>。第二个是比较身份（is 语义）✗；第三个 1/2 与 1/3 会被误判相等 ✗；第四个依赖字符串格式，脆弱 ✗。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（字符串表示与转换预测）：<code>f1 = Fraction(1, 2)</code>，以下输出组合正确的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">float(f1)→0.5，str(f1)→"1/2"，repr(f1)→"Fraction(1, 2)"</button>
             <button class="quiz-option">float(f1)→1.2，str(f1)→"1/2"，repr(f1)→"1/2"</button>
-            <button class="quiz-option">float(f1)→0.5，str(f1)→"Fraction(1, 2)"，repr(f1)→"1/2"</button>
             <button class="quiz-option">三者都报错，Fraction 不支持转换</button>
+            <button class="quiz-option">float(f1)→0.5，str(f1)→"Fraction(1, 2)"，repr(f1)→"1/2"</button>
+            <button class="quiz-option">float(f1)→0.5，str(f1)→"1/2"，repr(f1)→"Fraction(1, 2)"</button>
           </div>
           <div class="quiz-explain" hidden>实现 <code>__float__</code> → <code>float(f1)</code> 是 1/2 = 0.5；<code>__str__</code> 返回 "1/2"；<code>__repr__</code> 返回 "Fraction(1, 2)"（精确重建格式）。第一个组合全部正确。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（Fraction.__lt__）：实现 <code>f1 &gt; f2</code>（1/2 &gt; 1/3 为 True）。下列 <code>__lt__</code> 中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">a*d &lt; c*b 时返回 True，非 Fraction 返回 NotImplemented</button>
+            <button class="quiz-option">先转 float 再比较，但忘记类型检查</button>
             <button class="quiz-option">a &lt; c 时返回 True（只比分子）</button>
             <button class="quiz-option">b &lt; d 时返回 True（只比分母）</button>
-            <button class="quiz-option">先转 float 再比较，但忘记类型检查</button>
+            <button class="quiz-option">a*d &lt; c*b 时返回 True，非 Fraction 返回 NotImplemented</button>
           </div>
           <div class="quiz-explain" hidden>交叉相乘比较：<code>a/b &lt; c/d ⟺ a*d &lt; c*b</code>——1/2 &lt; 1/3 → 1×3 &lt; 1×2 → False，所以 <code>f1 &gt; f2</code>（即 f2 &lt; f1）为 True。只比分子：1/2 与 1/3 会相等 ✗；只比分母更乱 ✗；转 float 有精度风险且漏类型检查 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">

@@ -66,23 +66,23 @@
           <div class="quiz-explain" hidden><code>==</code> 比较时<strong>类型必须相同</strong>：列表和元组即使内容看起来一样也不相等，输出 <code>False</code>。详见「相等运算符」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">2. <code>print({1, 2, 3, 3, 3})</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">{1, 2, 3}</button>
             <button class="quiz-option">{1, 2, 3, 3, 3}</button>
+            <button class="quiz-option">{1, 2, 3}</button>
             <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">[1, 2, 3]</button>
           </div>
           <div class="quiz-explain" hidden>集合<strong>自动去重</strong>且无序：重复的 3 只保留一个，输出 <code>{1, 2, 3}</code>。注意空集合必须写 <code>set()</code>，<code>{}</code> 是空字典。详见「集合」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">3. <code>print(type((1)))</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">&lt;class 'int'&gt;</button>
-            <button class="quiz-option">&lt;class 'tuple'&gt;</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">&lt;class 'tuple'&gt;</button>
+            <button class="quiz-option">&lt;class 'int'&gt;</button>
             <button class="quiz-option">&lt;class 'list'&gt;</button>
           </div>
           <div class="quiz-explain" hidden><code>(1)</code> 只是<strong>带括号的数字</strong>，类型是 int；<strong>单元素元组必须加逗号</strong>：<code>(1,)</code> 才是 tuple。这是本课最经典的坑。详见「创建元组」一节。</div>
@@ -91,24 +91,24 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. <code>print("Alice" in {"name": "Alice"})</code> 的输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">True</button>
-            <button class="quiz-option">False</button>
             <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">返回键名</button>
+            <button class="quiz-option">False</button>
           </div>
           <div class="quiz-explain" hidden>对字典用 <code>in</code> 检查的是<strong>键</strong>，不是值：<code>"name" in d</code> 才是 True，<code>"Alice" in d</code> 是 False。详见「成员运算符」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">5. 执行 <code>a = [1, 2]; b = a; print(a is b)</code>，输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">True</button>
-            <button class="quiz-option">False</button>
-            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">None</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>b = a</code> 只是让 b 指向<strong>同一个列表对象</strong>，<code>is</code> 判断身份相同 → True。若写 <code>c = [1, 2]</code> 则是新对象：<code>a is c</code> 为 False，但 <code>a == c</code> 为 True。详见「身份运算符」一节。</div>
         </div>
@@ -118,8 +118,8 @@
           <div class="quiz-options">
             <button class="quiz-option">2</button>
             <button class="quiz-option">1</button>
-            <button class="quiz-option">5</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">5</button>
           </div>
           <div class="quiz-explain" hidden><code>count(1)</code> 统计值 1 的<strong>出现次数</strong>：列表里有两个 1 → 输出 2。注意 <code>index(1)</code> 才是第一个匹配的位置（0）。详见「列表操作」一节。</div>
         </div>
@@ -131,31 +131,31 @@
           <div class="quiz-prompt">7. <code>fruits = ["苹果", "香蕉", "橙子"]; print(fruits[::-1])</code> 的输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">['橙子', '香蕉', '苹果']</button>
+            <button class="quiz-option">('橙子', '香蕉', '苹果')</button>
             <button class="quiz-option">['苹果', '香蕉', '橙子']</button>
             <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">('橙子', '香蕉', '苹果')</button>
           </div>
           <div class="quiz-explain" hidden>切片 <code>[start:end:step]</code>，<code>step = -1</code> 表示倒着取，即反转列表。返回的仍是列表，<strong>原列表不变</strong>。详见「索引与切片」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">8. 执行 <code>nums = [3, 1, 4]; result = nums.sort(); print(result)</code>，输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">None</button>
-            <button class="quiz-option">[1, 3, 4]</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">[1, 3, 4]</button>
+            <button class="quiz-option">None</button>
             <button class="quiz-option">nums 本身</button>
           </div>
           <div class="quiz-explain" hidden><code>sort()</code> 是<strong>原地排序</strong>，修改 nums 本身并返回 <code>None</code>——所以打印 result 得到 <code>None</code>。想要新列表用 <code>sorted(nums)</code>。详见「列表操作」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">9. <code>d = dict.fromkeys(["a", "b"], 0); print(d)</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">{'a': 0, 'b': 0}</button>
-            <button class="quiz-option">{'a': 'b', 0: 0}</button>
             <button class="quiz-option">['a', 'b']</button>
+            <button class="quiz-option">{'a': 0, 'b': 0}</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">{'a': 'b', 0: 0}</button>
           </div>
           <div class="quiz-explain" hidden><code>dict.fromkeys(键序列, 默认值)</code> 以序列为<strong>键</strong>创建字典，所有键共享同一个默认值 0 → <code>{'a': 0, 'b': 0}</code>。详见「创建字典」一节。</div>
         </div>
@@ -167,33 +167,33 @@
       <p>下面是《4.容器类型》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核一（作业一·切片拷贝）：执行以下代码，最后的 <code>print(nums == copy, nums is copy)</code> 输出是？
 <pre><code>nums = [3, 1, 4, 1, 5]
 copy = nums[:]          # 切片拷贝
 nums[0] = 10
 print(nums == copy, nums is copy)</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">False False</button>
-            <button class="quiz-option">True False</button>
             <button class="quiz-option">True True</button>
+            <button class="quiz-option">False False</button>
             <button class="quiz-option">False True</button>
+            <button class="quiz-option">True False</button>
           </div>
           <div class="quiz-explain" hidden><code>nums[:]</code> 创建的是<strong>新列表</strong>（内容相同但身份不同）。修改 nums 后内容也不同了：<code>==</code> 比内容 → False，<code>is</code> 比身份 → 本来就不是同一对象 → False。输出 <strong>False False</strong>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核二（作业三·字典遍历）：执行 <code>d = {"x": 10, "y": 20}</code> 后，<code>print("x" in d, 20 in d)</code> 输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">True False</button>
-            <button class="quiz-option">True True</button>
             <button class="quiz-option">False True</button>
+            <button class="quiz-option">True True</button>
+            <button class="quiz-option">True False</button>
             <button class="quiz-option">False False</button>
           </div>
           <div class="quiz-explain" hidden>字典的 <code>in</code> 只查<strong>键</strong>：<code>"x"</code> 是键 → True；<code>20</code> 是值不是键 → False。输出 <strong>True False</strong>。想查值要用 <code>20 in d.values()</code>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（作业五·zip 与 get）：以下代码最后一行输出是？
 <pre><code>names = ["Alice", "Bob"]
 ages = (25, 30)
@@ -206,21 +206,21 @@ while i &lt; len(names):
     i += 1
 print(d.get("Charlie", "not found"))</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">not found</button>
-            <button class="quiz-option">None</button>
-            <button class="quiz-option">Charlie</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">Charlie</button>
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">not found</button>
           </div>
           <div class="quiz-explain" hidden><code>d</code> 里只有 Alice 和 Bob（年龄都 &gt; 20 被加入）。<code>get("Charlie", "not found")</code> 键不存在时返回<strong>默认值</strong>，不报错 → 输出 <strong>not found</strong>。对比：<code>d["Charlie"]</code> 会抛 KeyError。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（作业六·学生信息查找）：任务要求「找到 id 为 796997 的学生，打印其姓名和电话；找不到打印 未找到」。下列实现中<strong>正确</strong>的是？（students 为字典列表，学生数据见下方折叠区）</div>
           <div class="quiz-options">
-            <button class="quiz-option">遍历时 if s["id"]==796997 打印并 break；循环 else 打印未找到</button>
             <button class="quiz-option">遍历时 if s["id"]==796997 打印但不 break；循环 else 打印未找到</button>
-            <button class="quiz-option">遍历时 if s["id"]==796997 打印并 break；循环外无条件打印未找到</button>
             <button class="quiz-option">if s["id"]==796997 打印，但第一次迭代后无条件 break</button>
+            <button class="quiz-option">遍历时 if s["id"]==796997 打印并 break；循环外无条件打印未找到</button>
+            <button class="quiz-option">遍历时 if s["id"]==796997 打印并 break；循环 else 打印未找到</button>
           </div>
           <div class="quiz-explain" hidden>正确答案是<strong>for-else 模式</strong>：找到就打印并 <code>break</code>；循环的 else 只在「没被 break 打断」时执行，恰好表达「没找到」。第二个选项不 break，找到后仍会走 else 多打印一行 ✗；第三个无论找到与否都打印未找到 ✗；第四个第一次迭代就 break，若目标不在第一个就漏找 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">

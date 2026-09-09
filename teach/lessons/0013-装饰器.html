@@ -57,35 +57,35 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 装饰器本质上是什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">接收函数并返回新函数的高阶函数</button>
-            <button class="quiz-option">修改函数源码的编辑器</button>
-            <button class="quiz-option">类的特殊方法</button>
             <button class="quiz-option">异常处理机制</button>
+            <button class="quiz-option">修改函数源码的编辑器</button>
+            <button class="quiz-option">接收函数并返回新函数的高阶函数</button>
+            <button class="quiz-option">类的特殊方法</button>
           </div>
           <div class="quiz-explain" hidden>装饰器是一个可调用对象：接收一个可调用对象（函数），返回另一个可调用对象（wrapper）来替代它。详见「装饰器的本质」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">2. <code>@my_decorator</code> 写在函数上方，等价于？</div>
           <div class="quiz-options">
-            <button class="quiz-option">func = my_decorator(func)</button>
-            <button class="quiz-option">my_decorator() 立即执行函数体</button>
-            <button class="quiz-option">func = func(my_decorator)</button>
             <button class="quiz-option">仅仅是一个注释标记</button>
+            <button class="quiz-option">func = func(my_decorator)</button>
+            <button class="quiz-option">my_decorator() 立即执行函数体</button>
+            <button class="quiz-option">func = my_decorator(func)</button>
           </div>
           <div class="quiz-explain" hidden><code>@my_decorator</code> 是语法糖：<code>def f(): ...</code> 之后自动执行 <code>f = my_decorator(f)</code>。详见「装饰器本质示例」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">3. <code>functools.wraps(func)</code> 的作用是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">把原函数的 __name__ 等元信息复制到 wrapper</button>
-            <button class="quiz-option">让 wrapper 执行得更快</button>
             <button class="quiz-option">自动重试原函数</button>
             <button class="quiz-option">缓存原函数的返回值</button>
+            <button class="quiz-option">把原函数的 __name__ 等元信息复制到 wrapper</button>
+            <button class="quiz-option">让 wrapper 执行得更快</button>
           </div>
           <div class="quiz-explain" hidden>装饰后 <code>f.__name__</code> 默认变成 "wrapper"；<code>functools.wraps(func)</code> 把 <code>__name__</code>、<code>__doc__</code> 等元信息复制到 wrapper 上，保持函数身份。本课作业二就是手写实现它。</div>
         </div>
@@ -93,35 +93,35 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. <code>@decorator_a @decorator_b</code> 两个装饰器叠加，执行顺序是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">a、b 同时执行，无先后</button>
             <button class="quiz-option">a 外层先执行，再 b 外层，再原函数</button>
             <button class="quiz-option">b 外层先执行，再 a 外层，再原函数</button>
-            <button class="quiz-option">a、b 同时执行，无先后</button>
             <button class="quiz-option">只执行最上面的 a</button>
           </div>
           <div class="quiz-explain" hidden><code>@a @b</code> 等价于 <code>func = a(b(func))</code>：调用时 a 的外层先执行，然后是 b 的外层，再原函数，返回时逆序。详见「多个装饰器叠加」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">5. 带参数的装饰器 <code>@repeat(3)</code> 的结构是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">外层函数收参数，返回真正的装饰器</button>
-            <button class="quiz-option">装饰器直接写在参数后面</button>
             <button class="quiz-option">与不带参数的装饰器完全一样</button>
+            <button class="quiz-option">外层函数收参数，返回真正的装饰器</button>
             <button class="quiz-option">Python 不支持带参数装饰器</button>
+            <button class="quiz-option">装饰器直接写在参数后面</button>
           </div>
           <div class="quiz-explain" hidden>三层结构：<code>repeat(n)</code> 先执行并返回真正的装饰器 <code>decorator</code>，再由它去包装函数——<code>@repeat(3)</code> 等价于 <code>func = repeat(3)(func)</code>。源课程答案 p3.py 即此模式。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">6. timer 装饰器的 wrapper 中忘了 <code>return func(...)</code>，被装饰函数调用返回什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">None，原函数的返回值丢失</button>
             <button class="quiz-option">原函数的返回值，不受影响</button>
-            <button class="quiz-option">wrapper 对象本身</button>
+            <button class="quiz-option">None，原函数的返回值丢失</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">wrapper 对象本身</button>
           </div>
           <div class="quiz-explain" hidden>wrapper 没有 return 时默认返回 None——<code>slow_function()</code> 就拿不到 "Done" 了。所以计时装饰器既要打印耗时，也要 <code>return result</code>。</div>
         </div>
@@ -129,12 +129,12 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. 装饰器本体（非 wrapper）里的代码什么时候执行？</div>
           <div class="quiz-options">
-            <button class="quiz-option">函数定义时执行一次（import 阶段）</button>
             <button class="quiz-option">每次调用被装饰函数时执行</button>
             <button class="quiz-option">从不执行</button>
+            <button class="quiz-option">函数定义时执行一次（import 阶段）</button>
             <button class="quiz-option">程序退出时执行</button>
           </div>
           <div class="quiz-explain" hidden>装饰器本体在 <code>@deco</code> 一行（即<strong>定义函数时</strong>）就执行——所以注册类、收集函数等副作用逻辑要放在装饰器本体；「每次调用都执行」的逻辑必须放进 wrapper。放错位置是装饰器的经典 bug 源。</div>
@@ -144,20 +144,20 @@
           <div class="quiz-prompt">8. <code>@repeat(3)</code> 等价于下列哪个表达式？</div>
           <div class="quiz-options">
             <button class="quiz-option">func = repeat(3)(func)</button>
-            <button class="quiz-option">func = repeat(func, 3)</button>
-            <button class="quiz-option">repeat(3) 直接执行 func 三次</button>
             <button class="quiz-option">func = repeat(func)(3)</button>
+            <button class="quiz-option">repeat(3) 直接执行 func 三次</button>
+            <button class="quiz-option">func = repeat(func, 3)</button>
           </div>
           <div class="quiz-explain" hidden><code>repeat(3)</code> 返回装饰器 <code>decorator</code>，再作用到 func 上——两步合成 <code>func = repeat(3)(func)</code>。这就是「带参数装饰器 = 三层函数」的等价形式。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">9. 类装饰器 <code>@Dec</code> 装饰函数 f 之后，<code>f</code> 是什么？调用 <code>f(1, 2)</code> 会触发什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">f 是 Dec 的实例，调用触发 Dec.__call__</button>
             <button class="quiz-option">f 仍是原函数，没有任何变化</button>
-            <button class="quiz-option">f 是 Dec 这个类本身</button>
             <button class="quiz-option">运行时报错（类不能装饰函数）</button>
+            <button class="quiz-option">f 是 Dec 这个类本身</button>
+            <button class="quiz-option">f 是 Dec 的实例，调用触发 Dec.__call__</button>
           </div>
           <div class="quiz-explain" hidden><code>@Dec</code> 等价于 <code>f = Dec(f)</code>——f 变成 <strong>Dec 的实例</strong>（原函数存进实例属性）。之后 <code>f(1, 2)</code> 触发的是 <code>Dec.__call__(实例, 1, 2)</code>——类装饰器的核心正是第 9 课的 <code>__call__</code>。</div>
         </div>
@@ -173,9 +173,9 @@
           <div class="quiz-prompt">考核一（作业一·timer 装饰器）：实现 <code>@timer</code>——调用函数后打印 <code>函数名 执行时间: X.XXXX 秒</code>，且调用结果必须保留（<code>slow_function()</code> 返回 "Done"）。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">wrapper 先记 start，调用 func 存 result，打印耗时后 return result</button>
-            <button class="quiz-option">wrapper 只打印耗时，不 return func 的结果</button>
-            <button class="quiz-option">直接在装饰器外层打印耗时，不定义 wrapper</button>
             <button class="quiz-option">wrapper 在 func 调用前就打印耗时</button>
+            <button class="quiz-option">直接在装饰器外层打印耗时，不定义 wrapper</button>
+            <button class="quiz-option">wrapper 只打印耗时，不 return func 的结果</button>
           </div>
           <div class="quiz-explain" hidden>正确结构：<code>wrapper</code> 里 <code>start = time.time()</code> → <code>result = func(*args, **kwargs)</code> → 计算耗时并打印 → <code>return result</code>。第二个丢失返回值 ✗；第三个在<strong>定义时</strong>（import 阶段）就打印，且不返回新函数 ✗；第四个计的不是函数执行耗时 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -201,13 +201,13 @@ slow_function()
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核二（作业二·wraps 装饰器）：手写 <code>wraps(func)</code>，让被装饰函数保持原来的 <code>__name__</code> 和 <code>__doc__</code>。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">直接返回原函数，不返回 wrapper</button>
             <button class="quiz-option">返回的装饰器把 func.__name__ 和 func.__doc__ 复制给 wrapper 后返回 wrapper</button>
             <button class="quiz-option">只复制 __name__，不管 __doc__</button>
             <button class="quiz-option">把 wrapper 的元信息复制给原函数</button>
-            <button class="quiz-option">直接返回原函数，不返回 wrapper</button>
           </div>
           <div class="quiz-explain" hidden>正确结构：<code>wraps(func)</code> 返回装饰器 <code>decorator(wrapper)</code>，其中把 <code>wrapper.__name__ = func.__name__</code>、<code>wrapper.__doc__ = func.__doc__</code>，再返回 wrapper。第二个只保留了一半 ✗；第三个方向反了 ✗；第四个等于没装饰 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -237,7 +237,7 @@ say_hello.__doc__   # '打招呼'</code></pre>
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核三（叠加顺序预测）：以下代码的输出顺序是？
 <pre><code>def a(func):
     def wrapper():
@@ -260,21 +260,21 @@ def hello():
 
 hello()</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">A 前 → B 前 → 执行 → B 后 → A 后</button>
-            <button class="quiz-option">B 前 → A 前 → 执行 → A 后 → B 后</button>
             <button class="quiz-option">A 前 → 执行 → A 后 → B 前 → 执行 → B 后</button>
+            <button class="quiz-option">B 前 → A 前 → 执行 → A 后 → B 后</button>
+            <button class="quiz-option">A 前 → B 前 → 执行 → B 后 → A 后</button>
             <button class="quiz-option">B 前 → 执行 → B 后 → A 前 → 执行 → A 后</button>
           </div>
           <div class="quiz-explain" hidden><code>@a @b</code> 即 <code>hello = a(b(hello))</code>：调用时先进入 a 的 wrapper（打印 A 前）→ 调用 b 的 wrapper（打印 B 前）→ 原函数（执行）→ 返回 b 的 wrapper（B 后）→ 返回 a 的 wrapper（A 后）。顺序：<strong>A 前 → B 前 → 执行 → B 后 → A 后</strong>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（返回值保留）：用正确的 timer 装饰 <code>slow_function</code>（内部 <code>time.sleep(1); return "Done"</code>），调用后程序的输出<strong>最后一行</strong>是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">"Done"（调用方 print 了返回值）</button>
-            <button class="quiz-option">"slow_function 执行时间: 1.XXXX 秒"</button>
-            <button class="quiz-option">None</button>
             <button class="quiz-option">没有输出</button>
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">"slow_function 执行时间: 1.XXXX 秒"</button>
+            <button class="quiz-option">"Done"（调用方 print 了返回值）</button>
           </div>
           <div class="quiz-explain" hidden>wrapper 内先打印耗时行，然后 <code>return result</code>；调用方 <code>print(slow_function())</code> 再打印返回值。所以最后一行是 <strong>"Done"</strong>——这验证了「返回值必须保留」。</div>
         </div>

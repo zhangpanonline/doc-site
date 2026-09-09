@@ -57,35 +57,35 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 一个 <code>.py</code> 文件在模块化体系中是什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">模块，模块名是去掉 .py 的文件名</button>
+            <button class="quiz-option">什么都还不是</button>
             <button class="quiz-option">包，包名是文件名</button>
             <button class="quiz-option">成员，成员名是文件名</button>
-            <button class="quiz-option">什么都还不是</button>
+            <button class="quiz-option">模块，模块名是去掉 .py 的文件名</button>
           </div>
           <div class="quiz-explain" hidden>创建 <code>.py</code> 文件就是定义模块：<code>my_math.py</code> → 模块 <code>my_math</code>。文件顶层的变量/函数/类是它的导出成员。详见「定义模块」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">2. 目录成为「包」的条件是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">目录里至少有 3 个 py 文件</button>
             <button class="quiz-option">目录中包含 __init__.py</button>
             <button class="quiz-option">目录名以大写开头</button>
-            <button class="quiz-option">目录里至少有 3 个 py 文件</button>
             <button class="quiz-option">任何目录都是包</button>
           </div>
           <div class="quiz-explain" hidden>目录含 <code>__init__.py</code> 即视为<strong>包</strong>；该文件在首次导入包时执行，可组织导出接口、做包级初始化。详见「包」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">3. <code>__all__</code> 的作用是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">控制 from 模块 import * 导入哪些成员</button>
-            <button class="quiz-option">让模块运行更快</button>
             <button class="quiz-option">限制 import 模块 的整模块导入</button>
+            <button class="quiz-option">让模块运行更快</button>
             <button class="quiz-option">声明模块的所有私有成员</button>
+            <button class="quiz-option">控制 from 模块 import * 导入哪些成员</button>
           </div>
           <div class="quiz-explain" hidden><code>__all__ = ["PI", "add"]</code> 只影响 <code>from my_math import *</code>：只有清单里的成员被导入；同时作为公开 API 的文档。整模块 <code>import my_math</code> 不受影响。详见「使用 __all__ 控制导出清单」一节。</div>
         </div>
@@ -93,24 +93,24 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 直接运行 <code>python my_math.py</code> 时，模块内 <code>__name__</code> 的值是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">"__main__"</button>
-            <button class="quiz-option">"my_math"</button>
             <button class="quiz-option">None</button>
             <button class="quiz-option">文件名全路径</button>
+            <button class="quiz-option">"my_math"</button>
+            <button class="quiz-option">"__main__"</button>
           </div>
           <div class="quiz-explain" hidden>直接运行：<code>__name__ == "__main__"</code>；被 import：<code>__name__ == "my_math"</code>。用 <code>if __name__ == "__main__":</code> 包裹测试代码。详见「模块的 __name__ 与直接运行」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">5. 相对导入 <code>from .math_ops import add</code> 的限制是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">不能用于直接运行的模块，只用于包内导入</button>
             <button class="quiz-option">不能在子包中使用</button>
-            <button class="quiz-option">只能导入兄弟模块</button>
             <button class="quiz-option">没有任何限制</button>
+            <button class="quiz-option">不能用于直接运行的模块，只用于包内导入</button>
+            <button class="quiz-option">只能导入兄弟模块</button>
           </div>
           <div class="quiz-explain" hidden>相对导入（<code>.</code> 当前包、<code>..</code> 父包）只用于<strong>包内模块被导入</strong>时；直接运行含相对导入的模块会报错。详见「相对导入」一节。</div>
         </div>
@@ -120,8 +120,8 @@
           <div class="quiz-options">
             <button class="quiz-option">一次，后续走 sys.modules 缓存</button>
             <button class="quiz-option">三次，每次重新执行</button>
-            <button class="quiz-option">两次，第三次报错</button>
             <button class="quiz-option">零次，只加载不执行</button>
+            <button class="quiz-option">两次，第三次报错</button>
           </div>
           <div class="quiz-explain" hidden>模块<strong>首次导入执行一次</strong>，之后从 <code>sys.modules</code> 缓存直接返回，不重复执行。详见「模块的执行与缓存」一节。</div>
         </div>
@@ -129,35 +129,35 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. a.py 里 <code>from b import bar</code>；b.py 里 <code>from a import foo</code>。直接运行 a.py 会怎样？</div>
           <div class="quiz-options">
-            <button class="quiz-option">ImportError：b 导入时 a 尚未定义 foo</button>
-            <button class="quiz-option">正常运行，Python 自动解决</button>
             <button class="quiz-option">死循环直到内存耗尽</button>
             <button class="quiz-option">SyntaxError</button>
+            <button class="quiz-option">ImportError：b 导入时 a 尚未定义 foo</button>
+            <button class="quiz-option">正常运行，Python 自动解决</button>
           </div>
           <div class="quiz-explain" hidden>a 执行到 <code>from b import bar</code> 时去执行 b；b 里 <code>from a import foo</code> 时 a 还没执行到定义 foo 的那行 → <strong>ImportError</strong>。解法：公共代码抽到第三个模块，或把导入延迟到函数内部。详见「循环导入问题」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">8. <code>__slots__ = ("x", "y")</code> 的类，实例化后 <code>p.z = 1</code> 会怎样？</div>
           <div class="quiz-options">
-            <button class="quiz-option">AttributeError（没有 __dict__，不能加新属性）</button>
             <button class="quiz-option">正常添加</button>
-            <button class="quiz-option">静默忽略</button>
             <button class="quiz-option">z 自动成为槽位</button>
+            <button class="quiz-option">静默忽略</button>
+            <button class="quiz-option">AttributeError（没有 __dict__，不能加新属性）</button>
           </div>
           <div class="quiz-explain" hidden><code>__slots__</code> 声明后实例<strong>没有 <code>__dict__</code></strong>，只能使用声明的槽位——<code>p.z = 1</code> 抛 AttributeError。这是省内存的代价，也是拼写错误的「报警器」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">9. 模块 M 的 <code>__all__ = ["PI", "add"]</code>，另外有公开成员 E 与 <code>_secret</code>。执行 <code>from M import *</code> 后可用的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">只有 PI 和 add（__all__ 限定清单）</button>
             <button class="quiz-option">PI、add、E（下划线成员除外）</button>
-            <button class="quiz-option">全部四个成员</button>
             <button class="quiz-option">只有 _secret</button>
+            <button class="quiz-option">只有 PI 和 add（__all__ 限定清单）</button>
+            <button class="quiz-option">全部四个成员</button>
           </div>
           <div class="quiz-explain" hidden>定义了 <code>__all__</code> 后，星号导入<strong>只按清单来</strong>：E 虽是公开成员但不在清单里也进不来；_secret 无论如何都不进。完整规则：有 __all__ 用 __all__，没有则排除下划线成员。</div>
         </div>
@@ -170,23 +170,23 @@
       <p>📣 源作业还要求<strong>费曼复述</strong>：包/模块/成员关系、<code>__all__</code> 作用、<code>__init__.py</code> 作用、模块搜索顺序——四者任选其一讲给空气（或 AI 老师）听，讲不通就回看文档。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核一（__name__ 预测）：模块 my_math.py 末尾写有 <code>if __name__ == "__main__": print(add(3, 5))</code>。以下两种用法哪种会打印 8？</div>
           <div class="quiz-options">
-            <button class="quiz-option">python my_math.py 直接运行会打印；被 import 不会打印</button>
             <button class="quiz-option">被 import 会打印；直接运行不会</button>
-            <button class="quiz-option">两种都会打印</button>
             <button class="quiz-option">两种都不打印</button>
+            <button class="quiz-option">python my_math.py 直接运行会打印；被 import 不会打印</button>
+            <button class="quiz-option">两种都会打印</button>
           </div>
           <div class="quiz-explain" hidden>直接运行时 <code>__name__ == "__main__"</code> 成立 → 打印 8；被 import 时 <code>__name__ == "my_math"</code> → 分支不进入。这是「测试代码只在自己运行时执行」的标准技巧。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核二（__all__ 预测）：my_math.py 定义 <code>__all__ = ["PI", "add"]</code>，另有两个公开成员 E、subtract。执行 <code>from my_math import *</code> 后可用的是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">只有下划线开头的成员不可用</button>
             <button class="quiz-option">只有 PI 和 add；E 与 subtract 都不可用</button>
             <button class="quiz-option">PI、add、E、subtract 全部可用</button>
-            <button class="quiz-option">只有下划线开头的成员不可用</button>
             <button class="quiz-option">E 和 subtract 可用，PI 和 add 不可用</button>
           </div>
           <div class="quiz-explain" hidden>星号导入只导入 <code>__all__</code> 清单：<strong>PI 和 add</strong>。E、subtract 虽然是公开成员，但不在清单里，星号导入进不来（仍可用 <code>from my_math import subtract</code> 显式导入）。</div>
@@ -203,13 +203,13 @@
           <div class="quiz-explain" hidden>a 执行到 <code>from b import bar</code> 时去执行 b；b 里 <code>from a import foo</code> 时 a 还没执行到定义 foo 的那行 → <strong>ImportError</strong>。解法：公共代码抽到第三个模块，或把导入延迟到函数内部。详见「循环导入问题」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核四（__slots__ 研究题）：<code>class Point: __slots__ = ("x", "y")</code>。下列说法正确的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">实例没有 __dict__，不能动态添加新属性，但更省内存</button>
             <button class="quiz-option">实例仍有 __dict__，只是不能添加新属性</button>
-            <button class="quiz-option">__slots__ 让属性访问更快但内存更大</button>
+            <button class="quiz-option">实例没有 __dict__，不能动态添加新属性，但更省内存</button>
             <button class="quiz-option">__slots__ 与普通类没有任何区别</button>
+            <button class="quiz-option">__slots__ 让属性访问更快但内存更大</button>
           </div>
           <div class="quiz-explain" hidden><code>__slots__</code> 把实例属性固定为声明的槽位：实例<strong>没有 <code>__dict__</code></strong>，<code>p.z = 1</code> 抛 AttributeError，同时每个实例不再携带字典——大量小对象时显著省内存。属性访问本身与字典类相当，好处在内存。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">

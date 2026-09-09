@@ -60,12 +60,12 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. <code>class Dog: pass</code> 的等价写法是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">Dog = type("Dog", (), {})</button>
-            <button class="quiz-option">Dog = object("Dog", (), {})</button>
             <button class="quiz-option">Dog = Dog()</button>
+            <button class="quiz-option">Dog = object("Dog", (), {})</button>
+            <button class="quiz-option">Dog = type("Dog", (), {})</button>
             <button class="quiz-option">Dog = type(Dog)</button>
           </div>
           <div class="quiz-explain" hidden><code>class</code> 语句是语法糖：收集类体命名空间后，底层调用 <code>type(类名, 父类元组, 属性字典)</code> 创建类。详见「类的创建过程」一节。</div>
@@ -76,8 +76,8 @@
           <div class="quiz-options">
             <button class="quiz-option">创建类的类，默认是 type</button>
             <button class="quiz-option">创建实例的类</button>
-            <button class="quiz-option">类的父类</button>
             <button class="quiz-option">类上的装饰器</button>
+            <button class="quiz-option">类的父类</button>
           </div>
           <div class="quiz-explain" hidden>元类是「创建类的类」：<code>type(Dog) → type</code>，默认元类就是 type。继承 type 可以自定义元类。详见「元类」与第 7 课「类型与元类」。</div>
         </div>
@@ -96,24 +96,24 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. <code>class Child(Base)</code>，Base 的元类是 MyMeta，Child 的元类是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">自动继承 MyMeta</button>
-            <button class="quiz-option">必须显式指定，否则是 type</button>
             <button class="quiz-option">无法继承，会报错</button>
             <button class="quiz-option">Child 没有元类</button>
+            <button class="quiz-option">必须显式指定，否则是 type</button>
+            <button class="quiz-option">自动继承 MyMeta</button>
           </div>
           <div class="quiz-explain" hidden>子类<strong>自动继承</strong>父类的元类：<code>type(Child) → MyMeta</code>。Plugin 插件的自动注册正是利用这一点：所有继承 Plugin 的类都会走 PluginMeta.__new__。详见「深入：元类的查找顺序」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">5. 两个父类元类不同导致冲突（TypeError），如何解决？</div>
           <div class="quiz-options">
-            <button class="quiz-option">新建同时继承两个元类的兼容元类</button>
             <button class="quiz-option">放弃多继承</button>
-            <button class="quiz-option">删除其中一个元类</button>
+            <button class="quiz-option">新建同时继承两个元类的兼容元类</button>
             <button class="quiz-option">把元类改为 object</button>
+            <button class="quiz-option">删除其中一个元类</button>
           </div>
           <div class="quiz-explain" hidden>元类冲突的解法：定义 <code>class CommonMeta(MetaA, MetaB)</code> 同时继承两个元类，再用 <code>metaclass=CommonMeta</code> 创建子类。详见「深入：元类的查找顺序」一节。</div>
         </div>
@@ -122,9 +122,9 @@
           <div class="quiz-prompt">6. 想用元类实现「单例」（拦截实例化），应该重写？</div>
           <div class="quiz-options">
             <button class="quiz-option">__call__（实例化时触发）</button>
-            <button class="quiz-option">__new__（创建类时触发一次）</button>
             <button class="quiz-option">__init__（初始化类时触发）</button>
             <button class="quiz-option">__str__</button>
+            <button class="quiz-option">__new__（创建类时触发一次）</button>
           </div>
           <div class="quiz-explain" hidden>实例化 <code>Dog()</code> 走 <code>元类.__call__</code>——单例要拦截的是「每次实例化」，所以重写 <code>__call__</code> 缓存实例。元类的 <code>__new__</code> 只在<strong>创建类</strong>时执行一次，拦不住实例化。详见「两条时间线」图。</div>
         </div>
@@ -132,35 +132,35 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 执行 <code>class Dog(metaclass=DogMeta)</code> 创建类时，<code>DogMeta.__call__</code> 会被调用吗？</div>
           <div class="quiz-options">
-            <button class="quiz-option">不会，走 type.__call__ 转调 DogMeta.__new__</button>
-            <button class="quiz-option">会，创建类前先调用一次</button>
-            <button class="quiz-option">只在之后实例化 Dog() 时调用</button>
             <button class="quiz-option">创建类与实例化时各调用一次</button>
+            <button class="quiz-option">只在之后实例化 Dog() 时调用</button>
+            <button class="quiz-option">会，创建类前先调用一次</button>
+            <button class="quiz-option">不会，走 type.__call__ 转调 DogMeta.__new__</button>
           </div>
           <div class="quiz-explain" hidden>创建类时，<code>DogMeta</code> 的类型是 type，入口是 <code>type.__call__</code>，其内部转调 <code>DogMeta.__new__</code>——<code>DogMeta.__call__</code> 此时<strong>不参与</strong>。等到 <code>Dog()</code> 实例化时，<code>type(Dog) = DogMeta</code>，<code>DogMeta.__call__</code> 才出场。详见文档「深入：DogMeta 调用协议拆解」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">8. 自动注册插件：希望「定义子类」时就注册（不要求实例化），注册代码应该放在元类的哪里？</div>
           <div class="quiz-options">
-            <button class="quiz-option">__new__ 里创建类之后</button>
             <button class="quiz-option">__call__ 里实例化时</button>
             <button class="quiz-option">__init__ 里初始化实例时</button>
             <button class="quiz-option">任何位置效果都一样</button>
+            <button class="quiz-option">__new__ 里创建类之后</button>
           </div>
           <div class="quiz-explain" hidden>定义子类触发的是元类 <code>__new__</code>（创建类），所以注册必须在 <code>__new__</code> 里、<code>super().__new__</code> <strong>之后</strong>（拿到新类再注册）。放 <code>__call__</code> 里则必须实例化才注册 ✗。详见「两条时间线」图。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">9. 单例元类里，实例缓存 <code>cls._instance</code> 应该存成什么结构，才能支持多个不同的类各自单例？</div>
           <div class="quiz-options">
-            <button class="quiz-option">字典 {cls: 实例}，按类区分</button>
+            <button class="quiz-option">集合，自动去重</button>
             <button class="quiz-option">单个变量 _instance，所有类共用一个</button>
             <button class="quiz-option">列表，按实例化顺序取</button>
-            <button class="quiz-option">集合，自动去重</button>
+            <button class="quiz-option">字典 {cls: 实例}，按类区分</button>
           </div>
           <div class="quiz-explain" hidden>元类是<strong>所有用它的类共享</strong>的：<code>_instance = {}</code> 按 <code>cls</code> 作键缓存，Database 与 Player 才能各自单例（源答案 p1.py 正是 <code>cls not in cls._instance</code>）。单变量会让所有类共享同一个实例 ✗。</div>
         </div>
@@ -207,9 +207,9 @@ print(db1.host)     # localhost</code></pre>
           <div class="quiz-prompt">考核二（作业二·自动注册）：用元类把 Plugin 的所有子类自动注册进 <code>PluginMeta.registry</code>（键为类名）。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">__new__ 创建类后，name 不是 Plugin 才注册，返回新类</button>
-            <button class="quiz-option">__new__ 中把 Plugin 自己也注册进去</button>
             <button class="quiz-option">改为在 __call__（实例化时）才注册</button>
             <button class="quiz-option">用 name.startswith("_") 作为注册条件</button>
+            <button class="quiz-option">__new__ 中把 Plugin 自己也注册进去</button>
           </div>
           <div class="quiz-explain" hidden>正确答案：在 <code>__new__</code> 里先 <code>cls = super().__new__(mcs, name, bases, namespace)</code>，再 <code>if name != "Plugin": mcs.registry[name] = cls</code>，最后 return cls。这样定义子类（不实例化）就会触发注册。第二个把 Plugin 基类也注册了 ✗；第三个要求实例化才注册 ✗；第四个条件错误，什么都注册不上 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -238,9 +238,9 @@ print(PluginMeta.registry)
           <div class="quiz-prompt">考核三（作业三·方法日志）：用元类自动为类中每个非私有方法（不以 _ 开头）加日志——调用前打印 <code>[LOG] 调用 方法名</code>。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">__new__ 遍历 namespace，对不以 _ 开头且 callable 的成员用 wrapper 包裹后替换</button>
-            <button class="quiz-option">跳过条件写成 not key.startswith("__")，把单下划线方法也包裹</button>
-            <button class="quiz-option">wrapper 里只打印日志，忘记调用原函数</button>
             <button class="quiz-option">不替换 namespace 里的函数，指望 __new__ 之后自动生效</button>
+            <button class="quiz-option">wrapper 里只打印日志，忘记调用原函数</button>
+            <button class="quiz-option">跳过条件写成 not key.startswith("__")，把单下划线方法也包裹</button>
           </div>
           <div class="quiz-explain" hidden>正确答案：在 <code>__new__</code> 创建类<strong>之前</strong>遍历 <code>namespace</code>，对 <code>not key.startswith("_") and callable(value)</code> 的成员，用打印日志再调用原函数的 wrapper <strong>替换</strong> <code>namespace[key]</code>，然后才交给 <code>super().__new__</code>。第二个把 _ 开头（私有）方法也包裹 ✗；第三个方法被吞掉 ✗；第四个不替换就没有效果 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -270,13 +270,13 @@ print(calc.add(3, 5))
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（调用协议预测）：执行 <code>class Dog(metaclass=DogMeta)</code> 创建类时，<code>DogMeta.__call__</code> 会被调用吗？</div>
           <div class="quiz-options">
-            <button class="quiz-option">不会，走 type.__call__ 转调 DogMeta.__new__</button>
+            <button class="quiz-option">创建类与实例化时各调用一次</button>
             <button class="quiz-option">会，创建类前先调用一次</button>
             <button class="quiz-option">只在之后实例化 Dog() 时调用</button>
-            <button class="quiz-option">创建类与实例化时各调用一次</button>
+            <button class="quiz-option">不会，走 type.__call__ 转调 DogMeta.__new__</button>
           </div>
           <div class="quiz-explain" hidden>创建类时，<code>DogMeta</code> 的类型是 type，入口是 <code>type.__call__</code>，其内部转调 <code>DogMeta.__new__</code>——<code>DogMeta.__call__</code> 此时<strong>不参与</strong>。等到 <code>Dog()</code> 实例化时，<code>type(Dog) = DogMeta</code>，<code>DogMeta.__call__</code> 才出场。详见文档「深入：DogMeta 调用协议拆解」。</div>
         </div>

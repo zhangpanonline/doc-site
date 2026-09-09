@@ -60,35 +60,35 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 所有类的类型（即创建类的类）是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">type（元类）</button>
-            <button class="quiz-option">object</button>
             <button class="quiz-option">类自己</button>
             <button class="quiz-option">function</button>
+            <button class="quiz-option">object</button>
+            <button class="quiz-option">type（元类）</button>
           </div>
           <div class="quiz-explain" hidden>创建类的类称为<strong>元类</strong>，默认是 <code>type</code>：<code>type(Dog) → &lt;class 'type'&gt;</code>。详见「类型与元类」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">2. <code>type(type)</code> 的结果是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">type</button>
-            <button class="quiz-option">object</button>
             <button class="quiz-option">function</button>
+            <button class="quiz-option">object</button>
+            <button class="quiz-option">type</button>
             <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>type</code> 是自己的元类：<code>type(type) → type</code>（自指）。同时 <code>type.__base__ → object</code>——type 继承自 object。详见「验证 type 与 isinstance 的关系」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">3. 类 A 中定义 <code>__a = 2</code>，外部执行 <code>A.__a</code> 会发生什么？</div>
           <div class="quiz-options">
+            <button class="quiz-option">返回 3</button>
+            <button class="quiz-option">返回 1</button>
             <button class="quiz-option">AttributeError（名称被改写）</button>
             <button class="quiz-option">返回 2</button>
-            <button class="quiz-option">返回 1</button>
-            <button class="quiz-option">返回 3</button>
           </div>
           <div class="quiz-explain" hidden>双下划线开头（且不以双下划线结尾）的 <code>__a</code> 会被改写为 <code>_A__a</code>，外部访问 <code>A.__a</code> 抛 AttributeError；访问 <code>A._A__a</code> 才能拿到 2。详见「类中的私有成员」一节。</div>
         </div>
@@ -100,31 +100,31 @@
           <div class="quiz-prompt">4. <code>isinstance(type, object)</code> 的结果是？</div>
           <div class="quiz-options">
             <button class="quiz-option">True</button>
+            <button class="quiz-option">None</button>
             <button class="quiz-option">False</button>
             <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">None</button>
           </div>
           <div class="quiz-explain" hidden>Python 3 中所有类都继承 object，type 也不例外——<code>isinstance(type, object) → True</code>。等价判断：<code>issubclass(type, object)</code> 也是 True。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">5. <code>class D(B, C)</code> 且 B、C 都继承 A，<code>D.__base__</code> 是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">B</button>
-            <button class="quiz-option">C</button>
-            <button class="quiz-option">(B, C)</button>
             <button class="quiz-option">A</button>
+            <button class="quiz-option">C</button>
+            <button class="quiz-option">B</button>
+            <button class="quiz-option">(B, C)</button>
           </div>
           <div class="quiz-explain" hidden><code>__bases__</code> 是全部直接父类 <code>(B, C)</code>；<code>__base__</code> 取其中的<strong>第一个</strong>——B。详见「MRO」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">6. 类成员（如类属性）的查找顺序是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">先自身 MRO 链条，再元类 MRO 链条</button>
-            <button class="quiz-option">先元类 MRO 链条，再自身 MRO 链条</button>
             <button class="quiz-option">只查自身的 MRO 链条</button>
             <button class="quiz-option">只查元类的 MRO 链条</button>
+            <button class="quiz-option">先自身 MRO 链条，再元类 MRO 链条</button>
+            <button class="quiz-option">先元类 MRO 链条，再自身 MRO 链条</button>
           </div>
           <div class="quiz-explain" hidden>类成员先沿<strong>自身 MRO</strong>（父类链）查找，找不到再沿<strong>元类 MRO</strong>查找。实例成员则是：自身 → 类型的 MRO 链条。详见「成员的查找顺序」一节。</div>
         </div>
@@ -132,35 +132,35 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. <code>print(type(object))</code> 的输出是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">&lt;class 'type'&gt;</button>
             <button class="quiz-option">&lt;class 'object'&gt;</button>
             <button class="quiz-option">&lt;class 'function'&gt;</button>
-            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>object 也是一个类，而所有类都由 type 创建：<code>type(object) → &lt;class 'type'&gt;</code>。object 是继承链终点，但创建它的仍是 type。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">8. <code>print(isinstance(A, A))</code>（A 是一个类）的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">False</button>
-            <button class="quiz-option">True</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">False</button>
             <button class="quiz-option">None</button>
+            <button class="quiz-option">True</button>
           </div>
           <div class="quiz-explain" hidden><code>isinstance(A, A)</code> 问「A 这个对象是 A 的实例吗」——A 是<strong>类</strong>，它的实例是 a（<code>isinstance(a, A) → True</code>）；A 本身是 type 的实例，不是 A 的实例 → <strong>False</strong>。对比：<code>issubclass(A, A)</code> 恒为 True。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">9. <code>function = type(lambda: None)</code>，<code>print(isinstance(function, function))</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">False</button>
             <button class="quiz-option">True</button>
             <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">None</button>
+            <button class="quiz-option">False</button>
           </div>
           <div class="quiz-explain" hidden><code>function</code> 类本身的类型是 <code>type</code>（所有类都由 type 创建），不是 function——<code>isinstance(function, function) → False</code>。而普通函数对象 <code>func</code> 才是 function 的实例：<code>isinstance(func, function) → True</code>。这是 demo1.py 里最容易答错的一行。</div>
         </div>
@@ -177,42 +177,42 @@
           <div class="quiz-prompt">考核一（demo1.py·type 段）：<code>print(isinstance(type, function))</code> 的输出是？（function = type(lambda: None)）</div>
           <div class="quiz-options">
             <button class="quiz-option">False</button>
-            <button class="quiz-option">True</button>
             <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">None</button>
+            <button class="quiz-option">True</button>
           </div>
           <div class="quiz-explain" hidden>type 是一个<strong>类</strong>，不是函数对象——<code>isinstance(type, function) → False</code>。虽然 type 可以像函数一样调用（type("Dog", (), {})），但它的类型是 type 而不是 function。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核二（demo1.py·object 段）：<code>print(isinstance(object, type))</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">True</button>
-            <button class="quiz-option">False</button>
-            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">None</button>
+            <button class="quiz-option">False</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>object 由 type 创建——<code>isinstance(object, type) → True</code>。继承链终点 object 也是「万物之源」type 的实例，两条链在此交汇。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（demo1.py·类与实例段）：<code>print(isinstance(a, type))</code>（a 是类 A 的实例）的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">False</button>
+            <button class="quiz-option">None</button>
             <button class="quiz-option">True</button>
             <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">None</button>
+            <button class="quiz-option">False</button>
           </div>
           <div class="quiz-explain" hidden>实例 a 是<strong>类 A</strong> 的实例，不是 type 的实例（类才是 type 的实例）——<code>isinstance(a, type) → False</code>；<code>isinstance(a, A)</code> 与 <code>isinstance(a, object)</code> 才是 True。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核四（demo1.py·function 段）：<code>print(isinstance(function, function))</code> 的输出是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">False</button>
             <button class="quiz-option">True</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">None</button>
           </div>
           <div class="quiz-explain" hidden><code>function</code> 类本身的类型是 <code>type</code>（所有类都由 type 创建），不是 function——<code>isinstance(function, function) → False</code>。而普通函数对象 <code>func</code> 才是 function 的实例：<code>isinstance(func, function) → True</code>。</div>
         </div>

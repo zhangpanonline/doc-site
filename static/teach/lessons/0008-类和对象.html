@@ -58,28 +58,28 @@
           <div class="quiz-options">
             <button class="quiz-option">通过类名修改，如 Dog.species = 新值</button>
             <button class="quiz-option">通过任一实例修改，如 dog1.species = 新值</button>
-            <button class="quiz-option">在每个实例的 __init__ 里各自修改</button>
             <button class="quiz-option">类属性创建后无法修改</button>
+            <button class="quiz-option">在每个实例的 __init__ 里各自修改</button>
           </div>
           <div class="quiz-explain" hidden>类属性存于类字典，要<strong>通过类名修改</strong>才能让所有实例共享变化。实例上赋值 <code>dog1.species = ...</code> 只会给 dog1 新建一个同名实例属性，别的实例不受影响。详见「实例属性与类属性」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">2. <code>isinstance()</code> 与 <code>type()</code> 的区别是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">两者都只认直接类型</button>
             <button class="quiz-option">isinstance 考虑继承，type 不考虑</button>
             <button class="quiz-option">type 考虑继承，isinstance 不考虑</button>
             <button class="quiz-option">两者完全相同，可以互换</button>
-            <button class="quiz-option">两者都只认直接类型</button>
           </div>
           <div class="quiz-explain" hidden><code>isinstance(dog, Animal)</code> 为 True（Dog 继承 Animal）；<code>type(dog) == Animal</code> 为 False（type 返回精确类型 Dog）。详见「isinstance()」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">3. <code>vars(dog)</code> 返回的是什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">实例自己的属性字典</button>
             <button class="quiz-option">含类属性的完整属性字典</button>
+            <button class="quiz-option">实例自己的属性字典</button>
             <button class="quiz-option">所有方法的列表</button>
             <button class="quiz-option">类字典</button>
           </div>
@@ -89,24 +89,24 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. <code>Dog.__base__</code> 返回的是什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">第一个直接父类</button>
+            <button class="quiz-option">类名的字符串</button>
             <button class="quiz-option">所有直接父类组成的元组</button>
             <button class="quiz-option">所有祖先类列表</button>
-            <button class="quiz-option">类名的字符串</button>
+            <button class="quiz-option">第一个直接父类</button>
           </div>
           <div class="quiz-explain" hidden><code>__bases__</code> 是所有直接父类<strong>元组</strong>（如 <code>(B, C)</code>），<code>__base__</code> 是其中的<strong>第一个</strong>（<code>B</code>）。详见「内置属性」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">5. 类中定义 <code>self.__password</code>，它实际存进对象字典的键是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">_BankAccount__password</button>
             <button class="quiz-option">__password</button>
-            <button class="quiz-option">password</button>
             <button class="quiz-option">_password</button>
+            <button class="quiz-option">_BankAccount__password</button>
+            <button class="quiz-option">password</button>
           </div>
           <div class="quiz-explain" hidden>双下划线开头触发<strong>名称改写</strong>：<code>__password</code> 被改写为 <code>_BankAccount__password</code>（前加类名和下划线），外部直接访问 <code>obj.__password</code> 会 AttributeError。这是约定式防护，不是真正的私有。详见「访问控制」一节。</div>
         </div>
@@ -116,8 +116,8 @@
           <div class="quiz-options">
             <button class="quiz-option">类属性自增，所有实例共享计数</button>
             <button class="quiz-option">每个实例各自维护独立的 count</button>
-            <button class="quiz-option">抛出 AttributeError</button>
             <button class="quiz-option">只影响第一个创建的实例</button>
+            <button class="quiz-option">抛出 AttributeError</button>
           </div>
           <div class="quiz-explain" hidden><code>Dog.count += 1</code> 通过类名修改<strong>类属性</strong>，每创建一个实例计数 +1，所有实例共享——这是统计实例数的标准写法。详见「类方法」一节。</div>
         </div>
@@ -129,25 +129,25 @@
           <div class="quiz-prompt">7. <code>class D(B, C)</code>，B、C 都继承 A。D 的 MRO 顺序是？</div>
           <div class="quiz-options">
             <button class="quiz-option">D → B → C → A → object</button>
-            <button class="quiz-option">D → B → A → C → A → object</button>
             <button class="quiz-option">D → A → B → C → object</button>
+            <button class="quiz-option">D → B → A → C → A → object</button>
             <button class="quiz-option">顺序取决于 B 和 C 的定义先后</button>
           </div>
           <div class="quiz-explain" hidden>菱形继承的 MRO 是 <strong>D → B → C → A → object</strong>（C3 线性化，近似广度优先）——不是直觉上的「B 走完再到 C」。A 只出现一次且在最后。详见「方法解析顺序（MRO）」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">8. MRO 为 D → B → C → A 时，B 的方法里写 <code>super().method()</code>，实际调用的是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">D 的方法</button>
             <button class="quiz-option">C 的方法（MRO 中 B 的下一个）</button>
             <button class="quiz-option">A 的方法（B 的直接父类）</button>
-            <button class="quiz-option">D 的方法</button>
             <button class="quiz-option">object 的方法</button>
           </div>
           <div class="quiz-explain" hidden><code>super()</code> 沿<strong>当前对象实例的 MRO</strong> 找当前类的下一个——B 的下一个是 C，不是直接父类 A！这是多继承 super 与直觉最大的差异点。详见「super() 在多继承中的行为」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">9. 以下代码的输出是？
 <pre><code>class Animal:
     kingdom = "Animalia"
@@ -166,10 +166,10 @@ setattr(dog, "color", "golden")
 delattr(dog, "color")
 print(hasattr(dog, "color"))</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">brown 然后 False</button>
-            <button class="quiz-option">brown 然后 True</button>
             <button class="quiz-option">golden 然后 False</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">brown 然后 True</button>
+            <button class="quiz-option">brown 然后 False</button>
           </div>
           <div class="quiz-explain" hidden>反射四连：<code>getattr</code> 键不存在返回<strong>默认值</strong> brown；<code>setattr</code> 动态加属性 golden；<code>delattr</code> 删掉它；<code>hasattr</code> 再查 → <strong>False</strong>。输出：brown → False。</div>
         </div>
@@ -181,7 +181,7 @@ print(hasattr(dog, "color"))</code></pre></div>
       <p>下面是《8.类和对象》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核一（作业一·腾讯面试题）：以下代码的输出顺序是？
 <pre><code>class Base(object):
     def __init__(self):
@@ -201,43 +201,43 @@ class C(A, B):
 
 c = C()</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">enter C → enter A → enter B → enter Base → leave Base → leave B → leave A → leave C</button>
-            <button class="quiz-option">enter C → enter A → enter Base → leave Base → leave A → enter B → enter Base → leave B → leave C</button>
             <button class="quiz-option">enter C → enter B → enter A → enter Base → leave Base → leave A → leave B → leave C</button>
             <button class="quiz-option">enter C → enter A → enter B → enter Base → leave A → leave B → leave Base → leave C</button>
+            <button class="quiz-option">enter C → enter A → enter Base → leave Base → leave A → enter B → enter Base → leave B → leave C</button>
+            <button class="quiz-option">enter C → enter A → enter B → enter Base → leave Base → leave B → leave A → leave C</button>
           </div>
           <div class="quiz-explain" hidden><code>C(A, B)</code> 的 MRO 是 C → A → B → Base。<code>C.__init__</code> 打印 enter C 后 <code>super()</code> 调到 A；A 打印 enter A 后 <code>super()</code> 沿 MRO 调到<strong>B</strong>（不是 Base！）；B 的 <code>super()</code> 才到 Base。返回时按后进先出打印 leave。完整顺序：<strong>enter C → enter A → enter B → enter Base → leave Base → leave B → leave A → leave C</strong>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核二（作业二·反射）：<code>print(type(dog1), type(Dog))</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">&lt;class 'Dog'&gt; &lt;class 'type'&gt;</button>
             <button class="quiz-option">&lt;class 'Dog'&gt; &lt;class 'Dog'&gt;</button>
             <button class="quiz-option">&lt;class 'type'&gt; &lt;class 'type'&gt;</button>
+            <button class="quiz-option">&lt;class 'Dog'&gt; &lt;class 'type'&gt;</button>
             <button class="quiz-option">&lt;class 'type'&gt; &lt;class 'Dog'&gt;</button>
           </div>
           <div class="quiz-explain" hidden><code>type(dog1)</code> 是创建实例的类 → <code>Dog</code>；<code>type(Dog)</code> 是创建类的类（元类）→ <code>type</code>。输出：<strong>&lt;class 'Dog'&gt; &lt;class 'type'&gt;</strong>。所有类的类型都是 type。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（作业二·属性字典）：<code>dog2 = Dog("Max", 5)</code> 后，<code>vars(dog2)</code> 的结果是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">{'name': 'Max', 'age': 5}</button>
-            <button class="quiz-option">{'name': 'Max', 'age': 5, 'kingdom': 'Animalia'}</button>
             <button class="quiz-option">{'name': 'Max', 'age': 5, 'count': 2, 'bark': ...}</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">{'name': 'Max', 'age': 5, 'kingdom': 'Animalia'}</button>
+            <button class="quiz-option">{'name': 'Max', 'age': 5}</button>
           </div>
           <div class="quiz-explain" hidden><code>vars(dog2)</code> 只看<strong>实例自己的</strong>字典：<code>name</code> 和 <code>age</code>。类属性 <code>kingdom</code>（继承来的）、<code>count</code>、方法 <code>bark</code> 都在类字典里，不会出现在 vars 结果中。→ <strong>{'name': 'Max', 'age': 5}</strong>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核四（作业三·链表实现）：实现 <code>LinkedList.append(value)</code>——在链表尾部添加新节点（head 为 None 时为首节点）。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">head 为空则 head=新节点；否则循环到 next 为 None 的节点后接上</button>
-            <button class="quiz-option">无条件把新节点放在头部，head 指向新节点</button>
-            <button class="quiz-option">无条件 head=新节点，旧链表被覆盖</button>
             <button class="quiz-option">循环条件写为 current.next 为空，但循环体内不移动 current</button>
+            <button class="quiz-option">head 为空则 head=新节点；否则循环到 next 为 None 的节点后接上</button>
+            <button class="quiz-option">无条件 head=新节点，旧链表被覆盖</button>
+            <button class="quiz-option">无条件把新节点放在头部，head 指向新节点</button>
           </div>
           <div class="quiz-explain" hidden>正确的 append：链表为空时 <code>head = new_node</code>；否则从 head 出发，<code>while current.next is not None</code> 走到<strong>最后一个节点</strong>，再 <code>current.next = new_node</code>。第二个是 prepend 的行为 ✗；第三个只保留最后一个 ✗；第四个是死循环 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">

@@ -58,24 +58,24 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. pip 默认从哪里下载包？</div>
           <div class="quiz-options">
+            <button class="quiz-option">Python 官网的安装包目录</button>
             <button class="quiz-option">PyPI（pypi.org）</button>
             <button class="quiz-option">GitHub 仓库</button>
-            <button class="quiz-option">Python 官网的安装包目录</button>
             <button class="quiz-option">系统自带的软件仓库</button>
           </div>
           <div class="quiz-explain" hidden>pip 从 <strong>PyPI</strong>（Python Package Index，默认源 pypi.org）下载包；网络慢可临时换镜像源 <code>-i URL</code>。详见「pip 概述」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">2. <code>pip install "requests&gt;=2.20,&lt;3.0"</code> 表示？</div>
           <div class="quiz-options">
-            <button class="quiz-option">安装 2.20 到 3.0 之间的版本</button>
             <button class="quiz-option">同时安装 2.20 和 3.0 两个版本</button>
-            <button class="quiz-option">优先装 3.0，装不上再装 2.20</button>
             <button class="quiz-option">这是非法写法</button>
+            <button class="quiz-option">安装 2.20 到 3.0 之间的版本</button>
+            <button class="quiz-option">优先装 3.0，装不上再装 2.20</button>
           </div>
           <div class="quiz-explain" hidden><code>&gt;=2.20,&lt;3.0</code> 是<strong>组合条件</strong>：版本在 [2.20, 3.0) 范围内。逗号表示「同时满足」。详见「指定版本」一节。</div>
         </div>
@@ -85,8 +85,8 @@
           <div class="quiz-options">
             <button class="quiz-option">不同项目隔离各自的依赖版本</button>
             <button class="quiz-option">加速包的下载</button>
-            <button class="quiz-option">把代码打包成 exe</button>
             <button class="quiz-option">自动生成 requirements.txt</button>
+            <button class="quiz-option">把代码打包成 exe</button>
           </div>
           <div class="quiz-explain" hidden>每个 venv 是独立的 Python 环境：项目 A 用 flask 2、项目 B 用 flask 3，互不冲突。详见「虚拟环境」一节。</div>
         </div>
@@ -98,8 +98,8 @@
           <div class="quiz-prompt">4. 把当前环境所有依赖锁定到文件，用？</div>
           <div class="quiz-options">
             <button class="quiz-option">pip freeze &gt; requirements.txt</button>
-            <button class="quiz-option">pip list &gt; requirements.txt</button>
             <button class="quiz-option">pip save requirements.txt</button>
+            <button class="quiz-option">pip list &gt; requirements.txt</button>
             <button class="quiz-option">pip export requirements.txt</button>
           </div>
           <div class="quiz-explain" hidden><code>pip freeze</code> 输出「包名==版本」清单，重定向到 <code>requirements.txt</code> 即可复现环境（<code>pip install -r</code> 恢复）。详见「依赖管理」一节。</div>
@@ -109,19 +109,19 @@
           <div class="quiz-prompt">5. <code>python -m pip install ...</code> 比直接 <code>pip install ...</code> 的好处是？</div>
           <div class="quiz-options">
             <button class="quiz-option">保证用的是当前 Python 解释器对应的 pip</button>
-            <button class="quiz-option">安装速度更快</button>
-            <button class="quiz-option">自动跳过已安装的包</button>
             <button class="quiz-option">不需要联网</button>
+            <button class="quiz-option">自动跳过已安装的包</button>
+            <button class="quiz-option">安装速度更快</button>
           </div>
           <div class="quiz-explain" hidden>多版本 Python 共存时 <code>pip</code> 可能指向别的解释器；<code>python -m pip</code> 明确用<strong>当前 python</strong> 去运行 pip 模块。详见「pip 概述」提示框。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">6. <code>pip uninstall 包名</code> 想跳过确认提示，加什么参数？</div>
           <div class="quiz-options">
-            <button class="quiz-option">-y</button>
             <button class="quiz-option">-f</button>
             <button class="quiz-option">-r</button>
+            <button class="quiz-option">-y</button>
             <button class="quiz-option">-U</button>
           </div>
           <div class="quiz-explain" hidden><code>pip uninstall -y 包名</code> 自动确认（-y = yes）；<code>-U</code> 是 install 的升级简写，别混了。详见「卸载第三方库」一节。</div>
@@ -130,35 +130,35 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 项目同时依赖 requests（HTTP）与 python-dotenv（读 .env），requirements.txt 正确内容是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">两行：requests&gt;=... 与 python-dotenv&gt;=...</button>
-            <button class="quiz-option">只写 requests，dotenv 是标准库</button>
             <button class="quiz-option">写 pip 和 python 两个包名</button>
             <button class="quiz-option">把 API 密钥也写进 requirements.txt</button>
+            <button class="quiz-option">只写 requests，dotenv 是标准库</button>
+            <button class="quiz-option">两行：requests&gt;=... 与 python-dotenv&gt;=...</button>
           </div>
           <div class="quiz-explain" hidden>两个第三方依赖都要进清单；<code>python-dotenv</code> <strong>不是标准库</strong>必须列出来。API 密钥等敏感配置放 <code>.env</code>（不进版本库），而不是 requirements.txt。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">8. 新机器上复现项目环境的正确顺序是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">pip install requirements.txt</button>
             <button class="quiz-option">建 venv → 激活 → pip install -r requirements.txt</button>
             <button class="quiz-option">先 pip freeze 再建 venv</button>
             <button class="quiz-option">直接 pip install -r（无需 venv）</button>
-            <button class="quiz-option">pip install requirements.txt</button>
           </div>
           <div class="quiz-explain" hidden>标准复现流程：<code>python -m venv .venv</code> → <code>source .venv/bin/activate</code> → <code>pip install -r requirements.txt</code>。顺序不能乱：先隔离环境再装依赖，避免污染全局。详见「使用 venv 管理项目依赖」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">9. <code>pip freeze</code> 输出的清单与手写的 requirements.txt 有什么区别？</div>
           <div class="quiz-options">
-            <button class="quiz-option">freeze 是全部依赖的精确版本快照；手写可只列直接依赖+范围</button>
-            <button class="quiz-option">两者完全一样</button>
             <button class="quiz-option">freeze 只输出直接依赖</button>
             <button class="quiz-option">手写清单无法使用版本范围</button>
+            <button class="quiz-option">freeze 是全部依赖的精确版本快照；手写可只列直接依赖+范围</button>
+            <button class="quiz-option">两者完全一样</button>
           </div>
           <div class="quiz-explain" hidden><code>pip freeze</code> 是「当前环境的<strong>完整快照</strong>」——所有已装包（含传递依赖）的精确版本；手写清单通常只列<strong>直接依赖</strong>并可用范围约束。工程实践：手写直接依赖、用 freeze 或锁文件锁定完整版本。</div>
         </div>
@@ -170,13 +170,13 @@
       <p>下面是《23.第三方库》源课程作业（实现命令行 AI 聊天工具）的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核一（聊天主循环）：终端聊天工具要求——循环读输入；<code>/exit</code> 退出；空输入跳过；每轮把用户消息发给 AI，再把 AI 回复记回消息历史。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">while True：/exit 则 break；空输入 continue；append 用户消息、请求后 append AI 回复</button>
-            <button class="quiz-option">只用 for 循环读三次输入就退出</button>
-            <button class="quiz-option">/exit 判断放在消息 append 之后</button>
             <button class="quiz-option">AI 回复不写回 messages，每次都无上下文</button>
+            <button class="quiz-option">/exit 判断放在消息 append 之后</button>
+            <button class="quiz-option">只用 for 循环读三次输入就退出</button>
+            <button class="quiz-option">while True：/exit 则 break；空输入 continue；append 用户消息、请求后 append AI 回复</button>
           </div>
           <div class="quiz-explain" hidden>正确结构：<code>while True</code> 读输入 → <code>/exit</code> break → 空输入 <code>continue</code> → <code>messages.append({"role": "user", ...})</code> → 请求 → <code>messages.append({"role": "assistant", ...})</code>（多轮对话靠历史上下文）。第二个三次就结束 ✗；第三个退出词也会发给 AI ✗；第四个没有对话记忆 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -203,35 +203,35 @@
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核二（流式输出）：AI 回复是逐块到达的生成器，要「边到边打印」。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">for content in stream：print(content, end="", flush=True) 并累积 full_content</button>
             <button class="quiz-option">先 list(stream) 全部收完，再一次性 print</button>
-            <button class="quiz-option">print(content, end="") 但不加 flush=True</button>
             <button class="quiz-option">每块都 print(content)（默认换行）</button>
+            <button class="quiz-option">for content in stream：print(content, end="", flush=True) 并累积 full_content</button>
+            <button class="quiz-option">print(content, end="") 但不加 flush=True</button>
           </div>
           <div class="quiz-explain" hidden>流式输出要点：<code>print(content, end="", flush=True)</code>——<code>end=""</code> 不换行拼成一句话，<code>flush=True</code> 立即刷出（否则终端缓冲，看不到「边到边」）。第二个失去流式体验 ✗；第三个可能被缓冲 ✗；第四个每块一行 ✗。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（依赖清单）：该聊天工具用了 requests（发 HTTP 请求）与 python-dotenv（读 .env 配置），requirements.txt 应为？</div>
           <div class="quiz-options">
-            <button class="quiz-option">requests&gt;=2.31.0 与 python-dotenv&gt;=1.0.0 两行</button>
-            <button class="quiz-option">只写 requests 一行，dotenv 是标准库</button>
-            <button class="quiz-option">写 pip 与 python 两个包名</button>
             <button class="quiz-option">不需要 requirements.txt</button>
+            <button class="quiz-option">写 pip 与 python 两个包名</button>
+            <button class="quiz-option">只写 requests 一行，dotenv 是标准库</button>
+            <button class="quiz-option">requests&gt;=2.31.0 与 python-dotenv&gt;=1.0.0 两行</button>
           </div>
           <div class="quiz-explain" hidden>两个第三方依赖都要进清单：<code>requests&gt;=2.31.0</code> 与 <code>python-dotenv&gt;=1.0.0</code>（dotenv <strong>不是</strong>标准库）。api 密钥等敏感配置放 <code>.env</code>，不进 git。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核四（SSE 解析）：逐行解析流式响应——行格式为 <code>data: {...}</code>，遇到 <code>data: [DONE]</code> 结束，JSON 解析失败要跳过该行。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">JSON 解析失败直接让程序崩溃</button>
             <button class="quiz-option">跳过非 data: 行；[DONE] 则 break；解析异常 try/except 后 continue</button>
             <button class="quiz-option">不判断 data: 前缀，每行都当 JSON 解析</button>
             <button class="quiz-option">遇到 [DONE] 不 break，继续读到超时</button>
-            <button class="quiz-option">JSON 解析失败直接让程序崩溃</button>
           </div>
           <div class="quiz-explain" hidden>正确解析三步：<code>if not text.startswith("data: "): continue</code> → 去掉前缀后 <code>[DONE]</code> 则 <code>break</code> → <code>json.loads</code> 包 try/except 跳过坏行。第二个把心跳行（如 <code>: ping</code>）当 JSON 会崩 ✗；第三个多等一轮 ✗；第四个一个坏块就崩溃 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
