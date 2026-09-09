@@ -63,7 +63,7 @@
   --ifm-heading-font-family: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "STSong", Georgia, "Times New Roman", serif;
   --ifm-font-family-monospace: "LXGW WenKai Mono GB Screen", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "JetBrains Mono", "Courier New", monospace;
   --ifm-code-font-size: calc(95% + 1px); /* 在默认 95% 基础上再大 1px，手写体更易读 */
-  --ifm-pre-line-height: 1.75;
+  --ifm-pre-line-height: 1.8; /* 手写笔记的宽松行距 */
   --docusaurus-highlighted-code-line-bg: rgba(157, 59, 44, 0.08);
 
   /* ===== 滚动条：墨色淡描 ===== */
@@ -165,13 +165,45 @@
   border-right: 2px solid var(--course-accent);
 }
 
-/* ===== 代码块：纸底 + 纸纹边 ===== */
+/* ===== 代码块：手写笔记纸面——纸底 + 纸纹边 + 纸纹颗粒 + 轻抬纸影 ===== */
 .theme-code-block {
+  position: relative;
   border: 1px solid var(--course-border);
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(45, 41, 38, 0.06), 0 6px 18px rgba(45, 41, 38, 0.07);
+}
+/* 纸张颗粒：细噪点蒙层（仅亮色），带出真实纸张的纤维感 */
+.theme-code-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme='dark'] .theme-code-block {
+  box-shadow: none; /* 深夜蓝墨：保持平面感 */
+}
+[data-theme='dark'] .theme-code-block::after {
+  display: none; /* 纸张颗粒只在亮色纸面有意义 */
 }
 .theme-code-block pre {
   background-color: var(--course-code-bg);
+}
+
+/* 高亮行：朱批墨线，像批注时划下的记号 */
+.theme-code-block-highlighted-line {
+  position: relative;
+}
+.theme-code-block-highlighted-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--course-accent);
 }
 
 /* 文字选区：朱批洗染，与纸墨世界一致 */
