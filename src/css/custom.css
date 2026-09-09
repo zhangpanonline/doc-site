@@ -711,8 +711,9 @@
 html.immersive .navbar {
   display: none;
 }
+/* 侧栏用 visibility 隐藏：保留占位宽度，文档内容位置完全不动 */
 html.immersive .theme-doc-sidebar-container {
-  display: none;
+  visibility: hidden;
 }
 .immersive-toggle {
   position: fixed;

@@ -219,7 +219,7 @@
       </div>
     </section>
 
-            <section>
+                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -275,11 +275,33 @@ SELECT * FROM orders WHERE user_id = 1 ORDER BY created_at DESC LIMIT 20;</code>
               },
               source: '任务基于《06.索引》课程知识点 · 来源层级：一手（PostgreSQL 官方文档 EXPLAIN 章节）场景化',
               breakdown: `思路：先 <code>EXPLAIN (ANALYZE, BUFFERS)</code> 看计划与代价；对照 WHERE/ORDER BY 检查最左前缀、列上是否有函数/运算/类型转换、是否左模糊；修正后再次 EXPLAIN 对比。坑：统计信息过期时计划可能仍不走索引——先 <code>ANALYZE orders;</code> 再验证。`,
-            },
-          ],
+            }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `登录查询是 <code>WHERE lower(email) = ?</code>——email 上的普通索引用不上（对列做了函数运算）。官方文档给的解法是什么？UNIQUE 表达式索引还能多约束什么？`,
+    source: '来源：PostgreSQL 官方文档 11.7「Indexes on Expressions」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>表达式索引</strong>：<code>CREATE INDEX ON users (lower(email))</code>——索引建在函数结果上，查询里的 lower(email) 直接命中。声明 <code>UNIQUE</code> 后还能防「大小写不同但业务上重复」的行（<code>User@x.com</code> 与 <code>user@x.com</code> 无法并存）——普通唯一约束做不到这点。文档原句：「indexes on expressions can be used to enforce constraints that are not definable as simple unique constraints」。`,
+  },
+  {
+    type: 'design',
+    level: '高级岗常问',
+    prompt: `产品要求「邮箱大小写不敏感 + 唯一」。候选方案：① lower(email) 表达式索引；② citext 类型；③ 应用层统一小写。你选哪个？依据是什么？`,
+    source: '来源：PostgreSQL 官方文档 11.7「Indexes on Expressions」（大小写不敏感查询场景）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `① <strong>表达式索引</strong>：不改列类型、存量数据不动，查询处写 lower(email) 即可命中——<strong>侵入最小</strong>，首选；② <strong>citext</strong>：列类型换成大小写不敏感文本，查询零改动，但改类型要迁移数据、扩展依赖；③ 应用层统一：最弱——历史数据/多入口（API、后台、导入脚本）总有一处漏小写。结论：默认 ①，类型可控的新表可选 ②，③ 只做最后兜底不依赖。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
 
 
 

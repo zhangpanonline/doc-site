@@ -304,7 +304,7 @@ def merge_dicts(*dicts):
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握函数的参数与返回值——可以继续学习《<a href="/agents/python/作用域/">4.作用域</a>》了。</p>
     </section>
 
-                        <section>
+                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -365,11 +365,30 @@ print(fetch_data.__name__, fetch_data.__doc__)</code></pre>`,
     },
     source: '任务基于《5.函数》课程知识点（装饰器小节）· 来源层级：一手（Python 官方文档 functools 章节）场景化',
     breakdown: `思路：外层 <code>def retry(times, delay)</code> 返回装饰器；wrapper 里 for 循环 + try/except + time.sleep(delay)；耗尽后 raise 最后一次异常；记得 <code>@functools.wraps(fn)</code>。坑：只捕获目标异常（如 ConnectionError），别吞 KeyboardInterrupt 或参数类型错误；delay 要可配置为 0 方便测试。`,
+  }, {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码想生成一组「各自加 1」的函数，结果全部返回 2：
+<pre><code>funcs = [lambda: i for i in range(3)]
+print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
+为什么三个 lambda 记住了同一个 i？怎么修复？`,
+    source: '来源：Python 官方文档 FAQ「Why do lambdas defined in a loop with different values all return the same result?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>晚绑定</strong>：闭包捕获的是<strong>变量本身</strong>（不是定义时的值）——三个 lambda 共享同一个 i 的引用，循环结束后 i=2，调用时全部读 2。修复：用默认参数做<strong>值快照</strong> <code>lambda i=i: i</code>（定义时求值），或用 functools.partial。这是官方 FAQ 原题，AI 生成「循环里造回调」代码时的头号坑。`,
   },
-],
+  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `写一个「API 日志外壳」：包装任意函数、参数全部透传，以后被包装函数新增参数也不改外壳。官方 FAQ 推荐的写法是什么？`,
+    source: '来源：Python 官方文档 FAQ「How can I pass optional or keyword parameters from one function to another?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>def wrapper(*args, **kwargs): ...; return fn(*args, **kwargs)</code>——用 * 与 ** 在调用侧<strong>解包透传</strong>，外壳与真实签名解耦。这正是装饰器/工具注册表（Agent 工具统一日志、限流外壳）的标准写法；FAQ 同时提醒：参数是「参数」，调用时传的是「实参」，两者术语别混。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
 
 
 

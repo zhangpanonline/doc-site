@@ -19,13 +19,74 @@ INTRO = (
 
 
 def make_questions(lesson, questions):
-    """把题组渲染成内嵌数据脚本（window.__interview）。"""
+    """把题组渲染成内嵌数据脚本（window.__interview）；EXTRA 里的 B 路线补题追加到组尾。"""
+    extra = EXTRA.get(lesson)
+    if extra:
+        # questions 以 ']' 结尾：剥掉 ']' 与最后一个对象的尾逗号，再拼接追加题
+        inner = questions.rstrip()[:-1].rstrip()
+        if inner.endswith(','):
+            inner = inner[:-1]
+        questions = inner + ', ' + extra.strip() + ']'
     return ('      <script>\n'
             f'        window.__interview = {{\n'
             f'          lesson: {lesson!r},\n'
             f'          questions: {questions},\n'
             '        };\n'
             '      </script>')
+
+
+# 题源协议 B 补题：新题必须来自实际检索的来源（链接 + 检索日期 + 层级）。
+# 追加到对应课程的题组尾部（key = lesson 键）。
+EXTRA = {
+    '0005-函数': r'''  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码想生成一组「各自加 1」的函数，结果全部返回 2：
+<pre><code>funcs = [lambda: i for i in range(3)]
+print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
+为什么三个 lambda 记住了同一个 i？怎么修复？`,
+    source: '来源：Python 官方文档 FAQ「Why do lambdas defined in a loop with different values all return the same result?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>晚绑定</strong>：闭包捕获的是<strong>变量本身</strong>（不是定义时的值）——三个 lambda 共享同一个 i 的引用，循环结束后 i=2，调用时全部读 2。修复：用默认参数做<strong>值快照</strong> <code>lambda i=i: i</code>（定义时求值），或用 functools.partial。这是官方 FAQ 原题，AI 生成「循环里造回调」代码时的头号坑。`,
+  },
+  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `写一个「API 日志外壳」：包装任意函数、参数全部透传，以后被包装函数新增参数也不改外壳。官方 FAQ 推荐的写法是什么？`,
+    source: '来源：Python 官方文档 FAQ「How can I pass optional or keyword parameters from one function to another?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>def wrapper(*args, **kwargs): ...; return fn(*args, **kwargs)</code>——用 * 与 ** 在调用侧<strong>解包透传</strong>，外壳与真实签名解耦。这正是装饰器/工具注册表（Agent 工具统一日志、限流外壳）的标准写法；FAQ 同时提醒：参数是「参数」，调用时传的是「实参」，两者术语别混。`,
+  },
+''',
+    '0008-类和对象': r'''  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的类里有 <code>def __secret(self)</code>，你发现外部居然能 <code>obj._A__secret()</code> 调到它。双下划线开头到底发生了什么？它是「私有」吗？`,
+    source: '来源：Python 官方文档 FAQ「private names / name mangling」条目 + datamodel 名称改写规范 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>名称改写</strong>：<code>__spam</code>（至少两个前导下划线、最多一个尾部）在类体内被文本替换为 <code>_classname__spam</code>。目的不是安全（官方 FAQ 明说「Python programmers never bother to use private variable names」），而是<strong>防止子类无意覆盖</strong>：B(A) 里再写 __spam 会变成 _B__spam，碰不到 A 的。结论：防手滑用 __、真需要私有靠约定（单下划线）。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 把「文件句柄清理」写进了 <code>__del__</code>，结果句柄迟迟不关。审查：del 语句和 __del__ 是什么关系？为什么不推荐用 __del__ 做资源清理？`,
+    source: '来源：Python 官方文档 FAQ「My class defines __del__ but it is not called when I delete the object」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>del x</code> 只是<strong>减引用计数</strong>——计数归零时 __del__ 才被调用；若有循环引用（子节点存父引用），计数永不归零，只能等 GC 的<strong>不定时</strong>回收。所以 __del__ 的调用时机<strong>不可预测</strong>，不适合做资源清理。正确：with / contextmanager / 显式 close()。AI 生成代码把「销毁即清理」当 C++ 析构来用是经典错位。`,
+  },
+''',
+    'db-0006-索引': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `登录查询是 <code>WHERE lower(email) = ?</code>——email 上的普通索引用不上（对列做了函数运算）。官方文档给的解法是什么？UNIQUE 表达式索引还能多约束什么？`,
+    source: '来源：PostgreSQL 官方文档 11.7「Indexes on Expressions」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>表达式索引</strong>：<code>CREATE INDEX ON users (lower(email))</code>——索引建在函数结果上，查询里的 lower(email) 直接命中。声明 <code>UNIQUE</code> 后还能防「大小写不同但业务上重复」的行（<code>User@x.com</code> 与 <code>user@x.com</code> 无法并存）——普通唯一约束做不到这点。文档原句：「indexes on expressions can be used to enforce constraints that are not definable as simple unique constraints」。`,
+  },
+  {
+    type: 'design',
+    level: '高级岗常问',
+    prompt: `产品要求「邮箱大小写不敏感 + 唯一」。候选方案：① lower(email) 表达式索引；② citext 类型；③ 应用层统一小写。你选哪个？依据是什么？`,
+    source: '来源：PostgreSQL 官方文档 11.7「Indexes on Expressions」（大小写不敏感查询场景）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `① <strong>表达式索引</strong>：不改列类型、存量数据不动，查询处写 lower(email) 即可命中——<strong>侵入最小</strong>，首选；② <strong>citext</strong>：列类型换成大小写不敏感文本，查询零改动，但改类型要迁移数据、扩展依赖；③ 应用层统一：最弱——历史数据/多入口（API、后台、导入脚本）总有一处漏小写。结论：默认 ①，类型可控的新表可选 ②，③ 只做最后兜底不依赖。`,
+  },
+''',
+}
 
 
 LESSONS = [

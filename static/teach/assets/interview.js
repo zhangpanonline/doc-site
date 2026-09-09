@@ -36,11 +36,11 @@
 
 (function () {
   const TYPE_META = {
-    trap: {emoji: '🕳️', label: '陷阱'},
-    mechanism: {emoji: '⚙️', label: '机制'},
-    review: {emoji: '🩺', label: '代码审查排错'},
-    design: {emoji: '🏗️', label: '设计选型'},
-    scenario: {emoji: '🤖', label: 'AI 辅助场景'},
+    trap: {emoji: '🕳️', label: '陷阱', rank: 0},
+    mechanism: {emoji: '⚙️', label: '机制', rank: 1},
+    review: {emoji: '🩺', label: '代码审查排错', rank: 2},
+    design: {emoji: '🏗️', label: '设计选型', rank: 3},
+    scenario: {emoji: '🤖', label: 'AI 辅助场景', rank: 4},
   };
 
   const storageKey = (lesson, idx) => `interview-answer:${lesson}:${idx}`;
@@ -54,6 +54,12 @@
   function initInterview(launchBtn) {
     const data = window.__interview;
     if (!data || !Array.isArray(data.questions) || !data.questions.length) return;
+
+    // 展示顺序固定：陷阱 → 机制 → 审查排错 → 设计选型 → AI 辅助场景（同类保持原有先后）
+    data.questions = data.questions
+      .map((q, i) => ({q, i}))
+      .sort((a, b) => ((TYPE_META[a.q.type]?.rank ?? 9) - (TYPE_META[b.q.type]?.rank ?? 9)) || (a.i - b.i))
+      .map(x => x.q);
 
     let current = 0;      // 当前题序号（关闭重开不重置）
     let revealed = false; // 当前题是否已核对

@@ -286,7 +286,7 @@ class LinkedList:
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握类与对象的核心机制——可以继续学习《<a href="/agents/python/对象的类型/">7.对象的类型</a>》了。</p>
     </section>
 
-                        <section>
+                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -356,11 +356,27 @@ class Duck(Flyer, Swimmer):
               },
               source: '任务基于《8.类和对象》课程知识点（反射工具小节）· 来源层级：一手（Python 官方文档 inspect 模块）场景化',
               breakdown: `思路：<code>cls.__mro__</code> 拿 MRO；遍历 <code>cls.__dict__</code>，用 <code>isinstance(v, classmethod)</code> / <code>isinstance(v, staticmethod)</code> / <code>types.FunctionType</code> 区分三种方法；isinstance/issubclass 直接调用即可。坑：判断「实例方法」时别在实例上 hasattr（会踩类属性共享的幽灵），在类字典上分类才干净。`,
-            },
-          ],
+            }, {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的类里有 <code>def __secret(self)</code>，你发现外部居然能 <code>obj._A__secret()</code> 调到它。双下划线开头到底发生了什么？它是「私有」吗？`,
+    source: '来源：Python 官方文档 FAQ「private names / name mangling」条目 + datamodel 名称改写规范 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>名称改写</strong>：<code>__spam</code>（至少两个前导下划线、最多一个尾部）在类体内被文本替换为 <code>_classname__spam</code>。目的不是安全（官方 FAQ 明说「Python programmers never bother to use private variable names」），而是<strong>防止子类无意覆盖</strong>：B(A) 里再写 __spam 会变成 _B__spam，碰不到 A 的。结论：防手滑用 __、真需要私有靠约定（单下划线）。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 把「文件句柄清理」写进了 <code>__del__</code>，结果句柄迟迟不关。审查：del 语句和 __del__ 是什么关系？为什么不推荐用 __del__ 做资源清理？`,
+    source: '来源：Python 官方文档 FAQ「My class defines __del__ but it is not called when I delete the object」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>del x</code> 只是<strong>减引用计数</strong>——计数归零时 __del__ 才被调用；若有循环引用（子节点存父引用），计数永不归零，只能等 GC 的<strong>不定时</strong>回收。所以 __del__ 的调用时机<strong>不可预测</strong>，不适合做资源清理。正确：with / contextmanager / 显式 close()。AI 生成代码把「销毁即清理」当 C++ 析构来用是经典错位。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
 
 
 
