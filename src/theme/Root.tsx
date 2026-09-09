@@ -76,11 +76,37 @@ function ProgressRecorder(): React.JSX.Element | null {
   return null;
 }
 
+/**
+ * 访问埋点：每次页面浏览（含 SPA 路由切换）POST /api/track 记录一条访问。
+ * IP 与地区由 Vercel 函数从请求头读取；本地 dev 等请求失败时静默忽略。
+ */
+function VisitTracker(): null {
+  const {pathname} = useLocation();
+
+  useEffect(() => {
+    try {
+      fetch('/api/track', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({path: pathname}),
+        keepalive: true,
+      }).catch(() => {
+        // 上报失败（本地 dev / 网络波动）不影响阅读
+      });
+    } catch {
+      // fetch 不可用时静默跳过
+    }
+  }, [pathname]);
+
+  return null;
+}
+
 export default function Root({children}: {children: React.ReactNode}): React.JSX.Element {
   return (
     <OriginalRoot>
       <ProgressRecorder />
       <ImmersiveToggle />
+      <VisitTracker />
       {children}
     </OriginalRoot>
   );
