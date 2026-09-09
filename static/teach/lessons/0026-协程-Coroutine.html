@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="配合《26.协程 Coroutine》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（gather/Event + demo 内嵌）+ 真实面试题">
   <title>协程 Coroutine · 互动教学课程（第 26 节）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
 </head>
 <body>
@@ -13,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 24 课</p>
       <h1>协程 Coroutine</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/协程 Coroutine/">24.协程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/协程 Coroutine/">24.协程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -316,85 +317,62 @@ async def test():
       <p style="margin-top:1.2rem">三道考核全部答对，说明你已经把协程、Task、Future 串成了整体——可以继续学习《<a href="/agents/python/异步编程/">25.异步编程</a>》了。</p>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（async/await 原理·必问）：<code>async</code> 与 <code>await</code> 关键字的作用？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">async 定义协程函数；await 暂停当前协程等待异步操作完成</button>
-            <button class="quiz-option">async 创建线程；await 等待线程结束</button>
-            <button class="quiz-option">async 修饰普通函数；await 是 return 的别名</button>
-            <button class="quiz-option">两者都是装饰器</button>
-          </div>
-          <div class="quiz-explain" hidden><code>async</code>：定义协程函数，调用后返回协程对象但<strong>不立即执行</strong>，必须由 await 或事件循环调度；<code>await</code>：暂停当前协程等待异步操作完成（只能在 async 函数内使用），等待期间让出执行权——协作式调度的核心。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（协程竞态·高频追问）：单线程的协程也会有竞态条件吗？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">会：await 处切换，读写共享变量被打断仍会出错</button>
-            <button class="quiz-option">不会，单线程天然安全</button>
-            <button class="quiz-option">只有多线程才有竞态</button>
-            <button class="quiz-option">协程有 GIL 保护，不会出错</button>
-          </div>
-          <div class="quiz-explain" hidden><strong>协程也会有竞态</strong>：协程在 <code>await</code> 处切换，若「读共享变量 → await → 写共享变量」被打断，多个协程交错修改共享数据仍会出错（如第 25 课的 Lock 示例）。单线程只是「不会同时执行」，不是「不会交错」。<a href="https://cloud.tencent.com/developer/article/2409986">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（嵌套 run·深水区）：在已运行的事件循环里（协程内）再调 <code>asyncio.run(...)</code> 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">RuntimeError：不能从正在运行的循环中调用</button>
-            <button class="quiz-option">正常运行，内部创建新循环</button>
-            <button class="quiz-option">自动复用当前循环</button>
-            <button class="quiz-option">静默忽略嵌套调用</button>
-          </div>
-          <div class="quiz-explain" hidden><code>asyncio.run</code> 被设计为<strong>同步代码的唯一顶层入口</strong>：协程内（或任何循环运行中）再调它抛 <strong>RuntimeError: asyncio.run() cannot be called from a running event loop</strong>。协程内要并发用 <code>await</code> 或 <code>create_task</code>——这是异步新人必踩的坑。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处：Runebook（Python 官方文档中文版）</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（GC 风险·深水区）：<code>asyncio.create_task(coro())</code> 的返回值不保存会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">任务可能被垃圾回收，协程没跑完就消失</button>
-            <button class="quiz-option">完全没有影响</button>
-            <button class="quiz-option">任务会自动被永久保留</button>
-            <button class="quiz-option">抛出异常提醒</button>
-          </div>
-          <div class="quiz-explain" hidden>事件循环只对 Task 保持<strong>弱引用</strong>：不保存返回值的 Task 可能在完成前被<strong>垃圾回收</strong>（后台任务「消失」）。官方文档明确要求：create_task 的结果一定要存进变量（并适时 await/gather）。这是并发编程的经典静默坑。<a href="https://runebook.dev/en/docs/python/library/asyncio-task/creating-tasks">出处：Runebook（Python 官方文档中文版）</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（协程归宿·机制）：协程对象的三种合法归宿是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">被 await、被 create_task 调度、被 close 关闭</button>
-            <button class="quiz-option">只能被 await，没有其他方式</button>
-            <button class="quiz-option">只能被 create_task 调度</button>
-            <button class="quiz-option">创建后自动运行</button>
-          </div>
-          <div class="quiz-explain" hidden>协程对象只有三种合法命运：<strong>被 await</strong>、<strong>被 create_task 调度</strong>、<strong>被 close() 关闭</strong>——三者都不是就触发 <code>RuntimeWarning: coroutine was never awaited</code>（debug 模式更明显）。这是「忘记 await」的官方判定标准。<a href="https://runebook.dev/en/docs/python/library/asyncio-task/creating-tasks">出处同面试题四</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（阻塞传导·机制）：协程 A 中调用了同步阻塞函数（如 <code>time.sleep(5)</code>），整个事件循环会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">全部任务卡住 5 秒（单线程被阻塞）</button>
-            <button class="quiz-option">其他协程照常运行</button>
-            <button class="quiz-option">阻塞函数自动转成异步</button>
-            <button class="quiz-option">抛异常中断循环</button>
-          </div>
-          <div class="quiz-explain" hidden>事件循环是<strong>单线程</strong>的：任何协程里的同步阻塞（time.sleep、同步网络请求）都会卡住整个循环，所有任务暂停 5 秒——阻塞具有「传导性」。规范：<code>await asyncio.sleep</code> 或 <code>await asyncio.to_thread(阻塞函数)</code>。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处同面试题三</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0026-协程-Coroutine',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `<code>async def f()</code> 只是定义。调用 <code>f()</code> 而不 await、也不交给循环，会发生什么？协程对象的生命周期是怎样的？`,
+    source: '考点来源：腾讯云「Python 并发编程模型」（async/await 原理题）· 场景改写',
+    breakdown: `调用 async 函数返回一个<strong>协程对象</strong>——<strong>一行都不会执行</strong>，直到它被 await（或被包装进 Task 交给循环）。裸调用不 await：Python 打 <code>RuntimeWarning: coroutine was never awaited</code>，函数体从未运行。AI 生成代码时「调了没 await」是 asyncio 头号低级错误，审查时看到 async 函数被裸调用就报警。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `单线程的协程也会有竞态条件吗？给一个具体例子。`,
+    source: '考点来源：腾讯云「Python 并发编程模型」（协程竞态题）· 场景改写',
+    breakdown: `<strong>会</strong>——没有 GIL 竞争，但有<strong>逻辑竞态</strong>：两个协程在 await 之间读写共享状态，交错执行。经典例子：<code>if balance >= amount: await 扣款()</code> 两个协程同时通过判断、双花扣款。没有 await 的代码段是原子的，但一旦 await 让出，回来时世界可能已经变了。修复：检查与修改放在同一段无 await 代码里，或用 asyncio.Lock。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码在协程里又调了 <code>asyncio.run()</code>，运行时报 <code>RuntimeError: asyncio.run() cannot be called from a running event loop</code>。审查并修复：
+<pre><code>async def fetch():
+    # AI 写的小工具函数内部
+    return asyncio.run(do_http())   # ？</code></pre>`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（嵌套 run 题）· 场景改写',
+    breakdown: `<code>asyncio.run()</code> 是「创建新循环并运行到结束」的<strong>入口函数</strong>——在一个循环里再 run 必然冲突。修复：协程内<strong>直接 await</strong>（<code>await do_http()</code>）；如果调用的是同步函数（requests 之类）则 <code>run_in_executor</code>。AI 生成「工具函数内部自带 asyncio.run」是最常见的复用性 bug——入口只能有一个。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `协程 A 中调用了同步阻塞函数（如 requests.get），对同一循环里的其他协程有什么影响？如何设计才能不传染？`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（阻塞传导题）· 场景改写',
+    breakdown: `<strong>阻塞会传导给所有人</strong>：单线程循环卡死，其他协程（包括用户的健康检查、心跳）全部停摆——一条慢请求拖垮整个服务。设计原则：协程内<strong>禁止同步阻塞调用</strong>；必须用时 <code>run_in_executor</code> 隔离到线程池，或把阻塞调用封装成「异步外观」的适配层（同步实现 + 异步包装），让上层代码永远只看见 await。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个协程版限流批量请求器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '对 20 个任务按「每批最多 5 个并发」分批执行；单任务失败不影响同批其他任务；模拟一次阻塞调用并正确放进 run_in_executor；全部结束后给出成败统计。',
+      accept: ['并发上限 5 生效（asyncio.Semaphore）', '失败隔离且统计正确', '阻塞调用经 run_in_executor 执行、不卡住其他任务'],
+    },
+    source: '任务基于《26.协程-Coroutine》课程知识点 · 场景化',
+    breakdown: `思路：<code>sem = asyncio.Semaphore(5)</code>，任务内 <code>async with sem:</code> 限流；失败逐任务捕获；阻塞函数 <code>await loop.run_in_executor(None, sync_work)</code>。坑：Semaphore 要在<strong>任务内</strong>获取（gather 前批量 acquire 会把并发上限变成 0）；executor 默认线程池，CPU 密集要传进程池。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -412,5 +390,6 @@ async def test():
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

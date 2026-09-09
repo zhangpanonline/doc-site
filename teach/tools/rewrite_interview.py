@@ -946,6 +946,190 @@ def save(dir, name):
     breakdown: `思路：<code>for p in Path(root).rglob('*.py'): if re.search(r'_test\\.py$', p.name)</code> 过滤；<code>p.read_text(encoding='utf-8').count('\\n')</code> 行数；结果 sorted。坑：read_text 记得 encoding（陷阱题同款）；二进制/大文件用迭代计数而不是整读。`,
   },
 ]'''),
+    # ——— 第六批 ———
+    ('0023-第三方库.html', '巩固与延伸', '0023-第三方库', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 让你直接 <code>pip install xxx</code> 装到系统 Python。审查：项目依赖管理的正确工作流是什么？为什么必须先建虚拟环境？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（依赖管理工作流题）· 场景改写',
+    breakdown: `正确工作流：<strong>建 venv（每项目一个）→ 激活 → pip install → 记录依赖到 requirements.txt → 锁版本</strong>。不建 venv 直接装全局：多个项目依赖互相污染、版本冲突无法隔离、系统 Python 被第三方包搞坏（macOS/服务器都踩过）。AI 给的安装命令默认没 venv，是新手项目事故的头号来源。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `<code>requirements.txt</code> 里的 <code>==</code>、<code>>=</code>、<code>~=</code> 各是什么意思？写「范围」有什么风险？`,
+    source: '考点来源：pip 官方文档 Requirement Specifiers · 场景改写',
+    breakdown: `<code>==</code> 精确版本；<code>>=</code> 下限不限上限（未来大版本可能不兼容）；<code>~=</code> 兼容版本（<code>~=1.4.2</code> == >=1.4.2, <1.5.0——允许补丁/次版本升级、禁止主版本跳变）。风险：范围过大时「今天能装、半年后装出来行为不同」——部署不可复现，生产环境必须锁死。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 装了两个库：库 A 依赖 X==1.0、库 B 依赖 X==2.0。审查：pip 会怎么处理？运行时会发生什么？怎么解决？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（依赖冲突题）· 场景改写',
+    breakdown: `pip 默认<strong>不做全局依赖解析</strong>——后装的 X 覆盖先装的（版本漂移），运行时谁的行为错随导入顺序「随机」爆发：A 调 X 的旧 API 报 AttributeError，或更糟——<strong>静默行为不一致</strong>。解决：① 锁文件 + 依赖解析器（uv/pip-tools）提前发现冲突；② 找兼容版本组合；③ 隔离到不同 venv/服务。AI 装包不检查依赖树是生产环境「依赖地狱」的起点。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `手写 requirements.txt（直接依赖 + 版本范围）与锁文件（uv.lock / poetry.lock）的区别是什么？部署环境为什么必须用锁文件？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（锁定策略题）· 场景改写',
+    breakdown: `requirements.txt 通常只列<strong>直接依赖</strong>（可带范围），间接依赖版本不受控；锁文件记录<strong>完整依赖树的精确版本 + 哈希</strong>——同一份锁文件在任何机器装出来字节级一致。部署/CI 原则：开发用范围（宽松、好升级），<strong>发布与部署用锁文件</strong>（可复现、可回滚）。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `搭一个可复现的项目环境（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '建 venv → 安装两个依赖（如 requests 与 pytest）→ 生成 requirements.txt 与锁文件（pip freeze）→ 用第二个全新 venv 按锁文件安装，验证 pip show 版本一致。',
+      accept: ['venv 隔离生效（全局 python 不受影响）', '两个环境安装出的版本完全一致', '能说清 requirements 与锁文件的区别'],
+    },
+    source: '任务基于《23.第三方库》课程知识点 · 来源层级：一手（Python 官方文档 venv / pip freeze 章节）场景化',
+    breakdown: `思路：<code>python3 -m venv .venv && source .venv/bin/activate && pip install requests pytest</code>；<code>pip freeze > requirements.lock.txt</code>；第二个 venv 里 <code>pip install -r requirements.lock.txt</code> 后 <code>pip show</code> 对比。坑：freeze 输出含全部间接依赖（这是锁文件的特性不是 bug）；pip 自身的版本也影响安装行为，必要时一并记录。`,
+  },
+]'''),
+    ('0024-事件循环.html', '巩固与延伸', '0024-事件循环', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `asyncio 是单线程的，为什么能实现高并发？事件循环到底在做什么？`,
+    source: '考点来源：腾讯云「Python 并发编程模型：面试中的重点考察点」（并发模型题）· 场景改写',
+    breakdown: `单线程通过<strong>事件循环</strong>调度成千上万个协程：协程在<strong>等待 IO 时让出控制权</strong>（await），循环立刻切换到其他就绪协程——CPU 几乎不空闲，一个线程扛住大量并发连接。适合 <strong>IO 密集</strong>（网络请求、数据库、文件）；CPU 密集计算会独占线程，得用进程池/线程池。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `协程在什么时机切换？一段没有 await 的同步代码会打断其他协程吗？`,
+    source: '考点来源：腾讯云「Python 并发编程模型」（协程切换题）· 场景改写',
+    breakdown: `只在 <code>await</code> 处切换（等待不可立即完成的 IO/任务时让出）。<strong>没有 await 的代码是原子的</strong>——一段同步计算会一路跑完，期间其他协程全部排队（所以循环里做重计算/调阻塞函数会卡死整个 loop）。这就是「协程是协作式调度」的含义：不让，谁也抢不走。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码给 Future 挂了 done 回调，回调里没写 try/except。审查：回调抛异常会发生什么？主流程能捕获到吗？
+<pre><code>async def main():
+    fut = loop.create_future()
+    fut.add_done_callback(boom)   # boom 内部 raise ValueError
+
+def boom(fut):
+    raise ValueError('回调爆炸')</code></pre>`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（回调异常题）· 场景改写',
+    breakdown: `回调异常<strong>不会传播回 await 方</strong>——它被事件循环捕获并交给 <code>loop 的异常处理器</code>（默认打日志），主流程若无其事继续跑。危害：关键失败静默。修复：回调内部 try/except 显式处理；需要「失败即中止」语义时改用 await/回调链返回。AI 生成的回调代码最爱裸奔。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `在子线程里 await 主线程事件循环创建的 Task/Future，会发生什么？跨线程该怎么做？`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（线程亲和性题）· 场景改写',
+    breakdown: `Future/Task <strong>绑定创建它的循环</strong>：在别的线程直接 await 会 RuntimeError（Future attached to a different loop）。跨线程协作的姿势：① <code>loop.call_soon_threadsafe(cb)</code> 把回调投递回主循环；② <code>asyncio.run_coroutine_threadsafe(coro, loop)</code> 拿到 concurrent Future 在别的线程等待。Agent 服务里「后台线程发事件给主循环」就是这个模式。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个 asyncio 并发下载器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '用 asyncio.gather 并发请求 10 个 URL（可用 asyncio.sleep 模拟）；统计并发总耗时显著小于 10 次串行耗时；其中一个请求失败不影响其他结果收集。',
+      accept: ['并发执行（总耗时 ≈ 单个最长耗时而非求和）', '单个失败不中断全部（return_exceptions 或按任务捕获）', '能说出 await 在哪几个点让出'],
+    },
+    source: '任务基于《24.事件循环》课程知识点 · 场景化',
+    breakdown: `思路：<code>async def fetch(i): await asyncio.sleep(0.1); return i</code>；<code>results = await asyncio.gather(*[fetch(i) for i in range(10)], return_exceptions=True)</code>。坑：gather 默认任一失败即抛（其余被取消）——收集部分失败要 return_exceptions；并发数无上限时注意对端限流（下节课的限流工具）。`,
+  },
+]'''),
+    ('0025-Future类.html', '巩固与延伸', '0025-Future类', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `asyncio 里 Task 与 Future 是什么关系？各在什么场景出现？`,
+    source: '考点来源：Skillup「Python 后端面试题（asyncio 高频面试题汇总）」（Task vs Future 题）· 场景改写',
+    breakdown: `<strong>Task 是 Future 的子类</strong>：Future 是「未来结果的占位符」（谁都可以 set_result 完成它，库/框架用它做回调桥接）；Task 额外<strong>包装一个协程</strong>并由事件循环调度执行——<code>asyncio.create_task(coro)</code> 得到的都是 Task。业务代码几乎总是跟 Task 打交道，Future 出现在自定义同步原语/桥接层。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `在协程里调用了同步阻塞函数（如 <code>time.sleep(5)</code> 或 requests.get），会发生什么？正确做法是什么？`,
+    source: '考点来源：腾讯云「Python 并发编程模型」（事件循环陷阱题）· 场景改写',
+    breakdown: `<strong>整个事件循环被阻塞 5 秒</strong>——所有协程全部停摆（单线程，睡死就是全死）。正确做法：① 有异步版本换 <code>await asyncio.sleep</code> / httpx；② 没有异步版本的 CPU/阻塞调用丢进线程池 <code>await loop.run_in_executor(None, blocking_fn)</code>。AI 在 asyncio 代码里塞同步 requests 是并发性能杀手，审查必查。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码创建了 Task 但没 await、也没取异常。审查：Task 抛异常后会发生什么？
+<pre><code>async def worker():
+    raise ValueError('任务炸了')
+
+async def main():
+    task = asyncio.create_task(worker())
+    await asyncio.sleep(1)   # 没有 await task</code></pre>`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（Task 异常题）· 场景改写',
+    breakdown: `异常<strong>不会中断主流程</strong>——事件循环只在 Task 被回收时打一条 <code>Task exception was never retrieved</code> 警告，然后静默丢弃。危害：任务失败无人知晓。修复：<code>await task</code>（异常照常抛）、<code>gather</code> 收集、或显式 <code>task.exception()</code>。规则：创建 Task 就必须有人「认领」它的结果或异常。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `一个 Future 注册了多个 done 回调，其中一个回调抛异常，其他回调还会执行吗？依赖回调做关键业务逻辑的设计有什么问题？`,
+    source: '考点来源：Skillup「Python 后端面试题（asyncio 高频汇总）」（回调隔离题）· 场景改写',
+    breakdown: `<strong>其他回调照常执行</strong>——回调异常被 loop 异常处理器单独记录，互不影响（隔离性其实不错）。但设计问题：回调是「发后不理」语义，业务关键路径（比如支付结果处理）放进回调，失败只打日志、无法可靠重试与告警。正确姿势：关键流程用 await/Task 编排，回调只做「通知/清理」类非关键工作。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个带超时的任务管理器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '并发运行 5 个可能超时/失败的任务（asyncio.sleep 模拟）；单任务超时 1 秒即标记超时；全部结束后返回「成功/失败/超时」分类统计；没有任何 Task 异常被静默丢弃。',
+      accept: ['超时任务被正确标记（asyncio.wait_for 或 wait+timeout）', '统计分类正确', '无「Task exception was never retrieved」警告'],
+    },
+    source: '任务基于《25.Future类》课程知识点 · 场景化',
+    breakdown: `思路：<code>await asyncio.wait_for(task, timeout=1)</code> 逐个包裹（或 wait+timeout 批量）；捕获 TimeoutError/CancelledError 分类；每个任务都 await/exception() 认领。坑：wait_for 超时会<strong>取消</strong>任务——任务里 finally 清理要能扛取消；被取消的任务别重复 await。`,
+  },
+]'''),
+    ('0026-协程-Coroutine.html', '巩固与延伸', '0026-协程-Coroutine', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `<code>async def f()</code> 只是定义。调用 <code>f()</code> 而不 await、也不交给循环，会发生什么？协程对象的生命周期是怎样的？`,
+    source: '考点来源：腾讯云「Python 并发编程模型」（async/await 原理题）· 场景改写',
+    breakdown: `调用 async 函数返回一个<strong>协程对象</strong>——<strong>一行都不会执行</strong>，直到它被 await（或被包装进 Task 交给循环）。裸调用不 await：Python 打 <code>RuntimeWarning: coroutine was never awaited</code>，函数体从未运行。AI 生成代码时「调了没 await」是 asyncio 头号低级错误，审查时看到 async 函数被裸调用就报警。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `单线程的协程也会有竞态条件吗？给一个具体例子。`,
+    source: '考点来源：腾讯云「Python 并发编程模型」（协程竞态题）· 场景改写',
+    breakdown: `<strong>会</strong>——没有 GIL 竞争，但有<strong>逻辑竞态</strong>：两个协程在 await 之间读写共享状态，交错执行。经典例子：<code>if balance >= amount: await 扣款()</code> 两个协程同时通过判断、双花扣款。没有 await 的代码段是原子的，但一旦 await 让出，回来时世界可能已经变了。修复：检查与修改放在同一段无 await 代码里，或用 asyncio.Lock。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码在协程里又调了 <code>asyncio.run()</code>，运行时报 <code>RuntimeError: asyncio.run() cannot be called from a running event loop</code>。审查并修复：
+<pre><code>async def fetch():
+    # AI 写的小工具函数内部
+    return asyncio.run(do_http())   # ？</code></pre>`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（嵌套 run 题）· 场景改写',
+    breakdown: `<code>asyncio.run()</code> 是「创建新循环并运行到结束」的<strong>入口函数</strong>——在一个循环里再 run 必然冲突。修复：协程内<strong>直接 await</strong>（<code>await do_http()</code>）；如果调用的是同步函数（requests 之类）则 <code>run_in_executor</code>。AI 生成「工具函数内部自带 asyncio.run」是最常见的复用性 bug——入口只能有一个。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `协程 A 中调用了同步阻塞函数（如 requests.get），对同一循环里的其他协程有什么影响？如何设计才能不传染？`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（阻塞传导题）· 场景改写',
+    breakdown: `<strong>阻塞会传导给所有人</strong>：单线程循环卡死，其他协程（包括用户的健康检查、心跳）全部停摆——一条慢请求拖垮整个服务。设计原则：协程内<strong>禁止同步阻塞调用</strong>；必须用时 <code>run_in_executor</code> 隔离到线程池，或把阻塞调用封装成「异步外观」的适配层（同步实现 + 异步包装），让上层代码永远只看见 await。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个协程版限流批量请求器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '对 20 个任务按「每批最多 5 个并发」分批执行；单任务失败不影响同批其他任务；模拟一次阻塞调用并正确放进 run_in_executor；全部结束后给出成败统计。',
+      accept: ['并发上限 5 生效（asyncio.Semaphore）', '失败隔离且统计正确', '阻塞调用经 run_in_executor 执行、不卡住其他任务'],
+    },
+    source: '任务基于《26.协程-Coroutine》课程知识点 · 场景化',
+    breakdown: `思路：<code>sem = asyncio.Semaphore(5)</code>，任务内 <code>async with sem:</code> 限流；失败逐任务捕获；阻塞函数 <code>await loop.run_in_executor(None, sync_work)</code>。坑：Semaphore 要在<strong>任务内</strong>获取（gather 前批量 acquire 会把并发上限变成 0）；executor 默认线程池，CPU 密集要传进程池。`,
+  },
+]'''),
 ]
 
 
@@ -953,6 +1137,12 @@ def rewrite(path, questions_script):
     with open(path, encoding='utf-8') as f:
         src = f.read()
     src = src.replace('6 道面试实战（中/高/专家各 2 道）', '面试实战')
+    # 站点 favicon（与 Docusaurus 站点一致），幂等
+    if '<link rel="icon"' not in src:
+        src = src.replace(
+            '<link rel="stylesheet" href="../assets/course.css">',
+            '<link rel="icon" href="../../img/avatar.png" type="image/png">\n  <link rel="stylesheet" href="../assets/course.css">',
+        )
     h2 = src.index('      <h2>💼 面试实战</h2>')
     start = src.rindex('<section>', 0, h2)   # 面试实战小节的 <section> 开标签
     end = src.index('</section>', h2) + len('</section>')

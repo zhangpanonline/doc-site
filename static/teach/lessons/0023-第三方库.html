@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="配合《23.第三方库》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（命令行 AI 聊天工具）+ 真实面试题">
   <title>第三方库 · 互动教学课程（第 23 节）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
 </head>
 <body>
@@ -13,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 21 课</p>
       <h1>第三方库</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/第三方库/">21.第三方库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/第三方库/">21.第三方库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -258,85 +259,59 @@
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握第三方库的实战用法——可以继续学习《<a href="/agents/python/事件循环/">22.事件循环</a>》了。</p>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（依赖管理·高频）：项目依赖管理的基本工作流是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">venv 隔离环境 + requirements.txt 声明依赖 + 锁文件保证可复现</button>
-            <button class="quiz-option">所有项目共享全局环境，直接 pip install</button>
-            <button class="quiz-option">只把依赖名写在 README 里</button>
-            <button class="quiz-option">依赖装进代码目录随 git 提交</button>
-          </div>
-          <div class="quiz-explain" hidden>标准工作流：<strong>venv</strong> 隔离（不同项目不同环境）→ <strong>requirements.txt</strong> 声明依赖 → <strong>锁文件</strong>（或 pip freeze）保证「在别人机器上也能跑」的可复现构建。没有锁文件的团队会出现经典的「在我机器上能跑」问题。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（版本约束·追问）：<code>~=2.31.0</code> 表示什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">同系列更新：&gt;=2.31.0 且 &lt;3.0</button>
-            <button class="quiz-option">恰好等于 2.31.0</button>
-            <button class="quiz-option">任意版本都可以</button>
-            <button class="quiz-option">排除 2.31.0</button>
-          </div>
-          <div class="quiz-explain" hidden><code>~=2.31.0</code> 是「兼容版本」约束：允许<strong>同系列小版本更新</strong>（&gt;=2.31.0 且 &lt;3.0），既锁定大版本又自动吸收补丁修复——介于 <code>==</code>（太死）与 <code>&gt;=</code>（太松）之间的常用选择。<a href="https://pip.pypa.io/en/stable/reference/requirement-specifiers/">出处：pip 官方文档 Requirement Specifiers（中文面试题集均有收录）</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（依赖一致性·机制）：<code>pip check</code> 的作用是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">检查已装包之间的依赖是否冲突/缺失</button>
-            <button class="quiz-option">检查代码语法错误</button>
-            <button class="quiz-option">检查网络连通性</button>
-            <button class="quiz-option">校验包的下载来源</button>
-          </div>
-          <div class="quiz-explain" hidden><code>pip check</code> 检查<strong>当前环境所有已装包</strong>的依赖声明是否被满足（缺失/版本冲突会列出）——排查「装了一堆包后环境坏了」的第一工具。生产环境排障的标准动作。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（依赖冲突·工程）：A 需要包 X==1.0、B 需要 X==2.0，同时装会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">pip 报依赖冲突或覆盖安装，正确解法是用独立 venv</button>
-            <button class="quiz-option">pip 自动同时保留两个版本</button>
-            <button class="quiz-option">自动选择较新的版本</button>
-            <button class="quiz-option">两个项目只能二选一</button>
-          </div>
-          <div class="quiz-explain" hidden>pip 同一环境只能装一个版本：后装的<strong>覆盖</strong>先装的（或直接报冲突）——A、B 中必有一个坏掉。正确解法：<strong>两个项目各自独立的 venv</strong>（这正是虚拟环境存在的根本原因）。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（锁定策略·工程）：手写 requirements.txt（直接依赖+版本范围）与锁文件（pip freeze/uv.lock）的区别？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">锁文件记录完整依赖树的精确版本，保证环境可复现</button>
-            <button class="quiz-option">两者内容完全相同</button>
-            <button class="quiz-option">requirements.txt 比锁文件更精确</button>
-            <button class="quiz-option">锁文件只记录直接依赖</button>
-          </div>
-          <div class="quiz-explain" hidden>手写清单通常只列<strong>直接依赖</strong>（带范围），每次安装结果可能不同；锁文件记录<strong>整个依赖树</strong>（含传递依赖）的精确版本——任何机器重建出一致环境。团队实践：直接依赖手写进清单、锁文件提交进仓库保证可复现。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（工程实践篇）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（隔离机制·机制）：激活 venv 后 pip 安装的包为什么不会污染全局？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">venv 有自己的 site-packages 且 PATH 优先指向它</button>
-            <button class="quiz-option">包被加密存储</button>
-            <button class="quiz-option">全局环境被自动锁定</button>
-            <button class="quiz-option">venv 会卸载全局的包</button>
-          </div>
-          <div class="quiz-explain" hidden>venv 创建了<strong>独立的解释器副本 + 独立 site-packages</strong>，激活只是把 PATH 指向 venv 的 bin——pip 装到 venv 自己的 site-packages，全局环境毫发无损。理解 PATH 与 site-packages 两级机制，才算真正懂虚拟环境。<a href="https://docs.python.org/3/library/venv.html">出处：Python 官方文档 venv（中文面试题集均有收录）</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0023-第三方库',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 让你直接 <code>pip install xxx</code> 装到系统 Python。审查：项目依赖管理的正确工作流是什么？为什么必须先建虚拟环境？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（依赖管理工作流题）· 场景改写',
+    breakdown: `正确工作流：<strong>建 venv（每项目一个）→ 激活 → pip install → 记录依赖到 requirements.txt → 锁版本</strong>。不建 venv 直接装全局：多个项目依赖互相污染、版本冲突无法隔离、系统 Python 被第三方包搞坏（macOS/服务器都踩过）。AI 给的安装命令默认没 venv，是新手项目事故的头号来源。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `<code>requirements.txt</code> 里的 <code>==</code>、<code>>=</code>、<code>~=</code> 各是什么意思？写「范围」有什么风险？`,
+    source: '考点来源：pip 官方文档 Requirement Specifiers · 场景改写',
+    breakdown: `<code>==</code> 精确版本；<code>>=</code> 下限不限上限（未来大版本可能不兼容）；<code>~=</code> 兼容版本（<code>~=1.4.2</code> == >=1.4.2, <1.5.0——允许补丁/次版本升级、禁止主版本跳变）。风险：范围过大时「今天能装、半年后装出来行为不同」——部署不可复现，生产环境必须锁死。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 装了两个库：库 A 依赖 X==1.0、库 B 依赖 X==2.0。审查：pip 会怎么处理？运行时会发生什么？怎么解决？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（依赖冲突题）· 场景改写',
+    breakdown: `pip 默认<strong>不做全局依赖解析</strong>——后装的 X 覆盖先装的（版本漂移），运行时谁的行为错随导入顺序「随机」爆发：A 调 X 的旧 API 报 AttributeError，或更糟——<strong>静默行为不一致</strong>。解决：① 锁文件 + 依赖解析器（uv/pip-tools）提前发现冲突；② 找兼容版本组合；③ 隔离到不同 venv/服务。AI 装包不检查依赖树是生产环境「依赖地狱」的起点。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `手写 requirements.txt（直接依赖 + 版本范围）与锁文件（uv.lock / poetry.lock）的区别是什么？部署环境为什么必须用锁文件？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（锁定策略题）· 场景改写',
+    breakdown: `requirements.txt 通常只列<strong>直接依赖</strong>（可带范围），间接依赖版本不受控；锁文件记录<strong>完整依赖树的精确版本 + 哈希</strong>——同一份锁文件在任何机器装出来字节级一致。部署/CI 原则：开发用范围（宽松、好升级），<strong>发布与部署用锁文件</strong>（可复现、可回滚）。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `搭一个可复现的项目环境（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '建 venv → 安装两个依赖（如 requests 与 pytest）→ 生成 requirements.txt 与锁文件（pip freeze）→ 用第二个全新 venv 按锁文件安装，验证 pip show 版本一致。',
+      accept: ['venv 隔离生效（全局 python 不受影响）', '两个环境安装出的版本完全一致', '能说清 requirements 与锁文件的区别'],
+    },
+    source: '任务基于《23.第三方库》课程知识点 · 来源层级：一手（Python 官方文档 venv / pip freeze 章节）场景化',
+    breakdown: `思路：<code>python3 -m venv .venv && source .venv/bin/activate && pip install requests pytest</code>；<code>pip freeze > requirements.lock.txt</code>；第二个 venv 里 <code>pip install -r requirements.lock.txt</code> 后 <code>pip show</code> 对比。坑：freeze 输出含全部间接依赖（这是锁文件的特性不是 bug）；pip 自身的版本也影响安装行为，必要时一并记录。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -354,5 +329,6 @@
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

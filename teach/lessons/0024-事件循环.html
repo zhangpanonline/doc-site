@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="配合《24.事件循环》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题，15-20 分钟掌握事件循环的调度机制">
   <title>事件循环 · 互动教学课程（第 24 节）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
 </head>
 <body>
@@ -13,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 22 课</p>
       <h1>事件循环</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/事件循环/">22.事件循环</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/事件循环/">22.事件循环</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -333,85 +334,65 @@ print("循环已停止")</code></pre></div>
       <p style="margin-top:1.2rem">三道考核全部答对且能讲清理由，说明你已经吃透 <code>_run_once</code> 的调度机制——可以继续学习《<a href="/agents/python/Future类/">23.Future类</a>》了。</p>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0024-事件循环',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `asyncio 是单线程的，为什么能实现高并发？事件循环到底在做什么？`,
+    source: '考点来源：腾讯云「Python 并发编程模型：面试中的重点考察点」（并发模型题）· 场景改写',
+    breakdown: `单线程通过<strong>事件循环</strong>调度成千上万个协程：协程在<strong>等待 IO 时让出控制权</strong>（await），循环立刻切换到其他就绪协程——CPU 几乎不空闲，一个线程扛住大量并发连接。适合 <strong>IO 密集</strong>（网络请求、数据库、文件）；CPU 密集计算会独占线程，得用进程池/线程池。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `协程在什么时机切换？一段没有 await 的同步代码会打断其他协程吗？`,
+    source: '考点来源：腾讯云「Python 并发编程模型」（协程切换题）· 场景改写',
+    breakdown: `只在 <code>await</code> 处切换（等待不可立即完成的 IO/任务时让出）。<strong>没有 await 的代码是原子的</strong>——一段同步计算会一路跑完，期间其他协程全部排队（所以循环里做重计算/调阻塞函数会卡死整个 loop）。这就是「协程是协作式调度」的含义：不让，谁也抢不走。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码给 Future 挂了 done 回调，回调里没写 try/except。审查：回调抛异常会发生什么？主流程能捕获到吗？
+<pre><code>async def main():
+    fut = loop.create_future()
+    fut.add_done_callback(boom)   # boom 内部 raise ValueError
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（并发模型·高频）：asyncio 单线程为什么能实现高并发？事件循环的作用是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">异步非阻塞 I/O：await 让出执行权，事件循环调度其他任务</button>
-            <button class="quiz-option">asyncio 内部偷偷用了多线程</button>
-            <button class="quiz-option">靠 GIL 让多个协程并行执行</button>
-            <button class="quiz-option">单线程只是假象，实际是多进程</button>
-          </div>
-          <div class="quiz-explain" hidden>核心：<strong>异步非阻塞 I/O 模型</strong>——遇到网络/文件等 I/O 等待时不阻塞线程，<code>await</code> 让出执行权，<strong>事件循环</strong>（核心调度器）转去执行其他任务，I/O 完成后恢复；整个过程单线程，无内核线程/进程切换开销，所以能高效处理上千并发连接。<a href="https://cloud.tencent.com/developer/article/2409986">出处：腾讯云「Python 并发编程模型：面试中的重点考察点」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（协程切换·追问）：协程在什么时机切换？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只在 await 处让出（协作式调度，非时间片轮转）</button>
-            <button class="quiz-option">由操作系统按时间片抢占切换</button>
-            <button class="quiz-option">每个字节码指令后都可能切换</button>
-            <button class="quiz-option">随机切换</button>
-          </div>
-          <div class="quiz-explain" hidden>协程是<strong>协作式调度</strong>：只有在遇到 <code>await</code> 时才暂停切换；没有 await 的代码连续执行不会被打断——这与线程的「抢占式」完全不同。追问常接：<code>await asyncio.sleep(0)</code> 为什么能让出执行权。<a href="https://cloud.tencent.com/developer/article/2409986">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（回调异常·深水区）：<code>call_soon</code> 注册的回调里抛了异常，会发生什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">异常从 run_forever 向上传播，循环中止</button>
-            <button class="quiz-option">异常被静默吞掉</button>
-            <button class="quiz-option">异常只打印日志，循环继续</button>
-            <button class="quiz-option">回调被自动重试</button>
-          </div>
-          <div class="quiz-explain" hidden>回调中的未捕获异常会<strong>穿过 run_forever 抛给调用者</strong>（循环随之中止）——所以生产代码的回调必须自己 try/except，或注册异常处理器（loop.set_exception_handler）统一兜底。这是事件循环错误处理的核心机制题。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处：Runebook（Python 官方文档中文版）</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（线程安全·机制）：<code>call_soon_threadsafe</code> 与 <code>call_soon</code> 的区别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">threadsafe 版可以从其他线程安全地向循环提交回调</button>
-            <button class="quiz-option">两者完全一样</button>
-            <button class="quiz-option">threadsafe 版只能在主线程使用</button>
-            <button class="quiz-option">call_soon 已经支持多线程</button>
-          </div>
-          <div class="quiz-explain" hidden><code>call_soon</code> 只能在<strong>事件循环所在线程</strong>调用；从其他线程提交任务必须用 <code>call_soon_threadsafe</code>（内部做线程安全的唤醒）——「异步世界」与「多线程世界」之间的标准桥梁。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（线程亲和性·机制）：在子线程里 await 主线程创建的 Task/Future 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">RuntimeError：Future/Task 绑定创建它的循环与线程</button>
-            <button class="quiz-option">正常工作，asyncio 自动协调</button>
-            <button class="quiz-option">任务自动迁移到子线程</button>
-            <button class="quiz-option">任务被静默取消</button>
-          </div>
-          <div class="quiz-explain" hidden>asyncio 的 Future/Task <strong>绑定创建它的循环与线程</strong>：跨线程 await 会抛 RuntimeError——事件循环不是线程安全的。需要跨线程协作用 <code>run_coroutine_threadsafe</code>（返回 concurrent.futures.Future 供子线程等待）。这是 asyncio 线程模型的深水区。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处：Runebook（Python 官方文档中文版）</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（调度细节·深水区）：<code>_run_once</code> 阻塞等待 I/O 期间，到期的延时任务会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">超时返回后重新处理延时队列，到期项进 ready</button>
-            <button class="quiz-option">要等 I/O 事件发生才会处理</button>
-            <button class="quiz-option">被直接丢弃</button>
-            <button class="quiz-option">立即中断阻塞提前处理</button>
-          </div>
-          <div class="quiz-explain" hidden>按 <code>_run_once</code> 五步：阻塞等待的 timeout 恰好是「最近延时任务的到期时间」——<strong>超时返回后重新处理延时队列</strong>（把到期项移入 ready），循环继续。I/O 与定时器的统一调度正是事件循环的精妙之处。<a href="https://runebook.dev/zh/docs/python/library/asyncio-runner/asyncio.run">出处同专家题一</a></div>
-        </div>
-      </div>
+def boom(fut):
+    raise ValueError('回调爆炸')</code></pre>`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（回调异常题）· 场景改写',
+    breakdown: `回调异常<strong>不会传播回 await 方</strong>——它被事件循环捕获并交给 <code>loop 的异常处理器</code>（默认打日志），主流程若无其事继续跑。危害：关键失败静默。修复：回调内部 try/except 显式处理；需要「失败即中止」语义时改用 await/回调链返回。AI 生成的回调代码最爱裸奔。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `在子线程里 await 主线程事件循环创建的 Task/Future，会发生什么？跨线程该怎么做？`,
+    source: '考点来源：Runebook（Python 官方文档中文版）（线程亲和性题）· 场景改写',
+    breakdown: `Future/Task <strong>绑定创建它的循环</strong>：在别的线程直接 await 会 RuntimeError（Future attached to a different loop）。跨线程协作的姿势：① <code>loop.call_soon_threadsafe(cb)</code> 把回调投递回主循环；② <code>asyncio.run_coroutine_threadsafe(coro, loop)</code> 拿到 concurrent Future 在别的线程等待。Agent 服务里「后台线程发事件给主循环」就是这个模式。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个 asyncio 并发下载器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '用 asyncio.gather 并发请求 10 个 URL（可用 asyncio.sleep 模拟）；统计并发总耗时显著小于 10 次串行耗时；其中一个请求失败不影响其他结果收集。',
+      accept: ['并发执行（总耗时 ≈ 单个最长耗时而非求和）', '单个失败不中断全部（return_exceptions 或按任务捕获）', '能说出 await 在哪几个点让出'],
+    },
+    source: '任务基于《24.事件循环》课程知识点 · 场景化',
+    breakdown: `思路：<code>async def fetch(i): await asyncio.sleep(0.1); return i</code>；<code>results = await asyncio.gather(*[fetch(i) for i in range(10)], return_exceptions=True)</code>。坑：gather 默认任一失败即抛（其余被取消）——收集部分失败要 return_exceptions；并发数无上限时注意对端限流（下节课的限流工具）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -429,5 +410,6 @@ print("循环已停止")</code></pre></div>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

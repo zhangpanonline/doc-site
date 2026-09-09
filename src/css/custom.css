@@ -707,7 +707,38 @@
   gap: 8px;
 }
 
+/* 沉浸模式（仅 PC）：隐藏顶部导航栏与左侧菜单，内容占满页面 */
+html.immersive .navbar {
+  display: none;
+}
+html.immersive .theme-doc-sidebar-container {
+  display: none;
+}
+.immersive-toggle {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.5rem;
+  z-index: 1000;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--course-border);
+  background: var(--course-card);
+  color: var(--course-muted);
+  font-size: 1.15rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(45, 41, 38, 0.18);
+  transition: transform 0.15s, color 0.15s;
+}
+.immersive-toggle:hover {
+  transform: translateY(-2px);
+  color: var(--course-accent-ink);
+}
+
 @media (max-width: 996px) {
+  .immersive-toggle {
+    display: none;
+  }
   .ai-tiles {
     grid-template-columns: 1fr 1fr;
   }
