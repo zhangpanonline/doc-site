@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 3 课</p>
       <h1>函数</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/函数/">3.函数</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/函数/">3.函数</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -304,113 +304,76 @@ def merge_dicts(*dicts):
     </section>
 
     <section>
+    <section>
+    <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0005-函数',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 帮你写了个工具函数：<code>def add_item(item, items=[])</code>，多次调用后 items 里出现了上次调用的数据。为什么？正确写法是什么？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（可变默认参数题）· 场景改写',
+    breakdown: `<strong>默认参数在函数定义时只求值一次</strong>：那个 [] 是所有调用共享的同一列表对象。修复：默认值用 <code>None</code>，函数体内再建：<code>def add_item(item, items=None): items = items or []</code>。可变默认参数是 Python 面试第一陷阱，AI 生成代码也最爱犯。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `什么是闭包？闭包成立的三个要素是什么？为什么内层函数能「记住」外层函数的变量？`,
+    source: '考点来源：itying「分享下你遇到过的 Python 经典面试题」（闭包题）· 场景改写',
+    breakdown: `闭包 = <strong>内层函数 + 它捕获的外层变量（自由变量）</strong>。三要素：① 嵌套函数；② 内层引用外层变量；③ 外层函数返回内层函数。机制：函数对象带 <code>__closure__</code>（cell 元组）保存被引用的外层变量，所以外层函数退出后变量依然活着。AI 时代这题的新问法：为什么 Agent 工具的回调能记住配置——答案就是闭包。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一个装饰器，但被装饰函数的文档和名字都变了。审查下面的代码并修复：
+<pre><code>def timer(fn):
+    def wrapper(*args, **kwargs):
+        import time
+        t0 = time.perf_counter()
+        out = fn(*args, **kwargs)
+        print(f'{fn.__name__} 用时 {time.perf_counter() - t0:.4f}s')
+        return out
+    return wrapper
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（闭包·高频）：什么是闭包？闭包的三大要素是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">函数嵌套、内层引用外层变量、外层返回内层函数</button>
-            <button class="quiz-option">函数嵌套、内层使用 global、外层返回内层函数</button>
-            <button class="quiz-option">只要函数返回另一个函数就是闭包</button>
-            <button class="quiz-option">闭包就是 lambda 表达式</button>
-          </div>
-          <div class="quiz-explain" hidden>闭包三要素：① <strong>函数嵌套</strong>；② 内层函数<strong>引用外层函数的变量</strong>；③ 外层函数<strong>返回内层函数</strong>。作用：数据封装、延迟计算，也是装饰器的基础。只返回函数但内层没捕获外层变量，不构成严格意义的闭包。<a href="https://bbs.itying.com/topic/695b2cdc6f4d61004c837ead">出处：itying「分享下你遇到过的 Python 经典面试题」</a></div>
-        </div>
+@timer
+def fetch_data(url):
+    \"\"\"从接口拉数据\"\"\"
+    return url
 
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（可变默认参数·经典坑题）：以下代码的输出是？
-<pre><code>def append_to(element, target=[]):
-    target.append(element)
-    return target
-
-print(append_to(1))
-print(append_to(2))</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">[1] 然后 [1, 2]（共享同一个默认列表）</button>
-            <button class="quiz-option">[1] 然后 [2]（每次调用新建列表）</button>
-            <button class="quiz-option">[1] 然后报错</button>
-            <button class="quiz-option">[] 然后 [2]</button>
-          </div>
-          <div class="quiz-explain" hidden>默认参数在<strong>函数定义时只求值一次</strong>：<code>target=[]</code> 的列表在定义时创建，之后所有不传 target 的调用<strong>共享同一个列表对象</strong>——所以第二次调用追加后是 <code>[1, 2]</code>。正确写法是 None 哨兵模式：<code>target=None</code> + 函数内 <code>if target is None: target = []</code>。经验法则：默认参数慎用可变类型。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（带参装饰器·高频实现题）：实现 <code>@repeat(3)</code> 让函数重复执行 3 次，下列<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">def repeat(n) 返回 decorator(func)，wrapper 里 for 循环调用 func n 次</button>
-            <button class="quiz-option">def repeat(n, func) 两个参数，直接包装</button>
-            <button class="quiz-option">装饰器本体里直接 for 循环执行 func（定义时就执行了）</button>
-            <button class="quiz-option">wrapper 只调用一次 func，把结果乘以 n</button>
-          </div>
-          <div class="quiz-explain" hidden>带参装饰器是<strong>三层结构</strong>：外层 <code>repeat(n)</code> 收参数并返回真正的装饰器 <code>decorator</code>；decorator 返回 wrapper；wrapper 里 <code>for _ in range(n): func(*args, **kwargs)</code> 才实现重复。第二个签名错（装饰器只收函数）✗；第三个把「定义时」与「调用时」混淆，且不返回新函数 ✗；第四个语义错 ✗。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（函数一等公民·概念）：为什么函数名可以当作参数传递、可以赋值给变量？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">一切皆对象，函数名是函数对象的引用</button>
-            <button class="quiz-option">函数是特殊的编译期符号</button>
-            <button class="quiz-option">只有内置函数可以传递</button>
-            <button class="quiz-option">函数传递时会自动拷贝一份</button>
-          </div>
-          <div class="quiz-explain" hidden>Python <strong>一切皆对象</strong>：函数名只是函数对象的引用——函数是「一等公民」，可赋值（<code>f2 = f1</code>）、可作参数（map/filter）、可作返回值（闭包）、可存进数据结构。这是理解装饰器、回调、高阶函数的基础。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（传参语义·深水区）：以下代码的输出是？
-<pre><code>def f(x):
-    x = 99
-
-a = 1
-f(a)
-print(a)</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">1（不可变对象重新赋值不影响外部）</button>
-            <button class="quiz-option">99（函数内修改生效）</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">None</button>
-          </div>
-          <div class="quiz-explain" hidden>参数传递的是<strong>对象的引用</strong>：函数内 <code>x = 99</code> 只是让局部名字 x 指向新对象 99，<strong>不影响外部的 a</strong>（a 仍指向 1）。对比：传可变对象（list）并原地修改（append）才会影响外部——「传引用 + 不可变对象重新赋值无效」的完整理解。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（函数元信息·机制）：<code>def f(): """文档"""</code> 后，<code>f.__doc__</code> 与 <code>f.__name__</code> 分别是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">"文档" 与 "f"（函数对象携带元信息）</button>
-            <button class="quiz-option">None 与 None</button>
-            <button class="quiz-option">"文档" 与 "function"</button>
-            <button class="quiz-option">运行时报错</button>
-          </div>
-          <div class="quiz-explain" hidden>函数对象携带<strong>元信息属性</strong>：<code>__doc__</code>（docstring 文档字符串）、<code>__name__</code>（函数名）等——装饰器不加 functools.wraps 会丢的正是它们（面试题二的延伸）。<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <details class="quiz-explain" style="border-left-color:var(--accent); margin-top:1rem">
-        <summary>面试追问参考：闭包延迟绑定陷阱（经典）</summary>
-<pre><code># 输出 [6, 6, 6, 6]，不是 [0, 2, 4, 6]
-def multipliers():
-    return [lambda x: i * x for i in range(4)]
-print([m(2) for m in multipliers()])
-
-# 原因：闭包捕获的是变量本身（而非值），调用时 i 已是 3
-# 修复：默认参数绑定值
-def multipliers():
-    return [lambda x, i=i: i * x for i in range(4)]</code></pre>
-        <p style="margin:0"><a href="https://bbs.itying.com/topic/695b2cdc6f4d61004c837ead">出处同面试题一</a></p>
-      </details>
+print(fetch_data.__name__, fetch_data.__doc__)</code></pre>`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（函数元信息题）· 场景改写',
+    breakdown: `不处理时 <code>fetch_data.__name__</code> 变成 wrapper、__doc__ 变成 None——<strong>函数元信息丢失</strong>，日志、文档、反射（如 Agent 工具注册表读 __name__/__doc__ 生成工具描述）全都踩坑。修复：<code>@functools.wraps(fn)</code> 加在 wrapper 上（拷贝 __name__/__doc__/__module__ 等）。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要让 AI 给一批 API 函数统一加「重试 + 耗时日志」能力，重试次数各函数不同。你该让它写普通装饰器还是带参装饰器？提示词里要强调哪些点？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（带参装饰器题）· 场景改写',
+    breakdown: `需要 <strong>带参装饰器</strong>（装饰器工厂）：<code>@retry(times=3)</code> 这层先接收参数、返回真正的装饰器。提示词必须强调：① 默认值给合理兜底；② <code>@functools.wraps</code> 保留元信息（上一题的坑）；③ 异常要区分「可重试」与「不可重试」，别把参数错误也重试 3 遍；④ 重试间加退避延迟。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个带参装饰器 <code>@retry(times, delay)</code>（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '装饰一个「模拟网络请求、按次数随机失败」的函数，重试至成功或次数耗尽后抛异常；重试时打印第几次；被装饰函数的 __name__ / __doc__ 保持不变。',
+      accept: ['重试次数与延迟符合参数', '次数耗尽后抛出异常（而非吞掉）', 'functools.wraps 保留了 __name__ / __doc__'],
+    },
+    source: '任务基于《5.函数》课程知识点（装饰器小节）· 来源层级：一手（Python 官方文档 functools 章节）场景化',
+    breakdown: `思路：外层 <code>def retry(times, delay)</code> 返回装饰器；wrapper 里 for 循环 + try/except + time.sleep(delay)；耗尽后 raise 最后一次异常；记得 <code>@functools.wraps(fn)</code>。坑：只捕获目标异常（如 ConnectionError），别吞 KeyboardInterrupt 或参数类型错误；delay 要可配置为 0 方便测试。`,
+  },
+],
+        };
+      </script>
     </section>
 
-    <section>
-      <h2>巩固与延伸</h2>
+巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/controlflow.html#defining-functions">4. More Control Flow Tools</a>——函数定义、默认参数、可变参数的权威讲解。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/defining-your-own-python-function/">Defining Your Own Python Function</a>，把参数类型与调用约定讲得很透。</li>
@@ -425,5 +388,6 @@ def multipliers():
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

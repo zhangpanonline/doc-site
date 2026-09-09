@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 1 课</p>
       <h1>python 基本语法</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/python基本语法/">1.基础语法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/python基本语法/">1.基础语法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -286,92 +286,68 @@ print(f"共计 {prime_count} 个素数")</code></pre>
     </section>
 
     <section>
+    <section>
+    <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0003-python基本语法',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 帮你的计费模块写了个比较：<code>0.1 + 0.2 == 0.3</code> 结果是 False，它还以为写错了。为什么？这类比较正确姿势是什么？`,
+    source: '考点来源：腾讯云「分享 10 个高频 Python 面试题」（浮点精度题）· 场景改写',
+    breakdown: `0.1、0.2 在二进制浮点里是<strong>无限循环小数</strong>，存的是近似值，加出来的不是精确的 0.3。涉及钱的比较/相等判断：金额用 <code>Decimal</code>（字符串构造），一般数值用 <code>math.isclose(a, b, rel_tol=1e-9)</code>，绝不直接 ==。`,
+  },
+  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `<code>a = [1, 2]</code>，<code>b = a</code>，然后 <code>b.append(3)</code>。a 是什么？为什么？变量、对象、引用三者什么关系？`,
+    source: '考点来源：牛客网「最强 Python 面试题之 Python 基础题」· 场景改写',
+    breakdown: `a 也变成 <code>[1, 2, 3]</code>。变量是<strong>贴在对象上的标签</strong>：a = [1,2] 创建一个列表对象并贴标签 a；b = a 只是给同一对象再贴一张标签 b——append 改的是那唯一的对象。判断「同一个对象」用 <code>is</code>；AI 生成代码里最常见的别名 bug 就是这个。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一个「判断两个值是否相等」的工具，你在代码审查。逐行判断输出并说明坑：
+<pre><code>def same(a, b):
+    return a is b
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（牛客·最强 Python 面试题系列）：关于「变量、对象、引用」的关系，下列说法正确的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">变量是指针，对象存值，赋值 a=1 是创建对象 1 并让 a 指向它</button>
-            <button class="quiz-option">变量就是对象，二者没有区别</button>
-            <button class="quiz-option">类型信息存在变量中，对象没有类型</button>
-            <button class="quiz-option">使用变量前必须先声明其类型</button>
-          </div>
-          <div class="quiz-explain" hidden>经典三问：<strong>变量</strong>是到内存空间的指针；<strong>对象</strong>是存值的内存块；<strong>引用</strong>是自动形成的从变量到对象的指针。<code>a = 1</code> 的过程：创建值 1 的对象 → 创建变量 a → 把 a 连到对象。类型概念<strong>存在于对象中</strong>而非变量中（动态类型）。<a href="https://www.nowcoder.com/discuss/378581336049594368">出处：牛客网「最强 Python 面试题之 Python 基础题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（牛客 NP 系列·进制转换）：把十六进制字符串 "FF" 转成十进制，正确写法与结果是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">int("FF", 16) → 255</button>
-            <button class="quiz-option">int("FF") → 255</button>
-            <button class="quiz-option">float("FF", 16) → 255.0</button>
-            <button class="quiz-option">直接运算，Python 自动识别十六进制</button>
-          </div>
-          <div class="quiz-explain" hidden><code>int(x, base)</code> 的 base 参数（2~36）指定进制：<code>int("FF", 16) → 255</code>；不带 base 的 <code>int("FF")</code> 会抛 ValueError（无法按十进制解析）。这是牛客 Python 入门题库（NP 系列）的常考题。还可自测：<code>int("101", 2)</code> → 5。<a href="https://developer.aliyun.com/article/1538325">出处：牛客刷题——Python 篇（2）类型转换</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（浮点精度·高频陷阱）：<code>print(0.1 + 0.2 == 0.3)</code> 的输出是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">False（二进制浮点无法精确表示 0.1）</button>
-            <button class="quiz-option">True</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">0.30000000000000004</button>
-          </div>
-          <div class="quiz-explain" hidden><code>0.1 + 0.2</code> 实际是 <code>0.30000000000000004</code> ≠ 0.3 → <strong>False</strong>。Python 浮点是 IEEE 754 双精度，十进制小数在二进制下无法精确表示。工程实践：金额等精确场景用 <code>Decimal</code> 或按「分」存整数；浮点比较用容差 <code>abs(a - b) &lt; 1e-9</code>。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（字符串驻留·陷阱）：<code>a = "hello"; b = "hello"; print(a is b)</code> 的输出是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">True（简短字符串会被驻留复用）</button>
-            <button class="quiz-option">False（每次赋值都新建字符串）</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">与运行环境有关，无法确定</button>
-          </div>
-          <div class="quiz-explain" hidden>类似小整数缓存，Python 对<strong>简短、只含字母数字下划线的字符串</strong>做驻留（interning）：<code>a is b → True</code>。但这是实现细节——判断字符串内容仍用 <code>==</code>，不要依赖 <code>is</code> 的结果。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（链式比较机制·深水区）：<code>a &lt; b &lt; c</code> 与 <code>a &lt; b and b &lt; c</code> 的区别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">链式写法中间的 b 只计算一次，and 写法计算两次</button>
-            <button class="quiz-option">两者完全等价，没有任何区别</button>
-            <button class="quiz-option">链式写法会短路跳过 b 的计算</button>
-            <button class="quiz-option">链式写法只支持两个比较运算符</button>
-          </div>
-          <div class="quiz-explain" hidden>语义上等价，但<strong>求值次数不同</strong>：<code>a &lt; b &lt; c</code> 中 b <strong>只计算一次</strong>；<code>a &lt; b and b &lt; c</code> 中 b 计算两次。当 b 是带副作用的表达式（如函数调用）时，两者行为可观察地不同——这是面试官追问「区别」时的标准答案。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（内存管理·机制）：<code>del a</code> 对变量 a 做了什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">解除引用；对象引用计数归零时被垃圾回收</button>
-            <button class="quiz-option">立即释放对象占用的内存</button>
-            <button class="quiz-option">把变量的值清空为 None</button>
-            <button class="quiz-option">删除变量对应的类型定义</button>
-          </div>
-          <div class="quiz-explain" hidden><code>del a</code> <strong>解除变量与对象的引用</strong>（名字从命名空间移除）；对象何时释放由<strong>引用计数</strong>决定——计数归零才回收（CPython 主机制，辅以标记清除/分代回收处理循环引用）。若还有别的引用，对象不会释放。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-      </div>
-
-      <details class="quiz-explain" style="border-left-color:var(--accent); margin-top:1rem">
-        <summary>面试追问参考：变量使用前必须赋值吗？del 有什么用？</summary>
-        <p style="margin:0">① 变量无须事先声明，但<strong>使用前必须先赋值</strong>（赋值的同时创建变量）；② <code>del</code> 释放变量（解除引用），对象会在引用计数归零后被回收；③ 标识符规则：字母/数字/下划线组成、<strong>不能数字开头</strong>、区分大小写。<a href="https://www.nowcoder.com/discuss/378581336049594368">出处同面试题一</a></p>
-      </details>
+print(same(256, 256))                      # ?
+x, y = int('1000'), 1000 * 1
+print(same(x, y))                          # ?
+print(same('hello', ''.join(['he', 'llo'])))  # ?</code></pre>`,
+    source: '考点来源：腾讯云「分享 10 个高频 Python 面试题」（小整数缓存/字符串驻留题）· 场景改写（结论经 CPython 实测校准）',
+    breakdown: `<code>is</code> 判断的是<strong>对象身份</strong>，不是值相等。第一行 True：小整数（-5~256）有全局缓存池，任何写法都是同一对象；后两行 False：<code>int('1000')</code>、<code>''.join(...)</code> 都是运行时新建的对象，与比较方的常量不是同一身份——同一份代码对「相等」的值一会儿 True 一会儿 False，就是暗雷本身。修复：值比较一律 <code>==</code>，只有与 None 比较（或真要判断身份）才用 is。`,
+  },
+  {
+    type: 'design',
+    level: '初级岗常问',
+    prompt: `你要用 AI 写一个「十六进制颜色转 RGB」小工具（输入如 <code>'FF8800'</code>）。给 AI 的提示词里应该要求哪些输入校验？为什么？`,
+    source: '考点来源：牛客刷题——Python 篇（2）类型转换（十六进制转换题）· 场景改写',
+    breakdown: `至少要四层：① 长度与格式（6 位十六进制、可带 # 前缀）；② 字符集（只用 0-9a-fA-F）；③ 用 <code>int(s, 16)</code> 转换，别用 float；④ 输出范围断言（0~255）与类型（int）。因为 AI 生成的代码对「非法输入」最不上心——面试官问这道题，考的其实是你能不能给 AI 写出<strong>可验收的规格</strong>。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个 <code>parse_config</code> 配置值解析小工具（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 15 分钟',
+      goal: '读入一组配置字符串（如 [\'3.14\', \'0xFF\', \'abc\', \'0.1+0.2\']），正确转换成 int/float/十六进制，浮点相等判断用 isclose，输出转换结果与无法解析的警告。',
+      accept: ['十六进制字符串正确转 int', '浮点比较使用 math.isclose 而非 ==', '无法解析的输入有明确警告而非崩溃'],
+    },
+    source: '任务基于《3.python基本语法》课程知识点 · 来源层级：一手（Python 官方文档浮点/内置函数章节）场景化',
+    breakdown: `思路：按 <code>int(s, 0)</code> / <code>float(s)</code> 逐级尝试转换并捕获 ValueError；浮点结果用 <code>math.isclose</code> 做容差比较；解析失败收集进 warnings 列表。坑：<code>int('FF', 0)</code> 会报错（无前缀不会猜十六进制），十六进制要用 <code>int(s, 16)</code> 或带 <code>0x</code> 前缀。`,
+  },
+],
+        };
+      </script>
     </section>
 
-    <section>
-      <h2>巩固与延伸</h2>
+巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/index.html">The Python Tutorial</a>——本课概念的权威出处，重点读第 3 章（数据类型）、第 5 章（控制流）、第 7 章（输入输出）。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-operators-expressions/">Operators and Expressions in Python</a>，把运算符优先级与表达式求值讲得很透。</li>
@@ -386,5 +362,6 @@ print(f"共计 {prime_count} 个素数")</code></pre>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

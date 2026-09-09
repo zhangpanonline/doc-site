@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 2 课</p>
       <h1>容器类型</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/容器类型/">2.容器类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/容器类型/">2.容器类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -248,92 +248,69 @@ else:
     </section>
 
     <section>
+    <section>
+    <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0004-容器类型',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 帮你写「复制一份配置再改」的代码，用了 <code>copy.copy()</code>：嵌套的列表改一处、两处一起变。为什么？深拷贝和浅拷贝差在哪？`,
+    source: '考点来源：CSDN「Python 面试八股大全｜数据类型、深浅拷贝」· 场景改写',
+    breakdown: `<code>copy.copy()</code> 是<strong>浅拷贝</strong>：只复制外层容器，内层元素仍指向原来的对象——嵌套列表（或其他可变对象）还是共享的。需要完全独立时用 <code>copy.deepcopy()</code>。真实项目里 AI 生成的「复制后修改」代码是最常见的埋雷点。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `在交互式解释器里逐行输入 <code>a = 256; b = 256</code>，<code>a is b</code> 是 True；改成 <code>a = 1000; b = 1000</code> 就是 False。但同一个 .py 文件里写 <code>1000 is 1000</code> 又可能是 True。为什么？`,
+    source: '考点来源：腾讯云「分享 10 个高频 Python 面试题」（小整数缓存题）· 场景改写（结论经 CPython 实测校准）',
+    breakdown: `两层机制叠加：① CPython 启动时预建 <strong>-5 ~ 256</strong> 的整数缓存池，范围内任何写法都指向同一对象，is 恒 True；② 范围外没有缓存，但<strong>编译器会合并同一编译单元内的相同常量</strong>——同一个 .py 文件里的两个 1000 字面量是同一对象（is True），交互式逐行（每行独立编译）则各自新建（is False）。is 的结果随运行方式而变，这正是值比较不能依赖 is 的铁证：用 <code>==</code>。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一段「删除列表中的偶数」：
+<pre><code>def drop_evens(nums):
+    for x in nums:
+        if x % 2 == 0:
+            nums.remove(x)
+    return nums
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（深浅拷贝·高频必考）：<code>original = [1, [2, 3], [4, 5]]</code>，执行 <code>shallow = original[:]</code> 后 <code>shallow[1][0] = 200</code>，此时 <code>original[1][0]</code> 的值是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">200（嵌套层共享，修改互相影响）</button>
-            <button class="quiz-option">2（完全独立，互不影响）</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">4</button>
-          </div>
-          <div class="quiz-explain" hidden>切片是<strong>浅拷贝</strong>：只复制外层壳，内部嵌套列表仍是同一个对象——所以改 <code>shallow[1][0]</code> 会同步改到 original（「藕断丝连」）。想完全隔离要用 <code>copy.deepcopy()</code>。这是「赋值/浅拷贝/深拷贝」三连问的核心。<a href="https://blog.csdn.net/qq_25987725/article/details/161245703">出处：CSDN「Python 面试八股大全｜数据类型、深浅拷贝」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（元组陷阱·高频）：<code>t = (1, [2]); t[1].append(3); print(t)</code> 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">(1, [2, 3])——元组"不可变"但元素可变对象可变</button>
-            <button class="quiz-option">TypeError——元组不可修改</button>
-            <button class="quiz-option">(1, [2])——修改被忽略</button>
-            <button class="quiz-option">(1, [2, 3], 3)</button>
-          </div>
-          <div class="quiz-explain" hidden>元组的「不可变」指<strong>引用不可变</strong>：<code>t[1]</code> 指向的列表对象本身是可变类型，<code>append</code> 改的是列表的内容（引用没换）→ 合法，输出 <code>(1, [2, 3])</code>。这也是「为什么元组能作字典键」追问的伏笔：内含可变对象的元组不可哈希。<a href="https://www.cnblogs.com/MaxCalvin/articles/19258458">出处：博客园「Python 数据结构与内存管理深究——测试开发进阶笔记」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（小整数缓存·高频陷阱）：关于 Python 的小整数缓存机制，正确的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">启动时预缓存 [-5, 256]，该范围内 is 判等通常为 True</button>
-            <button class="quiz-option">所有整数都缓存，is 判等永远可靠</button>
-            <button class="quiz-option">只有 0 和 1 被缓存</button>
-            <button class="quiz-option">小整数缓存只在函数内部生效</button>
-          </div>
-          <div class="quiz-explain" hidden>Python 启动时把 <strong>[-5, 256]</strong> 的小整数预创建并缓存：<code>a = 256; b = 256</code> 时 <code>a is b → True</code>（引用同一对象）；超出范围通常新建对象。注意：<strong>.py 文件里 <code>257 is 257</code> 可能因编译器常量折叠也为 True</strong>，面试要说明场景差异。经验法则：值比较用 <code>==</code>，只有 None/True/False 等单例才用 <code>is</code>。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（元组可哈希·陷阱）：<code>t = (1, [2]); hash(t)</code> 会发生什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">TypeError：含可变元素的元组不可哈希</button>
-            <button class="quiz-option">正常返回哈希值</button>
-            <button class="quiz-option">返回 0</button>
-            <button class="quiz-option">返回元组的 id</button>
-          </div>
-          <div class="quiz-explain" hidden>元组可哈希的前提是<strong>所有元素都可哈希</strong>：<code>(1, [2])</code> 内含可变列表 → <code>hash(t)</code> 抛 TypeError，不能作字典键。「元组能作键」的说法要加限定：内含可变对象的元组不行。<a href="https://www.cnblogs.com/MaxCalvin/articles/19258458">出处：博客园「Python 数据结构与内存管理深究」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（遍历中修改·深水区）：<code>for k in d: del d[k]</code>（遍历字典时删除元素）会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">RuntimeError：迭代期间字典大小改变</button>
-            <button class="quiz-option">正常删除所有元素</button>
-            <button class="quiz-option">静默跳过部分元素</button>
-            <button class="quiz-option">抛出 KeyError</button>
-          </div>
-          <div class="quiz-explain" hidden>遍历期间修改容器大小会抛 <strong>RuntimeError: dictionary changed size during iteration</strong>。安全做法：遍历<strong>键的副本</strong> <code>for k in list(d):</code>，或先收集要删的键再删——列表遍历时删除元素同理（索引错乱/漏删）。<a href="https://www.ihonker.com/archiver/tid-35131.html">出处：红客联盟「Python 面试必避 20 个代码坑」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（去重保序·工程题）：<code>list(set(nums))</code> 去重后的顺序是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">不保证与原列表一致（集合无序）</button>
-            <button class="quiz-option">永远保持原列表的顺序</button>
-            <button class="quiz-option">永远是升序</button>
-            <button class="quiz-option">永远是降序</button>
-          </div>
-          <div class="quiz-explain" hidden>集合<strong>无序</strong>：<code>list(set(nums))</code> 虽能去重但顺序不保证。要「去重且保序」，工程常用 <code>list(dict.fromkeys(nums))</code>（3.7+ 字典保序）。这是数据清洗面试的高频追问。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
-        </div>
-      </div>
-
-      <details class="quiz-explain" style="border-left-color:var(--accent); margin-top:1rem">
-        <summary>面试追问参考：赋值、浅拷贝、深拷贝三者的完整区别？</summary>
-        <p style="margin:0">① <strong>赋值</strong>（<code>b = a</code>）：只复制引用，同一个对象，一损俱损；② <strong>浅拷贝</strong>（<code>a[:]</code> / <code>a.copy()</code> / <code>copy.copy()</code>）：新外层壳，嵌套元素共享，改嵌套互相影响；③ <strong>深拷贝</strong>（<code>copy.deepcopy()</code>）：递归复制所有层级，完全独立。单层数据用浅拷贝即可，多层嵌套必须深拷贝。<a href="https://blog.csdn.net/qq_25987725/article/details/161245703">出处同面试题一</a></p>
-      </details>
+print(drop_evens([1, 2, 4, 5, 8]))  # 结果不对</code></pre>
+找出 bug，给出至少两种正确写法。`,
+    source: '考点来源：红客联盟「Python 面试必避 20 个代码坑」（遍历中修改题）· 场景改写',
+    breakdown: `<strong>边遍历边修改列表会漏删</strong>：remove 后元素前移，迭代器按索引走就跳过了下一个元素（[1,2,4,5,8] 会漏掉 4）。修复：① 列表推导 <code>[x for x in nums if x % 2]</code>；② 遍历副本 <code>for x in nums[:]</code>；③ 倒序遍历 <code>for i in range(len(nums)-1, -1, -1)</code>。AI 生成代码的三大经典坑之一，面试官必问。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要用 AI 实现「订单列表去重且保持顺序」（重复定义：完全相同的记录）。你会在提示词里指定哪种方案？为什么不用 set(nums)？`,
+    source: '考点来源：腾讯云「分享 10 个高频 Python 面试题」（去重保序题）· 场景改写',
+    breakdown: `<code>set(nums)</code> 会<strong>丢失顺序</strong>。保序去重的标准姿势：<code>list(dict.fromkeys(nums))</code>（现代 Python）或「seen 集合 + 列表」双结构。追问加分点：如果订单是元组（可哈希）可以直接进 set；如果含列表（不可哈希）要先转成可哈希 key——这正是「元组可哈希」考点的落点。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个订单去重保序小工具（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 15 分钟',
+      goal: '输入一批重复订单（元组列表，如 (订单号, 商品, 数量)），输出保序去重后的列表，并统计每笔重复订单出现了几次。',
+      accept: ['去重后保持首次出现顺序', '重复次数统计正确', '元组作为可哈希 key 使用正确'],
+    },
+    source: '任务基于《4.容器类型》课程知识点（去重保序/元组可哈希小节）· 场景化',
+    breakdown: `思路：遍历时用 dict 记录每个订单首次位置和出现次数（元组可哈希，直接当 key）；输出按首次位置排序。坑：不要把「顺序」交给 set；用 <code>dict.fromkeys</code> 一行去重虽然简洁，但统计次数需要额外一趟遍历——两件事可以合并成一次遍历。`,
+  },
+],
+        };
+      </script>
     </section>
 
-    <section>
-      <h2>巩固与延伸</h2>
+巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/datastructures.html">5. Data Structures</a>——列表、元组、字典、集合的权威讲解。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-lists-tuples/">Lists and Tuples in Python</a>，深入两种序列型容器的取舍。</li>
@@ -348,5 +325,6 @@ else:
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>
