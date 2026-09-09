@@ -161,6 +161,22 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `<strong>对象没有名字</strong>：赋值只是把<strong>名字绑定到值</strong>，一个对象可以有零到多个名字（<code>B = A; a = B()</code>——a 的名字是什么？A 还是 B？无从谈起）。FAQ 原话「Generally speaking, it can't」。硬要「命名」得自己维护映射表（name → obj），别让 AI 写反射变魔术。`,
   },
 ''',
+    '0005-函数': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `面试官问：Python 怎么写「输出参数」（call by reference）风格的函数？官方 FAQ 的答案是什么？`,
+    source: '来源：Python 官方文档 FAQ「How do I write a function with output parameters (call by reference)?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `FAQ 开宗明义：参数是<strong>按赋值传递</strong>，不存在 call-by-reference——形参与实参之间没有别名。要「返回多个结果」的正路：① <strong>返回元组</strong> <code>return a, b</code>；② 传可变对象进去改内容；③ 用实例属性/全局（不推荐）。别让 AI 写「函数里改参数名希望外面变」的代码——外面不会变。`,
+  },
+''',
+    '0009-对象的类型': r'''  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `用字符串调用函数/方法（如按配置名执行对应动作），官方 FAQ 推荐的最佳做法是什么？为什么不用 eval？`,
+    source: '来源：Python 官方文档 FAQ「How do I use strings to call functions/methods?」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>字典分发</strong>：<code>dispatch = {'go': a, 'stop': b}</code>（注意存函数不带括号），调用 <code>dispatch[get_input()]()</code>。FAQ 指出两大优势：字符串不必与函数同名（可读的键名映射任意函数）+ 天然充当 switch-case。eval/exec 执行任意字符串有注入风险，功能上也更笨重。Agent 工具注册表就是这个模式。`,
+  },
+''',
 }
 
 
