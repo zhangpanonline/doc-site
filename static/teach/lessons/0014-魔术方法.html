@@ -260,7 +260,7 @@ class Fraction:
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握魔术方法——可以继续学习《<a href="/agents/python/描述符/">13.描述符</a>》了。</p>
     </section>
 
-            <section>
+                                                    <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -312,11 +312,43 @@ users = {User('张三'), User('张三')}   # TypeError!</code></pre>`,
     },
     source: '任务基于《14.魔术方法》课程知识点 · 来源层级：一手（Python 官方文档 datamodel 章节）场景化',
     breakdown: `思路：__eq__ 比较 (x, y) 元组，__hash__ = hash((self.x, self.y))；__repr__ 输出 <code>Point2D(3, 4)</code> 这种可 eval 形式；近似比较做成 <code>def close_to(self, other, tol=1e-9)</code> 普通方法。坑：__hash__ 与 __eq__ 必须用同一组字段（审查题同款）；repr 里变量名要能被 eval 找到。`,
+  }, {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `<code>c.__len__ = lambda: 5</code> 之后 <code>len(c)</code> 还是报 TypeError。官方文档给出的规则是什么？为什么这样设计？`,
+    source: '来源：Python 官方文档 datamodel「Special method lookup」小节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文规则：对自定义类，特殊方法的<strong>隐式调用只保证在对象类型上定义时正确工作，实例字典里的定义无效</strong>（文档原例正是 c.__len__ = lambda: 5 后 len(c) 抛 TypeError: object of type 'C' has no len()）。设计理由：特殊方法若走实例字典查找，每个对象都要带一份方法表，<strong>性能和一致性</strong>都差。结论：len/str/iter/call 等协议方法一律定义在类上。`,
   },
-],
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的「给对象打补丁」代码：<code>obj.__str__ = 自定义函数</code> 想让 print 变格式。按官方规则会怎样？正确做法是什么？`,
+    source: '来源：Python 官方文档 datamodel「Special method lookup」小节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `print(obj) 走 <code>type(obj).__str__</code>——实例字典里的 __str__ 被<strong>无视</strong>，print 输出照旧。正确做法：① 类上定义（设计时就该有）；② 临时需求用 <code>type(obj).__str__ = ...</code> 猴子补丁（改的是类型，会生效但影响所有实例，慎用）；③ 换协议函数显式调用（自己调 obj.attr 而不是依赖隐式协议）。审查规则：看到「实例上挂 dunder」直接判无效。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -222,6 +222,36 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `查找链：<strong>① 数据描述符</strong>（有 __set__/__delete__）在类上定义时优先于实例字典 → ② <strong>实例字典</strong>（默认行为）→ ③ <strong>非数据描述符</strong>（只有 __get__）与类属性 → ④ __getattr__ 兜底。所以「只写 __get__ 的缓存描述符」会被实例同名属性遮蔽（复习审查题），而 property（数据描述符）永远拦在实例字典前面——这就是两个坑的机制根源。`,
   },
 ''',
+    '0011-可调用对象': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档说 <code>x(arg1, arg2)</code> 大致等价于什么？为什么普通 object 实例不可调用、而「类」本身却可调用？`,
+    source: '来源：Python 官方文档 datamodel「Emulating callable objects」object.__call__ 条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：x(arg1, arg2, ...) 大致等价于 <code>type(x).__call__(x, arg1, ...)</code>——调用协议在<strong>类型上</strong>执行。类可调用是因为 <code>type</code> 定义了 __call__（调用即实例化）；而 <strong>object 本身不提供 __call__</strong>（文档原话），所以普通对象默认不可调用——想让实例可调用，得自己的类定义 __call__。`,
+  },
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `审查 AI 的代码：它想在运行时给某个实例「挂上 __call__」让它可调用（<code>t.__call__ = lambda: 1</code>）。为什么按官方文档的定义，这不可能生效？`,
+    source: '来源：Python 官方文档 datamodel「Emulating callable objects」+「Special method lookup」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `调用翻译是 <code>type(x).__call__(x, ...)</code>——直接在<strong>类型对象上查找</strong> __call__，实例字典里的同名属性根本不参与；文档在「Special method lookup」一节明确：特殊方法的隐式调用<strong>只保证在对象类型上定义时正确工作</strong>（理由是跳过实例字典查找更快）。修复：把 __call__ 定义在类里；动态场景用 types.MethodType 绑到实例（普通属性调用不受此限）。`,
+  },
+''',
+    '0014-魔术方法': r'''  {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `<code>c.__len__ = lambda: 5</code> 之后 <code>len(c)</code> 还是报 TypeError。官方文档给出的规则是什么？为什么这样设计？`,
+    source: '来源：Python 官方文档 datamodel「Special method lookup」小节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文规则：对自定义类，特殊方法的<strong>隐式调用只保证在对象类型上定义时正确工作，实例字典里的定义无效</strong>（文档原例正是 c.__len__ = lambda: 5 后 len(c) 抛 TypeError: object of type 'C' has no len()）。设计理由：特殊方法若走实例字典查找，每个对象都要带一份方法表，<strong>性能和一致性</strong>都差。结论：len/str/iter/call 等协议方法一律定义在类上。`,
+  },
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的「给对象打补丁」代码：<code>obj.__str__ = 自定义函数</code> 想让 print 变格式。按官方规则会怎样？正确做法是什么？`,
+    source: '来源：Python 官方文档 datamodel「Special method lookup」小节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `print(obj) 走 <code>type(obj).__str__</code>——实例字典里的 __str__ 被<strong>无视</strong>，print 输出照旧。正确做法：① 类上定义（设计时就该有）；② 临时需求用 <code>type(obj).__str__ = ...</code> 猴子补丁（改的是类型，会生效但影响所有实例，慎用）；③ 换协议函数显式调用（自己调 obj.attr 而不是依赖隐式协议）。审查规则：看到「实例上挂 dunder」直接判无效。`,
+  },
+''',
 }
 
 

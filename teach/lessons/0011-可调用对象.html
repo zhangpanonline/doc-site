@@ -272,7 +272,7 @@ error_log("网络连接失败")</code></pre></div>
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握可调用对象——可以继续学习《<a href="/agents/python/元类/">10.元类</a>》了。</p>
     </section>
 
-                                                <section>
+                                                    <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -325,11 +325,25 @@ print(t())   # TypeError: 'Task' object is not callable</code></pre>
     },
     source: '任务基于《11.可调用对象》课程知识点（__call__ 小节）· 场景化',
     breakdown: `思路：<code>__init__</code> 里存 <code>self.prefix / self.retries</code>；<code>__call__</code> 里循环重试并打印。坑：实例属性与类属性别混用（幽灵共享同款坑）；__call__ 的返回值要正常透传，重试耗尽后 raise 而不是返回 None。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档说 <code>x(arg1, arg2)</code> 大致等价于什么？为什么普通 object 实例不可调用、而「类」本身却可调用？`,
+    source: '来源：Python 官方文档 datamodel「Emulating callable objects」object.__call__ 条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：x(arg1, arg2, ...) 大致等价于 <code>type(x).__call__(x, arg1, ...)</code>——调用协议在<strong>类型上</strong>执行。类可调用是因为 <code>type</code> 定义了 __call__（调用即实例化）；而 <strong>object 本身不提供 __call__</strong>（文档原话），所以普通对象默认不可调用——想让实例可调用，得自己的类定义 __call__。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `审查 AI 的代码：它想在运行时给某个实例「挂上 __call__」让它可调用（<code>t.__call__ = lambda: 1</code>）。为什么按官方文档的定义，这不可能生效？`,
+    source: '来源：Python 官方文档 datamodel「Emulating callable objects」+「Special method lookup」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `调用翻译是 <code>type(x).__call__(x, ...)</code>——直接在<strong>类型对象上查找</strong> __call__，实例字典里的同名属性根本不参与；文档在「Special method lookup」一节明确：特殊方法的隐式调用<strong>只保证在对象类型上定义时正确工作</strong>（理由是跳过实例字典查找更快）。修复：把 __call__ 定义在类里；动态场景用 types.MethodType 绑到实例（普通属性调用不受此限）。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 
