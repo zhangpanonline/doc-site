@@ -22,7 +22,7 @@ yarn-error.log*
 .history
 .DS_Store
 .codegraph/
-AGENTS.md
+# AGENTS.md 已于 2026-09-09 入库（协作规则），不再忽略
 .claude
 .scratch/
 .vercel
