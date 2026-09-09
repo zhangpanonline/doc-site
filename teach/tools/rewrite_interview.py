@@ -31,8 +31,8 @@ def make_questions(lesson, questions):
 LESSONS = [
     # (文件名, 巩固小节标题, lesson 键, 题组 JS 文本)
     # ——— 已完成试点（保持幂等） ———
-    ('0008-类和对象.html', '巩固与延伸', None, None),
-    ('db-0006-索引.html', '巩固延伸', None, None),
+    ('0008-类和对象.html', '巩固与延伸', '0008-类和对象', "[\n            {\n              type: 'trap',\n              level: '中级岗常问',\n              prompt: `你用 AI 工具写了一个购物车类：\n<pre><code>class Cart:\n    items = []\n\n    def add(self, sku):\n        self.items.append(sku)</code></pre>\n两个实例 c1、c2 各自 add 了不同的商品，结果 c2.items 里出现了 c1 的商品。为什么？怎么改？`,\n              source: '考点来源：CSDN 文库「Python 面试核心考点解析：面向对象」（类属性陷阱题）· 场景改写',\n              breakdown: `<code>items = []</code> 是<strong>类属性</strong>：整个类只有一份，存在类字典里。实例访问 <code>self.items</code> 时沿查找链命中类属性，append 改的就是这个共享列表——所有实例看到同一份数据。修复：在 <code>__init__</code> 里写 <code>self.items = []</code>（实例属性，每个实例一份）。这是「可变类属性的幽灵共享」，与可变默认参数陷阱同源；AI 生成代码时非常常见，面试官也知道你在用 AI，专挑这种坑问。`,\n            },\n            {\n              type: 'mechanism',\n              level: '中级岗常问',\n              prompt: `多继承 <code>class D(B, C)</code>，B、C 都继承 A，四个类都有 <code>who()</code>，且 B、C 的 <code>who()</code> 里都调用了 <code>super().who()</code>。调用 <code>D().who()</code> 时，执行顺序是怎样的？super() 到底指向谁？`,\n              source: '考点来源：千锋教育「Python 面试题：阅读下面的代码说出运行结果」（MRO 题）· 场景改写',\n              breakdown: `MRO 由 C3 线性化得出：<strong>D → B → C → A → object</strong>。<code>super()</code> 指向的不是「父类」，而是<strong>MRO 中的下一个类</strong>——所以 B.who 里的 super 走到 C.who（而不是 A），C 里的 super 再走到 A.who，A 只执行一次。把「super = MRO 下一个」刻进脑子，菱形继承的所有走位题都能手推。`,\n            },\n            {\n              type: 'review',\n              level: '高级岗常问',\n              prompt: `AI 生成了下面的多继承代码，你在代码审查。找出所有问题并给出修复：\n<pre><code>class Animal:\n    def __init__(self, name):\n        self.name = name\n\nclass Flyer(Animal):\n    def __init__(self, name, wings):\n        Animal.__init__(self, name)\n        self.wings = wings\n\nclass Swimmer(Animal):\n    def __init__(self, name, fins):\n        Animal.__init__(self, name)\n        self.fins = fins\n\nclass Duck(Flyer, Swimmer):\n    def __init__(self, name):\n        Flyer.__init__(self, name, 2)\n        Swimmer.__init__(self, name, 2)</code></pre>`,\n              source: '考点来源：CSDN「一份高质量的 Python 基础知识笔试题完整解析」（super 硬编码调用题）· 场景改写',\n              breakdown: `两个问题：① <code>Animal.__init__</code> 被调用了<strong>两次</strong>（Flyer、Swimmer 各硬编码一次）——若 __init__ 里有计数/注册等副作用就会翻倍；② 硬编码父类名切断了 super 的 MRO 协作链：Swimmer 在链上被跳过，「每个类只执行一次且有序」的保证不复存在。修复：全部改用 <code>super().__init__(...)</code>，多继承时参数全量透传，让 MRO 自己调度。`,\n            },\n            {\n              type: 'design',\n              level: '高级岗常问',\n              prompt: `你要用 AI 搭一个 Agent 工具系统，每个工具都要有「日志、超时、重试」能力。在给 AI 的提示词里，你该让它用继承还是组合来复用这些能力？为什么？`,\n              source: '考点来源：Real Python《Inheritance and Composition: A Python OOP Guide》· 场景改写',\n              breakdown: `优先<strong>组合</strong>：把日志/超时/重试做成独立组件注入（如 <code>Tool(runner, logger, retry)</code>）。继承只应表达严格的 is-a 关系，用它复用横切能力会掉进多继承 MRO 的深水区（上一题就是活例）。组合可插拔、可独立测试、也更容易让 AI 一次写对——这是「多用组合、少用继承」在 AI 协作时代的实践版。`,\n            },\n            {\n              type: 'scenario',\n              level: '中级岗常问',\n              prompt: `写一个 <code>inspect_class</code> 反射小工具（建议用 Claude Code 完成），任务与验收点见任务卡。`,\n              scene: {\n                time: '约 15 分钟',\n                goal: '传入任意类，打印它的 MRO 与方法分类（实例方法 / 类方法 / 静态方法），并校验一组 isinstance / issubclass 关系（如 issubclass(Duck, Animal)）。',\n                accept: ['MRO 对多继承类打印正确', '三种方法分类无遗漏、无错分', 'isinstance / issubclass 结论与 MRO 一致'],\n              },\n              source: '任务基于《8.类和对象》课程知识点（反射工具小节）· 来源层级：一手（Python 官方文档 inspect 模块）场景化',\n              breakdown: `思路：<code>cls.__mro__</code> 拿 MRO；遍历 <code>cls.__dict__</code>，用 <code>isinstance(v, classmethod)</code> / <code>isinstance(v, staticmethod)</code> / <code>types.FunctionType</code> 区分三种方法；isinstance/issubclass 直接调用即可。坑：判断「实例方法」时别在实例上 hasattr（会踩类属性共享的幽灵），在类字典上分类才干净。`,\n            },\n          ]"),
+    ('db-0006-索引.html', '巩固延伸', 'db-0006-索引', "[\n            {\n              type: 'trap',\n              level: '初级岗常问',\n              prompt: `你用 AI 写了一条高频搜索：<code>SELECT * FROM users WHERE name LIKE '%明%'</code>，name 列上有 B+ 树索引，但 EXPLAIN 显示 Seq Scan（全表扫）。为什么索引没生效？怎么改？`,\n              source: '考点来源：牛客专刊「数据库索引-笔面试必考点 15 讲」（索引失效题）· PostgreSQL 场景改写（答案以 PG16 实测执行计划为准）',\n              breakdown: `前导 % 破坏了 B+ 树的字典序定位——「任意位置含『明』」无法用树缩小范围，只能全表扫（左模糊连 text_pattern_ops 索引也无能为力）。改法：① 前缀匹配改成右模糊 <code>name LIKE '明%'</code>，注意 PG 默认排序规则下<strong>普通 btree 索引不服务 LIKE</strong>——需要 C 排序规则或 <code>text_pattern_ops</code> 索引（实测：建 pattern_ops 索引后走 Bitmap Index Scan，Index Cond 落在「明」到「昏」的区间）；② 中缀/模糊搜索用 pg_trgm 的 GIN 三元组索引或全文检索（tsvector + GIN）。同类失效还包括：对索引列做运算/函数、隐式类型转换、OR 关联非索引列。`,\n            },\n            {\n              type: 'mechanism',\n              level: '初级岗常问',\n              prompt: `面试官连问：为什么 B+ 树索引能加快查询？二级索引不是直接拿到数据了吗，为什么还要「回表」？`,\n              source: '考点来源：CSDN「MySQL 索引、锁、三大范式一篇搞定」+ 牛客网回表考点 · PostgreSQL 口径改写',\n              breakdown: `B+ 树是排好序的查找结构：树高 2~4 层，几次 IO 就能定位（O(log n)），替代逐行比对的全表扫（O(n)）——就像书的目录。二级索引叶子只存<strong>索引键 + 行指针（PG 的 TID）</strong>，整行数据在表（heap）里；要拿索引外的列，必须再按 TID 查一次表——这次再查就是「回表」。若查询列全在索引里（覆盖索引 / Index Only Scan），可免回表。`,\n            },\n            {\n              type: 'review',\n              level: '高级岗常问',\n              prompt: `AI 生成了订单表联合索引和四条查询，你在代码审查。逐条判断：用得上这个索引吗（全部 / 部分 / 完全不行）？\n<pre><code>CREATE INDEX idx_orders ON orders(user_id, status, created_at);\n\n-- ①\nSELECT * FROM orders WHERE user_id = 1 AND status = 'paid';\n-- ②\nSELECT * FROM orders WHERE status = 'paid' AND created_at > now() - interval '7 days';\n-- ③\nSELECT * FROM orders WHERE user_id = 1 AND created_at > now() - interval '7 days';\n-- ④\nSELECT * FROM orders WHERE user_id = 1 ORDER BY created_at DESC LIMIT 20;</code></pre>`,\n              source: '考点来源：CSDN「MySQL 索引、锁、三大范式一篇搞定」（最左前缀题）· PostgreSQL 场景改写（答案以 PG16 + 100 万行实测执行计划为准）',\n              breakdown: `联合索引按 user_id → status → created_at 排序（PG16 + 100 万行实测）：① 从最左列连续命中，user_id、status 都进入 Index Cond，索引范围定位 ✓；② 跳过最左列，索引无法定位起点 → Parallel Seq Scan，完全用不上；③ user_id 定位到子树，created_at 因中间 status 断层只能作为<strong>索引内过滤</strong>（逐条检查而非范围 seek，选择性大打折扣）——注意：MySQL 经典答案说「范围后断最左前缀」，PG 里它仍会进 Index Cond，但只是过滤器；④ 索引序是 (status, created_at)，ORDER BY created_at 缺 status 等式 → 出现 Sort 节点；补上 <code>AND status = 'paid'</code> 后变成 Index Only Scan Backward，免排序。`,\n            },\n            {\n              type: 'design',\n              level: '高级岗常问',\n              prompt: `团队要做一个 RAG 问答系统，AI 提议「文档全放向量库就够了」。你坚持保留 PostgreSQL。向量索引和 B+ 树索引各解决什么问题？混合检索为什么离不开关系库？`,\n              source: '来源层级：一手（PostgreSQL 官方文档 pgvector / indexes 章节）+ 场景化改写',\n              breakdown: `向量索引（如 pgvector 的 HNSW）解决<strong>相似度召回</strong>（语义相近的文档块），B+ 树解决<strong>结构化精确查询</strong>（用户、权限、元数据、状态过滤）。RAG 实际要的是混合检索：先按 user_id/权限/时间做结构化过滤，再向量召回，还要事务（计费、去重）与一致性——这些是关系库的标配。pgvector 让向量与 B+ 树共存一个库，避免两套系统同步的复杂度。`,\n            },\n            {\n              type: 'scenario',\n              level: '中级岗常问',\n              prompt: `用 Claude Code 完成一次慢查询排查（任务与验收点见任务卡）。`,\n              scene: {\n                time: '约 20 分钟',\n                goal: 'orders 表 100 万行、建有联合索引，某高频查询 EXPLAIN 显示 Seq Scan。诊断索引为什么没生效，写出修正 SQL，并用 EXPLAIN 验证执行计划改变。',\n                accept: ['能指出失效原因（列上运算 / 左模糊 / 跳过最左列等）', '修正后的 SQL 执行计划出现 Index Scan（或 Index Only Scan）', '能说出新计划的代价变化'],\n              },\n              source: '任务基于《06.索引》课程知识点 · 来源层级：一手（PostgreSQL 官方文档 EXPLAIN 章节）场景化',\n              breakdown: `思路：先 <code>EXPLAIN (ANALYZE, BUFFERS)</code> 看计划与代价；对照 WHERE/ORDER BY 检查最左前缀、列上是否有函数/运算/类型转换、是否左模糊；修正后再次 EXPLAIN 对比。坑：统计信息过期时计划可能仍不走索引——先 <code>ANALYZE orders;</code> 再验证。`,\n            },\n          ]"),
     # ——— 第一批 ———
     ('0003-python基本语法.html', '巩固与延伸', '0003-python基本语法', r'''[
   {
@@ -762,6 +762,190 @@ print(sum(data))   # 0  ← ？</code></pre>`,
     breakdown: `思路：类版 __enter__ 记 time.perf_counter() 返回 self，__exit__ 算差值打印并<strong>返回 None</strong>（不吞异常）；生成器版 yield 放中间、finally 里打印。坑：__exit__ 别返回 True（审查题同款）；计时用 perf_counter 不用 time.time（墙钟会被系统时间调整干扰）。`,
   },
 ]'''),
+    # ——— 第五批 ———
+    ('0019-ABC.html', '巩固与延伸', '0019-ABC', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `Python 的「鸭子类型」是什么意思？AI 生成的代码里没有任何 isinstance 检查，反而更 Pythonic——为什么？`,
+    source: '考点来源：博客园「Python 面试题面向对象」（鸭子类型题）· 场景改写',
+    breakdown: `<strong>「走起来像鸭子、叫起来像鸭子，就是鸭子」</strong>：只关心对象<strong>有没有所需的方法</strong>，不关心它的类型。所以函数参数不写类型检查、任何实现了 read() 的对象都能传给读文件的逻辑——协议兼容即类型。代价：错误推迟到运行时才暴露（TypeError: missing method）。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `面向对象的三大特性是什么？Python 的多态靠什么实现？`,
+    source: '考点来源：博客园「Python 面试题面向对象」（OOP 三特性题）· 场景改写',
+    breakdown: `<strong>封装</strong>（隐藏实现细节，暴露接口）、<strong>继承</strong>（复用与扩展）、<strong>多态</strong>（同一接口、不同行为）。Python 的多态主要靠<strong>鸭子类型</strong>实现——不要求继承同一基类，只要实现相同方法就能互换（这也是 ABC 存在的原因：当接口需要显式契约时用它约束）。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码用 <code>register()</code> 把没实现接口的类注册成了 ABC 的虚拟子类。审查：虚拟子类与真实继承有什么区别？register 有什么风险？
+<pre><code>class Storage(ABC):
+    @abstractmethod
+    def save(self, data): ...
+
+class Weird:          # 没有 save 方法
+    def load(self): ...
+
+Storage.register(Weird)
+print(isinstance(Weird(), Storage))   # True！</code></pre>`,
+    source: '考点来源：博客园「Python 面试题面向对象」（虚拟子类题）· 场景改写',
+    breakdown: `<code>register()</code> 只在 ABCMeta 的注册表里登记，<strong>isinstance/issubclass 返回 True，但完全不检查实现</strong>——Weird() 没有 save()，调用即 AttributeError。真实继承 + @abstractmethod 会在<strong>实例化时</strong>通过 __abstractmethods__ 检查拦下未实现者。风险：register 绕过全部契约检查，只应在「第三方类无法改继承关系」时谨慎使用，且调用前自己兜底。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `什么时候选 Protocol 而不是 ABC？两者的本质区别是什么？`,
+    source: '考点来源：Maxiom「Python Developer Interview Questions（2026）」（ABC vs Protocol 题）· 场景改写',
+    breakdown: `<strong>ABC</strong>：运行时契约——强制继承关系，实例化时检查抽象方法，适合「你的体系里必须显式注册」；<strong>Protocol</strong>：<strong>静态（类型检查器）契约</strong>——结构化子类型，任何「长得像」的类自动兼容，零运行时开销，适合给第三方代码、鸭子类型场景补类型检查。口诀：要运行时拦截选 ABC，要静态检查且不打扰运行时选 Protocol。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `用 ABC 定义一个存储接口（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '定义 Storage 抽象基类（save/load 抽象方法）；实现 FileStorage 与 MemoryStorage；漏实现抽象方法的类在实例化时报 TypeError；再用 register 注册一个第三方类并说明行为差异。',
+      accept: ['两个实现正常使用', '漏实现时实例化即报错', 'register 的虚拟子类 isinstance 通过但调用缺方法报错（能解释差异）'],
+    },
+    source: '任务基于《19.ABC》课程知识点 · 来源层级：一手（Python 官方文档 abc 章节）场景化',
+    breakdown: `思路：<code>class Storage(ABC): @abstractmethod def save...</code>；子类继承并全部实现。坑：抽象方法装饰器别漏（漏了实例化不拦截）；register 虚拟子类不检查实现（审查题同款）；ABC 与 @dataclass 混用时注意 ABC 的 __init__ 约束。`,
+  },
+]'''),
+    ('0020-类型标注.html', '巩固与延伸', '0020-类型标注', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `Python 的类型标注会在运行时强制吗？不会的话，它的价值在哪？`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（类型标注题）· 场景改写',
+    breakdown: `<strong>运行时完全不强制</strong>（除非用 pydantic 等库主动校验）——标注只是元数据。价值：① 静态检查器（mypy/pyright）提前发现类型错误；② IDE 补全/跳转；③ 给 AI 与协作者的「接口文档」——AI 时代这是最大的价值：标注写清楚，AI 生成代码的类型错误率显著下降。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `写一个「类型安全的通用容器」，get 返回的元素类型与放入的一致，用什么实现？核心写法是什么？`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（泛型场景题）· 场景改写',
+    breakdown: `<strong>TypeVar + Generic</strong>：<code>T = TypeVar('T'); class Box(Generic[T]): def get(self) -> T: ...</code>——<code>Box[int].get()</code> 静态检查推断为 int。类型检查器据此追踪类型流转：从 Box[int] 取出的值赋给 str 会报错。这是「类型安全容器」的标准答案。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码参数全标 <code>Any</code>，审查时你要求收敛。Any 和 object 有什么区别？为什么专家说 Any 是「类型检查的黑洞」？`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（Any vs object 题）· 场景改写',
+    breakdown: `<code>Any</code>：<strong>关闭所有检查</strong>——与任何类型双向兼容，赋值/调用都不报错，一个 Any 污染整条链（黑洞）；<code>object</code>：最宽但<strong>具体</strong>的类型——只能当普通 object 用，调方法要 isinstance 收窄。审查规则：Any 只出现在「真·动态」边界（反序列化、插件参数），内部逻辑必须收窄成具体类型。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `要给一个存量大型项目引入类型检查，正确的推进策略是什么？一次全标为什么行不通？`,
+    source: '考点来源：Maxiom「Python Developer Interview Questions（2026）」（渐进式类型化题）· 场景改写',
+    breakdown: `<strong>渐进式</strong>：① 从<strong>核心模块/公共接口</strong>开始标注（收益最大）；② 检查器增量开启（先 basic 再 strict，或用 per-file 忽略列表）；③ 第三方库无标注的补 stub 或用 Any 隔离；④ CI 里逐步收紧。一次全标会引爆几千条既有错误，没人敢合——类型化是过程不是开关。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `给一段现有代码补类型标注（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '给一个「用户查找」模块的函数补全标注（参数/返回值/Optional 字段）；写一个 Generic[T] 的 Result 容器；若装了 mypy/pyright 则跑通无错（未装则说明标注含义）。',
+      accept: ['函数签名标注完整（含 Optional 场景）', 'Result[T] 泛型容器标注正确', '能说清每处标注对静态检查的作用'],
+    },
+    source: '任务基于《20.类型标注》课程知识点 · 来源层级：一手（Python 官方文档 typing 章节）场景化',
+    breakdown: `思路：参数 <code>-> list[User]</code>、可空字段 <code>Optional[str]</code>（3.10+ 用 str | None）；容器 <code>T = TypeVar('T'); class Result(Generic[T])</code>。坑：别用 Any 偷懒（审查题同款）；dict 要标全 <code>dict[str, int]</code> 而不是裸 dict。`,
+  },
+]'''),
+    ('0021-模块化.html', '巩固与延伸', '0021-模块化', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `模块和包的区别是什么？Python 3.3+ 的「命名空间包」又是什么？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（基础理论 + 工程实践篇）」· 场景改写',
+    breakdown: `<strong>模块</strong>：单个 .py 文件；<strong>包</strong>：目录 + <code>__init__.py</code>（含子模块）。命名空间包：3.3+ 无 __init__.py 的目录也能当包导入（便于大型项目分目录合并），但显式 __init__.py 能控制导出与包级初始化，工程上仍推荐。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `两个模块相互 import 导致 ImportError/AttributeError，怎么解决？有哪些方案？`,
+    source: '考点来源：腾讯云「Python 模块化编程：面试题深度解析」（循环导入题）· 场景改写',
+    breakdown: `循环导入的本质：A 导入 B 时 B 又要导入 A，A 尚在<strong>半初始化状态</strong>（需要的名字还没定义）。方案：① <strong>延迟导入</strong>（import 写进函数体，调用时才执行）；② 抽公共依赖到第三个模块（C），A、B 都只 import C；③ 改「导入模块」为「导入名字」（from .b import f 换成 import .b 再 b.f 调用）。AI 生成的多模块代码最爱互导，审查时见到 A→B 与 B→A 同时出现就要报警。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的 utils 模块顶层直接执行了「读环境变量 + 建数据库连接 + 启动定时线程」。审查：模块顶层代码什么时候执行？这些副作用会带来什么问题？`,
+    source: '考点来源：腾讯云「Python 模块化编程：面试题深度解析」（导入副作用题）· 场景改写',
+    breakdown: `模块顶层代码在<strong>首次被 import 时执行一次</strong>（整个进程生命周期仅一次）。副作用问题：① 导入变慢（连 DB 要等超时）；② 导入顺序依赖（环境变量还没设好就连接）；③ 测试/CLI 场景无法隔离；④ import 失败连带整个应用起不来。修复：顶层只定义函数/常量，副作用放进显式 init()/连接池懒加载。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `包内部引用兄弟模块，用相对导入还是绝对导入？为什么？`,
+    source: '考点来源：腾讯云「Python 模块化编程：面试题深度解析」（导入方式题）· 场景改写',
+    breakdown: `<strong>包内用相对导入</strong>：<code>from .models import User</code>——包改名/移动位置后内部引用零改动，且明确表达「这是包内关系」；绝对导入（from app.models import User）依赖顶层包名，被嵌入别的项目时全崩。注意：相对导入只能在<strong>包内模块</strong>用，直接运行的顶层脚本（__main__）必须绝对导入。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `把一个扁平脚本拆成包（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '原脚本 200 行全在 main.py：拆成 utils/（工具函数）、models/（数据结构）两个包；包内用相对导入；入口 main.py 用绝对导入；无循环导入；顶层无副作用。',
+      accept: ['包结构清晰、内部相对导入', 'main.py 运行结果与原脚本一致', 'import 任意子模块不触发副作用'],
+    },
+    source: '任务基于《21.模块化》课程知识点 · 场景化',
+    breakdown: `思路：按职责拆函数进 utils/、类进 models/，__init__.py 里做轻量 re-export；包内 from .x import y；入口 import utils、import models 绝对导入。坑：别在 __init__.py 里做重活（导入副作用题同款）；拆完跑一遍原测试/样例确保行为一致。`,
+  },
+]'''),
+    ('0022-标准库.html', '巩固与延伸', '0022-标准库', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `读写文件的标准姿势是什么？为什么 open 必须显式写 <code>encoding='utf-8'</code>？`,
+    source: '考点来源：CSDN 文库「Python 面试核心考点解析」（文件操作题）· 场景改写',
+    breakdown: `<code>with open(path, 'r', encoding='utf-8') as f: ...</code>——with 保证异常路径也关闭句柄；encoding 显式指定避免<strong>平台默认编码</strong>（Windows 是 GBK，读 UTF-8 文件直接乱码/UnicodeDecodeError）。AI 生成的跨平台脚本漏写 encoding 是乱码事故头号来源。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `用正则匹配「行首 1–6 个 # 后跟至少一个空格」的 Markdown 标题，正确的模式是什么？贪婪与非贪婪怎么选？`,
+    source: '考点来源：CSDN 文库「Python 面试核心考点解析」（正则题）· 场景改写',
+    breakdown: `<code>^#{1,6} \\S</code> 或 <code>^#{1,6} +</code>（注意量词后跟空格是字面空格）；用 <code>re.MULTILINE</code> 让 ^ 匹配每行行首。贪婪 vs 非贪婪：<code>.*</code> 贪婪尽量多吃（容易跨行多吃），<code>.*?</code> 非贪婪见好就收——提取一对标记之间的内容用非贪婪，匹配「整行注释」这类有明确边界时贪婪更快更安全。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的路径拼接：<code>path = dir + '/' + filename</code>。审查：在 Windows 上会怎样？正确姿势是什么？
+<pre><code>import os
+
+def save(dir, name):
+    path = dir + '/' + name
+    with open(path, 'w') as f:
+        f.write('x')</code></pre>`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目」（路径拼接陷阱题）· 场景改写',
+    breakdown: `硬编码 <code>'/'</code> 在 Windows 上方向错误、且尾部多斜杠/目录缺斜杠都会出问题；同目录判等、规范化都没保障。正确：<code>os.path.join(dir, name)</code> 或更现代的 <code>pathlib.Path(dir) / name</code>——自动处理分隔符与边界。AI 生成代码最爱手拼路径，跨平台部署（服务器 Linux、本地 Windows）时必炸。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `pathlib 相比 os.path 好在哪里？新项目为什么推荐 pathlib？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目」（pathlib 题）· 场景改写',
+    breakdown: `<strong>面向对象</strong>：Path 对象自带属性与操作（<code>p.parent / p.suffix / p.read_text()</code>），链式 <code>p / 'a' / 'b'</code> 比嵌套 join 可读得多；<strong>跨平台</strong>：WindowsPath/PosixPath 自动适配；内置遍历 <code>p.glob('**/*.py')</code> 比 os.walk 简洁。os.path 仍可用（兼容老代码），但新代码默认 pathlib。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个目录扫描统计工具（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '用 pathlib 递归扫描目录：用正则过滤目标文件（如 _test.py 结尾）；统计每个文件行数与总行数；输出按路径排序的表格。',
+      accept: ['pathlib 全链路（无字符串拼路径）', 'glob/正则过滤正确', '行数统计与总行数正确'],
+    },
+    source: '任务基于《22.标准库》课程知识点 · 来源层级：一手（Python 官方文档 pathlib/re 章节）场景化',
+    breakdown: `思路：<code>for p in Path(root).rglob('*.py'): if re.search(r'_test\\.py$', p.name)</code> 过滤；<code>p.read_text(encoding='utf-8').count('\\n')</code> 行数；结果 sorted。坑：read_text 记得 encoding（陷阱题同款）；二进制/大文件用迭代计数而不是整读。`,
+  },
+]'''),
 ]
 
 
@@ -769,8 +953,9 @@ def rewrite(path, questions_script):
     with open(path, encoding='utf-8') as f:
         src = f.read()
     src = src.replace('6 道面试实战（中/高/专家各 2 道）', '面试实战')
-    start = src.index('      <h2>💼 面试实战</h2>')
-    end = src.index('</section>', start) + len('</section>')
+    h2 = src.index('      <h2>💼 面试实战</h2>')
+    start = src.rindex('<section>', 0, h2)   # 面试实战小节的 <section> 开标签
+    end = src.index('</section>', h2) + len('</section>')
     new_section = ('    <section>\n'
                    '      <h2>💼 面试实战</h2>\n'
                    + INTRO + '\n'

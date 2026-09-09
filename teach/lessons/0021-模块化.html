@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 19 课</p>
       <h1>模块化</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/模块化/">19.模块化</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/模块化/">19.模块化</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -237,85 +237,59 @@ q.z = 3                # 普通类可以随意添加属性</code></pre>
       <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握模块化——可以继续学习《<a href="/agents/python/标准库/">20.标准库</a>》了。</p>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（模块 vs 包·必问）：模块和包的区别？<code>__init__.py</code> 的作用？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">模块是 .py 文件；包是含 __init__.py 的目录，导入时自动执行它</button>
-            <button class="quiz-option">两者完全一样，只是叫法不同</button>
-            <button class="quiz-option">包是 .py 文件，模块是目录</button>
-            <button class="quiz-option">__init__.py 只是占位文件没有作用</button>
-          </div>
-          <div class="quiz-explain" hidden>模块是一个 <code>.py</code> 文件；包是含 <code>__init__.py</code> 的目录（即使为空，也是包的标识）。<code>__init__.py</code> 的作用：① 标识包身份；② 导入包时自动执行（初始化、配置）；③ 定义 <code>__all__</code> 控制 <code>import *</code>；④ 提前导入子模块简化外部导入路径。记忆口诀「标识 + 控制」。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目（基础理论 + 工程实践篇）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（循环导入·高频）：两个模块相互 import 导致 ImportError，怎么解决？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">抽公共模块或延迟导入（函数内部 import）</button>
-            <button class="quiz-option">把两个模块合并成一个文件</button>
-            <button class="quiz-option">删除其中一个 import 语句</button>
-            <button class="quiz-option">多 import 几遍就能解决</button>
-          </div>
-          <div class="quiz-explain" hidden>循环导入的成因：互相导入时一方<strong>尚未完成初始化</strong>就访问其成员。标准解法：① 重构——把共享依赖抽到第三个模块；② <strong>延迟导入</strong>——把 import 挪进函数体内（用时才导入，还能加快启动）。<a href="https://cloud.tencent.cn/developer/article/2409971">出处：腾讯云「Python 模块化编程：面试题深度解析」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（__slots__ 继承·深水区）：父类声明了 <code>__slots__</code>，子类<strong>没有</strong>声明，子类实例还有 <code>__dict__</code> 吗？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">有：子类未声明 slots 则自动获得 __dict__</button>
-            <button class="quiz-option">没有：__slots__ 会沿继承传递</button>
-            <button class="quiz-option">子类无法实例化</button>
-            <button class="quiz-option">子类定义会报错</button>
-          </div>
-          <div class="quiz-explain" hidden><code>__slots__</code> <strong>不自动沿继承传递</strong>：子类未声明自己的 <code>__slots__</code>（即使声明空元组也不行——空 slots 才继承父类限制）时，子类实例<strong>仍会有 <code>__dict__</code></strong>，省内存的效果在子类上失效。这是 __slots__ 深水区的经典追问：想全程省内存，每一层都要声明。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（PEP 562·机制）：模块级 <code>def __getattr__(name)</code> 的作用是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">拦截模块属性的未定义访问（惰性导出/弃用警告）</button>
-            <button class="quiz-option">定义模块的默认属性值</button>
-            <button class="quiz-option">限制模块只能被导入一次</button>
-            <button class="quiz-option">替代 __init__.py 的功能</button>
-          </div>
-          <div class="quiz-explain" hidden>PEP 562：模块级 <code>__getattr__</code> 在<strong>访问模块中不存在的属性</strong>时被调用——用于惰性导入重依赖（首次访问才 import）、给已改名/弃用的 API 发 DeprecationWarning（如 numpy 的兼容层）。这是「模块也是对象」的高级应用。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（导入副作用·机制）：模块顶层的代码什么时候执行？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">首次导入时执行一次（顶层语句是运行时的）</button>
-            <button class="quiz-option">永远不执行，只是声明</button>
-            <button class="quiz-option">每次 import 都重新执行</button>
-            <button class="quiz-option">编译期执行</button>
-          </div>
-          <div class="quiz-explain" hidden>模块顶层的<strong>可执行语句在首次导入时运行</strong>（打印、连接数据库等都会发生），之后由 sys.modules 缓存不再重复。所以「import 有副作用」是真实风险——这也是模块级代码要克制、用 <code>if __name__ == "__main__"</code> 隔离测试代码的原因。<a href="https://cloud.tencent.cn/developer/article/2409971">出处：腾讯云「Python 模块化编程：面试题深度解析」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（导入方式·设计）：相对导入（<code>from . import x</code>）与绝对导入如何选择？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">包内部用相对导入（不依赖包名）；外部/脚本用绝对导入</button>
-            <button class="quiz-option">任何场景都用相对导入</button>
-            <button class="quiz-option">任何场景都用绝对导入</button>
-            <button class="quiz-option">两者行为完全一致</button>
-          </div>
-          <div class="quiz-explain" hidden>包<strong>内部</strong>用相对导入（<code>from . import x</code>）——包改名/移动时不受影响；包<strong>外部</strong>与直接运行的脚本用绝对导入。注意：含相对导入的模块<strong>不能作为脚本直接运行</strong>。选型理由比选型本身更被面试官看重。<a href="https://cloud.tencent.cn/developer/article/2409971">出处同专家题一</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0021-模块化',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `模块和包的区别是什么？Python 3.3+ 的「命名空间包」又是什么？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目（基础理论 + 工程实践篇）」· 场景改写',
+    breakdown: `<strong>模块</strong>：单个 .py 文件；<strong>包</strong>：目录 + <code>__init__.py</code>（含子模块）。命名空间包：3.3+ 无 __init__.py 的目录也能当包导入（便于大型项目分目录合并），但显式 __init__.py 能控制导出与包级初始化，工程上仍推荐。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `两个模块相互 import 导致 ImportError/AttributeError，怎么解决？有哪些方案？`,
+    source: '考点来源：腾讯云「Python 模块化编程：面试题深度解析」（循环导入题）· 场景改写',
+    breakdown: `循环导入的本质：A 导入 B 时 B 又要导入 A，A 尚在<strong>半初始化状态</strong>（需要的名字还没定义）。方案：① <strong>延迟导入</strong>（import 写进函数体，调用时才执行）；② 抽公共依赖到第三个模块（C），A、B 都只 import C；③ 改「导入模块」为「导入名字」（from .b import f 换成 import .b 再 b.f 调用）。AI 生成的多模块代码最爱互导，审查时见到 A→B 与 B→A 同时出现就要报警。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的 utils 模块顶层直接执行了「读环境变量 + 建数据库连接 + 启动定时线程」。审查：模块顶层代码什么时候执行？这些副作用会带来什么问题？`,
+    source: '考点来源：腾讯云「Python 模块化编程：面试题深度解析」（导入副作用题）· 场景改写',
+    breakdown: `模块顶层代码在<strong>首次被 import 时执行一次</strong>（整个进程生命周期仅一次）。副作用问题：① 导入变慢（连 DB 要等超时）；② 导入顺序依赖（环境变量还没设好就连接）；③ 测试/CLI 场景无法隔离；④ import 失败连带整个应用起不来。修复：顶层只定义函数/常量，副作用放进显式 init()/连接池懒加载。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `包内部引用兄弟模块，用相对导入还是绝对导入？为什么？`,
+    source: '考点来源：腾讯云「Python 模块化编程：面试题深度解析」（导入方式题）· 场景改写',
+    breakdown: `<strong>包内用相对导入</strong>：<code>from .models import User</code>——包改名/移动位置后内部引用零改动，且明确表达「这是包内关系」；绝对导入（from app.models import User）依赖顶层包名，被嵌入别的项目时全崩。注意：相对导入只能在<strong>包内模块</strong>用，直接运行的顶层脚本（__main__）必须绝对导入。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `把一个扁平脚本拆成包（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '原脚本 200 行全在 main.py：拆成 utils/（工具函数）、models/（数据结构）两个包；包内用相对导入；入口 main.py 用绝对导入；无循环导入；顶层无副作用。',
+      accept: ['包结构清晰、内部相对导入', 'main.py 运行结果与原脚本一致', 'import 任意子模块不触发副作用'],
+    },
+    source: '任务基于《21.模块化》课程知识点 · 场景化',
+    breakdown: `思路：按职责拆函数进 utils/、类进 models/，__init__.py 里做轻量 re-export；包内 from .x import y；入口 import utils、import models 绝对导入。坑：别在 __init__.py 里做重活（导入副作用题同款）；拆完跑一遍原测试/样例确保行为一致。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -333,5 +307,6 @@ q.z = 3                # 普通类可以随意添加属性</code></pre>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

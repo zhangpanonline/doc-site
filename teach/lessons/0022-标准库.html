@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 20 课</p>
       <h1>标准库</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/标准库/">20.标准库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/标准库/">20.标准库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -259,85 +259,65 @@ def merge_markdown(files: list[str], output: str) -> None:
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握标准库的实战用法——可以继续学习《<a href="/agents/python/第三方库/">21.第三方库</a>》了。</p>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0022-标准库',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `读写文件的标准姿势是什么？为什么 open 必须显式写 <code>encoding='utf-8'</code>？`,
+    source: '考点来源：CSDN 文库「Python 面试核心考点解析」（文件操作题）· 场景改写',
+    breakdown: `<code>with open(path, 'r', encoding='utf-8') as f: ...</code>——with 保证异常路径也关闭句柄；encoding 显式指定避免<strong>平台默认编码</strong>（Windows 是 GBK，读 UTF-8 文件直接乱码/UnicodeDecodeError）。AI 生成的跨平台脚本漏写 encoding 是乱码事故头号来源。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `用正则匹配「行首 1–6 个 # 后跟至少一个空格」的 Markdown 标题，正确的模式是什么？贪婪与非贪婪怎么选？`,
+    source: '考点来源：CSDN 文库「Python 面试核心考点解析」（正则题）· 场景改写',
+    breakdown: `<code>^#{1,6} \\S</code> 或 <code>^#{1,6} +</code>（注意量词后跟空格是字面空格）；用 <code>re.MULTILINE</code> 让 ^ 匹配每行行首。贪婪 vs 非贪婪：<code>.*</code> 贪婪尽量多吃（容易跨行多吃），<code>.*?</code> 非贪婪见好就收——提取一对标记之间的内容用非贪婪，匹配「整行注释」这类有明确边界时贪婪更快更安全。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的路径拼接：<code>path = dir + '/' + filename</code>。审查：在 Windows 上会怎样？正确姿势是什么？
+<pre><code>import os
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（文件操作·高频）：读写文件的标准姿势是？为什么推荐 with open？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">with open(...) as f：退出时自动 close，异常也安全</button>
-            <button class="quiz-option">f = open(...)，用完手动 close</button>
-            <button class="quiz-option">readlines 一次性读入最快最稳</button>
-            <button class="quiz-option">文件不需要显式关闭</button>
-          </div>
-          <div class="quiz-explain" hidden><code>with open(...) as f:</code> 是标准姿势——文件对象是上下文管理器，退出 with（<strong>包括异常退出</strong>）自动 close，不会因中途出错泄漏句柄；大文件应逐行/按需读取而不是 readlines 全量载入。处理中文记得 <code>encoding="utf-8"</code>。<a href="https://wenku.csdn.net/doc/6et562nus6">出处：CSDN 文库「Python 面试核心考点解析：面向对象、异常处理、正则表达式与文件操作」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（正则·高频）：用正则匹配「行首 1-6 个 # 后跟至少一个空格的标题」，正确的模式是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">r"^(#{1,6})\s+(.+)$"（配合 re.MULTILINE）</button>
-            <button class="quiz-option">r"^#(.*)$"</button>
-            <button class="quiz-option">r"#{1,6}(.+)"</button>
-            <button class="quiz-option">r"^(#+)(.+)$"</button>
-          </div>
-          <div class="quiz-explain" hidden><code>^(#{1,6})\s+(.+)$</code> + <code>re.MULTILINE</code>：<code>{1,6}</code> 限定井号个数、<code>\s+</code> 要求标题前有空白、两个捕获组分别拿井号与内容——这也是作业二合并器的核心正则。<a href="https://wenku.csdn.net/doc/6et562nus6">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（路径拼接陷阱·深水区）：<code>os.path.join("/a", "/b")</code> 的结果是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">"/b"（绝对路径参数会覆盖前面的部分）</button>
-            <button class="quiz-option">"/a/b"</button>
-            <button class="quiz-option">"/a//b"</button>
-            <button class="quiz-option">运行时报错</button>
-          </div>
-          <div class="quiz-explain" hidden>os.path.join 的经典陷阱：后续参数若是<strong>绝对路径</strong>，会<strong>丢弃之前拼接的所有内容</strong> → <code>"/b"</code>。工程上拼接用户输入路径前必须先检查/清洗（如去掉前导 /），否则路径穿越类 bug 由此而生。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处：CSDN「100 道 Python 面试必背题目」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（pathlib·机制）：<code>pathlib.Path</code> 相比 <code>os.path</code> 的优势是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">面向对象、跨平台、链式调用、原生支持 / 操作符</button>
-            <button class="quiz-option">运行速度更快</button>
-            <button class="quiz-option">是 os.path 的字符串别名</button>
-            <button class="quiz-option">只在 Windows 上可用</button>
-          </div>
-          <div class="quiz-explain" hidden><code>Path("a") / "b" / "c.txt"</code>：面向对象（方法挂在对象上）、<strong>跨平台统一分隔符</strong>、链式可读（<code>.read_text()</code> 等一体集成）——现代 Python 代码的标准选择，os.path 字符串风格正逐步退役。<a href="https://blog.csdn.net/thmail/article/details/150763349">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（大文件处理·工程）：处理 10GB 文本文件的正确姿势是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">逐行/分块流式处理，任意时刻内存只占一小块</button>
-            <button class="quiz-option">read() 一次性读入再处理</button>
-            <button class="quiz-option">readlines() 读入列表再逐行处理</button>
-            <button class="quiz-option">先复制成多个小文件</button>
-          </div>
-          <div class="quiz-explain" hidden>大文件必须<strong>流式处理</strong>：<code>for line in f:</code> 或 <code>f.read(块大小)</code> 分块——任意时刻内存中只有当前一行/一块；read()/readlines() 会把整个文件载入内存，10GB 直接爆掉。这是「生成器惰性思想」在文件 I/O 上的标准应用。<a href="https://cloud.tencent.com/developer/article/2409961">出处：腾讯云「Python 高级特性解析与面试应对策略」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（正则贪婪·机制）：<code>re.findall(r"&lt;p&gt;(.*)&lt;/p&gt;", "&lt;p&gt;a&lt;/p&gt;&lt;p&gt;b&lt;/p&gt;")</code> 的结果是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">["a&lt;/p&gt;&lt;p&gt;b"]（贪婪匹配尽可能长）</button>
-            <button class="quiz-option">["a", "b"]（匹配两段）</button>
-            <button class="quiz-option">["a&lt;/p&gt;", "&lt;p&gt;b"]</button>
-            <button class="quiz-option">运行时报错</button>
-          </div>
-          <div class="quiz-explain" hidden><code>.*</code> 是<strong>贪婪匹配</strong>：从第一个 &lt;p&gt; 一直吃到<strong>最后一个</strong> &lt;/p&gt; → <code>["a&lt;/p&gt;&lt;p&gt;b"]</code>。想要两段分别匹配用非贪婪 <code>.*?</code>（结果是 ["a", "b"]）。贪婪/惰性之分是正则面试的必考陷阱。<a href="https://wenku.csdn.net/doc/6et562nus6">出处：CSDN 文库「Python 面试核心考点解析：正则表达式」</a></div>
-        </div>
-      </div>
+def save(dir, name):
+    path = dir + '/' + name
+    with open(path, 'w') as f:
+        f.write('x')</code></pre>`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目」（路径拼接陷阱题）· 场景改写',
+    breakdown: `硬编码 <code>'/'</code> 在 Windows 上方向错误、且尾部多斜杠/目录缺斜杠都会出问题；同目录判等、规范化都没保障。正确：<code>os.path.join(dir, name)</code> 或更现代的 <code>pathlib.Path(dir) / name</code>——自动处理分隔符与边界。AI 生成代码最爱手拼路径，跨平台部署（服务器 Linux、本地 Windows）时必炸。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `pathlib 相比 os.path 好在哪里？新项目为什么推荐 pathlib？`,
+    source: '考点来源：CSDN「100 道 Python 面试必背题目」（pathlib 题）· 场景改写',
+    breakdown: `<strong>面向对象</strong>：Path 对象自带属性与操作（<code>p.parent / p.suffix / p.read_text()</code>），链式 <code>p / 'a' / 'b'</code> 比嵌套 join 可读得多；<strong>跨平台</strong>：WindowsPath/PosixPath 自动适配；内置遍历 <code>p.glob('**/*.py')</code> 比 os.walk 简洁。os.path 仍可用（兼容老代码），但新代码默认 pathlib。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个目录扫描统计工具（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '用 pathlib 递归扫描目录：用正则过滤目标文件（如 _test.py 结尾）；统计每个文件行数与总行数；输出按路径排序的表格。',
+      accept: ['pathlib 全链路（无字符串拼路径）', 'glob/正则过滤正确', '行数统计与总行数正确'],
+    },
+    source: '任务基于《22.标准库》课程知识点 · 来源层级：一手（Python 官方文档 pathlib/re 章节）场景化',
+    breakdown: `思路：<code>for p in Path(root).rglob('*.py'): if re.search(r'_test\\.py$', p.name)</code> 过滤；<code>p.read_text(encoding='utf-8').count('\\n')</code> 行数；结果 sorted。坑：read_text 记得 encoding（陷阱题同款）；二进制/大文件用迭代计数而不是整读。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -355,5 +335,6 @@ def merge_markdown(files: list[str], output: str) -> None:
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

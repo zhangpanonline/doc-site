@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 18 课</p>
       <h1>类型标注</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/类型标注/">18.类型标注</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/类型标注/">18.类型标注</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -252,85 +252,59 @@ class AppConfig(TypedDict):
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握类型标注——可以继续学习《<a href="/agents/python/模块化/">19.模块化</a>》了。</p>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（类型标注·高频）：Python 的类型标注会在运行时强制吗？那它的价值在哪？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">不强制；价值在编码期检查、IDE 提示与文档化</button>
-            <button class="quiz-option">会强制，违反即抛 TypeError</button>
-            <button class="quiz-option">只在导入时检查一次</button>
-            <button class="quiz-option">没有任何价值，纯装饰</button>
-          </div>
-          <div class="quiz-explain" hidden>类型标注<strong>不参与运行时约束</strong>——它的价值在于：① IDE 自动补全/参数提示/错误高亮；② 配合 mypy/pyright 在<strong>编码期/CI</strong> 拦截类型错误；③ 作为函数接口的「文档」。团队实践常是「新代码强制标注 + CI 跑 mypy」。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（泛型场景·追问）：写一个「类型安全的通用容器」，让 <code>Stack[int]</code> 与 <code>Stack[str]</code> 互不混淆，靠什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">TypeVar + Generic，类型参数在检查期区分</button>
-            <button class="quiz-option">两个不同的类分别实现</button>
-            <button class="quiz-option">用 Any 标注所有方法</button>
-            <button class="quiz-option">Python 做不到，只能靠运行时判断</button>
-          </div>
-          <div class="quiz-explain" hidden><code>T = TypeVar("T")</code> + <code>class Stack(Generic[T])</code>：检查器会追踪 <code>int_stack: Stack[int]</code> 的元素类型，<code>int_stack.push("hello")</code> 在编码期就报警——泛型让「同一份代码、多种类型」既复用又安全。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（Any vs object·深水区）：标注 <code>Any</code> 与标注 <code>object</code> 的区别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">Any 完全关闭检查；object 只允许 object 拥有的方法</button>
-            <button class="quiz-option">两者完全相同</button>
-            <button class="quiz-option">object 完全关闭检查</button>
-            <button class="quiz-option">Any 比 object 更严格</button>
-          </div>
-          <div class="quiz-explain" hidden><code>Any</code> 是「逃生舱」——<strong>彻底关闭类型检查</strong>（任何操作都合法）；<code>object</code> 是具体类型——检查器只允许<strong>所有对象共有</strong>的操作（如 <code>str(x)</code>），调用不存在的方法会报警。所以「不确定类型」才用 Any，「确实是任意对象但只做通用操作」用 object。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（Protocol·机制）：<code>typing.Protocol</code> 的作用是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">定义结构化接口：方法匹配即满足，无需继承</button>
-            <button class="quiz-option">定义抽象类必须继承</button>
-            <button class="quiz-option">运行时强制类型转换</button>
-            <button class="quiz-option">声明函数为异步函数</button>
-          </div>
-          <div class="quiz-explain" hidden><code>class SupportsClose(Protocol): def close(self) -&gt; None: ...</code> 定义<strong>结构化接口</strong>：任何实现了 close 的类都自动满足该协议（无需显式继承）——静态检查器的「鸭子类型」版本，约束第三方类时格外有用。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处同面试题三</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（渐进式类型化·工程）：给存量大型项目引入类型检查，正确的推进策略是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">CI 跑 mypy 对新代码强制，存量逐步补全</button>
-            <button class="quiz-option">一次性给全部代码加完标注再上线</button>
-            <button class="quiz-option">类型标注没有工程价值，不需要引入</button>
-            <button class="quiz-option">只在文档里写类型说明</button>
-          </div>
-          <div class="quiz-explain" hidden>渐进式类型化（gradual typing）标准策略：<strong>新代码强制标注 + CI 集成 mypy/pyright</strong> 拦截回归，存量模块按优先级逐步补全；对无标注第三方库用 .pyi stub 或 typed wrapper，而不是到处撒 <code>type: ignore</code>。这是「专业级 Python 开发」的面试加分回答。<a href="https://maxiom.dev/python-developer-interview-questions">出处：Maxiom「Python Developer Interview Questions（2026）」中文面试集收录</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（类型收窄·机制）：<code>isinstance</code> 检查在类型检查器中起什么作用？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">收窄联合类型：分支内变量类型变具体</button>
-            <button class="quiz-option">运行时抛出类型异常</button>
-            <button class="quiz-option">自动转换变量类型</button>
-            <button class="quiz-option">对类型检查没有影响</button>
-          </div>
-          <div class="quiz-explain" hidden>类型收窄（narrowing）：<code>if isinstance(x, int):</code> 分支内检查器把 <code>x</code> 从 <code>int | str</code> <strong>收窄为 int</strong>，允许调用 int 专属方法——这是「标注 + 运行时检查」配合的典范，让静态与动态类型世界衔接起来。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处同面试题三</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0020-类型标注',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `Python 的类型标注会在运行时强制吗？不会的话，它的价值在哪？`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（类型标注题）· 场景改写',
+    breakdown: `<strong>运行时完全不强制</strong>（除非用 pydantic 等库主动校验）——标注只是元数据。价值：① 静态检查器（mypy/pyright）提前发现类型错误；② IDE 补全/跳转；③ 给 AI 与协作者的「接口文档」——AI 时代这是最大的价值：标注写清楚，AI 生成代码的类型错误率显著下降。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `写一个「类型安全的通用容器」，get 返回的元素类型与放入的一致，用什么实现？核心写法是什么？`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（泛型场景题）· 场景改写',
+    breakdown: `<strong>TypeVar + Generic</strong>：<code>T = TypeVar('T'); class Box(Generic[T]): def get(self) -> T: ...</code>——<code>Box[int].get()</code> 静态检查推断为 int。类型检查器据此追踪类型流转：从 Box[int] 取出的值赋给 str 会报错。这是「类型安全容器」的标准答案。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的代码参数全标 <code>Any</code>，审查时你要求收敛。Any 和 object 有什么区别？为什么专家说 Any 是「类型检查的黑洞」？`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（Any vs object 题）· 场景改写',
+    breakdown: `<code>Any</code>：<strong>关闭所有检查</strong>——与任何类型双向兼容，赋值/调用都不报错，一个 Any 污染整条链（黑洞）；<code>object</code>：最宽但<strong>具体</strong>的类型——只能当普通 object 用，调方法要 isinstance 收窄。审查规则：Any 只出现在「真·动态」边界（反序列化、插件参数），内部逻辑必须收窄成具体类型。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `要给一个存量大型项目引入类型检查，正确的推进策略是什么？一次全标为什么行不通？`,
+    source: '考点来源：Maxiom「Python Developer Interview Questions（2026）」（渐进式类型化题）· 场景改写',
+    breakdown: `<strong>渐进式</strong>：① 从<strong>核心模块/公共接口</strong>开始标注（收益最大）；② 检查器增量开启（先 basic 再 strict，或用 per-file 忽略列表）；③ 第三方库无标注的补 stub 或用 Any 隔离；④ CI 里逐步收紧。一次全标会引爆几千条既有错误，没人敢合——类型化是过程不是开关。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `给一段现有代码补类型标注（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '给一个「用户查找」模块的函数补全标注（参数/返回值/Optional 字段）；写一个 Generic[T] 的 Result 容器；若装了 mypy/pyright 则跑通无错（未装则说明标注含义）。',
+      accept: ['函数签名标注完整（含 Optional 场景）', 'Result[T] 泛型容器标注正确', '能说清每处标注对静态检查的作用'],
+    },
+    source: '任务基于《20.类型标注》课程知识点 · 来源层级：一手（Python 官方文档 typing 章节）场景化',
+    breakdown: `思路：参数 <code>-> list[User]</code>、可空字段 <code>Optional[str]</code>（3.10+ 用 str | None）；容器 <code>T = TypeVar('T'); class Result(Generic[T])</code>。坑：别用 Any 偷懒（审查题同款）；dict 要标全 <code>dict[str, int]</code> 而不是裸 dict。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -348,5 +322,6 @@ class AppConfig(TypedDict):
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>
