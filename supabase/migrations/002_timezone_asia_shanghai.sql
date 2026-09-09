@@ -16,16 +16,15 @@ as $$
     select (date_trunc('day', now() at time zone 'Asia/Shanghai'))::date as today
   ),
   daily as (
-    select g.d, count(v.id)::int as c
-    from generate_series(
-           (select today from day_bounds) - (p_days - 1),
-           (select today from day_bounds),
-           interval '1 day'
-         ) as g(d)
+    -- 用整数序列计算日期，全程 date 算术（generate_series(date,date,interval)
+    -- 会解析到 timestamptz 重载，导致 g.d + 1 报 42883）
+    select (b.today - (p_days - 1) + g.i) as d, count(v.id)::int as c
+    from day_bounds b
+    cross join generate_series(0, p_days - 1) as g(i)
     left join public.visits v
-      on v.created_at >= g.d at time zone 'Asia/Shanghai'
-     and v.created_at < (g.d + 1) at time zone 'Asia/Shanghai'
-    group by g.d
+      on v.created_at >= (b.today - (p_days - 1) + g.i) at time zone 'Asia/Shanghai'
+     and v.created_at <  ((b.today - (p_days - 1) + g.i) + 1) at time zone 'Asia/Shanghai'
+    group by 1
   ),
   country_region as (
     select coalesce(country, '未知') as country,
