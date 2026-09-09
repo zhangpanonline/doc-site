@@ -38,6 +38,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      lxgw-wenkai-mono-gb-screen-webfont:
+        specifier: ^1.0.1
+        version: 1.0.1
       prism-react-renderer:
         specifier: ^2.4.1
         version: 2.4.1(react@19.2.8)
@@ -4636,6 +4639,9 @@ packages:
 
   lunr@2.3.9:
     resolution: {integrity: sha512-zTU3DaZaF3Rt9rhN3uBMGQD3dD2/vFQqnvZCDv4dl5iOzq2IZQqTxu90r4E5J+nP70J3ilqVCrbho2eWaeW8Ow==}
+
+  lxgw-wenkai-mono-gb-screen-webfont@1.0.1:
+    resolution: {integrity: sha512-GuJbWOsusYJjPifhhIVH25WEADKnaRPrbSLlhjDN/FtFOwa8sCj7s/FAYOGkzbM/7jEAFp7DM+6ImEQuXSSzxg==}
 
   mark.js@8.11.1:
     resolution: {integrity: sha512-1I+1qpDt4idfgLQG+BNWmrqku+7/2bi5nLf4YwF8y8zXvmfiTBY3PV3ZibfrjBueCByROpuBjLLFCajqkgYoLQ==}
@@ -12403,6 +12409,8 @@ snapshots:
   lunr-languages@1.21.0: {}
 
   lunr@2.3.9: {}
+
+  lxgw-wenkai-mono-gb-screen-webfont@1.0.1: {}
 
   mark.js@8.11.1: {}
 

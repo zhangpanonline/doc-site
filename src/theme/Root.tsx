@@ -2,6 +2,8 @@ import React, {useEffect, useState} from 'react';
 import {useLocation} from '@docusaurus/router';
 import OriginalRoot from '@theme-original/Root';
 import {courses, sectionHref} from '@site/data/courses';
+// 代码手写等宽字体（霞鹜文楷 Mono GB 屏幕版）：unicode-range 分片，浏览器按需下载
+import 'lxgw-wenkai-mono-gb-screen-webfont/fonts/style.css';
 
 /**
  * 沉浸模式开关（仅 PC）：阅读课程小节时一键隐藏左侧菜单与顶部导航栏。

@@ -1,8 +1,30 @@
-import {themes as prismThemes} from 'prism-react-renderer';
+import {themes as prismThemes, type PrismTheme} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
+
+/**
+ * 纸墨代码主题（亮色）：暖纸底 + 墨色语法注解。
+ * 色板与 src/css/custom.css「纸墨 + 朱批」同源——朱砂关键词、黛绿字符串、
+ * 靛青数字、焦茶函数名；正文字号下全部 ≥4.5:1 对比度。
+ * 背景必须在此定义：prism 主题以内联样式注入，会盖过 CSS 里的背景设置。
+ */
+const paperInkTheme: PrismTheme = {
+  plain: {color: '#2d2926', backgroundColor: '#f3efe6'},
+  styles: [
+    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#73695c', fontStyle: 'italic'}},
+    {types: ['punctuation'], style: {color: '#6b6259'}},
+    {types: ['keyword', 'atrule', 'selector', 'tag', 'important', 'regex'], style: {color: '#9d3b2c'}},
+    {types: ['string', 'char', 'attr-value', 'url'], style: {color: '#1e6e5c'}},
+    {types: ['number', 'boolean', 'symbol'], style: {color: '#2b5876'}},
+    {types: ['function', 'class-name', 'attr-name'], style: {color: '#7a5200'}},
+    {types: ['builtin'], style: {color: '#7c2d21'}},
+    {types: ['operator', 'entity'], style: {color: '#6b6259'}},
+    {types: ['inserted'], style: {color: '#2e7d32'}},
+    {types: ['deleted'], style: {color: '#c0392b'}},
+  ],
+};
 const config: Config = {
   title: 'AI 大全栈 · 配套交互课程',
   tagline: '六个单元 · 一条从 Agents 开发到企业级全栈交付的学习路线',
@@ -137,7 +159,7 @@ const config: Config = {
       ],
     },
     prism: {
-      theme: prismThemes.github,
+      theme: paperInkTheme,
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,

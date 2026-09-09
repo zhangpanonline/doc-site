@@ -59,10 +59,11 @@
   --ifm-color-emphasis-300: #d8d0c0;
   --ifm-color-emphasis-600: var(--course-muted);
 
-  /* ===== 字体：标题宋体（讲义感），正文系统无衬线 ===== */
+  /* ===== 字体：标题宋体（讲义感），正文系统无衬线，代码手写等宽（霞鹜文楷 Mono） ===== */
   --ifm-heading-font-family: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "STSong", Georgia, "Times New Roman", serif;
-  --ifm-font-family-monospace: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "JetBrains Mono", "Courier New", monospace;
-  --ifm-code-font-size: 95%;
+  --ifm-font-family-monospace: "LXGW WenKai Mono GB Screen", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "JetBrains Mono", "Courier New", monospace;
+  --ifm-code-font-size: calc(95% + 1px); /* 在默认 95% 基础上再大 1px，手写体更易读 */
+  --ifm-pre-line-height: 1.75;
   --docusaurus-highlighted-code-line-bg: rgba(157, 59, 44, 0.08);
 
   /* ===== 滚动条：墨色淡描 ===== */
@@ -171,6 +172,14 @@
 }
 .theme-code-block pre {
   background-color: var(--course-code-bg);
+}
+
+/* 文字选区：朱批洗染，与纸墨世界一致 */
+::selection {
+  background: rgba(157, 59, 44, 0.16);
+}
+[data-theme='dark'] ::selection {
+  background: rgba(224, 122, 95, 0.3);
 }
 
 /* ===== AI 大全栈 站点外壳（纸墨版） ===== */
