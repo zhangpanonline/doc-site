@@ -313,6 +313,36 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `<code>ExceptionGroup</code>（3.11+）把<strong>多个不相关异常打包成一个</strong>（如并发任务里同时炸了三个错，不丢任何一个）；<code>except*</code> <strong>选择性提取</strong>组内匹配类型的异常处理，不匹配的<strong>继续向后续 except* 子句传播</strong>，最终未处理的重抛——嵌套异常组也能逐层剥离。普通 except 只匹配单一异常，遇上组只能整体处理。AI 写的「批量任务收集异常」代码用它才能既汇总又不丢细节。`,
   },
 ''',
+    '0019-ABC': r'''  {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `除了 register()，官方还提供什么机制来定制 isinstance/issubclass 的判定？官方例子（MyIterable）是怎么写的？`,
+    source: '来源：Python 官方文档 abc「abc.ABCMeta.__subclasshook__」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>__subclasshook__(cls, C)</code>：类方法——返回 True 判为子类、False 判不是、<strong>NotImplemented 交给默认规则</strong>。官方例子：MyIterable 里检查 <code>any('__iter__' in B.__dict__ for B in C.__mro__)</code>——<strong>按结构</strong>（有没有实现 __iter__）而不是按继承判定，配合 register 补第三方类。这是「结构化判定」的官方实现方式，面试官问虚拟子类机制时这才是完整答案。`,
+  },
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 写 ABC 时同时用了 register() 和 __subclasshook__。审查：两者语义有什么本质区别？什么场景必须用后者？`,
+    source: '来源：Python 官方文档 abc「ABCMeta.register」与「__subclasshook__」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `<strong>register</strong>：无条件<strong>点名登记</strong>——不看类长什么样，isinstance 恒 True（不检查实现，审查题同款风险）；<strong>__subclasshook__</strong>：<strong>按结构判定</strong>——逐个候选类检查是否真的实现了协议方法，没实现的照旧 False。规则：第三方类无法改继承 → register；需要「像鸭子才算鸭子」的严格语义 → subclasshook（官方 MyIterable 就是它）。AI 只知 register 不知 subclasshook，是 ABC 认知盲区。`,
+  },
+''',
+    '0020-类型标注': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档给 Any 的定义原文是什么？3.11 之后 Any 多了什么用法？`,
+    source: '来源：Python 官方文档 typing「typing.Any」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：Any = <strong>unconstrained type</strong>（无约束类型），<strong>「Every type is assignable to Any. Any is assignable to every type.」</strong>——双向兼容，所以它是类型检查的黑洞：把 Any 传给 int 参数不报错、从 Any 取值调任何方法也不报错。3.11 起 Any 还<strong>可作基类</strong>（文档：用于高度动态/任意鸭子类型的类避免检查器报错）。审查 AI 代码时 Any 泛滥即「类型标注形同虚设」。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档说 Protocol 类「primarily used with static type checkers that recognize structural subtyping」——这句话怎么理解？`,
+    source: '来源：Python 官方文档 typing「class typing.Protocol」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>结构化子类型（静态鸭子类型）</strong>：<code>class Proto(Protocol): def meth(self) -> int: ...</code> 定义一个「形状」；任何定义了 meth 的类<strong>自动被静态检查器视为 Proto 的子类型</strong>（无需继承/注册），官方例子 func(x: Proto) 传普通类 C 就能过检查。与 ABC 的本质区别：Protocol 的判定发生在<strong>类型检查器里</strong>（零运行时开销、零继承侵入），ABC 判定发生在运行时。`,
+  },
+''',
 }
 
 

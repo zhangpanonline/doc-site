@@ -283,7 +283,7 @@ class ListSequence(Sequence):
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握抽象类——可以继续学习《<a href="/agents/python/类型标注/">18.类型标注</a>》了。</p>
     </section>
 
-            <section>
+                                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -338,11 +338,49 @@ print(isinstance(Weird(), Storage))   # True！</code></pre>`,
     },
     source: '任务基于《19.ABC》课程知识点 · 来源层级：一手（Python 官方文档 abc 章节）场景化',
     breakdown: `思路：<code>class Storage(ABC): @abstractmethod def save...</code>；子类继承并全部实现。坑：抽象方法装饰器别漏（漏了实例化不拦截）；register 虚拟子类不检查实现（审查题同款）；ABC 与 @dataclass 混用时注意 ABC 的 __init__ 约束。`,
+  }, {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `除了 register()，官方还提供什么机制来定制 isinstance/issubclass 的判定？官方例子（MyIterable）是怎么写的？`,
+    source: '来源：Python 官方文档 abc「abc.ABCMeta.__subclasshook__」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>__subclasshook__(cls, C)</code>：类方法——返回 True 判为子类、False 判不是、<strong>NotImplemented 交给默认规则</strong>。官方例子：MyIterable 里检查 <code>any('__iter__' in B.__dict__ for B in C.__mro__)</code>——<strong>按结构</strong>（有没有实现 __iter__）而不是按继承判定，配合 register 补第三方类。这是「结构化判定」的官方实现方式，面试官问虚拟子类机制时这才是完整答案。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 写 ABC 时同时用了 register() 和 __subclasshook__。审查：两者语义有什么本质区别？什么场景必须用后者？`,
+    source: '来源：Python 官方文档 abc「ABCMeta.register」与「__subclasshook__」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `<strong>register</strong>：无条件<strong>点名登记</strong>——不看类长什么样，isinstance 恒 True（不检查实现，审查题同款风险）；<strong>__subclasshook__</strong>：<strong>按结构判定</strong>——逐个候选类检查是否真的实现了协议方法，没实现的照旧 False。规则：第三方类无法改继承 → register；需要「像鸭子才算鸭子」的严格语义 → subclasshook（官方 MyIterable 就是它）。AI 只知 register 不知 subclasshook，是 ABC 认知盲区。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

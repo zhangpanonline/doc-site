@@ -253,7 +253,7 @@ class AppConfig(TypedDict):
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握类型标注——可以继续学习《<a href="/agents/python/模块化/">19.模块化</a>》了。</p>
     </section>
 
-            <section>
+                                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -299,11 +299,49 @@ class AppConfig(TypedDict):
     },
     source: '任务基于《20.类型标注》课程知识点 · 来源层级：一手（Python 官方文档 typing 章节）场景化',
     breakdown: `思路：参数 <code>-> list[User]</code>、可空字段 <code>Optional[str]</code>（3.10+ 用 str | None）；容器 <code>T = TypeVar('T'); class Result(Generic[T])</code>。坑：别用 Any 偷懒（审查题同款）；dict 要标全 <code>dict[str, int]</code> 而不是裸 dict。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档给 Any 的定义原文是什么？3.11 之后 Any 多了什么用法？`,
+    source: '来源：Python 官方文档 typing「typing.Any」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：Any = <strong>unconstrained type</strong>（无约束类型），<strong>「Every type is assignable to Any. Any is assignable to every type.」</strong>——双向兼容，所以它是类型检查的黑洞：把 Any 传给 int 参数不报错、从 Any 取值调任何方法也不报错。3.11 起 Any 还<strong>可作基类</strong>（文档：用于高度动态/任意鸭子类型的类避免检查器报错）。审查 AI 代码时 Any 泛滥即「类型标注形同虚设」。`,
   },
-],
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档说 Protocol 类「primarily used with static type checkers that recognize structural subtyping」——这句话怎么理解？`,
+    source: '来源：Python 官方文档 typing「class typing.Protocol」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `<strong>结构化子类型（静态鸭子类型）</strong>：<code>class Proto(Protocol): def meth(self) -> int: ...</code> 定义一个「形状」；任何定义了 meth 的类<strong>自动被静态检查器视为 Proto 的子类型</strong>（无需继承/注册），官方例子 func(x: Proto) 传普通类 C 就能过检查。与 ABC 的本质区别：Protocol 的判定发生在<strong>类型检查器里</strong>（零运行时开销、零继承侵入），ABC 判定发生在运行时。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
