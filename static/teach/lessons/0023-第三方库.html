@@ -259,7 +259,7 @@
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握第三方库的实战用法——可以继续学习《<a href="/agents/python/事件循环/">22.事件循环</a>》了。</p>
     </section>
 
-        <section>
+                                                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -305,11 +305,59 @@
     },
     source: '任务基于《23.第三方库》课程知识点 · 来源层级：一手（Python 官方文档 venv / pip freeze 章节）场景化',
     breakdown: `思路：<code>python3 -m venv .venv && source .venv/bin/activate && pip install requests pytest</code>；<code>pip freeze > requirements.lock.txt</code>；第二个 venv 里 <code>pip install -r requirements.lock.txt</code> 后 <code>pip show</code> 对比。坑：freeze 输出含全部间接依赖（这是锁文件的特性不是 bug）；pip 自身的版本也影响安装行为，必要时一并记录。`,
+  }, {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `官方教程对 venv 的定义是什么？创建虚拟环境的标准命令是什么？`,
+    source: '来源：Python 官方教程《Virtual Environments and Packages》12.2 节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `教程原文：venv 是<strong>「创建与管理虚拟环境的模块」</strong>；关键行为——<strong>venv 安装的是运行命令时所用的那个 Python 版本</strong>（原文：executing the command with python3.12 will install version 3.12）。标准命令：<code>python -m venv tutorial-env</code>（目录自定）→ 激活 → pip install。每个项目一个 venv = 依赖隔离的地基。`,
   },
-],
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 给你的命令是 <code>python -m venv .venv</code>，但机器上装了多个 Python 版本，装出来的环境版本不对。按官方教程的说法，问题出在哪？`,
+    source: '来源：Python 官方教程《Virtual Environments and Packages》12.2 节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `venv <strong>绑定「命令实际解析到的那个解释器」</strong>——PATH 里 python 指向哪个版本，环境就是哪个版本。多版本机器上要<strong>用完整路径/版本名</strong>建环境：<code>python3.12 -m venv .venv</code>（或 uv venv --python 3.12）。装错版本再卸载重建成本高——AI 生成命令时不会知道你机器上 python 指向谁，审查部署脚本先确认解释器版本。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

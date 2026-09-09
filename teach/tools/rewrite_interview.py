@@ -403,6 +403,36 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `文档（3.13 起）：组处于<strong>未激活状态</strong>时会<strong>关闭传入的协程</strong>（不执行）。但 <strong>3.14 实测</strong>：未进入抛 <code>RuntimeError: has not been entered</code>、已结束抛 <code>RuntimeError: is finished</code>——行为随版本演进，共同点是<strong>块外 create_task 一律不可用</strong>（要么报错、要么协程被静默关闭）。AI 把组句柄存下来在别处复用，任务要么炸要么凭空消失——规则：TaskGroup 只在 async with 块内有效。`,
   },
 ''',
+    '0028-多线程与多进程': r'''  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `面试官新问法：听说 GIL 要被移除了？官方 FAQ 对 GIL 的现状与未来（PEP 703）怎么说？`,
+    source: '来源：Python 官方文档 FAQ「Can't we get rid of the Global Interpreter Lock?」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `FAQ 原文：GIL 让多线程 Python 程序<strong>实际只用一颗 CPU</strong>——「almost all Python code can only run while the GIL is held」；<strong>PEP 703 已批准</strong>，CPython 正推进移除 GIL：先以<strong>可选编译标志</strong>提供「有 GIL / 无 GIL」两种构建，长期目标收敛为单一构建。对当下意味着：主流发行版仍带 GIL，写代码别假设无锁；free-threading 构建下真正的数据竞争会现形，锁该加还是要加。`,
+  },
+  {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `官方 FAQ 说「每个字节码指令是原子的」，那为什么多线程的 <code>x += 1</code> 仍会丢更新？什么情况下必丢？`,
+    source: '来源：Python 官方文档 FAQ「What kinds of global value mutation are thread-safe?」条目 · 检索 2026-09-09 · 层级：一手（结论经 CPython 3.14 实测校准）',
+    breakdown: `FAQ 原文：GIL 保证同一时刻只有一个线程运行，线程<strong>只在字节码指令之间切换</strong>（sys.setswitchinterval 可调），所以原子性只到<strong>单条指令</strong>；<code>x += 1</code> 是 LOAD→ADD→STORE 多条指令，读到写之间被切走就丢更新。实测提醒：紧凑循环里 3.14 可能整段跑完不切换；但读与写之间<strong>释放 GIL</strong>（sleep、阻塞调用）就<strong>必丢</strong>（8 线程读-让出-写 8000 次仅剩 1314）。结论：FAQ 原子性到指令为止，复合语句加锁，别赌运气。`,
+  },
+''',
+    '0023-第三方库': r'''  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `官方教程对 venv 的定义是什么？创建虚拟环境的标准命令是什么？`,
+    source: '来源：Python 官方教程《Virtual Environments and Packages》12.2 节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `教程原文：venv 是<strong>「创建与管理虚拟环境的模块」</strong>；关键行为——<strong>venv 安装的是运行命令时所用的那个 Python 版本</strong>（原文：executing the command with python3.12 will install version 3.12）。标准命令：<code>python -m venv tutorial-env</code>（目录自定）→ 激活 → pip install。每个项目一个 venv = 依赖隔离的地基。`,
+  },
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 给你的命令是 <code>python -m venv .venv</code>，但机器上装了多个 Python 版本，装出来的环境版本不对。按官方教程的说法，问题出在哪？`,
+    source: '来源：Python 官方教程《Virtual Environments and Packages》12.2 节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `venv <strong>绑定「命令实际解析到的那个解释器」</strong>——PATH 里 python 指向哪个版本，环境就是哪个版本。多版本机器上要<strong>用完整路径/版本名</strong>建环境：<code>python3.12 -m venv .venv</code>（或 uv venv --python 3.12）。装错版本再卸载重建成本高——AI 生成命令时不会知道你机器上 python 指向谁，审查部署脚本先确认解释器版本。`,
+  },
+''',
 }
 
 
