@@ -19,7 +19,7 @@
 3. **Firewall → Custom Rules → 新增 bypass 规则**（消耗 Hobby 第 3 条自定义规则配额）：
    - 条件：`User-Agent` 包含 `360spider` / `sogou` / `yisouspider` / `shenma`（任一）
    - 动作：**Bypass** —— 防止 Bot Protection 误挑战未进 Vercel 验证名单的中文搜索蜘蛛，保住中文搜索收录
-4. **Firewall → Rate Limits → 新增**（Hobby 免费 1 条）：窗口 10 秒，上限 120 次/每 IP，超限动作 **Challenge**
+4. **Firewall → Custom Rules → 新建规则**，Action 下拉选 **Rate Limit**（速率限制是自定义规则的一种动作，不是独立菜单；Hobby 免费 1 条，不占 3 条自定义规则配额）：条件留空匹配所有请求，窗口 10 秒，上限 120 次，计数键 IP，超限动作 **Challenge**
 
 ## 部署后验证
 
