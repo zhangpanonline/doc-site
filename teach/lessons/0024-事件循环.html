@@ -334,7 +334,7 @@ print("循环已停止")</code></pre></div>
       <p style="margin-top:1.2rem">三道考核全部答对且能讲清理由，说明你已经吃透 <code>_run_once</code> 的调度机制——可以继续学习《<a href="/agents/python/Future类/">23.Future类</a>》了。</p>
     </section>
 
-                                                            <section>
+                                                                <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -386,11 +386,25 @@ def boom(fut):
     },
     source: '任务基于《24.事件循环》课程知识点 · 场景化',
     breakdown: `思路：<code>async def fetch(i): await asyncio.sleep(0.1); return i</code>；<code>results = await asyncio.gather(*[fetch(i) for i in range(10)], return_exceptions=True)</code>。坑：gather 默认任一失败即抛（其余被取消）——收集部分失败要 return_exceptions；并发数无上限时注意对端限流（下节课的限流工具）。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档对 <code>asyncio.gather</code> 的关键语义有三条：协程参数怎么处理？结果顺序？异常怎么传播？`,
+    source: '来源：Python 官方文档 asyncio「asyncio.gather」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文三要点：① 参数里的<strong>协程会被自动排成 Task</strong>（不用自己 create_task）；② 全部成功时返回<strong>按参数顺序</strong>排列的结果列表；③ <code>return_exceptions=False</code>（默认）时<strong>第一个异常立即传播</strong>给 await gather 的一方。这正是「并发一批请求」的标准姿势的官方语义背书。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `gather 里某个任务抛异常后，其他任务会被取消吗？想「一个失败不连累其他、结果照收」该怎么写？`,
+    source: '来源：Python 官方文档 asyncio「asyncio.gather」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：return_exceptions=False 时首个异常立即传播，但 <strong>aws 里其他任务不会被取消、继续运行</strong>——gather 不搞连坐。要「失败也把结果/异常全收回来」：<code>await gather(*aws, return_exceptions=True)</code>——返回列表里成功项是结果、失败项是<strong>异常对象</strong>，逐个 isinstance(x, Exception) 分类。AI 写的批量任务收集代码默认忘了这个参数，第一个失败就丢了其余结果。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 

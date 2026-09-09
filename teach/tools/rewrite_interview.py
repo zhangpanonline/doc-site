@@ -343,6 +343,36 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `<strong>结构化子类型（静态鸭子类型）</strong>：<code>class Proto(Protocol): def meth(self) -> int: ...</code> 定义一个「形状」；任何定义了 meth 的类<strong>自动被静态检查器视为 Proto 的子类型</strong>（无需继承/注册），官方例子 func(x: Proto) 传普通类 C 就能过检查。与 ABC 的本质区别：Protocol 的判定发生在<strong>类型检查器里</strong>（零运行时开销、零继承侵入），ABC 判定发生在运行时。`,
   },
 ''',
+    '0021-模块化': r'''  {
+    type: 'trap',
+    level: '初级岗常问',
+    prompt: `AI 写的代码到处 <code>from module import *</code>。官方教程对 import * 的态度是什么？为什么？`,
+    source: '来源：Python 官方教程《Modules》6.4.1 节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `教程原文：import * 的做法<strong>「frowned upon, since it often causes poorly readable code」</strong>——名字来源不可见、命名空间被污染、两处 import * 同名互相覆盖都难排查；官方只认可在<strong>交互式会话</strong>里图省事用它。工程代码规范：显式导入需要的名字（from m import a, b），或用 __all__ 精确控制星号导入内容。审查 AI 代码见 import * 直接要求改。`,
+  },
+  {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `官方教程说 import 语句放在模块开头是「customary but not required」。这句话怎么成了循环导入解法的官方依据？`,
+    source: '来源：Python 官方教程《Modules》6.1 节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `教程原文：import 放开头<strong>只是惯例而非强制</strong>；放在顶层（函数/类外）的名字进入<strong>模块全局命名空间</strong>。循环导入时把 import <strong>移进函数体</strong>（延迟到调用时执行）正是利用这一点——A 模块完整初始化后再导入 B，绕开「半初始化模块」陷阱。代价：违背惯例、每次调用有微小开销；所以只用于打破循环，不是日常风格。`,
+  },
+''',
+    '0024-事件循环': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档对 <code>asyncio.gather</code> 的关键语义有三条：协程参数怎么处理？结果顺序？异常怎么传播？`,
+    source: '来源：Python 官方文档 asyncio「asyncio.gather」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文三要点：① 参数里的<strong>协程会被自动排成 Task</strong>（不用自己 create_task）；② 全部成功时返回<strong>按参数顺序</strong>排列的结果列表；③ <code>return_exceptions=False</code>（默认）时<strong>第一个异常立即传播</strong>给 await gather 的一方。这正是「并发一批请求」的标准姿势的官方语义背书。`,
+  },
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `gather 里某个任务抛异常后，其他任务会被取消吗？想「一个失败不连累其他、结果照收」该怎么写？`,
+    source: '来源：Python 官方文档 asyncio「asyncio.gather」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `文档原文：return_exceptions=False 时首个异常立即传播，但 <strong>aws 里其他任务不会被取消、继续运行</strong>——gather 不搞连坐。要「失败也把结果/异常全收回来」：<code>await gather(*aws, return_exceptions=True)</code>——返回列表里成功项是结果、失败项是<strong>异常对象</strong>，逐个 isinstance(x, Exception) 分类。AI 写的批量任务收集代码默认忘了这个参数，第一个失败就丢了其余结果。`,
+  },
+''',
 }
 
 

@@ -238,7 +238,7 @@ q.z = 3                # 普通类可以随意添加属性</code></pre>
       <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握模块化——可以继续学习《<a href="/agents/python/标准库/">20.标准库</a>》了。</p>
     </section>
 
-                                                                <section>
+                                                                    <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -284,11 +284,25 @@ q.z = 3                # 普通类可以随意添加属性</code></pre>
     },
     source: '任务基于《21.模块化》课程知识点 · 场景化',
     breakdown: `思路：按职责拆函数进 utils/、类进 models/，__init__.py 里做轻量 re-export；包内 from .x import y；入口 import utils、import models 绝对导入。坑：别在 __init__.py 里做重活（导入副作用题同款）；拆完跑一遍原测试/样例确保行为一致。`,
+  }, {
+    type: 'trap',
+    level: '初级岗常问',
+    prompt: `AI 写的代码到处 <code>from module import *</code>。官方教程对 import * 的态度是什么？为什么？`,
+    source: '来源：Python 官方教程《Modules》6.4.1 节 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `教程原文：import * 的做法<strong>「frowned upon, since it often causes poorly readable code」</strong>——名字来源不可见、命名空间被污染、两处 import * 同名互相覆盖都难排查；官方只认可在<strong>交互式会话</strong>里图省事用它。工程代码规范：显式导入需要的名字（from m import a, b），或用 __all__ 精确控制星号导入内容。审查 AI 代码见 import * 直接要求改。`,
   },
-],
+  {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `官方教程说 import 语句放在模块开头是「customary but not required」。这句话怎么成了循环导入解法的官方依据？`,
+    source: '来源：Python 官方教程《Modules》6.1 节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `教程原文：import 放开头<strong>只是惯例而非强制</strong>；放在顶层（函数/类外）的名字进入<strong>模块全局命名空间</strong>。循环导入时把 import <strong>移进函数体</strong>（延迟到调用时执行）正是利用这一点——A 模块完整初始化后再导入 B，绕开「半初始化模块」陷阱。代价：违背惯例、每次调用有微小开销；所以只用于打破循环，不是日常风格。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 
