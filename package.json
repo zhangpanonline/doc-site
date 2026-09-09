@@ -24,6 +24,7 @@
     "@easyops-cn/docusaurus-search-local": "^0.55.3",
     "@mdx-js/react": "^3.1.1",
     "@supabase/supabase-js": "^2.116.0",
+    "@vercel/functions": "^3.9.5",
     "clsx": "^2.1.1",
     "lxgw-wenkai-mono-gb-screen-webfont": "^1.0.1",
     "prism-react-renderer": "^2.4.1",
