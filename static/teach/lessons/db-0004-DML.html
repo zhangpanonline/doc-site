@@ -14,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 4 节</p>
       <h1>DML</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/DML/">04.DML</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 5 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/common/database/DML/">04.DML</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 5 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -227,85 +227,63 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
       </div>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（超高频）：WHERE 和 HAVING 有什么区别？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">WHERE 分组前过滤原始行、不能用聚合；HAVING 分组后过滤、能用聚合</button>
-            <button class="quiz-option">两者完全等价，用哪个都一样</button>
-            <button class="quiz-option">HAVING 分组前过滤，WHERE 分组后过滤</button>
-            <button class="quiz-option">WHERE 只能用于数字列，HAVING 只能用于字符串列</button>
-          </div>
-          <div class="quiz-explain" hidden>核心差异 = <strong>过滤时机</strong>：WHERE 在 GROUP BY 前过滤原始行（快、不能用聚合函数）；HAVING 在分组后过滤聚合结果（能用 COUNT/SUM/AVG 等）。「单笔订单 &gt; 100」用 WHERE，「消费总额 &gt; 1000 的客户」用 HAVING。<a href="https://blog.csdn.net/Captain_DUDU/article/details/160044029">出处：CSDN「SQL 面试高频 50 题精讲」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题二（执行顺序）：SQL 各子句的真实执行顺序是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT</button>
-            <button class="quiz-option">与书写顺序完全一致，从左到右执行</button>
-            <button class="quiz-option">FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</button>
-            <button class="quiz-option">WHERE → HAVING → GROUP BY → SELECT → FROM → LIMIT</button>
-          </div>
-          <div class="quiz-explain" hidden>书写顺序 ≠ 执行顺序。真实执行：<strong>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</strong>。两条推论：WHERE 里不能用 SELECT 中定义的列别名（SELECT 还没执行）；WHERE 里不能用聚合（分组还没发生）。<a href="https://blog.csdn.net/qq_43710593/article/details/142496808">出处：CSDN「面试题常见」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题三（LEFT JOIN 陷阱）：LEFT JOIN 后 WHERE 里过滤右表字段，左表「未匹配」的行会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">保留——LEFT JOIN 永远保留左表所有行</button>
-            <button class="quiz-option">被过滤掉——右表补 NULL 不满足条件，结果退化成 INNER JOIN</button>
-            <button class="quiz-option">变成 NULL 显示在结果末尾</button>
-            <button class="quiz-option">SQL 会直接报错</button>
-          </div>
-          <div class="quiz-explain" hidden>LEFT JOIN 保证左表全保留，但 <strong>WHERE 作用在 JOIN 之后的结果集上</strong>：未匹配行的右表字段是 NULL，<code>WHERE 右表.某列 = 'x'</code> 会把 NULL 行滤掉，LEFT 退化成 INNER。想「连接前」过滤右表，条件要写在 ON 里。<a href="https://blog.csdn.net/Captain_DUDU/article/details/160044029">出处：CSDN「SQL 面试高频 50 题精讲」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（NOT IN 陷阱）：子查询结果含 NULL 时，NOT IN 会发生什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">返回空结果——任何值与 NULL 比较都是未知，NOT IN 恒假</button>
-            <button class="quiz-option">正常返回所有不匹配的行</button>
-            <button class="quiz-option">把 NULL 当作一个合法值参与比较</button>
-            <button class="quiz-option">报错：NOT IN 不允许子查询含 NULL</button>
-          </div>
-          <div class="quiz-explain" hidden>经典陷阱：<code>x NOT IN (1, 2, NULL)</code> 对每个 x 的比较都涉及 NULL → 结果 UNKNOWN → 全部不满足 → <strong>空结果</strong>。生产环境建议用 <strong>NOT EXISTS</strong> 替代（只关心是否存在，不比较值），或用 NOT IN (子查询 WHERE 列 IS NOT NULL)。<a href="https://blog.csdn.net/Captain_DUDU/article/details/160044029">出处：CSDN「SQL 面试高频 50 题精讲」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题五（查询设计）：IN 和 EXISTS 怎么选？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">永远用 IN，语义直观</button>
-            <button class="quiz-option">永远用 EXISTS，性能更好</button>
-            <button class="quiz-option">内表（子查询结果）小时用 IN；外表逐行探测且内表大时用 EXISTS</button>
-            <button class="quiz-option">两者是同一语法，没有区别</button>
-          </div>
-          <div class="quiz-explain" hidden>IN：先算子查询结果，再与外表匹配——<strong>子查询结果小</strong>时快；EXISTS：遍历外表逐行探测子查询「是否有」——<strong>外表驱动、子查询表大</strong>时效率更高，且天然避开 NOT IN 的 NULL 陷阱。<a href="https://blog.csdn.net/Captain_DUDU/article/details/160044029">出处：CSDN「SQL 面试高频 50 题精讲」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题六（概念辨析）：JOIN 和 UNION 的区别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">两者都是合并表，方向不同而已</button>
-            <button class="quiz-option">JOIN 左右拼接（列变多）；UNION 上下拼接（行变多、字段一致）</button>
-            <button class="quiz-option">UNION 是 JOIN 的旧写法，已废弃</button>
-            <button class="quiz-option">JOIN 用于三张表以上，UNION 只能两张表</button>
-          </div>
-          <div class="quiz-explain" hidden>方向不同：<strong>JOIN 横向</strong>（按关联条件把多表字段拼成一行行，列变多）；<strong>UNION 纵向</strong>（把字段一致的多个结果集上下堆叠，行变多，默认去重、UNION ALL 不去重）。「左右拼接 vs 上下拼接」一句话说清。<a href="https://zhuanlan.zhihu.com/p/563132918">出处：知乎「宇宙最全系列 | 数据库面试题 v1.0」</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'db-0004-DML',
+          questions: [
+  {
+    type: 'trap',
+    level: '初级岗常问',
+    prompt: `WHERE 和 HAVING 有什么区别？能不能在 HAVING 里写非分组列的条件？`,
+    source: '考点来源：CSDN「SQL 面试高频 50 题精讲」（WHERE vs HAVING 题）· 场景改写',
+    breakdown: `<strong>WHERE 过滤行</strong>（分组前、可用任意列、不能用聚合）；<strong>HAVING 过滤分组</strong>（分组后、条件基于聚合结果如 HAVING SUM(amount) > 100）。在 HAVING 里写非分组列：PG 会报错（列必须出现在 GROUP BY 或聚合里）——MySQL 老版本会静默乱取一值，是坑。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `SQL 各子句的真实执行顺序是什么？为什么 WHERE 里不能引用 SELECT 里的别名？`,
+    source: '考点来源：CSDN「面试题常见」（执行顺序题）· 场景改写',
+    breakdown: `书写顺序 ≠ 执行顺序：<strong>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</strong>。WHERE 在 SELECT <strong>之前</strong>执行，别名还没诞生，所以不能用；ORDER BY 在 SELECT 之后，能用别名。理解顺序是分析 SQL 行为（哪些过滤早、哪些晚）的地基。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的「查所有员工及其部门名」：LEFT JOIN 后在 WHERE 里过滤右表字段，没部门的员工消失了。审查：
+<pre><code>SELECT e.name, d.name
+FROM employees e
+LEFT JOIN departments d ON e.dept_id = d.id
+WHERE d.active = true;   -- ← 把未匹配行滤掉了</code></pre>`,
+    source: '考点来源：CSDN「SQL 面试高频 50 题精讲」（LEFT JOIN 陷阱题）· 场景改写',
+    breakdown: `LEFT JOIN 未匹配的行右表字段是 <strong>NULL</strong>——WHERE 里 d.active = true 对 NULL 判定为假，<strong>未匹配行全部被滤掉</strong>，LEFT JOIN 退化成 INNER JOIN。修复：条件移到 <strong>ON</strong>（<code>ON e.dept_id = d.id AND d.active</code>，过滤发生在连接时、保留左表行），或 WHERE 里加 <code>OR d.id IS NULL</code>。AI 写的报表 SQL 高频坑。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `子查询结果里可能含 NULL 时，NOT IN 会发生什么？为什么专家说改用 NOT EXISTS？`,
+    source: '考点来源：CSDN「SQL 面试高频 50 题精讲」（NOT IN 陷阱题）· 场景改写',
+    breakdown: `<code>x NOT IN (1, 2, NULL)</code> 的语义是 x≠1 AND x≠2 AND x≠NULL——与 NULL 比较结果是 <strong>unknown</strong>，整句永远不为真 → 结果<strong>空集</strong>，静默吞掉所有行。<code>NOT EXISTS</code> 用相关性检查「不存在匹配行」，无三值逻辑问题。规则：子查询可能含 NULL 就用 NOT EXISTS（或 NOT IN 子查询里加 WHERE x IS NOT NULL）。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一组报表查询并复现两个陷阱（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: 'employees/departments 两表：① LEFT JOIN 统计各部门人数（含没部门员工）且 HAVING 过滤人数 > 1；② 复现 NOT IN 含 NULL 返回空集，改写为 NOT EXISTS 结果正确。',
+      accept: ['未匹配行保留在结果中（条件放 ON 或 OR NULL）', 'HAVING 过滤分组生效', 'NOT EXISTS 改写结果正确'],
+    },
+    source: '任务基于《04.DML》课程知识点 · 来源层级：一手（PostgreSQL 官方文档查询章节）场景化',
+    breakdown: `思路：① <code>LEFT JOIN ... ON e.dept_id = d.id AND d.active</code> + <code>GROUP BY ... HAVING count(*) > 1</code>；② NOT IN 空集复现后改 <code>WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE t2.x = t1.x)</code>。坑：HAVING 里用聚合别名（PG 允许 SELECT 别名，MySQL 不允许——以目标库为准）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固延伸</h2>
@@ -322,5 +300,6 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

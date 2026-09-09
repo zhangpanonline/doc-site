@@ -14,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 2 节</p>
       <h1>DDL</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/DDL/">02.DDL</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/common/database/DDL/">02.DDL</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -231,85 +231,59 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
       </div>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（SQL 基础高频题）：DDL 与 DML 的区别是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">DDL 定义结构（CREATE/ALTER/DROP/TRUNCATE）；DML 操作数据（INSERT/SELECT/UPDATE/DELETE）</button>
-            <button class="quiz-option">DDL 操作数据；DML 定义结构</button>
-            <button class="quiz-option">两者只是叫法不同，功能完全一样</button>
-            <button class="quiz-option">DDL 是 MySQL 的语法，DML 是 PostgreSQL 的语法</button>
-          </div>
-          <div class="quiz-explain" hidden>DDL 管<strong>结构</strong>（库、表、列、约束），DML 管<strong>数据</strong>（行）。进一步可答：DDL 主要给 DBA 用、立即生效；DML 是开发日常、支持事务。部分分类把 SELECT 单独划为 DQL。<a href="https://blog.csdn.net/basketball616/article/details/161391410">出处：CSDN「SQL 基础面试考点总结」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题二（牛客高频·三兄弟速记）：DELETE、TRUNCATE、DROP 谁保留表结构、谁最快？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">三者都保留表结构，DROP 最快</button>
-            <button class="quiz-option">只有 DROP 保留表结构，DELETE 最快</button>
-            <button class="quiz-option">DELETE 与 TRUNCATE 保留结构；速度 DROP ＞ TRUNCATE ＞ DELETE</button>
-            <button class="quiz-option">只有 DELETE 保留结构，TRUNCATE 最快</button>
-          </div>
-          <div class="quiz-explain" hidden>速记口诀：<strong>DELETE 删行</strong>（可 WHERE、可回滚、慢）；<strong>TRUNCATE 清数据</strong>（结构在、快）；<strong>DROP 删表</strong>（结构都没了、最快、不可恢复）。速度排序 DROP &gt; TRUNCATE &gt; DELETE。<a href="https://www.nowcoder.com/discuss/861302246330408960">出处：牛客网「DELETE、TRUNCATE 和 DROP 区别」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题三（陷阱题）：关于 TRUNCATE，下列说法哪个是正确的？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">TRUNCATE 可以带 WHERE 条件删除指定行</button>
-            <button class="quiz-option">TRUNCATE 不能带 WHERE，且不触发 DELETE 触发器</button>
-            <button class="quiz-option">TRUNCATE 与 DELETE 逐行删除的实现方式相同</button>
-            <button class="quiz-option">TRUNCATE 是 DML 语句，需要显式 COMMIT</button>
-          </div>
-          <div class="quiz-explain" hidden>TRUNCATE 是<strong>整表清空</strong>：不能带 WHERE；实现上是重置存储而非逐行删除，因此<strong>不触发行级 DELETE 触发器</strong>；属于 DDL。想部分删除只能 DELETE + WHERE。<a href="https://blog.csdn.net/basketball616/article/details/161391410">出处：CSDN「SQL 基础面试考点总结」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（PostgreSQL 机制题）：PG 里对一张大表执行了海量 DELETE，表却没有变小，为什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">MVCC 下 DELETE 只标记 dead tuple，空间要等 VACUUM 回收</button>
-            <button class="quiz-option">DELETE 在 PG 中默认只做逻辑标记，永不物理删除</button>
-            <button class="quiz-option">数据被 DELETE 触发器拦截了</button>
-            <button class="quiz-option">PG 的 DELETE 速度比 INSERT 慢导致</button>
-          </div>
-          <div class="quiz-explain" hidden>PG 基于 MVCC：DELETE 不原地删行，而是标记 <strong>dead tuple（死元组）</strong>，物理空间等 <strong>VACUUM</strong>（或 autovacuum）回收。海量 DELETE 后常见死元组堆积、索引膨胀。要快速清空大表，TRUNCATE 直接重置页面，没有这个问题。<a href="https://developer.cloud.tencent.com/article/1917703">出处：腾讯云开发者社区「[数据库]基础面试题总结」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题五（存储设计题）：定长 CHAR 与变长 VARCHAR 怎么选？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">一律 VARCHAR，定长早已过时</button>
-            <button class="quiz-option">一律 CHAR，存取速度永远更快</button>
-            <button class="quiz-option">长度固定且短的用 CHAR（空间换时间）；长度波动大用 VARCHAR 省空间</button>
-            <button class="quiz-option">两者无差别，看个人习惯</button>
-          </div>
-          <div class="quiz-explain" hidden>CHAR 定长：长度固定、存取快（部分场景快至 50%）、不足补空格、浪费空间——<strong>空间换时间</strong>，适合编码、固定位数 ID。VARCHAR 变长：存多长占多长，省空间，适合姓名、标题等波动大的字段。<a href="https://blog.csdn.net/javaeEEse/article/details/139613776">出处：CSDN「Java 最新面试题」· char 与 varchar 考点</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题六（性能机制题）：TRUNCATE 为什么比 DELETE 快得多？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">TRUNCATE 逐行删除但不写日志</button>
-            <button class="quiz-option">TRUNCATE 直接重置/销毁数据页，几乎不写行日志；DELETE 逐行删且每行写日志</button>
-            <button class="quiz-option">TRUNCATE 走索引，DELETE 不走索引</button>
-            <button class="quiz-option">TRUNCATE 是内存操作，DELETE 是磁盘操作</button>
-          </div>
-          <div class="quiz-explain" hidden>DELETE <strong>逐行删除</strong>，每行都要写事务/重做日志；TRUNCATE 不逐行操作，而是<strong>直接销毁数据页</strong>（相当于重建空表），日志量极小——所以快。DROP 更快：连结构元数据一起删，只写元数据日志。<a href="https://www.nowcoder.com/discuss/861302246330408960">出处：牛客网「DELETE、TRUNCATE 和 DROP 区别」</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'db-0002-DDL',
+          questions: [
+  {
+    type: 'trap',
+    level: '初级岗常问',
+    prompt: `DELETE、TRUNCATE、DROP 三者有什么区别？谁保留表结构？谁最快？`,
+    source: '考点来源：牛客网「DELETE、TRUNCATE 和 DROP 区别」· 场景改写',
+    breakdown: `<strong>DELETE</strong>：按行删除（可带 WHERE），表结构保留，最慢（逐行记日志/MVCC）；<strong>TRUNCATE</strong>：清空全部数据，表结构保留，极快（整表操作）；<strong>DROP</strong>：表结构连数据一起删。口诀：删行 DELETE、清表 TRUNCATE、删表 DROP。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `TRUNCATE 为什么比 DELETE 快得多？PG 里对一张大表海量 DELETE 后表文件却没变小，为什么？`,
+    source: '考点来源：牛客网「DELETE、TRUNCATE 和 DROP 区别」+ 腾讯云「[数据库]基础面试题总结」· 场景改写',
+    breakdown: `TRUNCATE 是<strong>整表级操作</strong>（直接重置数据文件/段），不做逐行处理；DELETE 逐行生成<strong>死元组</strong>（MVCC 旧版本），表文件不变小——空间要靠 <code>VACUUM</code> 回收标记、VACUUM FULL 才真正压缩文件。PG 面试的「DELETE 后表没变小」答案就是 MVCC + 死元组。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 生成的建表语句给所有文本列用了 CHAR(255)。审查：定长 CHAR 与变长 VARCHAR 怎么选？CHAR(255) 有什么问题？`,
+    source: '考点来源：CSDN「Java 最新面试题」（char 与 varchar 考点）· 场景改写',
+    breakdown: `<strong>CHAR(n)</strong>：不足补空格到定长，适合长度固定的值（哈希码、状态码）；<strong>VARCHAR(n)</strong>：按实际长度存储，适合长度可变的文本。CHAR(255) 的问题：短值<strong>全部补空格</strong>（浪费存储 + 比较/去空格陷阱），AI 从 MySQL 抄来的坏习惯。通用原则：默认 VARCHAR。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `建一张订单表的 DDL，你会怎么设计字段与约束？DDL 与 DML 的本质区别是什么？`,
+    source: '考点来源：CSDN「SQL 基础面试考点总结」（DDL vs DML 题）· 场景改写',
+    breakdown: `DDL = <strong>定义结构</strong>（CREATE/ALTER/DROP，改 schema）；DML = <strong>操作数据</strong>（INSERT/UPDATE/DELETE/SELECT，改行）。订单表要点：主键（id）、金额用 NUMERIC 不用 float、状态列 CHECK 约束、created_at 默认 now()、外键列加索引。AI 建表常见漏项：没主键、金额用浮点、缺时间列。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `建表并对比 DELETE/TRUNCATE（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '建一张带约束的表 → 插入数据 → 对比 DELETE 与 TRUNCATE 的耗时/行为（TRUNCATE 不能带 WHERE）→ 海量 DELETE 后用 VACUUM 回收空间说明原理。',
+      accept: ['建表含主键/CHECK/NUMERIC 等约束', 'DELETE 与 TRUNCATE 行为差异说清', 'VACUUM 回收死元组的原理能解释'],
+    },
+    source: '任务基于《02.DDL》课程知识点 · 来源层级：一手（PostgreSQL 官方文档 DDL 章节）场景化',
+    breakdown: `思路：<code>CREATE TABLE orders(...); INSERT ...; DELETE WHERE ...; TRUNCATE orders;</code> 对比；DELETE 大表后查 pg_stat_user_tables 的 n_dead_tup 再 VACUUM。坑：TRUNCATE 在事务里可回滚但不可带 WHERE；VACUUM 不是 VACUUM FULL（后者锁表重写，生产慎用）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固延伸</h2>
@@ -326,5 +300,6 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

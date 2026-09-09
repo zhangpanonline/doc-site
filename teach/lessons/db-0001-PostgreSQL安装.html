@@ -14,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 1 节</p>
       <h1>PostgreSQL 安装</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/PostgreSQL安装/">01.PostgreSQL安装</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/common/database/PostgreSQL安装/">01.PostgreSQL安装</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -231,85 +231,59 @@ SELECT current_user;   # 当前用户</code></pre>
       </div>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（Docker 部署 PostgreSQL 高频题）：容器删除后数据库数据为什么会丢？正确做法是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">容器可写层随容器删除而消失；用数据卷挂载 /var/lib/postgresql/data 持久化</button>
-            <button class="quiz-option">因为镜像被删了；重新 docker pull 即可恢复</button>
-            <button class="quiz-option">因为端口映射断了；重新 -p 映射即可恢复</button>
-            <button class="quiz-option">Docker 本来就不适合跑数据库，无法持久化</button>
-          </div>
-          <div class="quiz-explain" hidden>容器是易失的：写入在容器的可写层，<code>docker rm</code> 即删除该层。正确做法是启动时挂载数据卷（named volume 或宿主机目录）到 <code>/var/lib/postgresql/data</code>。<a href="https://blog.csdn.net/cui_yonghua/article/details/145984601">出处：CSDN「【部署】Docker 指令备忘清单」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题二（端口映射基础题）：部署命令写成 <code>-p 5433:5432</code>，这个写法表示什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">容器内 5433 转发到宿主机 5432</button>
-            <button class="quiz-option">宿主机随机端口转发到容器 5432</button>
-            <button class="quiz-option">宿主机 5433 转发到容器内 5432</button>
-            <button class="quiz-option">同时开放宿主机 5433 和 5432 两个端口</button>
-          </div>
-          <div class="quiz-explain" hidden>格式「宿主机:容器」：宿主机 5433 转发到容器内 5432。这样做的常见原因是宿主机 5432 已被占用，外部客户端用 <code>localhost:5433</code> 连接。<a href="https://blog.csdn.net/cui_yonghua/article/details/145984601">出处：CSDN「【部署】Docker 指令备忘清单」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题三（compose 网络陷阱）：docker-compose 里 pgAdmin 连接 PostgreSQL 用 <code>localhost:5432</code> 报 connection refused，原因与改法是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">PostgreSQL 没开远程访问；改 postgresql.conf 的 listen_addresses</button>
-            <button class="quiz-option">容器内 localhost 指容器自己；应改用服务名 db:5432（容器内部端口）</button>
-            <button class="quiz-option">宿主机防火墙拦截；应开放 5432 入站规则</button>
-            <button class="quiz-option">端口映射写反了；应改成 5432:5433</button>
-          </div>
-          <div class="quiz-explain" hidden>每个容器有独立网络命名空间，<strong>容器内的 localhost 就是容器自己</strong>，不是宿主机也不是相邻容器。在 compose 的自定义网络中，用<strong>服务名</strong>访问：<code>db:5432</code>（注意用容器内部端口 5432，不是宿主机映射端口 5433——5433 只给宿主机外部访问用）。<a href="https://raw.githubusercontent.com/Speri1009/data_engineering_zoomcamp_2025/refs/heads/main/Homework1.md">出处：Data Engineering Zoomcamp Homework 1（Docker & SQL）</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（数据安全陷阱）：「数据挂到 volume 就安全了」这句话对吗？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">不对——volume 不是备份，docker compose down -v 会像 rm -rf 一样删光数据</button>
-            <button class="quiz-option">对——volume 里的数据永远无法被删除</button>
-            <button class="quiz-option">对——Docker 会自动把 volume 同步到云端</button>
-            <button class="quiz-option">不对——volume 只能存配置文件，存不了数据</button>
-          </div>
-          <div class="quiz-explain" hidden>volume 解决的是「删容器不丢数据」，不是备份。<code>docker volume rm</code> 或 <code>docker compose down -v</code> 会把卷内数据彻底删除。真正的备份需要额外手段：<code>pg_dump</code> 逻辑备份、卷快照、复制等。<a href="https://codechick.io/tutorials/interview-devops/iqdo-seti-volumes">出处：codechick「Сети, тома и данные контейнера」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">面试题五（存储方案设计）：生产环境跑 PostgreSQL，数据卷选 named volume 还是 bind mount？为什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">bind mount——能看到宿主机具体路径，排查问题直观</button>
-            <button class="quiz-option">bind mount——性能比 named volume 高很多</button>
-            <button class="quiz-option">两者都一样，看个人习惯随便选</button>
-            <button class="quiz-option">named volume——不依赖宿主机目录结构，支持存储驱动，无权限/SELinux 问题</button>
-          </div>
-          <div class="quiz-explain" hidden>生产推荐 <strong>named volume</strong>：由 Docker 管理、不依赖宿主机具体目录结构、支持 NFS/云盘等驱动、避免 bind mount 常见的权限与 SELinux 标签问题。bind mount 的优势在开发场景（宿主机文件热更新、挂配置），不在数据库数据。<a href="https://codechick.io/tutorials/interview-devops/iqdo-seti-volumes">出处：codechick「Сети, тома и данные контейнера」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题六（镜像环境变量机制）：postgres 镜像的四个关键环境变量 POSTGRES_PASSWORD / POSTGRES_USER / POSTGRES_DB / PGDATA 各自的作用是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">四个都是可选参数，不设置时镜像随机生成</button>
-            <button class="quiz-option">PASSWORD 必填（超级用户密码）；USER 默认 postgres；DB 默认取用户名；PGDATA 默认 /var/lib/postgresql/data 且远程挂载需显式设置</button>
-            <button class="quiz-option">PASSWORD 必填；USER 必填；DB 必填；PGDATA 可选</button>
-            <button class="quiz-option">四个都只是连接参数，与数据初始化无关</button>
-          </div>
-          <div class="quiz-explain" hidden><code>POSTGRES_PASSWORD</code>【必填】初始化超级用户密码，缺了镜像拒绝启动；<code>POSTGRES_USER</code> 可选，默认 postgres；<code>POSTGRES_DB</code> 可选，首次启动创建该库，默认取用户名；<code>PGDATA</code> 可选，数据目录默认 <code>/var/lib/postgresql/data</code>，当卷是文件系统挂载点或无法 chown 的远程文件夹时必须显式指定子目录。<a href="https://blog.csdn.net/cui_yonghua/article/details/145984601">出处：CSDN「【部署】Docker 指令备忘清单」</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'db-0001-PostgreSQL安装',
+          questions: [
+  {
+    type: 'trap',
+    level: '初级岗常问',
+    prompt: `Docker 里跑的 PostgreSQL，容器一删数据就没了。为什么？正确做法是什么？`,
+    source: '考点来源：CSDN「【部署】Docker 指令备忘清单」（Docker 部署 PostgreSQL 题）· 场景改写',
+    breakdown: `容器文件系统是<strong>临时的</strong>：容器删除后写在其内的数据（包括 /var/lib/postgresql/data）一起消失。正确做法：<code>-v pgdata:/var/lib/postgresql/data</code> 把数据目录挂到<strong>卷（volume）</strong>——数据生命周期与容器解耦，容器重建数据仍在。AI 给的 docker run 命令不带 -v 是数据事故头号来源。`,
+  },
+  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `<code>docker run -p 5432:5432 postgres</code> 里的端口映射是什么意思？写成 -p 5432 只有一个端口号会怎样？`,
+    source: '考点来源：CSDN「【部署】Docker 指令备忘清单」（端口映射题）· 场景改写',
+    breakdown: `<code>-p 宿主机端口:容器端口</code>——把宿主机的 5432 转发到容器内的 5432，外部客户端连「宿主机 IP:5432」。只写一个端口（-p 5432）表示宿主机随机端口映射到容器 5432——外部得先查 docker port 才知道连哪，适合临时环境；固定映射适合开发。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的 docker-compose 里，pgAdmin 用 <code>localhost:5432</code> 连 PostgreSQL，连接失败。审查：compose 内部网络该怎么连？`,
+    source: '考点来源：Data Engineering Zoomcamp Homework 1（compose 网络题）· 场景改写',
+    breakdown: `compose 里每个服务在<strong>独立的容器网络</strong>中：localhost 指的是 pgAdmin 容器自己，不是宿主机也不是 postgres 容器。正确：用<strong>服务名</strong>当主机名（如 <code>db:5432</code>，compose 自动 DNS 解析）；依赖服务顺序加 depends_on。localhost 只在「从宿主机连容器」时用。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `生产环境跑 PostgreSQL，数据卷选 named volume 还是 bind mount？为什么？`,
+    source: '考点来源：codechick「Сети, тома и данные контейнера」（存储方案题）· 场景改写',
+    breakdown: `生产首选 <strong>named volume</strong>：由 Docker 统一管理（权限/备份/跨平台行为一致），bind mount 把宿主机路径直接映射——权限与路径耦合、备份要自己操心，但方便调试（直接看文件）。原则：<strong>数据完整性优先用 named volume</strong>，开发调试想看文件用 bind mount。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `用 docker compose 起一个带持久化的 PostgreSQL（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: 'compose 定义 postgres（named volume 挂数据目录）→ 建一张表插入数据 → docker compose down 后 up 重启 → 数据仍在。',
+      accept: ['named volume 挂载正确', '容器重建后数据仍在（验证持久化）', '能解释为什么容器删了数据没丢'],
+    },
+    source: '任务基于《01.PostgreSQL安装》课程知识点 · 来源层级：一手（Docker 官方文档 volumes 章节）场景化',
+    breakdown: `思路：compose 里 <code>volumes: - pgdata:/var/lib/postgresql/data</code> + 顶层 volumes: 声明；环境变量配 POSTGRES_PASSWORD/USER/DB（镜像首次初始化时生效）。坑：数据目录挂载路径写错（要挂目录本身不是父目录）；改环境变量对已初始化卷不生效。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固延伸</h2>
@@ -326,5 +300,6 @@ SELECT current_user;   # 当前用户</code></pre>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

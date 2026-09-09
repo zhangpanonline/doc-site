@@ -14,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 7 节</p>
       <h1>拓展知识</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/拓展知识/">07.拓展知识</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/common/database/拓展知识/">07.拓展知识</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -220,85 +220,59 @@
       </div>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（必考）：说说数据库三大范式？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">1NF 列原子；2NF 完全依赖主键；3NF 消除传递依赖</button>
-            <button class="quiz-option">1NF 主键唯一；2NF 外键关联；3NF 索引优化</button>
-            <button class="quiz-option">1NF 表要小；2NF 列要少；3NF 行要少</button>
-            <button class="quiz-option">1NF 去重；2NF 分库；3NF 分表</button>
-          </div>
-          <div class="quiz-explain" hidden>标准答案：<strong>1NF 每列原子不可再分</strong>；<strong>2NF 非主键列完全依赖主键</strong>（消除部分依赖）；<strong>3NF 非主键列无传递依赖</strong>。可再补一句：范式是减少冗余的指导原则，工程上偶尔会为了性能做反范式冗余。<a href="https://blog.csdn.net/m0_46266264/article/details/116168466">出处：CSDN「MySQL 索引、锁、三大范式一篇搞定」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题二（选型）：Redis 和 PostgreSQL 的本质区别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">两者都是关系型数据库，实现不同</button>
-            <button class="quiz-option">Redis 更快所以应该替代 PostgreSQL</button>
-            <button class="quiz-option">Redis 是键值型内存库（高读写、弱查询）；PG 是关系型磁盘库（强 ACID、JOIN）</button>
-            <button class="quiz-option">PG 只存字符串，Redis 只存数字</button>
-          </div>
-          <div class="quiz-explain" hidden>模型不同：<strong>Redis = K-V 内存库</strong>，超高读写、操作简单，但无 JOIN、数据要能放进内存；<strong>PG = 关系型磁盘库</strong>，强 ACID、SQL、事务。典型分工：Redis 做缓存/计数/会话，PG 做数据的家。<a href="https://www.nowcoder.com/issue/tutorial?tutorialId=10039&uuid=9ffd061f8c764aeab5ebc59b8d6b4427">出处：牛客专刊「数据库索引-笔面试必考点 15 讲」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题三（陷阱题）：关于视图，下列说法正确的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">视图会缓存查询结果，所以查询更快</button>
-            <button class="quiz-option">视图只是存好的 SQL，每次查询现场计算——本身不加速</button>
-            <button class="quiz-option">视图不能用于权限控制</button>
-            <button class="quiz-option">视图里不能使用 JOIN</button>
-          </div>
-          <div class="quiz-explain" hidden>视图 = <strong>命名的查询定义</strong>，不存数据、不缓存结果，每次现场算——它的价值是简化复杂 SQL、权限控制（只暴露部分列/行）、接口稳定，而不是提速。<strong>要提速的是物化视图</strong>。<a href="https://blog.csdn.net/weixin_47495011/article/details/133689530">出处：CSDN「3.数据库部分面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">面试题四（场景陷阱）：JSON 数据都存 MongoDB，对吗？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">对——JSON 是 MongoDB 的专属格式</button>
-            <button class="quiz-option">对——关系型数据库都存不了 JSON</button>
-            <button class="quiz-option">对——PG 的 JSONB 只是存储，不能查询</button>
-            <button class="quiz-option">不对——PG 的 JSONB 支持索引与高效查询，半结构化数据也能用 PG</button>
-          </div>
-          <div class="quiz-explain" hidden>PG 原生支持 JSON/JSONB：JSONB 二进制存储、<strong>可建 GIN 索引、按字段查询高效</strong>——关系型与 NoSQL 能力可以混用（课件能力表专门列了 JSON/JSONB 与 GIN/GiST 索引）。选型看的是查询模式与一致性要求，不是「存了什么格式」。<a href="https://blog.csdn.net/weixin_47495011/article/details/133689530">出处：CSDN「3.数据库部分面试题」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题五（高可用设计）：主库突然宕机，靠什么能力自动顶上？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">VACUUM 自动修复宕机</button>
-            <button class="quiz-option">触发器接管主库</button>
-            <button class="quiz-option">流复制 + 高可用组件：备机实时同步，故障时切换接管</button>
-            <button class="quiz-option">FDW 外部表自动重建</button>
-          </div>
-          <div class="quiz-explain" hidden>高可用 = <strong>流复制</strong>：主库的 WAL 实时同步到备机，主库宕机后备机提升为新主（配合 repmgr/Patroni 等做自动故障转移）。逻辑复制用于按表按行选择性地同步（数据分发/跨版本），不是故障接管。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题六（反范式权衡）：为什么实际项目里有时故意违反三范式？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">用冗余换查询性能——少 JOIN、直接读，典型如订单快照字段</button>
-            <button class="quiz-option">因为范式已经过时了</button>
-            <button class="quiz-option">因为违反范式能省磁盘</button>
-            <button class="quiz-option">因为数据库不支持范式化的设计</button>
-          </div>
-          <div class="quiz-explain" hidden>范式减少冗余但增加 JOIN（查询成本）。工程上常做<strong>受控冗余</strong>：订单表存下单时的商品名/单价<strong>快照</strong>（商品改价不影响历史订单）——这不是没学好范式，而是性能与历史可追溯性的刻意权衡。关键在「受控」：知道冗余了、谁来维护它。<a href="https://blog.csdn.net/m0_46266264/article/details/116168466">出处：CSDN「MySQL 索引、锁、三大范式一篇搞定」</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'db-0007-拓展知识',
+          questions: [
+  {
+    type: 'trap',
+    level: '初级岗常问',
+    prompt: `数据库三大范式分别是什么？一句话说清每层解决什么。`,
+    source: '考点来源：CSDN「MySQL 索引、锁、三大范式一篇搞定」· 场景改写',
+    breakdown: `<strong>1NF</strong>：列不可再分（单元格原子值）；<strong>2NF</strong>：非主键列完全依赖<strong>整个</strong>主键（消除部分依赖——联合主键时代码列只依赖一半）；<strong>3NF</strong>：非主键列不传递依赖主键（消除冗余——部门名放员工表就是冗余）。口诀：1 拆格子、2 拆半依赖、3 拆传递。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `Redis 和 PostgreSQL 的本质区别是什么？各自解决什么问题？`,
+    source: '考点来源：牛客专刊「数据库索引-笔面试必考点 15 讲」（选型题）· 场景改写',
+    breakdown: `<strong>Redis</strong>：内存键值存储，主打<strong>高速缓存/计数器/会话</strong>——毫秒级读写、数据可丢（或 AOF/RDB 兜底）；<strong>PostgreSQL</strong>：磁盘关系库，主打<strong>结构化数据 + ACID 事务 + 复杂查询</strong>。典型组合：<strong>PG 存真相、Redis 做缓存</strong>（读多写少的查询结果/热点数据），缓存失效策略要配套。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 把 50 个字段的报表逻辑全塞进一个视图，还计划「视图当表用」。审查：视图的本质是什么？滥用视图有什么代价？`,
+    source: '考点来源：CSDN「3.数据库部分面试题」（视图陷阱题）· 场景改写',
+    breakdown: `普通视图只是<strong>保存的查询</strong>：每次引用都重新执行底层 SQL——视图套视图/复杂连接会带来<strong>多层展开的执行计划膨胀</strong>与性能黑洞，且底层表结构一改视图就失效。正确用法：视图做<strong>接口抽象</strong>（权限隔离、常见查询封装），重报表用物化视图（REFRESH 定时刷新）或独立报表表。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `为什么实际项目里有时故意违反三范式（反范式）？举一个典型场景。`,
+    source: '考点来源：CSDN「MySQL 索引、锁、三大范式一篇搞定」（反范式权衡题）· 场景改写',
+    breakdown: `范式减少<strong>冗余</strong>，代价是<strong>多表 JOIN</strong>——高频查询要 JOIN 三张表才能拼出订单列表时，性能与复杂度都不划算。反范式：把高频读取的<strong>冗余字段</strong>（如订单表冗余存商品名快照）落库，牺牲少量一致性换查询性能。原则：<strong>写路径走范式保一致，读路径允许受控冗余换性能</strong>（冗余字段要有更新机制）。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `建视图并做范式分析（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '设计两张表（故意含一处 3NF 冗余）；创建视图封装常用查询并查询成功；指出冗余字段违反 3NF、说明何时该保留（读多写少）何时该拆。',
+      accept: ['视图创建与查询成功', '能指出冗余字段违反哪条范式', '能给出保留/拆分该冗余的取舍分析'],
+    },
+    source: '任务基于《07.拓展知识》课程知识点 · 来源层级：一手（PostgreSQL 官方文档视图章节）场景化',
+    breakdown: `思路：<code>CREATE VIEW v_orders AS SELECT ...</code>；范式分析对照「非主键列是否依赖主键、是否传递依赖」。坑：视图上的写入有限制（多表视图不可直接 UPDATE）；视图引用底层表结构变更要重验。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固延伸</h2>
@@ -315,5 +289,6 @@
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

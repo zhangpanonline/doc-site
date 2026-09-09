@@ -14,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 5 节</p>
       <h1>事务</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/事务/">05.事务</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/common/database/事务/">05.事务</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -233,85 +233,59 @@ PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pr
       </div>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（必考）：小明给小红转账 1000 元，为什么必须用事务？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">扣小明、加小红两步要么都成功要么都失败，防止钱凭空消失或翻倍</button>
-            <button class="quiz-option">因为转账金额超过 500 就必须用事务</button>
-            <button class="quiz-option">为了让转账速度更快</button>
-            <button class="quiz-option">为了把两条 UPDATE 压缩成一条执行</button>
-          </div>
-          <div class="quiz-explain" hidden>两步操作必须<strong>原子</strong>：只扣不加（小明亏钱）、只加不扣（小红凭空得钱）都是灾难。事务保证全成功或全回滚，账目恒平。<a href="https://blog.csdn.net/javaeEEse/article/details/139613776">出处：CSDN「Java 最新面试题」· 事务考点</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题二（概念题）：ACID 四特性分别解决什么问题？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">A 提速、C 压缩、I 加密、D 备份</button>
-            <button class="quiz-option">A 权限、C 审计、I 日志、D 监控</button>
-            <button class="quiz-option">A 不做一半、C 约束始终成立、I 并发互不干扰、D 提交不丢</button>
-            <button class="quiz-option">A 排序、C 去重、I 分页、D 缓存</button>
-          </div>
-          <div class="quiz-explain" hidden>原子性 = 全成功或全回滚；一致性 = 数据始终满足约束（转账总金额不变）；隔离性 = 并发事务互不干扰；持久性 = 提交后永久生效。<strong>一致性是目的，其余三条是手段</strong>——这句是加分点。<a href="https://blog.csdn.net/sshuai131400/article/details/121297979">出处：CSDN「MySQL 数据库面试题」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">面试题三（辨析高频）：不可重复读和幻读有什么区别？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">没有区别，是同一种问题的两种叫法</button>
-            <button class="quiz-option">脏读就是不可重复读，幻读是脏读的别称</button>
-            <button class="quiz-option">不可重复读由 INSERT 引起，幻读由 UPDATE 引起</button>
-            <button class="quiz-option">不可重复读是同一行被改/删（值变了）；幻读是范围结果集多了少了行（别的 INSERT）</button>
-          </div>
-          <div class="quiz-explain" hidden>精确区分：<strong>不可重复读</strong>——两次读<strong>同一条</strong>记录，值变了（别人 UPDATE/DELETE 已提交）；<strong>幻读</strong>——两次<strong>范围查询</strong>，行数变了（别人 INSERT 已提交）。「行内值变 vs 行数变」。<a href="https://www.nowcoder.com/discuss/353147555200573440">出处：牛客网「【Java 春秋招】常见 MySQL 面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（跨库陷阱）：MySQL 与 PostgreSQL 的默认隔离级别分别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">MySQL 默认 REPEATABLE READ；PostgreSQL 默认 READ COMMITTED</button>
-            <button class="quiz-option">两者都默认 READ COMMITTED</button>
-            <button class="quiz-option">两者都默认 REPEATABLE READ</button>
-            <button class="quiz-option">MySQL 默认 SERIALIZABLE；PG 默认 READ UNCOMMITTED</button>
-          </div>
-          <div class="quiz-explain" hidden>跨库必问：<strong>MySQL/InnoDB 默认 RR</strong>（历史原因：早期 binlog 只有 STATEMENT 格式），<strong>PG 默认 RC</strong>。另外 PG 不实现 READ UNCOMMITTED（设置后按 RC 处理），而 MySQL 有该级别。面试说到隔离级别先确认对方问的是哪个库。<a href="https://blog.csdn.net/weixin_39963192/article/details/115265159">出处：CSDN「面经汇总-数据库」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题五（机制题）：事务隔离是怎么实现的？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">数据库把所有事务排成一个队列串行执行</button>
-            <button class="quiz-option">靠操作系统文件锁实现</button>
-            <button class="quiz-option">主要靠锁机制 + MVCC 多版本并发控制</button>
-            <button class="quiz-option">靠数据库管理员人工协调</button>
-          </div>
-          <div class="quiz-explain" hidden>两大支柱：<strong>锁</strong>（行锁/表锁/间隙锁，控制写写冲突）+ <strong>MVCC</strong>（每行保留多版本，读旧快照不阻塞写、写新版本不阻塞读）。PG 的 READ COMMITTED / REPEATABLE READ 都建立在快照之上。<a href="https://blog.csdn.net/weixin_39963192/article/details/115265159">出处：CSDN「面经汇总-数据库」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题六（场景设计）：互联网高并发项目普遍选 READ COMMITTED 而不是 SERIALIZABLE，为什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">因为 SERIALIZABLE 已被数据库废弃</button>
-            <button class="quiz-option">隔离级别越高并发越差：RC 无脏读、够大多数业务用，性能好得多</button>
-            <button class="quiz-option">因为 RC 能防止所有并发问题</button>
-            <button class="quiz-option">因为 RC 是唯一支持事务的级别</button>
-          </div>
-          <div class="quiz-explain" hidden>权衡：隔离级别越高、并发性能越差。RC 已防脏读，大多数 Web 业务（列表、下单、报表）不需要更高的隔离保证，<strong>用 RC 换并发吞吐</strong>；只有财务对账（RR）与防超卖（SERIALIZABLE）才升级。这正是「默认够用，按需提升」的工程哲学。<a href="https://blog.csdn.net/weixin_39963192/article/details/115265159">出处：CSDN「面经汇总-数据库」</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'db-0005-事务',
+          questions: [
+  {
+    type: 'trap',
+    level: '初级岗常问',
+    prompt: `小明给小红转账 1000 元：扣小明 1000、加小红 1000 是两条 UPDATE。为什么必须包在事务里？`,
+    source: '考点来源：CSDN「Java 最新面试题」· 事务考点 · 场景改写',
+    breakdown: `两条 UPDATE 构成一个<strong>不可分割的业务操作</strong>：不包事务，第一条成功后崩溃/失败，钱就凭空消失（扣了没加）或凭空出现。事务保证<strong>原子性</strong>：要么两条都生效、要么都回滚。AI 写转账类代码漏事务是资金事故。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `ACID 四特性分别解决什么问题？`,
+    source: '考点来源：CSDN「MySQL 数据库面试题」（ACID 题）· 场景改写',
+    breakdown: `<strong>原子性 A</strong>（全成或全败——转账）；<strong>一致性 C</strong>（约束/规则不被破坏——余额不为负）；<strong>隔离性 I</strong>（并发事务互不干扰——两笔转账同时进行互不污染）；<strong>持久性 D</strong>（提交后不丢——断电数据仍在）。记忆法：A 转账、C 规则、I 并发、D 断电。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `面试官问：不可重复读和幻读有什么区别？PG 默认隔离级别下会同时出现吗？`,
+    source: '考点来源：牛客网「【Java 春秋招】常见 MySQL 面试题」（辨析题）· 场景改写',
+    breakdown: `<strong>不可重复读</strong>：同一事务内两次读<strong>同一行</strong>，值变了（别人 UPDATE 提交）；<strong>幻读</strong>：两次读<strong>同一范围</strong>，行数变了（别人 INSERT 提交）。PG 默认 <strong>READ COMMITTED</strong>：两者都可能出现（每次语句见最新已提交数据）；MySQL 默认 REPEATABLE READ：不可重复读被 MVCC 挡住，但幻读仍存在（需锁或更高隔离级）。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `事务隔离是怎么实现的？互联网高并发项目为什么普遍选 READ COMMITTED 而不是 SERIALIZABLE？`,
+    source: '考点来源：CSDN「面经汇总-数据库」（隔离机制题）· 场景改写',
+    breakdown: `主流实现是 <strong>MVCC</strong>：写不阻塞读、读不阻塞写——每行多版本，事务按快照读旧版本；再配合行锁解决写冲突。SERIALIZABLE 隔离最强但<strong>锁冲突/事务回滚率高</strong>，高并发下吞吐骤降；READ COMMITTED 每语句最新快照 + 应用层用乐观锁/幂等兜底，性价比最高——「数据库给基础、业务补边角」是互联网标准答案。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `两个会话实测不可重复读（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 25 分钟',
+      goal: '会话 A：BEGIN 后查一行余额；会话 B：UPDATE 该行并 COMMIT；会话 A 再查——PG 默认级别下两次结果不同（复现不可重复读）；会话 A 换成 REPEATABLE READ 重试，两次结果一致。',
+      accept: ['READ COMMITTED 下两次读结果不同（实测）', 'REPEATABLE READ 下两次读一致（快照）', '能解释 MVCC 快照机制'],
+    },
+    source: '任务基于《05.事务》课程知识点 · 来源层级：一手（PostgreSQL 官方文档事务隔离章节）场景化',
+    breakdown: `思路：两个 psql 会话（或用 docker exec 开两个）——A 里 <code>BEGIN; SELECT balance...;</code>，B 里 <code>UPDATE ...; COMMIT;</code>，A 再 SELECT。坑：PG 的 BEGIN 是 READ COMMITTED（语句级快照），REPEATABLE READ 要显式 BEGIN ISOLATION LEVEL REPEATABLE READ；顺序不对会看不到差异。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固延伸</h2>
@@ -328,5 +302,6 @@ PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pr
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

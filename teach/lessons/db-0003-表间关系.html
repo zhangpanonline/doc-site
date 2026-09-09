@@ -14,7 +14,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 3 节</p>
       <h1>表间关系</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/表间关系/">03.表间关系</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/common/database/表间关系/">03.表间关系</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -231,85 +231,59 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
       </div>
     </section>
 
-    <section>
+        <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（外键基础）：外键（Foreign Key）的作用是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">指向另一张表的主键，建立表间关联并保证数据完整性</button>
-            <button class="quiz-option">给表提速的索引工具，与数据完整性无关</button>
-            <button class="quiz-option">数据库的备份恢复机制</button>
-            <button class="quiz-option">一种压缩存储大数据字段的技术</button>
-          </div>
-          <div class="quiz-explain" hidden>外键指向<strong>父表主键</strong>，作用：① 建立表间关联；② 数据库层面自动约束（防止插入不存在的父记录、防止误删被引用的父记录）。代价是每次写入都要检查、降低写性能。<a href="https://m.php.cn/faq/2165953.html">出处：php.cn「MySQL 外键使用面试题解析」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题二（级联删除）：ON DELETE CASCADE 的优缺点各是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">没有优点，外键都应该禁用</button>
-            <button class="quiz-option">只有优点：开发最省事</button>
-            <button class="quiz-option">优点省代码；缺点误删父记录会连带清掉子数据，风险不可控</button>
-            <button class="quiz-option">优点快；缺点占磁盘</button>
-          </div>
-          <div class="quiz-explain" hidden>级联删除「方便」是真方便：删一条主记录，关联数据自动清理。但<strong>误删父表一条记录可能连带删掉订单、购买记录等关键数据</strong>，且难以追溯——所以《阿里巴巴开发手册》明确禁止使用级联。生产上慎用，宁可显式在应用层删除。<a href="https://www.cnblogs.com/2678066103hs/p/19047614">出处：博客园「为什么大厂都不推荐使用外键」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题三（大厂必问）：「为什么大厂都禁止使用外键？」最核心的原因是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">外键有安全漏洞，容易被黑客攻击</button>
-            <button class="quiz-option">写入性能开销 + 分库分表/微服务下跨库失效 + 级联误删风险</button>
-            <button class="quiz-option">外键占用磁盘空间过大</button>
-            <button class="quiz-option">外键是过时技术，新版数据库已删除该功能</button>
-          </div>
-          <div class="quiz-explain" hidden>三座大山：① <strong>性能</strong>——每次 INSERT/UPDATE/DELETE 都要检查父表、维护关联索引，高并发下成瓶颈，死锁概率上升；② <strong>架构演进</strong>——分库分表/微服务后数据跨库，外键物理上无法生效；③ <strong>级联风险</strong>——误删连带、难以追踪。辩证收尾：单机低并发、一致性优先的项目（ERP/财务）仍可用。<a href="https://www.cnblogs.com/2678066103hs/p/19047614">出处：博客园「为什么大厂都不推荐使用外键」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">面试题四（SET NULL 细节）：外键选了 ON DELETE SET NULL，有什么前提条件？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">外键列必须是主键</button>
-            <button class="quiz-option">外键列必须带 UNIQUE 约束</button>
-            <button class="quiz-option">外键列必须使用 SERIAL 类型</button>
-            <button class="quiz-option">外键列必须允许 NULL，否则父表删除会报错</button>
-          </div>
-          <div class="quiz-explain" hidden>SET NULL 要把外键列置空，所以该列<strong>必须允许 NULL</strong>（不能带 NOT NULL）——「软解绑」场景（父记录没了、子记录保留但失去关联）用它。与之相对，RESTRICT/NO ACTION 是默认的「硬禁止」。<a href="https://m.php.cn/faq/2165953.html">出处：php.cn「MySQL 外键使用面试题解析」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">面试题五（架构设计）：不用外键后，靠什么保证数据一致性？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">什么也不做，靠运气和开发者自觉</button>
-            <button class="quiz-option">全部改用触发器模拟，一个都不能少</button>
-            <button class="quiz-option">应用层校验 + 事务 + 定时对账巡检 + 逻辑外键</button>
-            <button class="quiz-option">把关联数据合并进同一张表，从根上避免不一致</button>
-          </div>
-          <div class="quiz-explain" hidden>标准答案组合拳：<strong>① 应用层校验</strong>（写子表前查父表，配合事务保证原子性）<strong>② 定时巡检</strong>（每日 SQL 扫「孤儿记录」对账、告警）<strong>③ 逻辑外键</strong>（应用层维护字段关联）<strong>④ 事件驱动/柔性事务</strong>保证最终一致。触发器模拟不推荐：逻辑隐蔽、难调试。<a href="https://www.cnblogs.com/2678066103hs/p/19047614">出处：博客园「为什么大厂都不推荐使用外键」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">面试题六（场景权衡）：什么场景适合用外键，什么场景必须禁用？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">所有场景都要用，不用外键的数据必然脏</button>
-            <button class="quiz-option">单机低并发、一致性优先的项目可用；高并发、分库分表、微服务项目禁用</button>
-            <button class="quiz-option">所有场景都禁用，外键百害无一利</button>
-            <button class="quiz-option">只有 MySQL 需要禁用，PostgreSQL 随便用</button>
-          </div>
-          <div class="quiz-explain" hidden>分场景：<strong>单体、低并发、数据量小、强一致</strong>（传统企业/ERP/财务）→ 用外键，省代码且数据库兜底；<strong>高并发、分布式、分库分表、微服务</strong> → 禁用，物理外键跨库失效且拖累性能。盲目跟风禁用和盲目使用都是错的。<a href="https://www.cnblogs.com/2678066103hs/p/19047614">出处：博客园「为什么大厂都不推荐使用外键」</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'db-0003-表间关系',
+          questions: [
+  {
+    type: 'trap',
+    level: '初级岗常问',
+    prompt: `外键（Foreign Key）的作用是什么？为什么说它是「引用完整性」的最后防线？`,
+    source: '考点来源：php.cn「MySQL 外键使用面试题解析」（外键基础题）· 场景改写',
+    breakdown: `外键保证<strong>引用完整性</strong>：子表的外键值必须存在于父表主键中——插入不存在的引用直接报错、父表删除被引用的行会被约束拦截。它是数据库层最后防线：应用 bug 漏校验时，脏数据在写入层就被挡住。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `<code>ON DELETE CASCADE</code> 与 <code>ON DELETE SET NULL</code> 各是什么语义？SET NULL 有什么前提条件？`,
+    source: '考点来源：php.cn「MySQL 外键使用面试题解析」（SET NULL 细节题）· 场景改写',
+    breakdown: `CASCADE：删父行时<strong>级联删除</strong>子表引用行；SET NULL：删父行时把子表外键列<strong>置 NULL</strong>（保留子行、断开关系）。SET NULL 前提：<strong>外键列必须可空</strong>（NOT NULL 列会报错），且业务上允许「孤儿行」语义。AI 写 schema 时常漏这个前提，建表直接失败。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `面试官问「为什么大厂都禁止使用外键」。最核心的原因是什么？AI 生成的 schema 里到处外键，你如何审查？`,
+    source: '考点来源：博客园「为什么大厂都不推荐使用外键」· 场景改写',
+    breakdown: `核心：<strong>外键在写入时做跨行/跨表校验并加锁</strong>——大表高频写入时成为锁竞争与性能瓶颈；且<strong>分库分表/数据迁移时外键无法跨库生效</strong>，扩容即拆约束。审查 AI 的 schema：核心交易表可以留外键，高频大表/待分库表去掉、一致性改由应用层保证。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `不用外键后，靠什么保证数据一致性？什么场景适合用外键、什么场景必须禁用？`,
+    source: '考点来源：博客园「为什么大厂都不推荐使用外键」（架构设计题）· 场景改写',
+    breakdown: `应用层手段：① 事务内先查父行再写子行；② <strong>定期对账任务</strong>扫孤儿数据修复/告警；③ 软删除 + 业务状态机兜底。适合外键：内部工具、数据量小、一致性优先（订单明细）；禁用外键：高频写入大表、分库分表、多团队共享表。原则：<strong>外键买的是即时一致性，代价是写入性能与扩展性</strong>。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `建一对父子表并验证外键行为（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: 'orders + order_items（外键引用 orders）→ 验证：插入不存在父行的子行被拒 → ON DELETE CASCADE 删父行级联删子行 → 去掉外键后插入孤儿行、写对账 SQL 找出它。',
+      accept: ['外键拒绝非法引用（实测报错）', 'CASCADE 级联删除生效', '对账 SQL 能找出孤儿行'],
+    },
+    source: '任务基于《03.表间关系》课程知识点 · 来源层级：一手（PostgreSQL 官方文档 DDL 约束章节）场景化',
+    breakdown: `思路：<code>REFERENCES orders(id) ON DELETE CASCADE</code>；孤儿行对账 <code>SELECT ... LEFT JOIN parent p ON ... WHERE p.id IS NULL</code>。坑：外键列类型要与父表主键完全一致；CASCADE 会穿透多级（A→B→C 删 A 把 C 也删了）。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固延伸</h2>
@@ -326,5 +300,6 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>
