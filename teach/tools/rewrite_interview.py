@@ -433,6 +433,36 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `venv <strong>绑定「命令实际解析到的那个解释器」</strong>——PATH 里 python 指向哪个版本，环境就是哪个版本。多版本机器上要<strong>用完整路径/版本名</strong>建环境：<code>python3.12 -m venv .venv</code>（或 uv venv --python 3.12）。装错版本再卸载重建成本高——AI 生成命令时不会知道你机器上 python 指向谁，审查部署脚本先确认解释器版本。`,
   },
 ''',
+    '0022-标准库': r'''  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `官方文档说 pathlib 的 Path 类分哪两大类？日常写代码该用哪个？`,
+    source: '来源：Python 官方文档 pathlib「pathlib — Object-oriented filesystem paths」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：Path 类分<strong>纯路径（PurePath）</strong>——只做<strong>纯计算操作、不碰 IO</strong>；<strong>具体路径（Path）</strong>——继承纯路径并<strong>增加 IO 操作</strong>（读写、mkdir、glob）。文档原话「If you've never used this module... Path is most likely what you need」——日常直接用 Path 即可。这层划分也是面试题「PurePath 和 Path 区别」的官方答案。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `AI 写的配置处理模块在「校验/规范化路径字符串」时用了 Path。按官方文档的划分，这里用 PurePath 更合适——为什么？`,
+    source: '来源：Python 官方文档 pathlib「pathlib — Object-oriented filesystem paths」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `官方划分依据：<strong>纯计算（拼接、规范化、判断后缀）不需要 IO</strong>——用 PurePath 明确表达「我不碰磁盘」：配置校验、模板路径处理、Windows 路径在 Linux 上分析等场景不会<strong>误触本地文件系统</strong>（Path 的 IO 方法还在，调用就真去读盘了）。用类型本身当契约：只做字符串级操作 → PurePath；要读写 → Path。`,
+  },
+''',
+    '0032-断点调试': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档说 pdb 支持哪些调试能力？逐条列出。`,
+    source: '来源：Python 官方文档 pdb「pdb — The Python Debugger」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文清单：① <strong>（条件）断点</strong>与<strong>源码行级单步</strong>；② <strong>栈帧检查</strong>；③ <strong>源码列表</strong>；④ 在<strong>任意栈帧上下文里求值任意 Python 代码</strong>（交互式改局部变量）；⑤ <strong>post-mortem 调试</strong>（崩溃后进现场）；⑥ 程序内嵌调用；⑦ <strong>可扩展</strong>（本质是个 Pdb 类）。面试答「pdb 能干什么」按这个清单答就齐了。`,
+  },
+  {
+    type: 'design',
+    level: '高级岗常问',
+    prompt: `服务崩溃了、异常栈已打印。官方文档说的 post-mortem 调试怎么用？和常规断点调试比适合什么场景？`,
+    source: '来源：Python 官方文档 pdb「pdb — The Python Debugger」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `<code>python -m pdb script.py</code>（崩溃后自动停在异常现场）或 except 块里 <code>pdb.pm()</code>——<strong>进入崩溃时刻的栈帧</strong>，用 p 查看当时变量、w 看栈、u/d 切换帧。适合：异常已发生、想<strong>事后取证</strong>而无法复现的场景（AI 生成的服务代码崩溃排查首选）；常规断点适合可稳定复现、要单步推演的场景。两者结合 = 生产排障的「断点收尾」策略。`,
+  },
+''',
 }
 
 

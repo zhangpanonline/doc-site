@@ -217,7 +217,7 @@
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握断点调试——<strong>恭喜你完成了《Python 语言核心》全部 30 章的互动课程！</strong>🎉</p>
     </section>
 
-                                                                        <section>
+                                                                            <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -263,11 +263,25 @@
     },
     source: '任务基于《32.断点调试》课程知识点 · 来源层级：一手（Python 官方文档 pdb 章节）场景化',
     breakdown: `思路：<code>for i in range(500): if i == 299: breakpoint()</code>（或 VS Code 条件断点）；日志版在出错分支打 error 日志 + i 值。坑：循环里 breakpoint 要配条件，无脑断点要按 299 次继续；异步代码里的断点注意交错状态（审查题同款）。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档说 pdb 支持哪些调试能力？逐条列出。`,
+    source: '来源：Python 官方文档 pdb「pdb — The Python Debugger」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文清单：① <strong>（条件）断点</strong>与<strong>源码行级单步</strong>；② <strong>栈帧检查</strong>；③ <strong>源码列表</strong>；④ 在<strong>任意栈帧上下文里求值任意 Python 代码</strong>（交互式改局部变量）；⑤ <strong>post-mortem 调试</strong>（崩溃后进现场）；⑥ 程序内嵌调用；⑦ <strong>可扩展</strong>（本质是个 Pdb 类）。面试答「pdb 能干什么」按这个清单答就齐了。`,
   },
-],
+  {
+    type: 'design',
+    level: '高级岗常问',
+    prompt: `服务崩溃了、异常栈已打印。官方文档说的 post-mortem 调试怎么用？和常规断点调试比适合什么场景？`,
+    source: '来源：Python 官方文档 pdb「pdb — The Python Debugger」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `<code>python -m pdb script.py</code>（崩溃后自动停在异常现场）或 except 块里 <code>pdb.pm()</code>——<strong>进入崩溃时刻的栈帧</strong>，用 p 查看当时变量、w 看栈、u/d 切换帧。适合：异常已发生、想<strong>事后取证</strong>而无法复现的场景（AI 生成的服务代码崩溃排查首选）；常规断点适合可稳定复现、要单步推演的场景。两者结合 = 生产排障的「断点收尾」策略。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 

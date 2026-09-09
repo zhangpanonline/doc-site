@@ -260,7 +260,7 @@ def merge_markdown(files: list[str], output: str) -> None:
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握标准库的实战用法——可以继续学习《<a href="/agents/python/第三方库/">21.第三方库</a>》了。</p>
     </section>
 
-                                                                                    <section>
+                                                                                        <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -312,11 +312,25 @@ def save(dir, name):
     },
     source: '任务基于《22.标准库》课程知识点 · 来源层级：一手（Python 官方文档 pathlib/re 章节）场景化',
     breakdown: `思路：<code>for p in Path(root).rglob('*.py'): if re.search(r'_test\\.py$', p.name)</code> 过滤；<code>p.read_text(encoding='utf-8').count('\\n')</code> 行数；结果 sorted。坑：read_text 记得 encoding（陷阱题同款）；二进制/大文件用迭代计数而不是整读。`,
+  }, {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `官方文档说 pathlib 的 Path 类分哪两大类？日常写代码该用哪个？`,
+    source: '来源：Python 官方文档 pathlib「pathlib — Object-oriented filesystem paths」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：Path 类分<strong>纯路径（PurePath）</strong>——只做<strong>纯计算操作、不碰 IO</strong>；<strong>具体路径（Path）</strong>——继承纯路径并<strong>增加 IO 操作</strong>（读写、mkdir、glob）。文档原话「If you've never used this module... Path is most likely what you need」——日常直接用 Path 即可。这层划分也是面试题「PurePath 和 Path 区别」的官方答案。`,
   },
-],
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `AI 写的配置处理模块在「校验/规范化路径字符串」时用了 Path。按官方文档的划分，这里用 PurePath 更合适——为什么？`,
+    source: '来源：Python 官方文档 pathlib「pathlib — Object-oriented filesystem paths」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `官方划分依据：<strong>纯计算（拼接、规范化、判断后缀）不需要 IO</strong>——用 PurePath 明确表达「我不碰磁盘」：配置校验、模板路径处理、Windows 路径在 Linux 上分析等场景不会<strong>误触本地文件系统</strong>（Path 的 IO 方法还在，调用就真去读盘了）。用类型本身当契约：只做字符串级操作 → PurePath；要读写 → Path。`,
+  },],
         };
       </script>
     </section>
+
+
 
 
 
