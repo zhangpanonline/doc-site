@@ -190,15 +190,205 @@ print(fetch_data.__name__, fetch_data.__doc__)</code></pre>`,
     breakdown: `思路：外层 <code>def retry(times, delay)</code> 返回装饰器；wrapper 里 for 循环 + try/except + time.sleep(delay)；耗尽后 raise 最后一次异常；记得 <code>@functools.wraps(fn)</code>。坑：只捕获目标异常（如 ConnectionError），别吞 KeyboardInterrupt 或参数类型错误；delay 要可配置为 0 方便测试。`,
   },
 ]'''),
+    # ——— 第二批 ———
+    ('0006-作用域.html', '巩固与延伸', '0006-作用域', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 跟你说「Python 传参是值传递」。但你调用 <code>def append_one(x): x.append(1)</code> 后，外面的列表真的变了。Python 传参到底算什么？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（传参方式题）· 场景改写',
+    breakdown: `准确说法：<strong>对象引用传递</strong>（pass-by-object-reference）——传的是对象的引用，不复制对象。于是不可变对象（int/str/元组）行为像值传递（重新绑定不影响外部），可变对象（list/dict）行为像引用传递（原地修改外部可见）。面试标准答法：可变对象传引用、不可变对象传值。`,
+  },
+  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `函数内部找不到一个变量名时，Python 按什么顺序查找？global 和 nonlocal 分别干什么用？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（LEGB 题）· 场景改写',
+    breakdown: `<strong>LEGB</strong>：Local（函数内）→ Enclosing（外层函数）→ Global（模块）→ Builtin（内建）。<code>global</code> 声明「赋值指向模块级变量」；<code>nonlocal</code> 指向<strong>最近一层外层函数</strong>的变量（闭包里改外层计数器的唯一正路）。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了这段代码，一运行就 <code>UnboundLocalError</code>。审查并修复：
+<pre><code>total = 0
+
+def add(n):
+    total += n   # AI 说「外面有 total」？
+    return total
+
+print(add(5))</code></pre>`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（作用域判定时机题）· 场景改写',
+    breakdown: `Python 在<strong>编译期</strong>就判定名字归属：函数体内对 total 有赋值语句 → total 被判定为局部变量 → 右侧读取时局部变量还未赋值 → UnboundLocalError。修复：函数内声明 <code>global total</code>（或改成传参+返回的纯函数写法，后者更推荐——AI 时代尤其要引导 AI 写无副作用的函数）。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要让 AI 实现一个「带状态的计数器」。什么时候让它用闭包，什么时候用类？各举一个场景。`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（设计选择题）· 场景改写',
+    breakdown: `<strong>闭包</strong>：状态单一、行为单一（计数器、缓存装饰器）——一个 <code>def make_counter()</code> + nonlocal 就够，代码最少；<strong>类</strong>：状态多、行为多（增删改查、多方法协作）——属性 + 方法更可读。追问加分：闭包在 pickle/调试/继承场景明显吃亏，AI 生成的多方法对象还是让 AI 用类。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个工厂函数 <code>make_counter(step)</code>（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 15 分钟',
+      goal: '返回一个计数器函数：每次调用按 step 递增并返回当前值；提供 reset 能力；多个计数器实例互不干扰。',
+      accept: ['nonlocal 正确使用（不用 global）', 'reset 后从 0 重新开始', '两个实例的计数互不影响'],
+    },
+    source: '任务基于《6.作用域》课程知识点（nonlocal 小节）· 场景化',
+    breakdown: `思路：<code>def make_counter(step): count = 0; def counter(): nonlocal count; count += step; return count; ...</code>——count 是外层函数的局部变量，靠 nonlocal 在闭包里修改。坑：忘写 nonlocal 会 UnboundLocalError（参考审查题）；reset 要记得把闭包里的 count 归零而不是重开一个。`,
+  },
+]'''),
+    ('0007-lambda表达式.html', '巩固与延伸', '0007-lambda表达式', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 在项目里到处写多行 lambda（含循环、赋值、try）。代码审查时你要求它改成 def。lambda 的边界在哪？什么场景才适合用？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（lambda 局限题）· 场景改写',
+    breakdown: `lambda 只能是<strong>单个表达式</strong>：不能有语句、赋值、注解、try——超过一行的逻辑用 def（有名字、可调试、可文档）。适合场景：<code>sorted(key=...)</code>、map/filter 的一次性小回调。AI 时代给 AI 的规则同样适用：lambda 只用于「一行能说清的表达式回调」。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `产品列表要先按公司名升序、同公司内按价格升序，正确写法是什么？背后的机制（元组 key + 排序稳定性）是什么？`,
+    source: '考点来源：CSDN「Python 篇——常考的数据类型」（多级排序题）· 场景改写',
+    breakdown: `<code>sorted(products, key=lambda p: (p['company'], p['price']))</code>：key 返回<strong>元组</strong>，依次按元组元素比较即多级排序。机制补充：sorted 是<strong>稳定排序</strong>——key 相同的元素保持原相对顺序，所以先按价格排、再按公司排，也能得到等价结果。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一段「过滤后取前 3 个」的代码，第二次循环是空的。审查并修复：
+<pre><code>nums = [1, 2, 3, 4, 5, 6]
+evens = filter(lambda x: x % 2 == 0, nums)
+
+print(list(evens))   # [2, 4, 6]
+print(list(evens))   # []  ← 为什么？</code></pre>`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（迭代器一次性题）· 场景改写',
+    breakdown: `filter/map 返回的是<strong>惰性迭代器</strong>，只能完整遍历<strong>一次</strong>——第一次 list() 已把它耗尽。修复：结果要复用时立刻转成 list（<code>evens = list(filter(...))</code>），或每次重新生成。AI 生成的代码最爱把迭代器当列表反复用，审查时看到 map/filter 赋值给变量就要警觉。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要让 AI 写一段数据清洗：过滤 + 映射 + 排序一连串操作。什么时候用 map/filter/lambda 链，什么时候用列表推导？`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（函数式组合题）· 场景改写',
+    breakdown: `单步变换优先<strong>列表推导</strong>（可读性最好，[x*2 for x in xs if x>0]）；多步链式（清洗→转换→聚合）用推导嵌套会很难读，可以用 map/filter 分步命名中间结果，或上生成器表达式省内存。原则：让 AI 写「人能一眼读懂的代码」优先于「最短的代码」。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个产品列表处理器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 15 分钟',
+      goal: '输入产品字典列表：过滤掉库存为 0 的项，按（公司名, 价格）两级排序，输出前 N 个；整个处理链允许用 lambda/推导式任意组合。',
+      accept: ['两级排序结果正确（公司升序、同公司价格升序）', '库存过滤正确', '输出条数受 N 限制'],
+    },
+    source: '任务基于《7.lambda表达式》课程知识点（排序与函数式小节）· 场景化',
+    breakdown: `思路：<code>filter(lambda p: p['stock'] > 0, ...)</code> 过滤 → <code>sorted(key=lambda p: (p['company'], p['price']))</code> 两级排序 → 切片取前 N。坑：filter 迭代器不能复用（审查题同款）；取前 N 用切片 <code>[:n]</code> 而不是 sort 之后再 filter。`,
+  },
+]'''),
+    ('0009-对象的类型.html', '巩固与延伸', '0009-对象的类型', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的代码判断两个 <code>User</code> 对象相等，结果 False：
+<pre><code>u1 = User('张三', 18)
+u2 = User('张三', 18)
+print(u1 == u2)   # False</code></pre>
+为什么？怎么让 == 按业务规则工作？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（is vs == 题）· 场景改写',
+    breakdown: `默认的 <code>__eq__</code> 继承自 object，行为就是<strong>身份比较（is）</strong>——两个不同实例必然 False。要让 == 按业务规则工作：类里实现 <code>__eq__</code>（比较关键字段）。同时记住：实现 __eq__ 会让实例变得<strong>不可哈希</strong>（用于 set/dict key 会报错），需要时配套实现 __hash__ 或声明不可哈希。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `Agent 工具注册表要校验「参数是否为某类型的实例」。你该用 type 还是 isinstance？为什么？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（type vs isinstance 题）· 场景改写',
+    breakdown: `用 <code>isinstance</code>：它<strong>兼容继承</strong>（子类实例也算基类实例），type 是严格相等（type(x) is SomeClass 才为 True）。工具系统允许用户传入自定义子类扩展时，isinstance 不会误杀。只在「必须精确到某个类、拒绝子类」时才用 type。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写的类型判断代码，逐条审查对错并说明：
+<pre><code>print(isinstance(1, int))          # ?
+print(isinstance(int, type))       # ?
+print(isinstance(True, int))       # ?
+print(type(1) is int)              # ?
+print(isinstance(int, int))        # ?</code></pre>`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（类型体系题）· 场景改写',
+    breakdown: `True / True / True / True / False。要点：<strong>一切皆对象</strong>——int 这个类本身是 type 的实例；bool 是 int 的子类（True 是 1 的别名子类实例）；int 的实例是整数对象，而 int 是类对象、不是自己的实例。这类题考的是「类型体系」心智模型，AI 生成类型反射代码时最容易在最后一条上犯错。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要让 AI 实现「按配置动态生成数据模型类」。用 type 工厂动态建类和写死 class 定义各适合什么场景？type 工厂的签名是什么？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（type 工厂题）· 场景改写',
+    breakdown: `<code>type(name, bases, namespace)</code> 动态创建类。适合：类在<strong>运行时才知道</strong>的场景（配置驱动的模型、ORM 的模型生成、序列化框架）；写死 class 适合静态业务代码。注意：动态建类失去 IDE 提示和静态检查，AI 生成的 ORM 里到处都是，能看懂机制才能审查。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个 <code>validate_params</code> 参数校验工具（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 15 分钟',
+      goal: '给定类型映射（如 [\'name\': str, \'count\': int]）与一批实际参数，用 isinstance 校验每个参数类型，输出不匹配项的清晰报告。',
+      accept: ['isinstance 校验（子类能通过基类检查）', '不匹配项报告包含参数名/期望/实际', 'bool 不会被误当 int 报错处理（明确 bool 也属于 int 时按需放行）'],
+    },
+    source: '任务基于《9.对象的类型》课程知识点（类型判断小节）· 场景化',
+    breakdown: `思路：遍历映射，<code>isinstance(value, expect)</code> 判断；报告拼上参数名、期望类型、实际类型。坑：bool 是 int 的子类，校验 int 时 bool 会静默通过——要不要放行是业务决策，工具里应当显式处理（要么放行并注释，要么单独拒绝）。`,
+  },
+]'''),
+    ('0010-对象的创建过程.html', '巩固与延伸', '0010-对象的创建过程', r'''[
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的单例类每次实例化都会重新执行 <code>__init__</code>，把计数器清零了。为什么？__new__ 和 __init__ 的分工是什么？`,
+    source: '考点来源：CSDN「一份高质量的 Python 基础知识笔试题完整解析」（__new__ vs __init__ 题）· 场景改写',
+    breakdown: `<code>__new__</code> 负责<strong>创建并返回实例</strong>（类方法，先于 __init__ 执行），<code>__init__</code> 负责<strong>初始化实例属性</strong>。单例里 __new__ 返回缓存的同一实例，但 __init__ 每次实例化都会在「这个返回的实例」上再跑一遍——所以单例的初始化要放进 __new__ 只执行一次，或 __init__ 里做幂等保护。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `用 __new__ 实现单例的完整机制是什么？多线程下怎么保证只创建一次？`,
+    source: '考点来源：51CTO「你想要的 Python 面试题都在这里了」（单例/线程安全单例题）· 场景改写',
+    breakdown: `<code>__new__</code> 里判断 <code>cls._instance</code> 是否已存在：不存在则 <code>super().__new__(cls)</code> 创建并缓存，存在则直接返回缓存。多线程版加<strong>双重检查 + threading.Lock</strong>：先无锁判空、再拿锁判空创建，避免每次实例化都争锁。AI 时代这题的新考法：你的 Agent 服务里哪些对象应该是单例（配置、连接池），哪些绝对不能（请求级状态）。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 在项目里把「当前登录用户」也写成了单例。审查这段设计：单例模式的代价是什么？哪些对象不该是单例？`,
+    source: '考点来源：CSDN「一份高质量的 Python 基础知识笔试题完整解析」（设计权衡题）· 场景改写',
+    breakdown: `代价：<strong>全局可变状态</strong>（隐藏耦合、测试难隔离、并发下互相污染）；多进程部署下每个 worker 各有一份「单例」，根本不单；序列化/热更新也会破坏。不该单例的：请求级状态（当前用户！）、带状态的业务对象。适合单例的：进程内配置、连接池、无状态工具。AI 生成代码时「当前用户」放全局是高频事故。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `面试官问：Python 里最「正统」的单例是什么？为什么模块级单例比手写 __new__ 更推荐？`,
+    source: '考点来源：51CTO「你想要的 Python 面试题都在这里了」（模块级单例题）· 场景改写',
+    breakdown: `<strong>模块只被导入执行一次</strong>（有 sys.modules 缓存）——模块里的实例天然全局唯一，即「模块级单例」：<code># config.py\nCONFIG = load_config()</code>。比手写 __new__ 单例更推荐：零魔法代码、可读、天然线程安全（导入锁）、测试时可重载模块。面试官爱听的答案：先问「你真的需要单例吗」，需要就用模块级。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个线程安全单例（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '用 __new__ + threading.Lock 实现单例类；启动 20 个线程并发实例化，断言所有线程拿到同一对象；说明为什么锁能保证只创建一次。',
+      accept: ['并发下所有实例 is 同一对象', '锁放在判空之外、创建代码之内（双重检查）', '能解释创建只发生一次的原因'],
+    },
+    source: '任务基于《10.对象的创建过程》课程知识点（__new__/单例小节）· 场景化',
+    breakdown: `思路：类属性 <code>_instance</code> + <code>_lock = threading.Lock()</code>；__new__ 里先无锁判空，未命中再 with lock 二次判空后创建。坑：忘记类属性放锁（每个实例一把锁就失效）；__init__ 每次仍会执行（陷阱题同款），把初始化幂等化或用标志位跳过。`,
+  },
+]'''),
 ]
 
 
-def rewrite(path, end_anchor, questions_script):
+def rewrite(path, questions_script):
     with open(path, encoding='utf-8') as f:
         src = f.read()
     src = src.replace('6 道面试实战（中/高/专家各 2 道）', '面试实战')
     start = src.index('      <h2>💼 面试实战</h2>')
-    end = src.index(end_anchor, start)
+    end = src.index('</section>', start) + len('</section>')
     new_section = ('    <section>\n'
                    '      <h2>💼 面试实战</h2>\n'
                    + INTRO + '\n'
@@ -216,10 +406,10 @@ def rewrite(path, end_anchor, questions_script):
 
 
 def main():
-    for fname, anchor, lesson, questions in LESSONS:
+    for fname, _anchor, lesson, questions in LESSONS:
         if questions is None:
-            continue  # 试点课已完成，跳过
-        rewrite(BASE + '/' + fname, anchor, make_questions(lesson, questions))
+            continue  # 已完成课程，跳过
+        rewrite(BASE + '/' + fname, make_questions(lesson, questions))
 
 
 if __name__ == '__main__':

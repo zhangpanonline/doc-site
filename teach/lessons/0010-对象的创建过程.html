@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 8 课</p>
       <h1>对象的创建过程</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/对象的创建过程/">8.对象的创建过程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/对象的创建过程/">8.对象的创建过程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -269,84 +269,59 @@ print(pool1 is pool2, pool1 is pool3)</code></pre></div>
     </section>
 
     <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
-
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（__new__ vs __init__·高频）：两者的区别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">__new__ 分配内存创建实例；__init__ 拿到实例后初始化属性</button>
-            <button class="quiz-option">__init__ 分配内存；__new__ 初始化属性</button>
-            <button class="quiz-option">两者同时执行，没有先后</button>
-            <button class="quiz-option">__new__ 是 __init__ 的别名</button>
-          </div>
-          <div class="quiz-explain" hidden><code>__new__</code>（静态方法，第一参数 cls）<strong>分配内存并返回实例</strong>，是真正意义的构造方法；<code>__init__</code> 在实例创建后<strong>初始化属性</strong>。若 <code>__new__</code> 没有返回本类实例，<code>__init__</code> 不会被调用。<a href="https://blog.csdn.net/weixin_42594427/article/details/151936271">出处：CSDN「一份高质量的 Python 基础知识笔试题完整解析」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（单例·高频）：「用尽量多的方法实现单例模式」——下列哪种<strong>不</strong>是有效的单例实现？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只在 __init__ 里判断属性是否存在</button>
-            <button class="quiz-option">模块级实例（模块天然单例）</button>
-            <button class="quiz-option">重写 __new__ 缓存实例</button>
-            <button class="quiz-option">元类 __call__ 缓存实例</button>
-          </div>
-          <div class="quiz-explain" hidden>单例的多种实现：① 模块单例（模块只执行一次，天然单例）；② <code>__new__</code> 缓存；③ 元类 <code>__call__</code> 缓存；④ 类装饰器；⑤ 线程锁 + __new__。而「只在 <code>__init__</code> 判断」<strong>拦不住创建</strong>——实例每次都新建，只是属性可能复用，不是单例。<a href="https://blog.51cto.com/u_14691718/4995821">出处：51CTO「你想要的 Python 面试题都在这里了」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（线程安全单例·深水区）：面试官追问「单例在多线程下如何保证只创建一次」，下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">__new__ 里加锁：双重检查 instance 是否存在，存在直接返回</button>
-            <button class="quiz-option">只在 __init__ 里加锁</button>
-            <button class="quiz-option">用全局变量存储实例，不加任何锁</button>
-            <button class="quiz-option">每个线程各持有一个单例</button>
-          </div>
-          <div class="quiz-explain" hidden>线程安全单例：在 <code>__new__</code> 里<strong>双重检查 + 加锁</strong>——先无锁快查 <code>cls._instance</code>（已存在直接返回，避免每次加锁），为 None 时才加锁并再次检查后创建（防止两个线程同时通过第一重检查）。第二个锁在 <code>__init__</code> 拦不住创建 ✗；第三个竞态下会创建出多个实例 ✗；第四个不是单例 ✗。<a href="https://blog.51cto.com/u_14691718/4995821">出处：51CTO「你想要的 Python 面试题都在这里了」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（__new__ 传参·陷阱）：<code>__new__(cls, *args)</code> 收到参数后不消费，直接 <code>object.__new__(cls, *args)</code> 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">TypeError：object.__new__ 不接受多余参数</button>
-            <button class="quiz-option">正常创建，参数自动忽略</button>
-            <button class="quiz-option">参数自动传给 __init__</button>
-            <button class="quiz-option">返回 None</button>
-          </div>
-          <div class="quiz-explain" hidden><code>object.__new__</code> 只接受 cls 一个参数——把实例化参数透传给它会抛 <strong>TypeError</strong>。所以单例的 <code>__new__(cls, *args, **kwargs)</code> 里要写 <code>super().__new__(cls)</code>（不带 args），参数留给 <code>__init__</code> 消费。这是重写 __new__ 时最容易踩的签名坑。<a href="https://blog.csdn.net/weixin_42594427/article/details/151936271">出处：CSDN「一份高质量的 Python 基础知识笔试题完整解析」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（设计权衡·深水区）：单例模式的代价是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">全局状态污染、难测试，可考虑依赖注入替代</button>
-            <button class="quiz-option">没有任何代价，应处处使用</button>
-            <button class="quiz-option">只是内存占用更大</button>
-            <button class="quiz-option">只是执行速度变慢</button>
-          </div>
-          <div class="quiz-explain" hidden>单例的本质是<strong>全局状态</strong>：隐藏的共享状态让模块间耦合、难以单元测试（状态残留）、并发下易出问题。面试加分回答：日志/配置/连接池等确有单例需求时使用，普通业务对象优先<strong>依赖注入</strong>而非硬编码单例。<a href="https://blog.csdn.net/weixin_42594427/article/details/151936271">出处：CSDN「一份高质量的 Python 基础知识笔试题完整解析」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（单例变体·机制）：「模块级单例」的实现依据是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">模块首次导入执行一次，之后走 sys.modules 缓存</button>
-            <button class="quiz-option">模块每次导入都重新执行</button>
-            <button class="quiz-option">模块级变量自动加锁</button>
-            <button class="quiz-option">模块只在主线程中导入</button>
-          </div>
-          <div class="quiz-explain" hidden>模块<strong>天然单例</strong>：首次导入执行一次，之后导入直接命中 <code>sys.modules</code> 缓存——所以「把实例定义在模块里」就是最简单可靠的单例实现（Python 界的共识做法）。面试「用尽量多的方法实现单例」时，模块法是最该先说的。<a href="https://blog.51cto.com/u_14691718/4995821">出处：51CTO「你想要的 Python 面试题都在这里了」</a></div>
-        </div>
-      </div>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0010-对象的创建过程',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 写的单例类每次实例化都会重新执行 <code>__init__</code>，把计数器清零了。为什么？__new__ 和 __init__ 的分工是什么？`,
+    source: '考点来源：CSDN「一份高质量的 Python 基础知识笔试题完整解析」（__new__ vs __init__ 题）· 场景改写',
+    breakdown: `<code>__new__</code> 负责<strong>创建并返回实例</strong>（类方法，先于 __init__ 执行），<code>__init__</code> 负责<strong>初始化实例属性</strong>。单例里 __new__ 返回缓存的同一实例，但 __init__ 每次实例化都会在「这个返回的实例」上再跑一遍——所以单例的初始化要放进 __new__ 只执行一次，或 __init__ 里做幂等保护。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `用 __new__ 实现单例的完整机制是什么？多线程下怎么保证只创建一次？`,
+    source: '考点来源：51CTO「你想要的 Python 面试题都在这里了」（单例/线程安全单例题）· 场景改写',
+    breakdown: `<code>__new__</code> 里判断 <code>cls._instance</code> 是否已存在：不存在则 <code>super().__new__(cls)</code> 创建并缓存，存在则直接返回缓存。多线程版加<strong>双重检查 + threading.Lock</strong>：先无锁判空、再拿锁判空创建，避免每次实例化都争锁。AI 时代这题的新考法：你的 Agent 服务里哪些对象应该是单例（配置、连接池），哪些绝对不能（请求级状态）。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 在项目里把「当前登录用户」也写成了单例。审查这段设计：单例模式的代价是什么？哪些对象不该是单例？`,
+    source: '考点来源：CSDN「一份高质量的 Python 基础知识笔试题完整解析」（设计权衡题）· 场景改写',
+    breakdown: `代价：<strong>全局可变状态</strong>（隐藏耦合、测试难隔离、并发下互相污染）；多进程部署下每个 worker 各有一份「单例」，根本不单；序列化/热更新也会破坏。不该单例的：请求级状态（当前用户！）、带状态的业务对象。适合单例的：进程内配置、连接池、无状态工具。AI 生成代码时「当前用户」放全局是高频事故。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `面试官问：Python 里最「正统」的单例是什么？为什么模块级单例比手写 __new__ 更推荐？`,
+    source: '考点来源：51CTO「你想要的 Python 面试题都在这里了」（模块级单例题）· 场景改写',
+    breakdown: `<strong>模块只被导入执行一次</strong>（有 sys.modules 缓存）——模块里的实例天然全局唯一，即「模块级单例」：<code># config.py\nCONFIG = load_config()</code>。比手写 __new__ 单例更推荐：零魔法代码、可读、天然线程安全（导入锁）、测试时可重载模块。面试官爱听的答案：先问「你真的需要单例吗」，需要就用模块级。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个线程安全单例（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 20 分钟',
+      goal: '用 __new__ + threading.Lock 实现单例类；启动 20 个线程并发实例化，断言所有线程拿到同一对象；说明为什么锁能保证只创建一次。',
+      accept: ['并发下所有实例 is 同一对象', '锁放在判空之外、创建代码之内（双重检查）', '能解释创建只发生一次的原因'],
+    },
+    source: '任务基于《10.对象的创建过程》课程知识点（__new__/单例小节）· 场景化',
+    breakdown: `思路：类属性 <code>_instance</code> + <code>_lock = threading.Lock()</code>；__new__ 里先无锁判空，未命中再 with lock 二次判空后创建。坑：忘记类属性放锁（每个实例一把锁就失效）；__init__ 每次仍会执行（陷阱题同款），把初始化幂等化或用标志位跳过。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -364,5 +339,6 @@ print(pool1 is pool2, pool1 is pool3)</code></pre></div>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

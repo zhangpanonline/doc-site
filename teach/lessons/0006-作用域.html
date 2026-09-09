@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 4 课</p>
       <h1>作用域</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/作用域/">4.作用域</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/作用域/">4.作用域</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -332,100 +332,66 @@ print(deposit2(10))   # 60</code></pre>
     </section>
 
     <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0006-作用域',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 跟你说「Python 传参是值传递」。但你调用 <code>def append_one(x): x.append(1)</code> 后，外面的列表真的变了。Python 传参到底算什么？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（传参方式题）· 场景改写',
+    breakdown: `准确说法：<strong>对象引用传递</strong>（pass-by-object-reference）——传的是对象的引用，不复制对象。于是不可变对象（int/str/元组）行为像值传递（重新绑定不影响外部），可变对象（list/dict）行为像引用传递（原地修改外部可见）。面试标准答法：可变对象传引用、不可变对象传值。`,
+  },
+  {
+    type: 'mechanism',
+    level: '初级岗常问',
+    prompt: `函数内部找不到一个变量名时，Python 按什么顺序查找？global 和 nonlocal 分别干什么用？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（LEGB 题）· 场景改写',
+    breakdown: `<strong>LEGB</strong>：Local（函数内）→ Enclosing（外层函数）→ Global（模块）→ Builtin（内建）。<code>global</code> 声明「赋值指向模块级变量」；<code>nonlocal</code> 指向<strong>最近一层外层函数</strong>的变量（闭包里改外层计数器的唯一正路）。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了这段代码，一运行就 <code>UnboundLocalError</code>。审查并修复：
+<pre><code>total = 0
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（传参方式·高频）：Python 函数传参是值传递还是引用传递？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">传引用：不可变对象改了不生效，可变对象改了生效</button>
-            <button class="quiz-option">纯值传递，函数内修改永远不影响外部</button>
-            <button class="quiz-option">纯引用传递，函数内修改永远影响外部</button>
-            <button class="quiz-option">Python 没有参数传递机制</button>
-          </div>
-          <div class="quiz-explain" hidden>函数参数传递的是<strong>对象的引用（内存地址）</strong>：不可变对象（int/str/tuple）在函数内重新赋值不会影响外部；可变对象（list/dict）原地修改会直接影响外部——「传引用 + 不可变对象天然只读」的组合，常常被简称为「传对象引用」。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
+def add(n):
+    total += n   # AI 说「外面有 total」？
+    return total
 
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（LEGB·概念必问）：函数内部找不到变量时，Python 按什么顺序查找？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">局部 → 外层函数 → 全局 → 内置（LEGB）</button>
-            <button class="quiz-option">全局 → 局部 → 内置 → 外层函数</button>
-            <button class="quiz-option">内置 → 全局 → 局部</button>
-            <button class="quiz-option">只在局部和全局两层查找</button>
-          </div>
-          <div class="quiz-explain" hidden><strong>LEGB</strong>：L（局部）→ E（外层函数/闭包）→ G（全局）→ B（内置）。同时注意：函数是作用域，若自己作用域没有变量就往上级查找——而<strong>赋值</strong>默认只影响当前层。追问常接：什么时候需要 global / nonlocal？<a href="https://blog.51cto.com/u_16213596/14796805">出处同面试题一</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（推导式作用域·陷阱）：Python 3 中执行 <code>[i for i in range(3)]</code> 之后，再执行 <code>print(i)</code> 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">NameError（推导式有自己的作用域，循环变量不泄漏）</button>
-            <button class="quiz-option">打印 2</button>
-            <button class="quiz-option">打印 0</button>
-            <button class="quiz-option">打印 [0, 1, 2]</button>
-          </div>
-          <div class="quiz-explain" hidden>Python 3 的推导式有<strong>独立作用域</strong>：循环变量 <code>i</code> 不泄漏到外层 → <code>print(i)</code> 抛 <strong>NameError</strong>。对比：普通 <code>for</code> 循环的循环变量会保留在外层作用域——面试常把两者放一起追问。<a href="https://cloud.tencent.com/developer/article/2139721">出处：腾讯云「分享 10 个高频 Python 面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（多层 nonlocal·陷阱）：以下代码 <code>mid()</code> 的返回值是？
-<pre><code>def outer():
-    x = 1
-
-    def mid():
-        x = 2
-
-        def inner():
-            nonlocal x
-            x += 10
-
-        inner()
-        return x
-
-    return mid()
-
-print(outer())</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">12（nonlocal 修改最近的 mid 的 x）</button>
-            <button class="quiz-option">11（修改 outer 的 x）</button>
-            <button class="quiz-option">2（nonlocal 无效）</button>
-            <button class="quiz-option">运行时报错</button>
-          </div>
-          <div class="quiz-explain" hidden><code>nonlocal x</code> 绑定<strong>最近一层</strong>定义 x 的外层函数——inner 的最近外层是 mid（x=2），所以 <code>2 + 10 = 12</code>；outer 的 x 仍是 1。多层嵌套时 nonlocal 不会「跳级」，这是闭包面试的深水区追问。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（作用域判定时机·机制）：Python 在什么时候判定一个名字是局部变量？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">编译函数时（有赋值语句即判为局部）</button>
-            <button class="quiz-option">每次调用函数时</button>
-            <button class="quiz-option">第一次访问该名字时</button>
-            <button class="quiz-option">运行时逐行动态判断</button>
-          </div>
-          <div class="quiz-explain" hidden>作用域在<strong>编译函数时</strong>就确定：函数体里只要有对某名字的<strong>赋值语句</strong>，该名字在整个函数内都是局部变量——这就是「先读后写抛 UnboundLocalError」的根因（读发生在赋值前）。面试官常追问：为什么加 global 才能修。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（设计选择·机制）：需要「带状态的函数」（计数器），闭包与类的区别是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">闭包轻量私密；类更面向对象、可扩展方法</button>
-            <button class="quiz-option">闭包无法保存状态，只有类可以</button>
-            <button class="quiz-option">类无法实现计数器</button>
-            <button class="quiz-option">两者完全等价没有区别</button>
-          </div>
-          <div class="quiz-explain" hidden>闭包（nonlocal）与类（实例属性）都能保存状态：闭包<strong>更轻量、状态天然私有</strong>（外部拿不到变量）；类<strong>更面向对象</strong>（可加方法、可继承、可多实例管理）。工程上简单状态用闭包、复杂行为用类（或第 9 课的可调用对象）。<a href="https://blog.51cto.com/u_16213596/14796805">出处同专家题一</a></div>
-        </div>
-      </div>
+print(add(5))</code></pre>`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（作用域判定时机题）· 场景改写',
+    breakdown: `Python 在<strong>编译期</strong>就判定名字归属：函数体内对 total 有赋值语句 → total 被判定为局部变量 → 右侧读取时局部变量还未赋值 → UnboundLocalError。修复：函数内声明 <code>global total</code>（或改成传参+返回的纯函数写法，后者更推荐——AI 时代尤其要引导 AI 写无副作用的函数）。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要让 AI 实现一个「带状态的计数器」。什么时候让它用闭包，什么时候用类？各举一个场景。`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（设计选择题）· 场景改写',
+    breakdown: `<strong>闭包</strong>：状态单一、行为单一（计数器、缓存装饰器）——一个 <code>def make_counter()</code> + nonlocal 就够，代码最少；<strong>类</strong>：状态多、行为多（增删改查、多方法协作）——属性 + 方法更可读。追问加分：闭包在 pickle/调试/继承场景明显吃亏，AI 生成的多方法对象还是让 AI 用类。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `实现一个工厂函数 <code>make_counter(step)</code>（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 15 分钟',
+      goal: '返回一个计数器函数：每次调用按 step 递增并返回当前值；提供 reset 能力；多个计数器实例互不干扰。',
+      accept: ['nonlocal 正确使用（不用 global）', 'reset 后从 0 重新开始', '两个实例的计数互不影响'],
+    },
+    source: '任务基于《6.作用域》课程知识点（nonlocal 小节）· 场景化',
+    breakdown: `思路：<code>def make_counter(step): count = 0; def counter(): nonlocal count; count += step; return count; ...</code>——count 是外层函数的局部变量，靠 nonlocal 在闭包里修改。坑：忘写 nonlocal 会 UnboundLocalError（参考审查题）；reset 要记得把闭包里的 count 归零而不是重开一个。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -443,5 +409,6 @@ print(outer())</code></pre></div>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>

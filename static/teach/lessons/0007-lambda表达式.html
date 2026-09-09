@@ -13,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 5 课</p>
       <h1>lambda 表达式</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/lambda表达式/">5.Lambda表达式</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 6 道面试实战（中/高/专家各 2 道）</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/lambda表达式/">5.Lambda表达式</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -244,87 +244,64 @@ products = [
     </section>
 
     <section>
+    <section>
       <h2>💼 面试实战</h2>
-      <p>下面是真实面试官会问的问题，选自中文互联网面试题集（出处附后）。先自己回答，再点击核对。三级面试难度：中级考应用，高级考陷阱，专家考机制与设计。</p>
+<p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: '0007-lambda表达式',
+          questions: [
+  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `AI 在项目里到处写多行 lambda（含循环、赋值、try）。代码审查时你要求它改成 def。lambda 的边界在哪？什么场景才适合用？`,
+    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（lambda 局限题）· 场景改写',
+    breakdown: `lambda 只能是<strong>单个表达式</strong>：不能有语句、赋值、注解、try——超过一行的逻辑用 def（有名字、可调试、可文档）。适合场景：<code>sorted(key=...)</code>、map/filter 的一次性小回调。AI 时代给 AI 的规则同样适用：lambda 只用于「一行能说清的表达式回调」。`,
+  },
+  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `产品列表要先按公司名升序、同公司内按价格升序，正确写法是什么？背后的机制（元组 key + 排序稳定性）是什么？`,
+    source: '考点来源：CSDN「Python 篇——常考的数据类型」（多级排序题）· 场景改写',
+    breakdown: `<code>sorted(products, key=lambda p: (p['company'], p['price']))</code>：key 返回<strong>元组</strong>，依次按元组元素比较即多级排序。机制补充：sorted 是<strong>稳定排序</strong>——key 相同的元素保持原相对顺序，所以先按价格排、再按公司排，也能得到等价结果。`,
+  },
+  {
+    type: 'review',
+    level: '高级岗常问',
+    prompt: `AI 写了一段「过滤后取前 3 个」的代码，第二次循环是空的。审查并修复：
+<pre><code>nums = [1, 2, 3, 4, 5, 6]
+evens = filter(lambda x: x % 2 == 0, nums)
 
-      <h3>⚡ 中级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题一（lambda 局限·高频）：关于 lambda 的使用，下列说法正确的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只能写单表达式，适合做 sort/filter/map 的 key 或回调</button>
-            <button class="quiz-option">可以包含多行语句和赋值</button>
-            <button class="quiz-option">比 def 定义的函数更强大</button>
-            <button class="quiz-option">lambda 必须有名字才能使用</button>
-          </div>
-          <div class="quiz-explain" hidden>lambda 的局限：<strong>只能是单表达式</strong>，不能包含语句和赋值；适用场景是 sort/filter/map 的 key、简短回调。逻辑复杂或需要复用时应该用 <code>def</code>。<a href="https://blog.51cto.com/u_16213596/14796805">出处：老男孩 IT 教育「Python 基础教程之最常见的面试题」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题二（函数式组合·高频）：把 <code>[1, 2, 3, 4, 5]</code> 中大于 2 的数平方，用 lambda 组合怎么写？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">list(map(lambda x: x**2, filter(lambda x: x &gt; 2, [1,2,3,4,5])))</button>
-            <button class="quiz-option">list(filter(lambda x: x &gt; 2, map(lambda x: x**2, [1,2,3,4,5])))</button>
-            <button class="quiz-option">[x**2 if x &gt; 2 for x in [1,2,3,4,5]]</button>
-            <button class="quiz-option">lambda [1,2,3,4,5]: x**2 if x &gt; 2</button>
-          </div>
-          <div class="quiz-explain" hidden>先 filter 再 map（由内向外）：<code>filter(lambda x: x &gt; 2, ...)</code> 筛出 <code>[3, 4, 5]</code>，再 <code>map(lambda x: x**2, ...)</code> → <strong>[9, 16, 25]</strong>。第二个顺序反了（先平方再筛，条件语义错）✗；第三个语法错（if 应在 for 后）✗。这是高阶函数组合的必考题。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
-        </div>
-      </div>
-
-      <h3>🔥 高级面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题三（多级排序·高频）：产品列表要先按公司名升序、同公司内按价格升序，正确写法是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">sorted(products, key=lambda p: (p["inc"], p["price"]))</button>
-            <button class="quiz-option">两次 sorted：先按价格再按公司</button>
-            <button class="quiz-option">sorted(products, key=lambda p: p["inc"] + p["price"])</button>
-            <button class="quiz-option">sort 两次，先公司后价格</button>
-          </div>
-          <div class="quiz-explain" hidden>key 返回<strong>元组</strong>即可多级排序：先比第一项（公司），相同再比第二项（价格）→ <code>key=lambda p: (p["inc"], p["price"])</code>。第二个顺序反了（稳定排序下要先按次要键再按主要键，易错）✗；第三个字符串拼接没有排序语义 ✗；第四个两次 sort 顺序也需倒置 ✗。这是真实项目里字典列表排序的标配写法。<a href="https://blog.csdn.net/2301_79556402/article/details/161120355">出处：CSDN「Python 篇——常考的数据类型」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">面试题四（排序稳定性·概念）：Python 的 <code>sorted</code> 是稳定排序，这个特性有什么用？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">相等元素的相对顺序保持，支持「先按次要键再按主要键」的多级排序</button>
-            <button class="quiz-option">让排序速度更快</button>
-            <button class="quiz-option">让排序结果唯一</button>
-            <button class="quiz-option">没有任何实际用途</button>
-          </div>
-          <div class="quiz-explain" hidden>稳定排序保证<strong>相等元素的相对顺序不变</strong>——多级排序的经典技巧：先按次要键排序，再按主要键排序，两次稳定排序即得「主键 + 次键」的有序结果（不依赖 key 元组写法时用它）。<a href="https://blog.csdn.net/2301_79556402/article/details/161120355">出处：CSDN「Python 篇——常考的数据类型」</a></div>
-        </div>
-      </div>
-
-      <h3>🧠 专家面试题</h3>
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题一（迭代器一次性·深水区）：以下代码第二次 <code>list(m)</code> 的结果是？
-<pre><code>m = map(lambda x: x * 2, [1, 2, 3])
-print(list(m))
-print(list(m))</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">[2, 4, 6] 然后 []（迭代器只能消费一次）</button>
-            <button class="quiz-option">[2, 4, 6] 然后 [2, 4, 6]</button>
-            <button class="quiz-option">[2, 4, 6] 然后报错</button>
-            <button class="quiz-option">两次都报错</button>
-          </div>
-          <div class="quiz-explain" hidden>map 返回<strong>迭代器</strong>：第一次 list 消费完毕，第二次从头再取得到<strong>空列表</strong>（迭代器无回退）。需要复用结果时先 <code>list(m)</code> 存下来；需要可重复遍历用推导式。这是「惰性计算」的另一面。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处：CSDN「Python 面试宝典（终极版）」</a></div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">专家题二（reduce 机制）：<code>reduce(f, xs, initial)</code> 的第三个参数 initial 的作用是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">指定初始累积值，空序列也能正常返回</button>
-            <button class="quiz-option">限制迭代的最大次数</button>
-            <button class="quiz-option">指定累积的方向</button>
-            <button class="quiz-option">reduce 只有两个参数，没有第三个</button>
-          </div>
-          <div class="quiz-explain" hidden><code>reduce(f, xs, initial)</code> 把 initial 作为<strong>第一个累积值</strong>参与运算：空序列时直接返回 initial（不报错），非空时 <code>f(f(initial, x1), x2)...</code>。求和、求积之外，「带初始状态的折叠」是函数式编程的通用模式。<a href="https://blog.csdn.net/wjhltl/article/details/136617882">出处同专家题一</a></div>
-        </div>
-      </div>
+print(list(evens))   # [2, 4, 6]
+print(list(evens))   # []  ← 为什么？</code></pre>`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（迭代器一次性题）· 场景改写',
+    breakdown: `filter/map 返回的是<strong>惰性迭代器</strong>，只能完整遍历<strong>一次</strong>——第一次 list() 已把它耗尽。修复：结果要复用时立刻转成 list（<code>evens = list(filter(...))</code>），或每次重新生成。AI 生成的代码最爱把迭代器当列表反复用，审查时看到 map/filter 赋值给变量就要警觉。`,
+  },
+  {
+    type: 'design',
+    level: '中级岗常问',
+    prompt: `你要让 AI 写一段数据清洗：过滤 + 映射 + 排序一连串操作。什么时候用 map/filter/lambda 链，什么时候用列表推导？`,
+    source: '考点来源：CSDN「Python 面试宝典（终极版）」（函数式组合题）· 场景改写',
+    breakdown: `单步变换优先<strong>列表推导</strong>（可读性最好，[x*2 for x in xs if x>0]）；多步链式（清洗→转换→聚合）用推导嵌套会很难读，可以用 map/filter 分步命名中间结果，或上生成器表达式省内存。原则：让 AI 写「人能一眼读懂的代码」优先于「最短的代码」。`,
+  },
+  {
+    type: 'scenario',
+    level: '初级岗常问',
+    prompt: `写一个产品列表处理器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+    scene: {
+      time: '约 15 分钟',
+      goal: '输入产品字典列表：过滤掉库存为 0 的项，按（公司名, 价格）两级排序，输出前 N 个；整个处理链允许用 lambda/推导式任意组合。',
+      accept: ['两级排序结果正确（公司升序、同公司价格升序）', '库存过滤正确', '输出条数受 N 限制'],
+    },
+    source: '任务基于《7.lambda表达式》课程知识点（排序与函数式小节）· 场景化',
+    breakdown: `思路：<code>filter(lambda p: p['stock'] > 0, ...)</code> 过滤 → <code>sorted(key=lambda p: (p['company'], p['price']))</code> 两级排序 → 切片取前 N。坑：filter 迭代器不能复用（审查题同款）；取前 N 用切片 <code>[:n]</code> 而不是 sort 之后再 filter。`,
+  },
+],
+        };
+      </script>
     </section>
+
+
 
     <section>
       <h2>巩固与延伸</h2>
@@ -342,5 +319,6 @@ print(list(m))</code></pre></div>
 
   </main>
   <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
 </body>
 </html>
