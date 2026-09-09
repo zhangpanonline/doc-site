@@ -283,6 +283,36 @@ print([f() for f in funcs])   # [2, 2, 2] ？</code></pre>
     breakdown: `第二次 await 抛 <code>RuntimeError: cannot reuse already awaited coroutine</code>——文档明确「It is a RuntimeError to await on a coroutine more than once」（3.5.2 起）。协程对象是<strong>一次性执行体</strong>：每次需要执行就<strong>重新调用 async 函数</strong>拿新协程（或每次 create_task）。AI 生成代码把协程当「可复用句柄」存起来是最常见的 asyncio 错误之一。`,
   },
 ''',
+    '0013-装饰器': r'''  {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档给 <code>functools.wraps</code> 的准确定义是什么？assigned 与 updated 两个参数分别控制什么？`,
+    source: '来源：Python 官方文档 functools「functools.wraps」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：wraps 是「定义 wrapper 时把 update_wrapper 当装饰器用的<strong>便捷函数</strong>」，<strong>等价于 partial(update_wrapper, wrapped=wrapped, assigned=..., updated=...)</strong>。<code>assigned</code>（默认 WRAPPER_ASSIGNMENTS）把 __module__/__name__/__qualname__/__doc__/__annotations__ 从原函数<strong>赋给</strong> wrapper；<code>updated</code>（默认 WRAPPER_UPDATES）把原函数 __dict__ <strong>合并进</strong> wrapper 的 __dict__。`,
+  },
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 写的装饰器用了 @wraps(f)，却抱怨「函数上的自定义属性丢了」。审查：wraps 到底复制什么、不复制什么？`,
+    source: '来源：Python 官方文档 functools「functools.wraps」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `wraps 只复制 <strong>assigned 名单里的元信息</strong>（__name__/__doc__ 等五个）+ updated 把 __dict__ <strong>浅合并</strong>——若 wrapper 自己定义了同名属性会<strong>覆盖</strong>合并来的；原函数属性里指向可变对象的仍是<strong>共享引用</strong>（改一处两处变）。「复制所有东西」的期望不成立：闭包状态、非名单属性一律不碰。要完整保留自定义属性：手动 update_wrapper 传自定义 assigned/updated，或把状态挂到装饰器外部容器。`,
+  },
+''',
+    '0016-异常处理': r'''  {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `finally 块里写 return 会怎样？官方教程怎么说？Python 3.14 起又有什么新变化？`,
+    source: '来源：Python 官方教程《Errors and Exceptions》8.5 节 + PEP 765 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `教程原文：finally 里有 return 时，返回值<strong>来自 finally 的 return</strong>而不是 try 的（连异常都会被吞掉）——原文直接说「This can be confusing and is therefore discouraged」。<strong>3.14 起编译器对 finally 中的 return 发出 SyntaxWarning</strong>（PEP 765），未来可能变成语法错误。AI 生成的清理代码里 finally-return 是经典暗雷，审查时直接标红。`,
+  },
+  {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `<code>except*</code> 和 <code>except</code> 有什么区别？异常组（ExceptionGroup）解决什么问题？`,
+    source: '来源：Python 官方教程《Errors and Exceptions》8.9「Raising and Handling Multiple Unrelated Exceptions」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>ExceptionGroup</code>（3.11+）把<strong>多个不相关异常打包成一个</strong>（如并发任务里同时炸了三个错，不丢任何一个）；<code>except*</code> <strong>选择性提取</strong>组内匹配类型的异常处理，不匹配的<strong>继续向后续 except* 子句传播</strong>，最终未处理的重抛——嵌套异常组也能逐层剥离。普通 except 只匹配单一异常，遇上组只能整体处理。AI 写的「批量任务收集异常」代码用它才能既汇总又不丢细节。`,
+  },
+''',
 }
 
 

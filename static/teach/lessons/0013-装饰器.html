@@ -283,7 +283,7 @@ hello()</code></pre></div>
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握装饰器——可以继续学习《<a href="/agents/python/魔术方法/">12.魔术方法</a>》了。</p>
     </section>
 
-            <section>
+                                                            <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -340,11 +340,47 @@ def fetch(url):
     },
     source: '任务基于《13.装饰器》课程知识点 · 来源层级：一手（Python 官方文档 functools 章节）场景化',
     breakdown: `思路：外层工厂接配置，内层 wrapper 用 *args/**kwargs 透传并 return 原结果；计数放闭包或函数属性。坑：审查题的三件套（返回值 / wraps / 异常）一个都不能漏；多个被装饰函数要各自独立计数（计数挂函数属性而非全局变量）。`,
+  }, {
+    type: 'mechanism',
+    level: '中级岗常问',
+    prompt: `官方文档给 <code>functools.wraps</code> 的准确定义是什么？assigned 与 updated 两个参数分别控制什么？`,
+    source: '来源：Python 官方文档 functools「functools.wraps」条目 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `原文：wraps 是「定义 wrapper 时把 update_wrapper 当装饰器用的<strong>便捷函数</strong>」，<strong>等价于 partial(update_wrapper, wrapped=wrapped, assigned=..., updated=...)</strong>。<code>assigned</code>（默认 WRAPPER_ASSIGNMENTS）把 __module__/__name__/__qualname__/__doc__/__annotations__ 从原函数<strong>赋给</strong> wrapper；<code>updated</code>（默认 WRAPPER_UPDATES）把原函数 __dict__ <strong>合并进</strong> wrapper 的 __dict__。`,
   },
-],
+  {
+    type: 'trap',
+    level: '高级岗常问',
+    prompt: `AI 写的装饰器用了 @wraps(f)，却抱怨「函数上的自定义属性丢了」。审查：wraps 到底复制什么、不复制什么？`,
+    source: '来源：Python 官方文档 functools「functools.wraps」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
+    breakdown: `wraps 只复制 <strong>assigned 名单里的元信息</strong>（__name__/__doc__ 等五个）+ updated 把 __dict__ <strong>浅合并</strong>——若 wrapper 自己定义了同名属性会<strong>覆盖</strong>合并来的；原函数属性里指向可变对象的仍是<strong>共享引用</strong>（改一处两处变）。「复制所有东西」的期望不成立：闭包状态、非名单属性一律不碰。要完整保留自定义属性：手动 update_wrapper 传自定义 assigned/updated，或把状态挂到装饰器外部容器。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -292,7 +292,7 @@ class BankAccount:
       <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握异常处理——可以继续学习《<a href="/agents/python/迭代器与生成器/">15.迭代器与生成器</a>》了。</p>
     </section>
 
-            <section>
+                                                            <section>
       <h2>💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -338,11 +338,47 @@ class BankAccount:
     },
     source: '任务基于《16.异常处理》课程知识点 · 来源层级：一手（Python 官方文档异常章节）场景化',
     breakdown: `思路：<code>except FileNotFoundError as e: raise ConfigError('配置不存在') from e</code>；finally 里 close；测试里 <code>assert cm.exception.__cause__</code>。坑：捕获范围写死具体异常类型，别用裸 except（审查题同款）；finally 里别 return。`,
+  }, {
+    type: 'trap',
+    level: '中级岗常问',
+    prompt: `finally 块里写 return 会怎样？官方教程怎么说？Python 3.14 起又有什么新变化？`,
+    source: '来源：Python 官方教程《Errors and Exceptions》8.5 节 + PEP 765 · 检索 2026-09-09 · 层级：一手',
+    breakdown: `教程原文：finally 里有 return 时，返回值<strong>来自 finally 的 return</strong>而不是 try 的（连异常都会被吞掉）——原文直接说「This can be confusing and is therefore discouraged」。<strong>3.14 起编译器对 finally 中的 return 发出 SyntaxWarning</strong>（PEP 765），未来可能变成语法错误。AI 生成的清理代码里 finally-return 是经典暗雷，审查时直接标红。`,
   },
-],
+  {
+    type: 'mechanism',
+    level: '高级岗常问',
+    prompt: `<code>except*</code> 和 <code>except</code> 有什么区别？异常组（ExceptionGroup）解决什么问题？`,
+    source: '来源：Python 官方教程《Errors and Exceptions》8.9「Raising and Handling Multiple Unrelated Exceptions」· 检索 2026-09-09 · 层级：一手',
+    breakdown: `<code>ExceptionGroup</code>（3.11+）把<strong>多个不相关异常打包成一个</strong>（如并发任务里同时炸了三个错，不丢任何一个）；<code>except*</code> <strong>选择性提取</strong>组内匹配类型的异常处理，不匹配的<strong>继续向后续 except* 子句传播</strong>，最终未处理的重抛——嵌套异常组也能逐层剥离。普通 except 只匹配单一异常，遇上组只能整体处理。AI 写的「批量任务收集异常」代码用它才能既汇总又不丢细节。`,
+  },],
         };
       </script>
     </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
