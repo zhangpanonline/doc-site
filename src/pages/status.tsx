@@ -40,9 +40,12 @@ function fmt(n: number): string {
   return n.toLocaleString('zh-CN');
 }
 
-/** '2026-09-09' → '9/9'（字符串切分，避免 Date 时区偏移） */
+/**
+ * '2026-09-09' 或 PostgREST 序列化的 '2026-09-09T00:00:00+00:00' → '9/9'
+ * （取前 10 位字符串切分，避免 Date 时区偏移）
+ */
 function fmtDay(isoDate: string): string {
-  const [, m, d] = isoDate.split('-');
+  const [, m, d] = isoDate.slice(0, 10).split('-');
   return `${Number(m)}/${Number(d)}`;
 }
 
