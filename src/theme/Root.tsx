@@ -1,14 +1,21 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useLocation} from '@docusaurus/router';
 import OriginalRoot from '@theme-original/Root';
 import {courses, sectionHref} from '@site/data/courses';
 // 代码手写等宽字体（霞鹜文楷 Mono GB 屏幕版）：unicode-range 分片，浏览器按需下载
 import 'lxgw-wenkai-mono-gb-screen-webfont/fonts/style.css';
 
+/** 沉浸模式下页签标题伪装成「文档」 */
+const IMMERSIVE_TITLE = '文档';
+/** 1×1 透明 PNG：沉浸模式下页签图标换成空白，退出时还原原图标 */
+const BLANK_ICON =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
 /**
  * 沉浸模式开关（仅 PC）：阅读课程小节时一键隐藏左侧菜单与顶部导航栏。
  * - 只在存在文档侧边栏的页面显示按钮（SSR 下不渲染任何东西，effects 仅客户端执行）
  * - 状态持久化到 localStorage（immersive-mode），刷新/换页保持
+ * - 沉浸期间页签标题改为「文档」、页签图标换成空白，退出时一并还原
  */
 function ImmersiveToggle(): React.JSX.Element | null {
   const location = useLocation();
@@ -20,18 +27,73 @@ function ImmersiveToggle(): React.JSX.Element | null {
     }
   });
   const [visible, setVisible] = useState(false);
+  // 沉浸期间 Docusaurus 每次改页签标题都会被记录，退出时还原到这里
+  const lastPageTitle = useRef<string | null>(null);
+  // 被换成空白图标的 favicon link 及其原始 href（退出时逐条还原）
+  const iconOrigins = useRef(new Map<HTMLLinkElement, string>());
 
   useEffect(() => {
     setVisible(Boolean(document.querySelector('.theme-doc-sidebar-container')));
   }, [location.pathname]);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('immersive', on);
+    const root = document.documentElement;
+
+    // 三个 apply 全部幂等（状态已符合就跳过），观察器触发自身时不会死循环
+    const applyClass = () => {
+      const has = root.classList.contains('immersive');
+      if (has !== on) root.classList.toggle('immersive', on);
+    };
+    const applyTitle = () => {
+      if (on) {
+        if (document.title !== IMMERSIVE_TITLE) {
+          lastPageTitle.current = document.title;
+          document.title = IMMERSIVE_TITLE;
+        }
+      } else if (lastPageTitle.current) {
+        document.title = lastPageTitle.current;
+        lastPageTitle.current = null;
+      }
+    };
+    const applyIcon = () => {
+      const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
+      const present = new Set(links);
+      for (const el of iconOrigins.current.keys()) {
+        if (!present.has(el)) iconOrigins.current.delete(el); // Helmet 重建 link 后清掉陈旧记录
+      }
+      for (const el of links) {
+        if (on) {
+          if (!iconOrigins.current.has(el)) iconOrigins.current.set(el, el.href);
+          if (el.href !== BLANK_ICON) el.href = BLANK_ICON;
+        } else {
+          const orig = iconOrigins.current.get(el);
+          if (orig && el.href !== orig) el.href = orig;
+        }
+      }
+    };
+    const applyAll = () => {
+      applyClass();
+      applyTitle();
+      applyIcon();
+    };
+
+    applyAll();
     try {
       localStorage.setItem('immersive-mode', on ? '1' : '0');
     } catch {
       // localStorage 不可用（隐私模式等）时仅本次会话生效
     }
+
+    // Docusaurus 用 react-helmet-async 管理 <html> 的 class、<title> 与 <head> 里的
+    // link，水合与路由切换时会把这些节点整体覆写回它渲染的版本，抹掉上面的直接修改
+    // （首屏水合恰晚于本 effect 几毫秒——旧版「第一下点击无效」的根因）。
+    // 观察这三个目标，一旦被覆写立即重新对齐。
+    const mo = new MutationObserver(applyAll);
+    mo.observe(root, {attributes: true, attributeFilter: ['class']});
+    mo.observe(document.head, {childList: true, subtree: true});
+    const titleEl = document.querySelector('title');
+    if (titleEl) mo.observe(titleEl, {childList: true, characterData: true});
+    return () => mo.disconnect();
   }, [on]);
 
   if (!visible) {
