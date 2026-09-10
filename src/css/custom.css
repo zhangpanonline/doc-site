@@ -183,6 +183,18 @@
   background-image: none; /* 纸纹只在亮色纸面有意义 */
 }
 
+/* 页面纸纹：html 与 body 同时铺同款纸纹（仅亮色），滚动全程画布与盒子都有纹理；
+   基色保持 --course-bg 不变 */
+html,
+body {
+  background-color: var(--course-bg);
+  background-image: url('/img/page-noise.png');
+}
+[data-theme='dark'] html,
+[data-theme='dark'] body {
+  background-image: none; /* 深夜蓝墨保持平面 */
+}
+
 /* 高亮行：朱批墨线，像批注时划下的记号 */
 .theme-code-block-highlighted-line {
   position: relative;
