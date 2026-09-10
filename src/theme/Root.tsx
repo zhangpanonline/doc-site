@@ -7,13 +7,16 @@ import 'lxgw-wenkai-mono-gb-screen-webfont/fonts/style.css';
 
 /** 沉浸模式下页签标题伪装成「文档」 */
 const IMMERSIVE_TITLE = '文档';
+/** 空 data URI：favicon 加载走失败路径，浏览器回落成"未设置图标"的默认地球样式 */
+const EMPTY_ICON = 'data:,';
 
 /**
  * 沉浸模式开关（仅 PC）：阅读课程小节时一键隐藏左侧菜单与顶部导航栏。
  * - 只在存在文档侧边栏的页面显示按钮（SSR 下不渲染任何东西，effects 仅客户端执行）
  * - 状态持久化到 localStorage（immersive-mode），刷新/换页保持
- * - 沉浸期间页签标题改为「文档」、页签图标移除（浏览器回落成"未设置图标"的
- *   默认地球样式），退出时一并还原
+ * - 沉浸期间页签标题改为「文档」、页签图标换成空 data URI（浏览器回落默认
+ *   地球样式），退出时一并还原；整页加载时由 docusaurus.config.ts 的内联
+ *   head 脚本在浏览器抓取图标之前移除 link，绕开 favicon 缓存
  */
 function ImmersiveToggle(): React.JSX.Element | null {
   const location = useLocation();
@@ -27,8 +30,8 @@ function ImmersiveToggle(): React.JSX.Element | null {
   const [visible, setVisible] = useState(false);
   // 沉浸期间 Docusaurus 每次改页签标题都会被记录，退出时还原到这里
   const lastPageTitle = useRef<string | null>(null);
-  // 沉浸期间被移除的 favicon link 元素及其原始 href（退出时原样插回，保留
-  // Helmet 的 data-rh 标记，避免它后续再补一条重复 link）
+  // 被换成空 data URI 的 favicon link 及其原始 href（退出时逐条还原；Helmet
+  // 路由切换时重建的 link 在首次换空时也会登记进来）
   const iconOrigins = useRef(new Map<HTMLLinkElement, string>());
 
   useEffect(() => {
@@ -56,23 +59,22 @@ function ImmersiveToggle(): React.JSX.Element | null {
     };
     const applyIcon = () => {
       const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
-      if (on) {
-        // 直接移除 favicon link：浏览器回落成"未设置图标"的默认地球样式
-        for (const el of links) {
-          if (!iconOrigins.current.has(el)) {
-            iconOrigins.current.set(el, el.href);
-            el.remove();
-          }
+      const present = new Set(links);
+      for (const el of iconOrigins.current.keys()) {
+        if (!present.has(el)) iconOrigins.current.delete(el); // Helmet 重建 link 后清掉陈旧记录
+      }
+      for (const el of links) {
+        if (on) {
+          // 换成空 data URI（加载失败 → 浏览器默认地球）；不直接移除 link：
+          // 图标按页面 URL 缓存，移除未必能触发浏览器重新求值
+          if (!iconOrigins.current.has(el)) iconOrigins.current.set(el, el.href);
+          if (el.href !== EMPTY_ICON) el.href = EMPTY_ICON;
+        } else {
+          const orig = iconOrigins.current.get(el);
+          if (orig && el.href !== orig) el.href = orig;
         }
-      } else if (iconOrigins.current.size > 0) {
-        // 退出：清掉 Helmet 在沉浸期间补插的重复 link，插回保存的原始元素
-        const savedEls = new Set(iconOrigins.current.keys());
-        for (const el of links) {
-          if (!savedEls.has(el)) el.remove();
-        }
-        for (const [el] of iconOrigins.current) {
-          if (!el.isConnected) document.head.appendChild(el);
-        }
+      }
+      if (!on) {
         iconOrigins.current.clear();
       }
     };

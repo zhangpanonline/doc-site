@@ -131,6 +131,21 @@ const config: Config = {
         },
       }),
     },
+    {
+      // 沉浸模式首屏同步（与 src/theme/Root.tsx 的 ImmersiveToggle 配合）：
+      // 这段内联脚本在 <head> 解析阶段执行，早于浏览器抓取 favicon，也早于
+      // React 水合。favicon 按页面 URL 缓存，运行时改 link 不一定能让页签
+      // 图标立即回落默认地球——在浏览器抓取之前就把 link 移除，整页加载时
+      // 页签必然是默认地球；标题与隐藏类同步提前设置，进入沉浸模式时
+      // 首屏无闪烁。
+      tagName: 'script',
+      attributes: {},
+      innerHTML: `(function(){try{if(localStorage.getItem('immersive-mode')!=='1')return;}catch(e){return;}
+document.documentElement.classList.add('immersive');
+document.title='文档';
+var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[i].remove();
+})();`,
+    },
   ],
 
   presets: [
