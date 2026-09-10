@@ -173,6 +173,9 @@ var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[
     image: 'img/social-card.png',
     navbar: {
       title: 'ZP',
+      // 下滑隐藏、上滑显示（沉浸模式下由 html.immersive .navbar {display:none}
+      // 覆盖，无论滚动方向都不展示）
+      hideOnScroll: true,
       logo: {
         alt: 'AI 大全栈',
         src: 'img/avatar.png',
