@@ -11,7 +11,7 @@ import type * as Preset from '@docusaurus/preset-classic';
  * 背景必须在此定义：prism 主题以内联样式注入，会盖过 CSS 里的背景设置。
  */
 const paperInkTheme: PrismTheme = {
-  plain: {color: '#2d2926', backgroundColor: '#f3efe6'},
+  plain: {color: '#2d2926', backgroundColor: '#f8f5ed'},
   styles: [
     {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#73695c', fontStyle: 'italic'}},
     {types: ['punctuation'], style: {color: '#6b6259'}},
@@ -25,6 +25,28 @@ const paperInkTheme: PrismTheme = {
     {types: ['deleted'], style: {color: '#c0392b'}},
   ],
 };
+
+/**
+ * 纸墨代码主题（深色）：牛皮纸深底 + 暖墨语法注解（A 方案配套）。
+ * 赭石关键词、橄榄绿字符串、麦金函数名、雾蓝数字、珊瑚内建、
+ * 暖灰斜体注释；在 #211d14 深底上全部 ≥4.5:1 对比度。
+ */
+const darkPaperInkTheme: PrismTheme = {
+  plain: {color: '#eae3d2', backgroundColor: '#211d14'},
+  styles: [
+    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#9a917d', fontStyle: 'italic'}},
+    {types: ['punctuation'], style: {color: '#a99f8a'}},
+    {types: ['keyword', 'atrule', 'selector', 'tag', 'important', 'regex'], style: {color: '#e8855f'}},
+    {types: ['string', 'char', 'attr-value', 'url'], style: {color: '#a9c477'}},
+    {types: ['number', 'boolean', 'symbol'], style: {color: '#a8c0e0'}},
+    {types: ['function', 'class-name', 'attr-name'], style: {color: '#e5c07b'}},
+    {types: ['builtin'], style: {color: '#f2a080'}},
+    {types: ['operator', 'entity'], style: {color: '#a99f8a'}},
+    {types: ['inserted'], style: {color: '#7ecb8a'}},
+    {types: ['deleted'], style: {color: '#e08b7a'}},
+  ],
+};
+
 const config: Config = {
   title: 'AI 大全栈 · 配套交互课程',
   tagline: '六个单元 · 一条从 Agents 开发到企业级全栈交付的学习路线',
@@ -180,7 +202,7 @@ const config: Config = {
     },
     prism: {
       theme: paperInkTheme,
-      darkTheme: prismThemes.dracula,
+      darkTheme: darkPaperInkTheme,
     },
   } satisfies Preset.ThemeConfig,
 };
