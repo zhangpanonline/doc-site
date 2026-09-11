@@ -1,19 +1,27 @@
 # robots.txt —— 君子协定层（只约束遵守协议的爬虫，强制拦截见 vercel.json 防火墙规则与 middleware.ts）
 #
-# 策略：保留搜索引擎正常收录（Googlebot / Bingbot / Baiduspider / 360Spider / Sogou / YisouSpider 等不在此列），
-#       拒绝 AI 训练爬虫与营销/SEO 抓取器。
+# 策略（2026-09-11 方案 B）：保留搜索引擎收录；放行「AI 搜索/引用」爬虫
+#   （ChatGPT 搜索、SearchGPT、Perplexity、Gemini 引用本站带来流量）；
+#   继续拒绝「AI 训练」爬虫与营销/SEO 抓取器。
 
 User-agent: *
 Allow: /
 
-# ---------- AI 大模型训练 / AI 助手爬虫 ----------
-User-agent: GPTBot
-Disallow: /
-
+# ---------- AI 搜索 / 引用爬虫（放行：AI 搜索引用本站，2026-09-11 方案 B） ----------
 User-agent: OAI-SearchBot
-Disallow: /
+Allow: /
 
 User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# ---------- AI 大模型训练爬虫（继续拦截） ----------
+User-agent: GPTBot
 Disallow: /
 
 User-agent: ClaudeBot
@@ -28,13 +36,7 @@ Disallow: /
 User-agent: CCBot
 Disallow: /
 
-User-agent: Google-Extended
-Disallow: /
-
 User-agent: GoogleOther
-Disallow: /
-
-User-agent: PerplexityBot
 Disallow: /
 
 User-agent: Perplexity-User

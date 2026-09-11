@@ -17,6 +17,12 @@ const ALLOWED_UA = [
   'googlebot',
   'bingbot',
   'baiduspider',
+  // AI 搜索/引用爬虫（2026-09-11 方案 B：放行，让 ChatGPT/Perplexity/Gemini 引用本站；
+  // 它们无 JS 能力，必须在 middleware 层直通才能读到正文）
+  'oai-searchbot',
+  'chatgpt-user',
+  'perplexitybot',
+  'google-extended',
   // 注意：360Spider/Sogou/YisouSpider/Shenma 已于 2026-09-11 移除——
   // 其站长平台需 ICP 备案，用户决定不提交；留白名单只是伪造 UA 的攻击面
   'yandexbot',
