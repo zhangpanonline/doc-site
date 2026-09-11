@@ -13,7 +13,7 @@ displayed_sidebar: agentsPython
 
 类本身也是对象，`type()` 是创建类的内置函数。可以动态地创建类：
 
-```python title="动态创建类" {8}
+```python title="动态创建类"
 # type(类名, (父类元组,), {属性字典})
 
 # 定义方法
@@ -45,7 +45,7 @@ my_dog.bark()       # Buddy says: Woof!
 
 ### MRO
 
-```python title="MRO 示例" {13,17-20}
+```python title="MRO 示例"
 class A:
     pass
 
@@ -70,7 +70,7 @@ print(D.__base__)  # B，取__bases__第一个
 
 ### 类中的私有成员
 
-```python title="私有成员示例" {5-7,15}
+```python title="私有成员示例"
 # 以下规则适用于所有成员
 
 
@@ -132,7 +132,7 @@ print(A._a, A.__a, A.__a__)  # __a访问不到，其他可以
 
 ## 验证 type 与 isinstance 的关系
 
-```python title="验证 type 与 isinstance" {1,4,11,17,30-31,48}
+```python title="验证 type 与 isinstance"
 function = type(lambda: None)
 
 # type

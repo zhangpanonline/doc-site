@@ -13,7 +13,7 @@ displayed_sidebar: agentsPython
 
 当使用 `print()`、`str()` 或 `repr()` 时，Python 会自动调用对应的魔术方法：
 
-```python title="字符串表示" {6,10}
+```python title="字符串表示"
 class Point:
     def __init__(self, x, y):
         self.x = x
@@ -49,7 +49,7 @@ print(repr(p))     # Point(3, 4) —— 调用 __repr__
 
 通过实现比较魔术方法，可以让自定义对象支持 `==`、`<`、`>` 等操作：
 
-```python title="比较操作" {6,13}
+```python title="比较操作"
 class Person:
     def __init__(self, name, age):
         self.name = name
@@ -105,7 +105,7 @@ print(sorted(people))  # [Person('Bob', 25), Person('Alice', 30)]
 
 :::
 
-```python title="total_ordering 简化" {3}
+```python title="total_ordering 简化"
 from functools import total_ordering
 
 @total_ordering
@@ -134,7 +134,7 @@ class Person:
 
 让对象支持 `+`、`-`、`*`、`/` 等运算符：
 
-```python title="算术运算" {6,18,24}
+```python title="算术运算"
 class Vector:
     def __init__(self, x, y):
         self.x = x
@@ -212,7 +212,7 @@ print(abs(v1))       # 2.236...
 
 实现容器协议，让自定义对象可以像 `list`、`dict` 一样使用 `[]`、 `len()`、`in` 等操作：
 
-```python title="容器协议" {5,9,21,25}
+```python title="容器协议"
 class ShoppingCart:
     def __init__(self):
         self._items = []
@@ -271,7 +271,7 @@ for item in cart:
 
 实现类型转换魔术方法，让对象支持 `int()`、`float()`、`bool()` 等转换：
 
-```python title="类型转换" {5,8,11}
+```python title="类型转换"
 class Money:
     def __init__(self, amount):
         self.amount = amount
@@ -304,7 +304,7 @@ print(bool(m0))    # False
 
 通过实现属性访问相关的魔术方法，可以拦截对对象属性的**读取**、**设置**和**删除**操作：
 
-```python title="属性访问拦截" {6,12,20}
+```python title="属性访问拦截"
 class Config:
     def __init__(self):
         # 必须用 object.__setattr__，否则会无限递归
@@ -357,7 +357,7 @@ print(cfg)            # Config({'port': 8080})
 - `__getattr__`：**仅**在访问**不存在**的属性时触发
 - `__getattribute__`：访问**任何**属性时都会触发（更底层，优先级更高）
 
-```python title="__getattr__ vs __getattribute__" {5,11}
+```python title="__getattr__ vs __getattribute__"
 class Demo:
     def __init__(self):
         self.existing = 100
@@ -390,7 +390,7 @@ print(d.missing)    # 先触发 __getattribute__，找不到，再触发 __getat
 
 除了 `__init__`，还有 `__del__` 在对象被销毁时调用：
 
-```python title="对象生命周期" {6}
+```python title="对象生命周期"
 class DatabaseConnection:
     def __init__(self, db_name):
         self.db_name = db_name

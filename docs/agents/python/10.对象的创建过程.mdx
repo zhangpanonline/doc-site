@@ -9,7 +9,7 @@ displayed_sidebar: agentsPython
 
 下面是对象创建的伪代码
 
-```python title="对象创建的伪代码" {3,6-7}
+```python title="对象创建的伪代码"
 def create_object(cls, *args, **kwargs):
     # 1. 调用 __new__ 创建实例
     obj = cls.__new__(cls, *args, **kwargs)
@@ -45,7 +45,7 @@ p.sayHi()
 
 确保一个类只有一个实例：
 
-```python title="单例模式" {4-7,12}
+```python title="单例模式"
 class Database:
     _instance = None
 
@@ -64,7 +64,7 @@ print(conn1 is conn2)  # True，说明是同一个实例
 
 复用已有对象，避免重复创建：
 
-```python title="对象池/缓存" {4-8,14-15}
+```python title="对象池/缓存"
 class ConnectionPool:
     _pool = {}
 
@@ -86,7 +86,7 @@ print(pool1 is pool3)  # False，不同 conn_id 返回不同对象
 
 `__new__` 可以返回不同类型的对象。当返回的对象不是当前类的实例时，`__init__` 不会被执行：
 
-```python title="正整数（返回不同类型）" {3-4,16-18}
+```python title="正整数（返回不同类型）"
 class PositiveInt:
     def __new__(cls, value):
         if value < 0:

@@ -90,7 +90,7 @@ def subtract(a: int, b: int) -> int:  # 不在 __all__ 中
 
 利用这个特性，可以在模块中写测试代码，只有直接运行时才执行：
 
-```python title="模块的 __name__ 与直接运行" {15}
+```python title="模块的 __name__ 与直接运行"
 # my_math.py
 
 __all__: list[str] = ["PI", "add"]

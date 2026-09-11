@@ -11,7 +11,7 @@ displayed_sidebar: agentsPython
 
 迭代器是实现了`__iter__`和`__next__`方法的对象
 
-```python title="迭代器类示例" {3,10}
+```python title="迭代器类示例"
 class MyIterator:
 
     def __iter__(self):
@@ -32,7 +32,7 @@ obj = MyIterator()  # obj 是一个迭代器
 
 ### 应用：无限序列
 
-```python title="无限斐波那契数列迭代器" {8,11}
+```python title="无限斐波那契数列迭代器"
 class FibonacciIterator:
     """无限斐波那契数列迭代器"""
 
@@ -362,7 +362,7 @@ for x in range(10):
 
 ### 生成器函数
 
-```python title="生成器函数" {4,6,8}
+```python title="生成器函数"
 # Python识别到这个函数中包含yield的关键字，因此该函数是一个生成器函数。
 def simple_generator():
     print("开始")
@@ -432,7 +432,7 @@ for value in main_generator():
 
 可使用`yield from` 语法糖简化代码：
 
-```python title="yield from 简化链式调用" {3}
+```python title="yield from 简化链式调用"
 def main_generator():
     yield "开始"
     yield from sub_generator()  # 委托给子生成器
@@ -443,7 +443,7 @@ def main_generator():
 
 当调用生成器的`send`函数的时候，可以向生成器发送数据，该数据会导致`yield`的表达式返回对应的值。
 
-```python title="生成器 send 发送数据" {4}
+```python title="生成器 send 发送数据"
 def calculator():
     total = 0
     while True:

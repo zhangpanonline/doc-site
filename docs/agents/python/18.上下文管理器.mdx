@@ -52,7 +52,7 @@ else:
 
 实现 `__enter__` 和 `__exit__` 方法：
 
-```python title="自定义上下文管理器" {6,12}
+```python title="自定义上下文管理器"
 class DatabaseConnection:
     def __init__(self, host):
         self.host = host
@@ -97,7 +97,7 @@ print(f"连接状态: {conn.connected}")  # False
 
 `__exit__` 方法可以处理或记录异常：
 
-```python title="异常处理：忽略指定异常" {13}
+```python title="异常处理：忽略指定异常"
 class SuppressError:
     """忽略指定类型的异常"""
     
@@ -128,7 +128,7 @@ print("程序继续执行")  # 正常执行
 
 对于简单的上下文管理器，可以使用 `contextlib` 模块的 `@contextmanager` 装饰器，用生成器函数实现：
 
-```python title="@contextmanager 装饰器" {9}
+```python title="@contextmanager 装饰器"
 from contextlib import contextmanager
 
 @contextmanager
@@ -152,7 +152,7 @@ with managed_resource("database") as res:
 
 **带异常处理的版本：**
 
-```python title="带异常处理的版本" {9}
+```python title="带异常处理的版本"
 from contextlib import contextmanager
 
 @contextmanager
@@ -188,7 +188,7 @@ with safe_file_write("data.txt") as f:
 
 可以同时使用多个 `with`：
 
-```python title="多个上下文管理器" {7}
+```python title="多个上下文管理器"
 # 嵌套写法
 with open("input.txt", "r") as fin:
     with open("output.txt", "w") as fout:
