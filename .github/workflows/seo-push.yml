@@ -8,6 +8,7 @@ name: SEO 主动推送（必应 IndexNow + 百度）
 on:
   push:
     branches: [main]
+  workflow_dispatch: # 可在 Actions 页手动触发
 
 jobs:
   seo-push:
