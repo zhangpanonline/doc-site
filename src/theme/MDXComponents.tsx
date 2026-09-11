@@ -1,10 +1,29 @@
 import React, {useState} from 'react';
 import MDXComponents from '@theme-original/MDXComponents';
 import Image from '@site/src/components/Image';
+import CodeRunner from '@site/src/components/CodeRunner';
+import {matchRunnerLanguage} from '@site/src/components/CodeRunner/languages';
+
+/**
+ * 围栏代码块分流（fenced 块经 MDXComponents.pre 进入，children 是原 Code
+ * 组件，className/代码字符串都在其 props 上）：
+ * - ```python / ```sql → CodeRunner（可运行代码块：运行/编辑/重置）
+ * - 其余语言 → 原样渲染（与官方 MDXPre 行为一致，仅透传 children）
+ * - 所有代码块下方追加「AI 解释」按钮（调用 /api/explain，按代码哈希缓存）
+ */
 
 function langFromClassName(className?: string): string {
   const m = /language-([\w+-]+)/.exec(className ?? '');
   return m?.[1] ?? 'text';
+}
+
+/** 从 pre 的 children（原 Code 元素）解析 className 与原始代码字符串 */
+function parseCodeProps(children?: React.ReactNode): {className?: string; code?: string} {
+  const kids = React.Children.toArray(children);
+  const only = kids.length === 1 ? kids[0] : null;
+  if (!React.isValidElement(only)) return {};
+  const p = only.props as {className?: string; children?: unknown};
+  return {className: p.className, code: typeof p.children === 'string' ? p.children : undefined};
 }
 
 /**
@@ -72,20 +91,35 @@ function AiExplain({code, lang}: {code: string; lang: string}) {
   );
 }
 
-/** 包装代码块：原样渲染 CodeBlock，下方追加 AI 解释 */
-function CodeBlockWithAI(props: {children?: React.ReactNode; className?: string}) {
-  const CodeBlock = MDXComponents.pre as React.ComponentType<typeof props>;
-  const code = String(props.children ?? '');
+/** 非执行块：原 CodeBlock 渲染 + 下方 AI 解释按钮 */
+function PlainBlockWithAI(props: {children?: React.ReactNode}) {
+  const {className, code} = parseCodeProps(props.children);
   return (
     <div className="code-block-ai">
-      <CodeBlock {...props} />
-      {code.trim() && <AiExplain code={code} lang={langFromClassName(props.className)} />}
+      {props.children}
+      {code && code.trim() && <AiExplain code={code} lang={langFromClassName(className)} />}
+    </div>
+  );
+}
+
+function MDXPre(props: {children?: React.ReactNode}): React.JSX.Element {
+  const {className, code} = parseCodeProps(props.children);
+  const runnerLang = matchRunnerLanguage(className);
+
+  // 非目标语言、手写 <pre>、children 非纯字符串 → 原样透传 + AI 解释
+  if (!runnerLang || !code) {
+    return <PlainBlockWithAI {...props} />;
+  }
+  return (
+    <div className="code-block-ai">
+      <CodeRunner language={runnerLang} code={code} staticNode={props.children} />
+      <AiExplain code={code} lang={runnerLang} />
     </div>
   );
 }
 
 export default {
   ...MDXComponents,
-  pre: CodeBlockWithAI,
+  pre: MDXPre,
   Image,
 };

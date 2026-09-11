@@ -1,0 +1,219 @@
+/* 可运行代码块：纸墨工具条 + 输出面板 + CodeMirror 配色。
+   外壳 .cr 承担卡片（边框/阴影/圆角/下边距），内部原 .theme-code-block 融入外壳；
+   工具条在代码下方一行（不覆盖代码、不与右上角复制按钮打架）。 */
+
+.cr {
+  /* 亮色纸墨（与 prism paperInkTheme 同源色板） */
+  --cr-bg: #f8f5ed;
+  --cr-fg: #2d2926;
+  --cr-muted: var(--course-muted);
+  --cr-accent: var(--course-accent);
+  --cr-gutter-bg: #f3efe6;
+  --cr-active-line: rgba(157, 59, 44, 0.05);
+  --cr-selection: rgba(157, 59, 44, 0.16);
+  --cr-comment: #73695c;
+  --cr-keyword: #9d3b2c;
+  --cr-string: #1e6e5c;
+  --cr-number: #2b5876;
+  --cr-func: #7a5200;
+  --cr-operator: #6b6259;
+
+  position: relative;
+  margin-bottom: var(--ifm-leading);
+  border: 1px solid var(--course-border);
+  border-radius: var(--ifm-code-border-radius);
+  box-shadow: 0 1px 2px rgba(45, 41, 38, 0.06), 0 6px 18px rgba(45, 41, 38, 0.07);
+  overflow: hidden; /* 工具条/输出面板的直角被卡片圆角裁掉 */
+}
+[data-theme='dark'] .cr {
+  --cr-bg: #211d14;
+  --cr-fg: #eae3d2;
+  --cr-gutter-bg: #2a2419;
+  --cr-active-line: rgba(232, 133, 95, 0.07);
+  --cr-selection: rgba(232, 133, 95, 0.28);
+  --cr-comment: #9a917d;
+  --cr-keyword: #e8855f;
+  --cr-string: #a9c477;
+  --cr-number: #a8c0e0;
+  --cr-func: #e5c07b;
+  --cr-operator: #a99f8a;
+  box-shadow: none; /* 深夜牛皮纸：保持平面感 */
+}
+
+/* 内部原代码块：只留内容，卡片职责交还外壳（!important 兜住与 custom.css 的同权重规则） */
+.cr .theme-code-block {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* 编辑态：隐藏静态块、显示编辑器（实例保持挂载，草稿不丢） */
+.cr .cr-static {
+  display: block;
+}
+.cr[data-editing='true'] .cr-static {
+  display: none;
+}
+.cr-editor {
+  background: var(--cr-bg);
+}
+.cr-editor[hidden] {
+  display: none;
+}
+.cr-editor .cm-editor {
+  max-height: 480px;
+}
+.cr-editor .cm-scroller {
+  overflow: auto;
+}
+.cr-editor .cm-gutters {
+  border-right: 1px solid var(--course-border);
+}
+
+/* 工具条：细、低对比、像纸页下缘随手写下的批注 */
+.cr-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px 1px 8px;
+  border-top: 1px dashed var(--course-border); /* 虚线：手写笔记的撕口感 */
+  background: var(--course-card);
+  font-size: 0.76rem;
+  line-height: 1.6;
+  min-height: 26px;
+  overflow-x: auto;
+}
+.cr-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--cr-muted);
+  font: inherit;
+  cursor: pointer;
+  padding: 1px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  transition: color 0.15s, background-color 0.15s;
+}
+.cr-btn:hover:not(:disabled),
+.cr-btn:focus-visible {
+  color: var(--cr-accent);
+  background: rgba(157, 59, 44, 0.07);
+  outline: none;
+}
+.cr-btn:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--cr-accent);
+}
+.cr-btn:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.cr-btn-run:not(:disabled) {
+  color: var(--cr-fg);
+  font-weight: 600;
+}
+.cr-btn[aria-pressed='true'] {
+  color: var(--cr-accent);
+  background: rgba(157, 59, 44, 0.08);
+}
+.cr-status {
+  color: var(--cr-muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  margin-left: 4px;
+}
+.cr-lang {
+  margin-left: auto;
+  padding-left: 8px;
+  color: var(--cr-muted);
+  opacity: 0.7;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.cr-dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cr-accent);
+  margin-left: 4px;
+  flex: none;
+}
+@media (max-width: 640px) {
+  .cr-lang {
+    display: none;
+  }
+}
+
+/* 输出面板 */
+.cr-out {
+  border-top: 1px dashed var(--course-border);
+  background: var(--course-card);
+}
+.cr-out-notice {
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  color: #7a5200;
+  background: var(--course-highlight); /* 朱批洗染 */
+  border-bottom: 1px solid var(--course-border);
+}
+.cr-out-text {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: var(--ifm-code-font-size);
+  font-family: var(--ifm-font-family-monospace);
+  color: var(--cr-fg);
+  background: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow: auto;
+}
+.cr-out-err {
+  margin: 0;
+  padding: 8px 12px 8px 10px;
+  color: var(--course-bad);
+  background: transparent;
+  border-left: 2px solid var(--cr-accent); /* 朱批竖线，与行高亮母题一致 */
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: var(--ifm-code-font-size);
+  max-height: 240px;
+  overflow: auto;
+}
+
+/* SQL 结果表 */
+.cr-table-wrap {
+  padding: 0 10px 10px;
+  overflow-x: auto;
+  max-height: 320px;
+}
+.cr-table-cap {
+  padding: 6px 0;
+  font-size: 0.72rem;
+  color: var(--cr-muted);
+}
+.cr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.cr-table th,
+.cr-table td {
+  border: 1px solid var(--course-border);
+  padding: 3px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+.cr-table th {
+  background: var(--cr-gutter-bg);
+  color: var(--course-accent-ink);
+  font-weight: 600;
+}
+.cr-table td.is-null {
+  color: var(--cr-muted);
+  font-style: italic;
+}
