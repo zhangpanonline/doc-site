@@ -17,13 +17,34 @@ function langFromClassName(className?: string): string {
   return m?.[1] ?? 'text';
 }
 
-/** 从 pre 的 children（原 Code 元素）解析 className 与原始代码字符串 */
+/** 递归提取代码文本：MDX v3 里 pre 的 children 是 code 元素（或嵌套），不是裸字符串 */
+function extractCode(children: React.ReactNode): string {
+  if (typeof children === 'string') {
+    return children;
+  }
+  const parts: string[] = [];
+  for (const c of React.Children.toArray(children)) {
+    if (typeof c === 'string') {
+      parts.push(c);
+    } else if (React.isValidElement(c)) {
+      parts.push(extractCode((c.props as {children?: React.ReactNode}).children));
+    }
+  }
+  return parts.join('');
+}
+
+/** 从 pre 的 children（原 Code 元素）解析 className 与原始代码字符串（递归兼容嵌套） */
 function parseCodeProps(children?: React.ReactNode): {className?: string; code?: string} {
-  const kids = React.Children.toArray(children);
-  const only = kids.length === 1 ? kids[0] : null;
-  if (!React.isValidElement(only)) return {};
-  const p = only.props as {className?: string; children?: unknown};
-  return {className: p.className, code: typeof p.children === 'string' ? p.children : undefined};
+  if (!children) {
+    return {};
+  }
+  const first = React.Children.toArray(children).find(React.isValidElement);
+  if (!first) {
+    return {};
+  }
+  const p = first.props as {className?: string; children?: unknown};
+  const code = extractCode(children).trim();
+  return {className: p.className, code: code || undefined};
 }
 
 /**
