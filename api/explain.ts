@@ -114,104 +114,170 @@ async function resolveModelCandidates(key: string): Promise<string[]> {
   }
 }
 
-// ---------- 多模型调用：GLM 优先，Gemini 兜底 ----------
+// ---------- 多提供商调用链：GLM → 讯飞星火 → Gemini ----------
+
+/** OpenAI 兼容的一次 chat 调用：成功返回文本，失败抛错 */
+async function chatOnce(opts: {
+  endpoint: string;
+  apiKey: string;
+  model: string;
+  prompt: string;
+  maxTokens: number;
+  timeoutMs: number;
+  provider: string;
+  extraBody?: Record<string, unknown>;
+}): Promise<string> {
+  const {endpoint, apiKey, model, prompt, maxTokens, timeoutMs, provider, extraBody} = opts;
+  const r = await fetch(endpoint, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`},
+    body: JSON.stringify({
+      model,
+      messages: [
+        {role: 'system', content: SYSTEM_PROMPT},
+        {role: 'user', content: prompt},
+      ],
+      max_tokens: maxTokens,
+      temperature: 0.6,
+      ...extraBody,
+    }),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!r.ok) {
+    throw new Error(`${provider} http ${r.status} ${(await r.text().catch(() => '')).slice(0, 200)}`);
+  }
+  const data = (await r.json()) as {choices?: {message?: {content?: string}}[]};
+  const text = data?.choices?.[0]?.message?.content?.trim();
+  if (!text) {
+    throw new Error(`${provider} empty response`);
+  }
+  return text;
+}
+
+/** Gemini 非 OpenAI 兼容格式：返回模型名 + 文本，失败抛错 */
+async function geminiOnce(opts: {
+  apiKey: string;
+  model: string;
+  prompt: string;
+  maxTokens: number;
+  timeoutMs: number;
+}): Promise<string> {
+  const {apiKey, model, prompt, maxTokens, timeoutMs} = opts;
+  const r = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        systemInstruction: {parts: [{text: SYSTEM_PROMPT}]},
+        contents: [{parts: [{text: prompt}]}],
+        generationConfig: {maxOutputTokens: maxTokens},
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    },
+  );
+  if (!r.ok) {
+    throw new Error(`gemini[${model}] http ${r.status} ${(await r.text().catch(() => '')).slice(0, 250)}`);
+  }
+  const data = (await r.json()) as {
+    candidates?: {content?: {parts?: {text?: string}[]}}[];
+  };
+  const text = (data?.candidates?.[0]?.content?.parts ?? [])
+    .map(p => p.text ?? '')
+    .join('')
+    .trim();
+  if (!text) {
+    throw new Error(`gemini[${model}] empty response`);
+  }
+  return text;
+}
 
 async function callLlm(
   prompt: string,
   params: {maxTokens: number; timeoutMs: number},
 ): Promise<{text: string; model: string}> {
   const glmKey = process.env.ZHIPU_API_KEY;
+  const sparkKey = process.env.SPARK_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
-  if (!glmKey && !geminiKey) {
+  if (!glmKey && !sparkKey && !geminiKey) {
     throw new Error('no AI keys configured');
   }
+
+  // 全局截止时间：函数上限 60s，留 12s 给缓存查询/模型解析/响应开销。
+  // 每档每次尝试的超时 = min(本模式超时, 距截止剩余)，档位越多也不会撑爆预算。
+  const deadline = Date.now() + 45_000;
+  const timeoutFor = () =>
+    Math.max(5_000, Math.min(params.timeoutMs, deadline - Date.now() - 1_500));
+  const rest = (ms: number) => new Promise(r => setTimeout(r, ms));
   let lastDetail = '';
 
-  // 主路：智谱 GLM-4-Flash（免费、快、中文原生）
+  // 1) 智谱 GLM-4-Flash（免费、快、中文原生）
   if (glmKey) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const r = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json', Authorization: `Bearer ${glmKey}`},
-          body: JSON.stringify({
-            model: 'glm-4-flash',
-            messages: [
-              {role: 'system', content: SYSTEM_PROMPT},
-              {role: 'user', content: prompt},
-            ],
-            max_tokens: params.maxTokens,
-            temperature: 0.6,
-          }),
-          signal: AbortSignal.timeout(params.timeoutMs),
+        const text = await chatOnce({
+          endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+          apiKey: glmKey,
+          model: 'glm-4-flash',
+          prompt,
+          maxTokens: params.maxTokens,
+          timeoutMs: timeoutFor(),
+          provider: 'glm-4-flash',
         });
-        if (r.ok) {
-          const data = (await r.json()) as {choices?: {message?: {content?: string}}[]};
-          const text = data?.choices?.[0]?.message?.content?.trim();
-          if (text) {
-            return {text, model: 'glm-4-flash'};
-          }
-          lastDetail = '[glm-4-flash] empty';
-        } else {
-          lastDetail = `[glm-4-flash] ${r.status} ${(await r.text().catch(() => '')).slice(0, 200)}`;
-          console.error('[explain] glm http', r.status, attempt);
-        }
+        return {text, model: 'glm-4-flash'};
       } catch (err) {
-        lastDetail = `[glm-4-flash] ${err instanceof Error ? err.message : String(err)}`;
-        console.error('[explain] glm attempt failed:', attempt, err);
+        lastDetail = err instanceof Error ? err.message : String(err);
+        console.error('[explain] glm attempt failed:', attempt, lastDetail);
       }
-      if (attempt === 0) {
-        await new Promise(res => setTimeout(res, 1500));
-      }
+      if (Date.now() > deadline) break;
+      await rest(1200);
     }
-    console.error('[explain] glm failed, fallback to gemini:', lastDetail);
+    console.error('[explain] glm failed, try spark:', lastDetail);
   }
 
-  // 兜底：Gemini 多候选轮换
+  // 2) 讯飞星火 Spark Lite（免费档，OpenAI 兼容）
+  if (sparkKey) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const text = await chatOnce({
+          endpoint: 'https://spark-api-open.xf-yun.com/v1/chat/completions',
+          apiKey: sparkKey,
+          model: 'lite',
+          prompt,
+          maxTokens: params.maxTokens,
+          timeoutMs: timeoutFor(),
+          provider: 'spark-lite',
+        });
+        return {text, model: 'spark-lite'};
+      } catch (err) {
+        lastDetail = err instanceof Error ? err.message : String(err);
+        console.error('[explain] spark attempt failed:', attempt, lastDetail);
+      }
+      if (Date.now() > deadline) break;
+      await rest(1200);
+    }
+    console.error('[explain] spark failed, try gemini:', lastDetail);
+  }
+
+  // 3) Gemini 多候选兜底
   if (geminiKey) {
     const models = await resolveModelCandidates(geminiKey);
-    for (const model of models.slice(0, glmKey ? 2 : 3)) {
+    for (const model of models.slice(0, 2)) {
       try {
-        const r = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`,
-          {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-              systemInstruction: {parts: [{text: SYSTEM_PROMPT}]},
-              contents: [{parts: [{text: prompt}]}],
-              generationConfig: {maxOutputTokens: params.maxTokens},
-            }),
-            signal: AbortSignal.timeout(params.timeoutMs),
-          },
-        );
-        if (!r.ok) {
-          const bodySnippet = (await r.text().catch(() => '')).slice(0, 300);
-          lastDetail = `[${model}] ${r.status} ${bodySnippet}`;
-          if (r.status === 503 || r.status === 429) {
-            console.error('[explain] gemini http', r.status, model, 'try next');
-            await new Promise(res => setTimeout(res, 1500));
-            continue;
-          }
-          console.error('[explain] gemini http', r.status, model, bodySnippet);
-          throw new Error(`upstream failed: ${lastDetail.slice(0, 300)}`);
-        }
-        const data = (await r.json()) as {
-          candidates?: {content?: {parts?: {text?: string}[]}}[];
-        };
-        const text = (data?.candidates?.[0]?.content?.parts ?? [])
-          .map(p => p.text ?? '')
-          .join('')
-          .trim();
-        if (text) {
-          return {text, model};
-        }
-        lastDetail = `[${model}] empty upstream`;
+        const text = await geminiOnce({
+          apiKey: geminiKey,
+          model,
+          prompt,
+          maxTokens: params.maxTokens,
+          timeoutMs: timeoutFor(),
+        });
+        return {text, model};
       } catch (err) {
-        lastDetail = `[${model}] ${err instanceof Error ? err.message : String(err)}`;
-        console.error('[explain] gemini attempt failed:', model, err);
-        throw new Error(`upstream failed: ${lastDetail.slice(0, 300)}`);
+        lastDetail = err instanceof Error ? err.message : String(err);
+        console.error('[explain] gemini attempt failed:', model, lastDetail);
       }
+      if (Date.now() > deadline) break;
+      await rest(1200);
     }
   }
 
