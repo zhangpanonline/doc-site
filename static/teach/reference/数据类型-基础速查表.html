@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数据类型 · 基础速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>数据类型 · 基础速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0005-数据类型-基础.html">《数据类型 · 基础互动教学课程》</a>使用。来源：官方文档 §8.3 + §8.5（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>建表选型速查</h2>
+      <table class="cmp-table">
+        <tr><th>需求</th><th>类型</th><th>关键点</th></tr>
+        <tr><td>不限长文本</td><td>text</td><td>PG 原生字符串类型，无性能差异</td></tr>
+        <tr><td>限长文本</td><td>varchar(n)</td><td>n 是字符数不是字节数</td></tr>
+        <tr><td>定长编号（慎用）</td><td>char(n)</td><td>补空格：比较/LIKE 有坑，现代实践几乎不用</td></tr>
+        <tr><td>金额</td><td>numeric(p, s)</td><td>精确十进制；禁止 float/double</td></tr>
+        <tr><td>整数</td><td>integer / bigint</td><td>按范围选，默认 integer</td></tr>
+        <tr><td>绝对时刻</td><td>timestamptz</td><td>内部存 UTC，按会话时区展示</td></tr>
+        <tr><td>当地时间语义</td><td>timestamp</td><td>存字面值，不随时区变化</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>面试速记</h2>
+      <dl class="term-grid">
+        <dt>超长两条路径</dt>
+        <dd>直接存储：报错（多余全空格则截断）；显式 CAST：静默截断到 n。</dd>
+        <dt>varchar 缺省长度</dt>
+        <dd>接受任意长度字符串（官方原文）。</dd>
+        <dt>timestamp 精度</dt>
+        <dd>p（0~6）控制秒的小数位，如 timestamp(3) = 毫秒。</dd>
+        <dt>DateStyle</dt>
+        <dd>模糊日期解析顺序：MDY（月日年）/ DMY / YMD——跨客户端格式坑。</dd>
+        <dt>钱为什么不能用浮点</dt>
+        <dd>浮点是二进制近似值，0.1+0.2 类误差在对账时现形。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§8.3 + §8.5）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

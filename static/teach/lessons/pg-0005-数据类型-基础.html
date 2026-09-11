@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 数据类型基础：varchar/text/char、日期时间与时区、numeric 精确小数（非渡一课程内容）">
+  <title>数据类型 · 基础 · 互动教学课程（官方文档拓展 pg-05）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>数据类型 · 基础</h1>
+      <p class="lesson-sub">来源：官方文档 §8.3 字符类型 + §8.5 日期/时间（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>分清 varchar(n) / char(n) / text 的语义与 n 的单位（字符不是字节），说出 text 是 PG 原生字符串类型</li>
+        <li>解释 timestamp 与 timestamptz 的时区差异（内部存 UTC），为跨时区应用正确选型</li>
+        <li>说出钱的类型标准答案（numeric）与浮点的陷阱</li>
+        <li>识别超长字符串截断、DateStyle 解析歧义等官方细节陷阱</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/datatype-character.html">§8.3</a> 与 <a href="http://www.postgres.cn/docs/current/datatype-datetime.html">§8.5</a>。</p>
+
+      <div class="card">
+        <h3>字符类型三兄弟（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li><code>varchar(n)</code> 有限变长 · <code>char(n)</code> 定长补空格 · <code>text</code> 无限变长</li>
+          <li><strong>n 是字符数不是字节数</strong>（官方原文：characters, not bytes）</li>
+          <li><strong>超长行为</strong>：直接存超长报错（多余全空格则截断）；显式转换则静默截断</li>
+          <li><strong>text 是 PG 原生字符串类型</strong>（官方：内置函数多接受/返回 text）；varchar 不带长度 = 任意长度</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>日期时间与时区</h3>
+        <ul class="pitfall-list">
+          <li><code>timestamp</code>（不带时区）存字面时间；<code>timestamptz</code>（带时区）<strong>内部存 UTC</strong>、按会话时区展示</li>
+          <li>精度 <code>p</code> 控制秒的小数位（0~6）；<code>interval</code> 可限字段集合（YEAR TO MONTH 等）</li>
+          <li><strong>DateStyle</strong>：模糊日期 01/02/03 按 MDY/DMY/YMD 解析——跨客户端格式不一致的坑</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>数值选型速记</h3>
+        <ul class="pitfall-list">
+          <li>整数 smallint(2B)/integer(4B)/bigint(8B)，默认 integer</li>
+          <li><strong>钱 = numeric(precision, scale)</strong>（精确十进制）；float 是近似值，<strong>钱不能用浮点</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. <code>varchar(10)</code> 里的 10 是指？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">10 个字节</button>
+            <button class="quiz-option">10 行数据</button>
+            <button class="quiz-option">10 个单词</button>
+            <button class="quiz-option">10 个字符（不是字节）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：这两种类型都可以存储长度最多为 n 个<strong>字符（不是字节）</strong>的字符串——10 个汉字也能存。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 官方说 PostgreSQL 的「原生」字符串类型是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">varchar(n)</button>
+            <button class="quiz-option">text</button>
+            <button class="quiz-option">bpchar</button>
+            <button class="quiz-option">char(n)</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：text 是 PostgreSQL 的<strong>原生字符串数据类型</strong>——大多数内置字符串函数都声明为接受或返回 text。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 存金额（钱）的官方推荐类型是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">real</button>
+            <button class="quiz-option">integer</button>
+            <button class="quiz-option">numeric（精确十进制）</button>
+            <button class="quiz-option">double precision</button>
+          </div>
+          <div class="quiz-explain" hidden>numeric 做精确十进制运算；浮点（real/double）是近似值，金额用浮点会出现 0.1+0.2 类误差。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. timestamptz 内部存的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">UTC 时间（展示时按会话时区转换）</button>
+            <button class="quiz-option">原始输入的字面时间</button>
+            <button class="quiz-option">会话时区的当地时间</button>
+            <button class="quiz-option">服务器时区的当地时间</button>
+          </div>
+          <div class="quiz-explain" hidden>带时区的 timestamp <strong>内部存 UTC</strong>，读取时按会话时区转换展示——跨时区应用的默认选择。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 往 varchar(5) 直接存储 6 个字符的字符串，会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">存为 NULL</button>
+            <button class="quiz-option">报错（除非多余的字符全是空格则截断）</button>
+            <button class="quiz-option">自动静默截断到 5 个字符</button>
+            <button class="quiz-option">自动扩容列</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：超长存储<strong>导致错误</strong>，除非多余的字符全是空格则截断；但<strong>显式转换</strong>时超长值被静默截断——两种路径行为不同。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 跨时区团队存「事件发生的当地时间」，该用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">text 存时间字符串</button>
+            <button class="quiz-option">interval</button>
+            <button class="quiz-option">timestamp（不带时区，存字面时间）</button>
+            <button class="quiz-option">timestamptz</button>
+          </div>
+          <div class="quiz-explain" hidden>「当地时间」语义不随查看者时区改变——用不带时区的 timestamp；「绝对时刻」用 timestamptz。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. AI 建表给「备注」列用了 char(255)。审查：有什么问题？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">char(255) 比 text 快很多</button>
+            <button class="quiz-option">char(255) 语法错误</button>
+            <button class="quiz-option">char(255) 不能存中文</button>
+            <button class="quiz-option">char 定长补空格：短值被补满 255，比较/拼接带空格坑；现代实践几乎不用 char</button>
+          </div>
+          <div class="quiz-explain" hidden>char(n) 固定长度、<strong>填充空格</strong>——短值比较时空格差异是经典坑；现代实践用 text（无长度限制）或 varchar(n)（要限制）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 客户端上报的日期字符串「01/02/03」被解析错乱，最可能的原因？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">DateStyle 设置与客户端预期不一致（MDY/DMY/YMD 解析顺序）</button>
+            <button class="quiz-option">列长度不够</button>
+            <button class="quiz-option">timestamp 类型不支持斜杠格式</button>
+            <button class="quiz-option">数据库版本太旧</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：模糊的日/月/年顺序用 <strong>DateStyle</strong> 控制（MDY=月日年、DMY=日月年、YMD=年月日）——前后端格式约定不一致的经典坑。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. varchar 不写长度（n 缺省）会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">退化为 char</button>
+            <button class="quiz-option">默认长度 255</button>
+            <button class="quiz-option">接受任意长度的字符串</button>
+            <button class="quiz-option">语法错误</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：如果 character varying 未指定长度，则该类型<strong>接受任意长度的字符串</strong>。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，数据类型基础就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一：订单表字段选型——订单号（定长 20 位字符）、备注（不限长）、金额、创建时刻（绝对时间）。最佳组合是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">varchar(20) / text / numeric(12,2) / timestamptz</button>
+            <button class="quiz-option">text / text / real / date</button>
+            <button class="quiz-option">varchar(20) / varchar(255) / integer / timestamp</button>
+            <button class="quiz-option">char(20) / char(255) / float / timestamp</button>
+          </div>
+          <div class="quiz-explain" hidden>定长业务编号用 varchar(20) 限长；不限长备注用 text（原生）；金额用 numeric；绝对时刻用 timestamptz。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核二：char(3) 存 'ab'，查询 WHERE c = 'ab' 却查不到，为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">char 大小写敏感</button>
+            <button class="quiz-option">char 不支持等值比较</button>
+            <button class="quiz-option">char 补空格存储为 'ab '，与 'ab' 比较受空格规则影响</button>
+            <button class="quiz-option">'ab' 被自动转成了 NULL</button>
+          </div>
+          <div class="quiz-explain" hidden>char(n) 固定长度<strong>填充空格</strong>——'ab' 实际存为 'ab '，比较时的空格语义就是 char 类型被现代实践抛弃的原因。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核三：想把「秒」精确到毫秒（3 位小数）的 timestamp，怎么写？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">timestamp:3</button>
+            <button class="quiz-option">timestamp 不支持小数秒</button>
+            <button class="quiz-option">用 numeric 存时间戳数字</button>
+            <button class="quiz-option">timestamp(3)（精度 p 控制秒的小数位）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：time/timestamp/interval 接受可选精度 <strong>p</strong>，指定秒域小数点后的位数（0~6）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核四：varchar(5) 列里 CAST('abcdef' AS varchar(5)) 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">自动扩容</button>
+            <button class="quiz-option">报错</button>
+            <button class="quiz-option">静默截断为 'abcde'（显式转换路径）</button>
+            <button class="quiz-option">返回 NULL</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：<strong>显式转换</strong>为 varchar(n)/char(n) 时，超长值被<strong>截断为 n 个字符而不报错</strong>——与直接存储的行为不同。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了数据类型基础——继续学习 <a href="/common/database-pg/pg-06-数据类型-数组与jsonb">pg-06 · 数据类型 · 数组与 jsonb</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0005-数据类型-基础',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 建的订单表金额列用了 <code>double precision</code>，对账时发现分对不上。为什么？正确类型是什么？`,
+              source: '来源：postgres.cn 官方文档 §8 数据类型（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `double precision 是<strong>二进制浮点近似值</strong>——十进制小数（如 0.1、0.3）无法精确表示，累加误差在对账时现形。金额标准答案：<code>numeric(p, s)</code> 精确十进制运算（PG 官方文档把 numeric 列为精确类型）。AI 从其他语言习惯里顺手写 float/double 是资金类事故高发写法。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `varchar(n) 与 text 有什么区别？官方文档为什么说 text 是「原生」字符串类型？`,
+              source: '来源：postgres.cn 官方文档 §8.3 字符类型（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `varchar(n) 限长（n 是<strong>字符数</strong>）；text 任意长度。官方原文：<strong>text 是 PG 原生字符串数据类型</strong>——大多数内置字符串函数接受/返回 text，varchar 行为上像 text 的 domain。性能无差异；选型只差「要不要数据库强制长度上限」。char(n) 定长补空格，现代实践几乎不用。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 建表把「创建时间」用了 <code>timestamp</code>，团队分布三个时区，报表时间对不上。审查：应该用什么类型？timestamp 与 timestamptz 的根本区别？`,
+              source: '来源：postgres.cn 官方文档 §8.5 日期/时间类型（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `<strong>绝对时刻用 timestamptz</strong>（内部存 UTC、按会话时区展示——任何时区的用户看到同一时刻）；timestamp 不带时区，存字面值、换会话时区展示不变（只适合「当地时间」语义，如门店营业时间）。跨时区系统的「创建时间」用 timestamp 必然对不上。修复要迁移列类型（USING 转换）。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `设计用户表：昵称（最长 30 字符）、个性签名（不限长）、注册时间（绝对时刻）。三类字段的选型与理由？`,
+              source: '来源：postgres.cn 官方文档 §8.3 + §8.5（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `昵称 <code>varchar(30)</code>——数据库层强制上限（n 是字符数，中文友好）；签名 <code>text</code>——不限长且原生类型；注册时间 <code>timestamptz</code>——绝对时刻跨时区正确。依据：官方「text 是原生类型」「timestamptz 内部存 UTC」。加分点：昵称上限若可能调整，可只在前端校验、库里用 text 避免迁移。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测类型行为（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '① varchar(5) 存 6 字符报错、CAST 静默截断；② char(3) 存 ab 后比较 ab 的行为；③ timestamptz 存 UTC 展示随会话时区变化；④ numeric 与 double 计算 0.1+0.2 的差异。',
+                accept: ['四种行为全部实测', '能解释超长两条路径（存储 vs 转换）的差异', '能解释浮点误差与 numeric 精确的原因'],
+              },
+              source: '任务基于官方文档 §8.3/§8.5 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>SELECT 0.1::numeric + 0.2::numeric, 0.1::double precision + 0.2::double precision;</code> 对比；<code>SET timezone = 'Asia/Shanghai'</code> 观察 timestamptz 展示变化。坑：char 比较的补空格行为与「尾随空格被忽略」的语义要分开验证（等值比较时 PG 会忽略尾随空格，但 LIKE 不会）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/datatype-character.html">postgres.cn · 8.3 字符类型</a> · <a href="http://www.postgres.cn/docs/current/datatype-datetime.html">8.5 日期/时间类型</a> · <a href="http://www.postgres.cn/docs/current/datatype-numeric.html">8.1 数字类型</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/datatype-money.html">8.2 货币类型</a>（money 与 numeric 的取舍）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/数据类型-基础速查表.html">数据类型 · 基础速查表</a>——选型表一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/DDL/">02.DDL</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

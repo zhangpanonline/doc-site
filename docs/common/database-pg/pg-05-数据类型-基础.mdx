@@ -1,0 +1,53 @@
+---
+sidebar_position: 5
+title: 'pg-05 · 数据类型 · 基础'
+description: 'PostgreSQL 官方文档拓展 §8：字符类型三兄弟、日期时间与时区、数值类型选型——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 数据类型 · 基础" desc="varchar 还是 text？timestamp 带不带时区？钱用 numeric 还是 float？——建表选型的第一课。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §8.3「字符类型」与 §8.5「日期/时间类型」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/datatype-character.html) / [官方英文版](https://www.postgresql.org/docs/current/datatype-character.html)）。
+
+:::
+
+## 字符类型：varchar(n) / char(n) / text
+
+官方表格：`varchar(n)` 有限制变长、`char(n)` 固定长度（填充空格）、`text` 无限变长。关键官方细节：
+
+- **n 是字符数不是字节数**——`varchar(10)` 可存 10 个汉字
+- **超长行为**：直接存储超长字符串报错（除非多余的字符全是空格，会被截断——SQL 标准要求的奇怪例外）；**显式转换**（`CAST`）时超长值被静默截断
+- **text 是 PostgreSQL 的原生字符串类型**——官方原文：大多数内置字符串函数都声明为接受/返回 text；varchar 在行为上像是 text 的 domain
+- `varchar` 不指定长度 = 接受任意长度；`bpchar` 是 PG 扩展的 char 别名
+
+:::tip 选型建议（面试高频）
+
+无长度限制要求用 **text**（原生、无性能差异）；需要数据库层强制长度上限用 **varchar(n)**；char(n) 的补空格行为在现代实践中几乎不用（比较/拼接时的空格是坑）。
+
+:::
+
+## 日期时间：时区是核心分水岭
+
+- `date` / `time` / `timestamp`（不带时区）/ `timestamptz`（带时区，`timestamp with time zone` 的 PG 扩展简写）
+- **timestamptz 内部存 UTC**，展示时按会话时区转换——跨时区应用的默认选择
+- `timestamp` 不带时区：存的就是字面时间，换时区不改值（常用于"事件发生的当地时间"）
+- 精度 `p`（秒的小数位，0~6）；`interval` 可限制字段集合（YEAR TO MONTH 等）
+- **DateStyle** 参数控制模糊日期输入（01/02/03）的解析顺序（MDY/DMY/YMD）——客户端格式不一致时的常见坑
+
+## 数值类型速记
+
+- 整数：`smallint`(2 字节) / `integer`(4) / `bigint`(8)——默认 integer
+- **精确小数：`numeric(precision, scale)`**——钱、金额的标准答案，精确十进制运算
+- `real`/`double precision`：浮点近似值——**钱不能用浮点**（0.1+0.2 的问题在 SQL 里同样存在）
+
+## 官方原文
+
+- [postgres.cn：8.3 字符类型](http://www.postgres.cn/docs/current/datatype-character.html)
+- [postgres.cn：8.5 日期/时间类型](http://www.postgres.cn/docs/current/datatype-datetime.html)
+- [官方英文版：8.3 Character Types](https://www.postgresql.org/docs/current/datatype-character.html)
+
+配套学习：<a href="/teach/lessons/pg-0005-数据类型-基础.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/数据类型-基础速查表.html">📋 数据类型 · 基础速查表（可打印）</a>
