@@ -22,7 +22,7 @@ async function resolveModel(key: string): Promise<string | null> {
   }
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`, {
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(8_000),
     });
     if (!r.ok) {
       const bodySnippet = (await r.text().catch(() => '')).slice(0, 200);
@@ -118,23 +118,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 代码：
 ${code}`;
 
-  // 503/429（高峰限流）退避重试，最多 3 次
-  for (let attempt = 0; attempt < 3; attempt++) {
+  // 503/429（高峰限流）退避重试，最多 2 次。
+  // 时间预算：模型解析(≤8s) + 缓存查询 + 2×(AI 20s + 退避 0.4s) ≈ 50s，
+  // 必须留余量给函数上限（vercel.json maxDuration 60s），否则整体 504。
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const r = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
         {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({contents: [{parts: [{text: prompt}]}]}),
-          signal: AbortSignal.timeout(30_000),
+          body: JSON.stringify({
+            contents: [{parts: [{text: prompt}]}],
+            // 输出上限 300 字 ≈ 800 token：防止模型失控拖到超时
+            generationConfig: {maxOutputTokens: 800},
+          }),
+          signal: AbortSignal.timeout(20_000),
         },
       );
       if (!r.ok) {
         const bodySnippet = (await r.text().catch(() => '')).slice(0, 200);
-        if ((r.status === 503 || r.status === 429) && attempt < 2) {
+        if ((r.status === 503 || r.status === 429) && attempt < 1) {
           console.error('[explain] gemini http', r.status, 'retrying', attempt + 1);
-          await new Promise(res => setTimeout(res, 700 * (attempt + 1)));
+          await new Promise(res => setTimeout(res, 400));
           continue;
         }
         console.error('[explain] gemini http', r.status, bodySnippet);
@@ -164,8 +170,8 @@ ${code}`;
       }
       return res.status(200).json({explanation: text, cached: false});
     } catch (err) {
-      if (attempt < 2) {
-        await new Promise(res => setTimeout(res, 700 * (attempt + 1)));
+      if (attempt < 1) {
+        await new Promise(res => setTimeout(res, 400));
         continue;
       }
       console.error('[explain] failed:', err);
