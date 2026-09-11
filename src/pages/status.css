@@ -369,8 +369,16 @@
 }
 
 table {
+  display: table; /* 覆盖 Infima 的 display:block（会包匿名表格盒、宽度收缩不撑满容器） */
   width: 100%;
   border-collapse: collapse;
+  margin-bottom: 0;
+}
+
+/* 路径表：最后一列（最近访问）不换行 */
+.path-table th:last-child,
+.path-table td:last-child {
+  white-space: nowrap;
 }
 
 th {

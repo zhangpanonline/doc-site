@@ -421,7 +421,7 @@ function Paths({paths}: {paths: PathRow[]}) {
         <p className="empty">暂无数据</p>
       ) : (
         <div className="table-wrap">
-          <table>
+          <table className="path-table">
             <thead>
               <tr>
                 <th>路径</th>
