@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 全文检索：tsvector/tsquery/@@ 匹配、GIN 加速、文档组合字段（非渡一课程内容）">
+  <title>全文检索 · 互动教学课程（官方文档拓展 pg-09）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>全文检索</h1>
+      <p class="lesson-sub">来源：官方文档 §12 全文检索（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出全文检索的三件套（tsvector / tsquery / @@）与各自职责</li>
+        <li>写对 to_tsvector + to_tsquery 的匹配查询，理解「词形还原」</li>
+        <li>给全文检索建 GIN 索引，并说出「查询表达式必须与索引表达式完全一致」的坑</li>
+        <li>按官方定义把「多字段组合」组织成可检索的文档</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/textsearch-intro.html">§12</a>。</p>
+
+      <div class="card">
+        <h3>三件套（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li><code>tsvector</code>：存储<strong>预处理后的文档</strong>（分词词位列表）</li>
+          <li><code>tsquery</code>：表示<strong>处理过的查询</strong>（词 + 逻辑组合 &amp;/|/!）</li>
+          <li><code>@@</code>：<strong>最重要的匹配操作符</strong>（官方原文）</li>
+          <li>全文搜索<strong>可以用索引加速</strong>（GIN）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>文档的定义（官方）</h3>
+        <ul class="pitfall-list">
+          <li>全文搜索系统中<strong>进行搜索的单元</strong>（文章、邮件）</li>
+          <li>在 PG 中通常是<strong>表中一行内的一个文本字段</strong>，或<strong>多个字段的组合</strong>（官方例：title || ' ' || author || ' ' || abstract || ' ' || body）</li>
+          <li>to_tsvector 做<strong>分词 + 词形还原</strong>（复数→单数等）——foxes 能匹配 fox</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. tsvector 存的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">索引结构</button>
+            <button class="quiz-option">原始文本的拷贝</button>
+            <button class="quiz-option">预处理后的文档（分词词位列表）</button>
+            <button class="quiz-option">查询条件</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：tsvector 用来存储<strong>预处理后的文档</strong>；tsquery 表示处理过的查询。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 官方说全文检索中「最重要的匹配操作符」是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">LIKE</button>
+            <button class="quiz-option">@@</button>
+            <button class="quiz-option">=</button>
+            <button class="quiz-option">@&gt;</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：其中最重要的匹配操作符是 <strong>@@</strong>（文档是否匹配查询）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 官方定义的「文档」是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">索引文件</button>
+            <button class="quiz-option">tsquery 的结果</button>
+            <button class="quiz-option">全文搜索系统中进行搜索的单元（如文章/邮件）</button>
+            <button class="quiz-option">数据库表的别称</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：一个 document 是在全文搜索系统中<strong>进行搜索的单元</strong>——例如一篇文章或电子邮件。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 在 PG 中，一个「文档」通常是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">表中一行内的文本字段，或多个字段的组合</button>
+            <button class="quiz-option">一个数据库</button>
+            <button class="quiz-option">一张索引</button>
+            <button class="quiz-option">一行里的一个 BLOB</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：文档通常是数据库表中<strong>一行内的一个文本字段</strong>，或这类字段的<strong>组合</strong>（title||author||abstract||body 官方例）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. to_tsvector('english', 'The quick foxes') 中，foxes 会变成？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">保持 foxes 原样</button>
+            <button class="quiz-option">还原为词位 fox（词形还原）</button>
+            <button class="quiz-option">被删除</button>
+            <button class="quiz-option">变成 foxy</button>
+          </div>
+          <div class="quiz-explain" hidden>to_tsvector 做分词 + <strong>词形还原</strong>（复数→单数等，取决于语言配置）——所以查询 fox 能命中 foxes。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 全文检索的索引怎么建、查询侧要注意什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不需要索引</button>
+            <button class="quiz-option">唯一索引</button>
+            <button class="quiz-option">B-tree(to_tsvector(...))；随便写都能命中</button>
+            <button class="quiz-option">GIN(to_tsvector(...))；查询表达式必须与索引表达式完全一致才能命中</button>
+          </div>
+          <div class="quiz-explain" hidden>官方：全文搜索可以用索引加速（GIN）；表达式索引的通用规则——查询侧 to_tsvector 的配置与写法必须与建索引时一致。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. tsquery 的逻辑组合支持哪些？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">&amp;（与）、|（或）、!（非）</button>
+            <button class="quiz-option">只能单一关键词</button>
+            <button class="quiz-option">只有 OR</button>
+            <button class="quiz-option">不支持逻辑组合</button>
+          </div>
+          <div class="quiz-explain" hidden>tsquery 用 <code>&amp;</code>（与）、<code>|</code>（或）、<code>!</code>（非）组合词位——'quick &amp; fox' 表示两词都要。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 中文文章做全文检索，需要知道什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">内置解析器直接完美支持中文</button>
+            <button class="quiz-option">内置解析器面向空格分词语言；中文需 pg_jieba/zhparser 等扩展</button>
+            <button class="quiz-option">必须全部转拼音</button>
+            <button class="quiz-option">中文不能全文检索</button>
+          </div>
+          <div class="quiz-explain" hidden>内置文本搜索解析器按空格/标点分词——中文无空格，需要分词扩展（pg_jieba、zhparser）配合配置。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 轻量文章搜索（几十万行、关键词检索），不想引入 Elasticsearch。可行方案是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">用 LIKE 全表扫</button>
+            <button class="quiz-option">必须上 ES，PG 做不了</button>
+            <button class="quiz-option">PG 内置全文检索：tsvector + GIN 索引，够用且免运维</button>
+            <button class="quiz-option">把数据导出到文件 grep</button>
+          </div>
+          <div class="quiz-explain" hidden>PG 全文检索 + GIN 是官方内置方案——数据量中等、检索需求基础时完全够用，省掉一个组件的运维。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，全文检索就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核一：文章表有 title 与 body 两列，要对两者一起做全文检索。文档怎么构造？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只索引 body</button>
+            <button class="quiz-option">用 UNION 合并两列</button>
+            <button class="quiz-option">文档 = title || ' ' || body（官方多字段组合模式），对组合表达式建索引</button>
+            <button class="quiz-option">分别建两个索引</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原例就是把多个字段连接成一个文档（title || ' ' || author || ...）——对组合表达式建 GIN 索引。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核二：索引是 to_tsvector('english', body)，查询写了 to_tsvector('simple', body) @@ ...。结果如何？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">报错</button>
+            <button class="quiz-option">配置不同无所谓</button>
+            <button class="quiz-option">能命中索引，配置自动对齐</button>
+            <button class="quiz-option">结果正确但走不了索引（表达式不一致）</button>
+          </div>
+          <div class="quiz-explain" hidden>表达式索引的黄金规则：查询侧表达式必须与索引<strong>完全一致</strong>（含语言配置）才会命中——不一致时静默全表扫。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核三：搜索「database」却匹配不到含「databases」的文章，最可能的原因？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">PG 不支持复数</button>
+            <button class="quiz-option">数据库坏了</button>
+            <button class="quiz-option">GIN 索引损坏</button>
+            <button class="quiz-option">查询侧没有用 to_tsquery 做同样的词形还原（或直接字符串比较）</button>
+          </div>
+          <div class="quiz-explain" hidden>词形还原要求<strong>两侧都走 to_tsvector/to_tsquery</strong>（同一语言配置）——一侧用原始字符串比较就没有还原效果。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核四：tsquery 中 'quick & !fox' 表示什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">恰好两个词</button>
+            <button class="quiz-option">quick 或 fox 任一</button>
+            <button class="quiz-option">包含 quick 且不包含 fox 的文档</button>
+            <button class="quiz-option">语法错误</button>
+          </div>
+          <div class="quiz-explain" hidden>&amp; 与、! 非——匹配含 quick 同时不含 fox 的文档。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了全文检索——继续学习 <a href="/common/database-pg/pg-10-显式锁与死锁">pg-10 · 显式锁与死锁</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0009-全文检索',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `AI 给文章搜索建了索引 <code>ON gin(to_tsvector('english', body))</code>，但线上查询走的是全表扫。EXPLAIN 一看：查询写的是 <code>to_tsvector('simple', body) @@ ...</code>。问题在哪？`,
+              source: '来源：postgres.cn 官方文档 §12 全文检索（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `表达式索引的黄金规则：<strong>查询侧表达式必须与索引表达式逐字一致</strong>（含语言配置）——'english' vs 'simple' 不一致 → 静默全表扫，结果还对（所以更难发现）。审查规则：建了表达式/GIN 索引后，所有查询路径的表达式都要与 DDL 对照。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `PG 全文检索的三件套是什么？各自的职责？官方说哪个操作符「最重要」？`,
+              source: '来源：postgres.cn 官方文档 §12 全文检索（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `<code>tsvector</code>：存<strong>预处理后的文档</strong>（分词词位）；<code>tsquery</code>：表示<strong>处理过的查询</strong>（词 + &amp;/|/! 逻辑）；<code>@@</code>：匹配操作符——官方原文「其中最重要的匹配操作符是 @@」。配合 GIN 索引加速（§12.9）。to_tsvector 做分词 + 词形还原（foxes→fox）。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的搜索：<code>WHERE body LIKE '%database%'</code> 做文章检索。审查：这方案的问题与 PG 的正确替代？`,
+              source: '来源：postgres.cn 官方文档 §12 全文检索（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `LIKE '%...%' 左模糊：<strong>无法走 B-tree 索引</strong>（全表扫）、无分词（database 匹配不到 databases）、无语义排序。PG 正确替代：<code>to_tsvector(body) @@ to_tsquery('...')</code> + GIN 索引——词位匹配、词形还原、可加 ts_rank 排序。AI 从「字符串包含」惯性里写 LIKE 搜索是搜索功能最常见的返工点。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `产品要站内文章搜索（约 50 万篇，关键词匹配 + 基础排序）。团队在「引入 Elasticsearch」与「PG 全文检索」之间犹豫。你的建议与依据？`,
+              source: '来源：postgres.cn 官方文档 §12 全文检索（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `50 万篇、关键词 + 基础排序——<strong>PG 内置全文检索（tsvector + GIN + ts_rank）完全够用</strong>：零新组件、数据不搬家、事务一致。上 ES 的时机：需要<strong>复杂相关性调优、聚合分析、亿级文档、专用分词生态</strong>时再考虑。原则：先量化规模与需求，PG 方案能覆盖就先用它——省一个分布式系统的运维。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测全文检索（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '① to_tsvector/to_tsquery 基础匹配（含词形还原：foxes 命中 fox）；② 建 GIN 索引后 EXPLAIN 确认走索引；③ 多字段组合文档（title||body）检索；④ 用 ts_rank 按相关性排序。',
+                accept: ['词形还原实测（复数命中单数）', 'GIN 索引在 EXPLAIN 中出现', 'ts_rank 排序结果与直觉一致'],
+              },
+              source: '任务基于官方文档 §12 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>CREATE INDEX ON articles USING gin(to_tsvector('english', title || ' ' || body));</code>；查询 <code>... @@ to_tsquery('english', 'quick & fox') ORDER BY ts_rank(...) DESC</code>。坑：查询表达式与索引表达式必须一致（陷阱题同款）；中文要换分词扩展，别用 english 配置硬试。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/textsearch-intro.html">postgres.cn · 12 全文检索</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/textsearch-tables.html">12.2 表和索引</a> · <a href="http://www.postgres.cn/docs/current/textsearch-controls.html">12.3 控制文本搜索</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/全文检索速查表.html">全文检索速查表</a>——三件套与索引一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/索引/">06.索引</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

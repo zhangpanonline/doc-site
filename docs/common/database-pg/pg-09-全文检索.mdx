@@ -1,0 +1,63 @@
+---
+sidebar_position: 9
+title: 'pg-09 · 全文检索'
+description: 'PostgreSQL 官方文档拓展 §12：tsvector/tsquery 与 @@ 匹配、GIN 索引全文检索——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 全文检索" desc="PG 内置全文检索：tsvector 存词位、tsquery 存查询、@@ 匹配、GIN 加速。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §12「全文检索」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/textsearch-intro.html) / [官方英文版](https://www.postgresql.org/docs/current/textsearch-intro.html)）。
+
+:::
+
+## 全文检索的组成（官方介绍）
+
+官方提供的类型与操作符：
+
+- **`tsvector`**：存储预处理后的文档（分词后的词位列表）
+- **`tsquery`**：表示处理过的查询（查询词 + 逻辑组合）
+- **`@@`**：最重要的匹配操作符（文档是否匹配查询）
+- 全文搜索**可以用索引加速**（GIN，§12.9）
+
+官方对「文档」的定义：全文搜索系统中进行搜索的单元（一篇文章、一封邮件）——在 PG 中，文档通常是**表中一行内的一个文本字段**，或**多个字段的组合**（官方原例）：
+
+```sql
+SELECT title || ' ' || author || ' ' || abstract || ' ' || body AS doc FROM ...
+```
+
+## 基本用法
+
+```sql
+-- 文档转 tsvector
+SELECT to_tsvector('english', 'The quick brown fox');
+-- 查询转 tsquery
+SELECT to_tsquery('english', 'quick & fox');
+-- 匹配
+SELECT to_tsvector('english', 'The quick brown fox')
+       @@ to_tsquery('english', 'quick & fox');   -- true
+```
+
+高频要点：
+
+- `to_tsvector` 做**分词 + 词形还原**（复数→单数等，取决于语言配置）
+- tsquery 支持逻辑：`&`（与）、`|`（或）、`!`（非）
+- 索引：`CREATE INDEX ON t USING gin(to_tsvector('english', body));`——查询侧必须用**完全相同**的表达式才能命中
+- 中文分词需要 `pg_jieba`/`zhparser` 等扩展（内置解析器主要面向空格分词语言）
+
+:::tip 与渡一课程的关系
+
+渡一《数据库》课程未覆盖全文检索——本节为纯增量内容。搜索功能（文章/商品/日志检索）不再需要外挂 Elasticsearch 的轻量场景，PG 内置方案即可。
+
+:::
+
+## 官方原文
+
+- [postgres.cn：12 全文检索](http://www.postgres.cn/docs/current/textsearch-intro.html)
+- [官方英文版：12 Full Text Search](https://www.postgresql.org/docs/current/textsearch-intro.html)
+
+配套学习：<a href="/teach/lessons/pg-0009-全文检索.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/全文检索速查表.html">📋 全文检索速查表（可打印）</a>

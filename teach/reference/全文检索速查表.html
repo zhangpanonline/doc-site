@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>全文检索速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>全文检索速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0009-全文检索.html">《全文检索互动教学课程》</a>使用。来源：官方文档 §12（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>三件套</h2>
+      <table class="cmp-table">
+        <tr><th>件</th><th>职责</th><th>示例</th></tr>
+        <tr><td>tsvector</td><td>预处理后的文档（词位）</td><td><code>to_tsvector('english', body)</code></td></tr>
+        <tr><td>tsquery</td><td>处理过的查询（逻辑组合）</td><td><code>to_tsquery('english', 'quick &amp; fox')</code></td></tr>
+        <tr><td>@@</td><td>匹配操作符（官方：最重要）</td><td><code>tsvector @@ tsquery</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>标准配置</h2>
+      <pre>-- 文档 = 多字段组合（官方模式）
+-- 索引（表达式必须与查询完全一致）
+CREATE INDEX ON articles USING gin(
+    to_tsvector('english', title || ' ' || body));
+
+-- 查询
+SELECT * FROM articles
+WHERE to_tsvector('english', title || ' ' || body)
+      @@ to_tsquery('english', 'quick & fox')
+ORDER BY ts_rank(to_tsvector('english', title || ' ' || body),
+                  to_tsquery('english', 'quick & fox')) DESC;</pre>
+    </section>
+
+    <section>
+      <h2>面试速记</h2>
+      <dl class="term-grid">
+        <dt>词形还原</dt>
+        <dd>to_tsvector 分词 + 还原（foxes→fox）——查询与文档同配置才能互相命中。</dd>
+        <dt>表达式一致性</dt>
+        <dd>查询侧 to_tsvector 的配置/字段必须与索引完全一致，否则静默全表扫。</dd>
+        <dt>中文</dt>
+        <dd>内置解析器面向空格分词语言；中文用 pg_jieba/zhparser 扩展。</dd>
+        <dt>选型</dt>
+        <dd>中等规模关键词搜索：PG 内置方案免运维；ES 留给复杂相关性/亿级场景。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§12）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>
