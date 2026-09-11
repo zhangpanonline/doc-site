@@ -77,12 +77,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const hash = createHash('md5').update(`${lang}\n${code}`).digest('hex');
   const admin = getSupabaseAdmin();
 
-  // 缓存命中：不再调用 AI
+  // 缓存命中（30 天 TTL 内）：不再调用 AI；过期后下次点击自动重新生成
+  const ttl = 30 * 86_400_000;
   try {
     const {data: cached} = await admin
       .from('code_explanations')
       .select('explanation')
       .eq('code_hash', hash)
+      .gte('created_at', new Date(Date.now() - ttl).toISOString())
       .maybeSingle();
     if (cached?.explanation) {
       return res.status(200).json({explanation: cached.explanation, cached: true});
@@ -110,45 +112,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 代码：
 ${code}`;
 
-  try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
-      {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({contents: [{parts: [{text: prompt}]}]}),
-        signal: AbortSignal.timeout(30_000),
-      },
-    );
-    if (!r.ok) {
-      const bodySnippet = (await r.text().catch(() => '')).slice(0, 200);
-      console.error('[explain] gemini http', r.status, bodySnippet);
+  // 503/429（高峰限流）退避重试，最多 3 次
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({contents: [{parts: [{text: prompt}]}]}),
+          signal: AbortSignal.timeout(30_000),
+        },
+      );
+      if (!r.ok) {
+        const bodySnippet = (await r.text().catch(() => '')).slice(0, 200);
+        if ((r.status === 503 || r.status === 429) && attempt < 2) {
+          console.error('[explain] gemini http', r.status, 'retrying', attempt + 1);
+          await new Promise(res => setTimeout(res, 700 * (attempt + 1)));
+          continue;
+        }
+        console.error('[explain] gemini http', r.status, bodySnippet);
+        return res.status(502).json({error: 'upstream failed'});
+      }
+      const data = (await r.json()) as {
+        candidates?: {content?: {parts?: {text?: string}[]}}[];
+      };
+      const text = (data?.candidates?.[0]?.content?.parts ?? [])
+        .map(p => p.text ?? '')
+        .join('')
+        .trim();
+      if (!text) {
+        return res.status(502).json({error: 'empty upstream'});
+      }
+      try {
+        await admin.from('code_explanations').upsert({
+          code_hash: hash,
+          lang,
+          code_preview: code.slice(0, 300),
+          explanation: text,
+          model,
+          created_at: new Date().toISOString(), // 刷新 TTL 起点
+        });
+      } catch {
+        // 缓存写入失败不影响本次返回
+      }
+      return res.status(200).json({explanation: text, cached: false});
+    } catch (err) {
+      if (attempt < 2) {
+        await new Promise(res => setTimeout(res, 700 * (attempt + 1)));
+        continue;
+      }
+      console.error('[explain] failed:', err);
       return res.status(502).json({error: 'upstream failed'});
     }
-    const data = (await r.json()) as {
-      candidates?: {content?: {parts?: {text?: string}[]}}[];
-    };
-    const text = (data?.candidates?.[0]?.content?.parts ?? [])
-      .map(p => p.text ?? '')
-      .join('')
-      .trim();
-    if (!text) {
-      return res.status(502).json({error: 'empty upstream'});
-    }
-    try {
-      await admin.from('code_explanations').upsert({
-        code_hash: hash,
-        lang,
-        code_preview: code.slice(0, 300),
-        explanation: text,
-        model,
-      });
-    } catch {
-      // 缓存写入失败不影响本次返回
-    }
-    return res.status(200).json({explanation: text, cached: false});
-  } catch (err) {
-    console.error('[explain] failed:', err);
-    return res.status(502).json({error: 'upstream failed'});
   }
+  return res.status(502).json({error: 'upstream failed'});
 }

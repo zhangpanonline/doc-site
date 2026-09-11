@@ -6,7 +6,8 @@
   "installCommand": "pnpm install --ignore-scripts",
   "functions": {
     "api/explain.ts": {
-      "regions": ["iad1"]
+      "regions": ["iad1"],
+      "maxDuration": 30
     }
   },
   "routes": [
