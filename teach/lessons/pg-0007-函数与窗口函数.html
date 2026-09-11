@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 函数与窗口函数：format/string_agg、窗口函数官方定义与 PARTITION BY、排名函数（非渡一课程内容）">
+  <title>函数与窗口函数 · 互动教学课程（官方文档拓展 pg-07）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>函数与窗口函数</h1>
+      <p class="lesson-sub">来源：教程 §3.5 窗口函数 + 官方文档 §9.4（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>背出官方对窗口函数的定义（关联行集上计算、行保留独立标识）</li>
+        <li>写对 OVER (PARTITION BY ...) 的分组内计算（官方 empsalary 例）</li>
+        <li>说清窗口函数与 GROUP BY 聚合的本质区别，及「不能写在 WHERE」的限制</li>
+        <li>用 format 与 string_agg 处理字符串拼接，用 ROW_NUMBER/RANK 做排名</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/tutorial-window.html">教程 §3.5</a> 与 <a href="http://www.postgres.cn/docs/current/functions-string.html">§9.4</a>。</p>
+
+      <div class="card">
+        <h3>窗口函数（官方定义与例）</h3>
+        <ul class="pitfall-list">
+          <li>官方定义：在<strong>与当前行有某种关联的表行</strong>上执行计算；与聚合可比，但<strong>不把多行压成一行</strong>——行保留独立标识</li>
+          <li>官方原例：<code>avg(salary) OVER (PARTITION BY depname)</code>——每行带本部门平均工资</li>
+          <li>高频：<code>ROW_NUMBER()</code> 行号、<code>RANK()/DENSE_RANK()</code> 排名、<code>SUM() OVER (ORDER BY ...)</code> 累积</li>
+          <li><strong>限制</strong>：窗口函数在 WHERE/GROUP BY/HAVING 之后求值——不能直接写进 WHERE</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>字符串函数速选</h3>
+        <ul class="pitfall-list">
+          <li><code>format(fmt, ...)</code>：sprintf 风格（官方原文），说明符 <code>%[position][flags][width]type</code>；<code>%L</code>/<code>%I</code> 安全引用字面量/标识符（拼动态 SQL 用）</li>
+          <li><code>string_agg(expr, sep)</code>：聚合函数——组内文本按分隔符拼接</li>
+          <li>常用：<code>split_part(s, sep, n)</code> / <code>length</code> / <code>trim</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 官方对窗口函数的定义，关键点是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只对整表做一次计算</button>
+            <button class="quiz-option">替代 WHERE 的过滤方式</button>
+            <button class="quiz-option">在与当前行有关联的行集上计算，且行保留独立标识</button>
+            <button class="quiz-option">把多行聚合压成一行输出</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：窗口函数在<strong>与当前行有某种关联的表行</strong>上执行计算；<strong>不会使多行聚合成一个单独的输出行</strong>——行保留独立标识。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 官方 empsalary 例中，<code>avg(salary) OVER (PARTITION BY depname)</code> 每行显示什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">全公司平均工资</button>
+            <button class="quiz-option">本部门的平均工资</button>
+            <button class="quiz-option">累计平均</button>
+            <button class="quiz-option">每个人的工资</button>
+          </div>
+          <div class="quiz-explain" hidden>PARTITION BY depname 按部门分区——每行附上<strong>本部门的 avg</strong>（develop 5020、personnel 3700、sales 4866.67）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. <code>string_agg(name, ', ')</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">按逗号排序</button>
+            <button class="quiz-option">把组内文本按分隔符拼接成一个字符串</button>
+            <button class="quiz-option">计算字符串长度</button>
+            <button class="quiz-option">把字符串拆成数组</button>
+          </div>
+          <div class="quiz-explain" hidden>string_agg 是聚合函数——把组内每个值用分隔符串起来（如部门内所有人名拼成一行）。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 窗口函数与 GROUP BY 聚合的本质区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">GROUP BY 更快</button>
+            <button class="quiz-option">GROUP BY 把多行压成一行；窗口函数每行都在，附带窗口计算结果</button>
+            <button class="quiz-option">窗口函数不能做聚合计算</button>
+            <button class="quiz-option">两者完全相同，只是语法不同</button>
+          </div>
+          <div class="quiz-explain" hidden>官方定义直击这点：窗口函数<strong>不使多行聚合成一行</strong>——行保留独立标识，每行附带关联行集的计算结果。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. <code>WHERE row_number() OVER (...) = 1</code> 能过滤出每组第一行吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">可以，完全合法</button>
+            <button class="quiz-option">可以但性能差</button>
+            <button class="quiz-option">只有 ROW_NUMBER 可以</button>
+            <button class="quiz-option">不行——窗口函数在 WHERE 之后求值，需包一层子查询/CTE</button>
+          </div>
+          <div class="quiz-explain" hidden>窗口函数的求值发生在 WHERE/GROUP BY/HAVING 之后——WHERE 里引用会报错；标准解法：子查询/CTE 包一层再过滤。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. RANK 与 DENSE_RANK 在并列时的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">DENSE_RANK 跳号，RANK 不跳</button>
+            <button class="quiz-option">两者完全一致</button>
+            <button class="quiz-option">并列时两者都报错</button>
+            <button class="quiz-option">RANK 跳号（1,1,3），DENSE_RANK 不跳（1,1,2）</button>
+          </div>
+          <div class="quiz-explain" hidden>经典区别：并列名次后 RANK 跳过序号（1,1,3），DENSE_RANK 连续（1,1,2）——按「要不要跳号」选。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 官方说 format 函数的形式类似于 C 的什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">printf 的兄弟 fprintf</button>
+            <button class="quiz-option">sprintf</button>
+            <button class="quiz-option">strcat</button>
+            <button class="quiz-option">regex</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：format 根据格式字符串产生格式化输出，其形式<strong>类似于 C 函数 sprintf</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 拼动态 SQL 时官方推荐的防注入姿势是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">format 的 %L（字面量）与 %I（标识符）安全引用</button>
+            <button class="quiz-option">直接字符串拼接</button>
+            <button class="quiz-option">用 replace 替换单引号</button>
+            <button class="quiz-option">全部用大写写 SQL</button>
+          </div>
+          <div class="quiz-explain" hidden><code>%L</code> 把值正确加引号并转义、<code>%I</code> 处理标识符（表名/列名）——动态 SQL 的标准姿势，手拼引号是注入源头。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 「每人工资与本部门平均工资的差」的写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">用子查询分两次查</button>
+            <button class="quiz-option">salary - avg(salary) OVER ()</button>
+            <button class="quiz-option">salary - avg(salary) OVER (PARTITION BY depname)</button>
+            <button class="quiz-option">salary - avg(salary)（直接写）</button>
+          </div>
+          <div class="quiz-explain" hidden>窗口函数直接参与行内表达式：<code>salary - avg(...) OVER (PARTITION BY depname)</code> 每行算出与部门平均的差。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，函数与窗口函数就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核一：每个部门工资最高的员工（同名次都列出）——标准写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">GROUP BY 后 MAX(salary)</button>
+            <button class="quiz-option">ORDER BY salary LIMIT 1</button>
+            <button class="quiz-option">JOIN 两次表</button>
+            <button class="quiz-option">RANK() OVER (PARTITION BY depname ORDER BY salary DESC) 包一层取 rank = 1</button>
+          </div>
+          <div class="quiz-explain" hidden>分组内排名 + 外层过滤的标准模式；RANK（并列同名次）配合 rank=1 可列出并列最高。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核二：输出每个部门「员工名单：张三、李四」这样的聚合字符串，用什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">split_part</button>
+            <button class="quiz-option">format 函数</button>
+            <button class="quiz-option">string_agg(name, '、') 配合 GROUP BY</button>
+            <button class="quiz-option">CONCAT 逐行拼接</button>
+          </div>
+          <div class="quiz-explain" hidden>string_agg 聚合组内文本——「组内名单」场景的标准答案。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三：给订单按时间排序后算「截至当前行的累计金额」，写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">SUM(amount) OVER (ORDER BY created_at)</button>
+            <button class="quiz-option">SUM(amount) OVER (PARTITION BY created_at)</button>
+            <button class="quiz-option">子查询 SUM 全表</button>
+            <button class="quiz-option">GROUP BY 后 SUM</button>
+          </div>
+          <div class="quiz-explain" hidden>OVER (ORDER BY ...) 定义「从窗口起点到当前行」的滑动窗口——累积和的标准写法。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核四：format('%1$s 的分数是 %2$s', name, score) 中 %1$s 表示？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">表示 1 个空格</button>
+            <button class="quiz-option">引用第 1 个参数（name），按字符串格式化</button>
+            <button class="quiz-option">美元符号语法错误</button>
+            <button class="quiz-option">引用第 2 个参数</button>
+          </div>
+          <div class="quiz-explain" hidden>官方说明符 <code>%[position][flags][width]type</code>：<code>n$</code> 指定参数索引（1$=第一个参数），s 表示字符串格式。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了函数与窗口函数——继续学习 <a href="/common/database-pg/pg-08-索引进阶">pg-08 · 索引进阶</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0007-函数与窗口函数',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的报表：<code>SELECT ..., row_number() OVER (...) AS rn FROM t WHERE rn = 1;</code> 直接报错。为什么？正确姿势是什么？`,
+              source: '来源：postgres.cn 官方教程 §3.5 窗口函数（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `<strong>窗口函数的求值发生在 WHERE/GROUP BY/HAVING 之后</strong>——WHERE 里看不到别名 rn，也不允许直接引用窗口函数。正确姿势：包一层——<code>SELECT * FROM (SELECT ..., row_number() OVER (...) AS rn FROM t) x WHERE x.rn = 1;</code>（或 CTE）。AI 生成「每组取前 N」类报表时这个错误高频出现。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方文档对窗口函数的定义是什么？与聚合函数的可比点与不同点各是什么？`,
+              source: '来源：postgres.cn 官方教程 §3.5 窗口函数（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `官方原文：窗口函数<strong>在与当前行有某种关联的表行上执行计算</strong>——与聚合函数可比（都是行集上的计算）；不同点：窗口函数<strong>不会使多行聚合成一个单独的输出行</strong>，<strong>行保留它们独立的标识</strong>。补充官方细节：窗口函数可以访问的不仅仅是查询结果的当前行。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 拼动态 SQL 用字符串拼接：<code>'SELECT * FROM ' + table_name + ' WHERE name = ''' + user_input + ''''</code>。审查：风险与官方推荐做法？`,
+              source: '来源：postgres.cn 官方文档 §9.4 字符串函数（format 条目，官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `手拼引号 = <strong>SQL 注入</strong>（user_input 带引号即可逃逸）。官方姿势：<code>format('SELECT * FROM %I WHERE name = %L', table_name, user_input)</code>——<code>%I</code> 按标识符引用（表名/列名加引号）、<code>%L</code> 按字面量引用（值加引号并转义）。审查 AI 生成的动态 SQL：见到字符串拼接进 SQL 一律打回改 format。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `报表需求「每行显示本组小计占比 + 全表总计占比」。用窗口函数还是多次子查询？怎么写？`,
+              source: '来源：postgres.cn 官方教程 §3.5 窗口函数（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `窗口函数一枪双雕：<code>amount / sum(amount) OVER (PARTITION BY grp)</code> 给组内占比、<code>amount / sum(amount) OVER ()</code> 给全表占比——一次扫描、每行保留明细（这正是官方定义「行保留独立标识」的价值）。多次子查询方案扫描多遍且易出错。原则：<strong>「明细行 + 分组统计并存」的需求就是窗口函数的场景</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测窗口函数与字符串函数（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '建 empsalary 表（官方原例数据）→ ① avg OVER (PARTITION BY depname) 复现官方输出；② RANK 与 DENSE_RANK 并列差异实测；③ format 的 %I/%L 动态 SQL 拼接；④ string_agg 组内名单。',
+                accept: ['官方 empsalary 输出复现（develop 5020 等）', 'RANK 跳号与 DENSE_RANK 不跳实测', 'format %I/%L 结果正确'],
+              },
+              source: '任务基于官方教程 §3.5 + §9.4 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：官方原例数据（develop 5 人、personnel 2 人、sales 2 人）建表；<code>SELECT ... rank() OVER (ORDER BY salary DESC), dense_rank() ...</code> 对照并列行；<code>SELECT format('SELECT %I FROM %I', 'name', 't')</code> 观察加引号结果。坑：窗口函数不能进 WHERE（陷阱题同款）；format 的 %s 会输出 NULL 而 %L 输出 NULL 字面量。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/tutorial-window.html">postgres.cn · 教程 3.5 窗口函数</a> · <a href="http://www.postgres.cn/docs/current/functions-string.html">9.4 字符串函数</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/functions-window.html">9.22 窗口函数调用</a>（完整语法）· <a href="http://www.postgres.cn/docs/current/functions-aggregate.html">9.21 聚合函数</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/函数与窗口函数速查表.html">函数与窗口函数速查表</a>——语法与官方定义一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/DML/">04.DML</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

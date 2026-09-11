@@ -1,0 +1,57 @@
+---
+sidebar_position: 7
+title: 'pg-07 · 函数与窗口函数'
+description: 'PostgreSQL 官方文档拓展 §9 + 教程 §3.5：format 与 string_agg、窗口函数官方定义与 OVER/PARTITION BY、排名函数——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 函数与窗口函数" desc="format 拼字符串、string_agg 聚合文本、窗口函数做分组内计算——报表 SQL 的三板斧。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方教程 §3.5「窗口函数」与官方文档 §9.4「字符串函数」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/tutorial-window.html) / [官方英文版](https://www.postgresql.org/docs/current/tutorial-window.html)）。
+
+:::
+
+## 字符串函数速选
+
+- **`format(formatstr, ...)`**：sprintf 风格的格式化输出（官方：形式类似 C 的 sprintf）。格式说明符 `%[position][flags][width]type`——如 `format('%1$s 年龄 %2$s', name, age)`（`1$` 指定参数索引）；常用于拼日志、动态 SQL（配合 `%L`/`%I` 安全引用字面量与标识符）
+- **`string_agg(expr, sep)`**：聚合函数，把组内文本串起来（如把每个部门的员工名拼成一行）
+- 常用：`length` / `split_part(s, sep, n)` / `trim` / `upper/lower`
+
+## 窗口函数：官方定义
+
+官方原文：
+
+> 一个**窗口函数**在一系列**与当前行有某种关联**的表行上执行一种计算。这与聚合函数有可比之处，但窗口函数**不会使多行聚合成一个单独的输出行**——行保留它们独立的标识。
+
+官方原例（比较每位员工的工资与其所在部门的平均工资）：
+
+```sql
+SELECT depname, empno, salary,
+       avg(salary) OVER (PARTITION BY depname)
+FROM empsalary;
+-- 每行都是「自己的 salary + 本部门的 avg」：develop 部门 avg 5020、personnel 3700、sales 4866.67
+```
+
+语法骨架：`函数(...) OVER (PARTITION BY 分组列 ORDER BY 排序列)`。
+
+**与聚合的本质区别**：`GROUP BY` 把多行压成一行；窗口函数**每行都在**，附带"窗口"上的计算结果。
+
+高频窗口函数：`ROW_NUMBER()`（行号）、`RANK()`/`DENSE_RANK()`（排名，并列时 RANK 跳号 DENSE_RANK 不跳）、`SUM(...) OVER (ORDER BY ...)`（累积和）。
+
+:::warning 窗口函数的限制
+
+窗口函数在 WHERE / GROUP BY / HAVING 之后求值——**不能直接写在 WHERE 里**（要过滤窗口结果须包一层子查询/CTE）。
+
+:::
+
+## 官方原文
+
+- [postgres.cn：3.5 窗口函数（教程）](http://www.postgres.cn/docs/current/tutorial-window.html)
+- [postgres.cn：9.4 字符串函数和操作符](http://www.postgres.cn/docs/current/functions-string.html)
+- [官方英文版：3.5 Window Functions](https://www.postgresql.org/docs/current/tutorial-window.html)
+
+配套学习：<a href="/teach/lessons/pg-0007-函数与窗口函数.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/函数与窗口函数速查表.html">📋 函数与窗口函数速查表（可打印）</a>
