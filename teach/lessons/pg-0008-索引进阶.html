@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 索引进阶：部分索引排除常见值、多列索引最左前缀与 32 列上限、INCLUDE 覆盖（非渡一课程内容）">
+  <title>索引进阶 · 互动教学课程（官方文档拓展 pg-08）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>索引进阶</h1>
+      <p class="lesson-sub">来源：官方文档 §11.8 部分索引 + §11.3 多列索引（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出部分索引的定义（谓词定义的子集）与主要动机（官方：避免索引常见值）</li>
+        <li>解释部分索引的两个收益（减小尺寸 + 加速更新）与适用前提（常见值可预知）</li>
+        <li>复述多列索引的官方规则：前导列约束时效率最高、32 列上限、INCLUDE 列</li>
+        <li>识别「用部分索引查被排除值」的官方陷阱</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/indexes-partial.html">§11.8</a> 与 <a href="http://www.postgres.cn/docs/current/indexes-multicolumn.html">§11.3</a>。</p>
+
+      <div class="card">
+        <h3>部分索引（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li>定义：建立在表<strong>子集</strong>上，子集由<strong>谓词</strong>（WHERE 条件）定义</li>
+          <li>主要动机（官方原文）：<strong>避免索引常见值</strong>——常见值查询不走索引，没必要留在索引里</li>
+          <li>收益：<strong>减小索引尺寸</strong>、加速查询、<strong>加速表更新</strong>（不必每次都维护索引）</li>
+          <li>官方 access_log 例：排除内网 IP 范围——外网 IP 查询走索引、内网 IP 查询<strong>不能用</strong>该索引</li>
+          <li>前提：<strong>常见值可预知</strong>——数据分布不变最适合；分布变化要重建索引</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>多列索引（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li>官方例：<code>CREATE INDEX ON test2 (major, minor)</code> 服务 <code>WHERE major = c AND minor = c</code></li>
+          <li>B-tree/GiST/GIN/BRIN 支持；<strong>最多 32 列</strong>（含 INCLUDE 列）</li>
+          <li>可服务「索引列任意子集」的查询，但<strong>对前导（最左侧）列有约束时效率最高</strong>（官方原文——最左前缀出处）</li>
+          <li><strong>INCLUDE 列</strong>：非关键列随索引存储（B-tree），覆盖查询免回表</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 官方说使用部分索引的「一个主要原因」是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">替代主键</button>
+            <button class="quiz-option">减少表的大小</button>
+            <button class="quiz-option">避免索引常见值</button>
+            <button class="quiz-option">避免索引罕见值</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：使用部分索引的一个主要原因是<strong>避免索引常见值</strong>——常见值查询本就不走索引。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 部分索引的「部分」由什么定义？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">表的前 N 行</button>
+            <button class="quiz-option">主键范围</button>
+            <button class="quiz-option">谓词（WHERE 条件表达式）</button>
+            <button class="quiz-option">随机抽样</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：部分索引建立在表的子集上，该子集由<strong>条件表达式（谓词）</strong>定义。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 多列索引对哪类查询效率最高（官方原文）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">对所有列都没有约束的查询</button>
+            <button class="quiz-option">只查 INCLUDE 列的查询</button>
+            <button class="quiz-option">对前导（最左侧）列有约束的查询</button>
+            <button class="quiz-option">对最后一列有约束的查询</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：当<strong>对前导（最左侧）列有约束时</strong>，多列 B-tree 索引的效率最高——「最左前缀」的官方出处。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 部分索引带来的两个收益是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据压缩 + 自动分片</button>
+            <button class="quiz-option">表变小 + 查询永远走索引</button>
+            <button class="quiz-option">减小索引尺寸 + 加速表更新（不必每次更新都维护索引）</button>
+            <button class="quiz-option">不需要维护 + 加速全表扫</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：减小索引尺寸、加速使用它的查询；也加速很多表更新操作（索引不需要在所有情况下都被更新）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 官方 access_log 例：查询内网 IP 会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">仍然走索引</button>
+            <button class="quiz-option">无法使用该部分索引（被谓词排除的值）</button>
+            <button class="quiz-option">报错</button>
+            <button class="quiz-option">自动走全表扫并且更快</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：内网 IP 的查询<strong>无法使用部分索引</strong>——因为它使用从索引中排除的地址。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 官方说部分索引最适合什么场景？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据每天变化的表</button>
+            <button class="quiz-option">数据分布不会改变的情况</button>
+            <button class="quiz-option">只有主键查询的表</button>
+            <button class="quiz-option">所有表都该默认建</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：部分索引要求<strong>常见值能被预知</strong>——最适合数据分布不会改变的情况；分布变化要重建（有维护负担）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 多列索引的列数上限是（官方）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有上限</button>
+            <button class="quiz-option">8 列</button>
+            <button class="quiz-option">16 列</button>
+            <button class="quiz-option">32 列（含 INCLUDE 列）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：索引最多可以有 <strong>32 列</strong>，包括 INCLUDE 列（限制可在源码里修改）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. INCLUDE 列的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">替代主键约束</button>
+            <button class="quiz-option">创建部分索引</button>
+            <button class="quiz-option">参与索引排序与比较</button>
+            <button class="quiz-option">非关键列随索引存储，覆盖查询免回表</button>
+          </div>
+          <div class="quiz-explain" hidden>INCLUDE 列不参与索引键的排序/查找，但随索引存值——SELECT 只查关键列+INCLUDE 列时 Index Only Scan 免回表。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 订单表 90% 行是 status='done'，高频查询只查未完成订单。最佳索引是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">对 done 行建部分索引</button>
+            <button class="quiz-option">普通索引 ON (status)</button>
+            <button class="quiz-option">不要任何索引</button>
+            <button class="quiz-option">部分索引 ON (created_at) WHERE status != 'done'</button>
+          </div>
+          <div class="quiz-explain" hidden>done 是常见值（90%）——按官方「避免索引常见值」原则，只为未完成的 10% 建部分索引：小、快、更新负担轻。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，索引进阶就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核一：日志表要按 (url, ip) 查外部访客、内网流量占 95%。官方推荐的索引方案是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每天重建一次全表索引</button>
+            <button class="quiz-option">部分索引 ON (url, ip) WHERE 非内网范围（官方 access_log 模式）</button>
+            <button class="quiz-option">全表索引 ON (url, ip)</button>
+            <button class="quiz-option">对 ip 单独建两个索引</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原例的直接应用：排除内网常见值——索引只覆盖 5% 的有价值行。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核二：查询是 WHERE a = ? AND b = ?，另有 WHERE a = ? 的查询。索引 (a, b) 与 (b, a) 选哪个？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">(b, a)——b 更常用</button>
+            <button class="quiz-option">(a, b)——a 是两种查询共有的前导列</button>
+            <button class="quiz-option">随便哪个都一样</button>
+            <button class="quiz-option">两个都建</button>
+          </div>
+          <div class="quiz-explain" hidden>两种查询都以 a 为条件：a 作前导列时两种查询都能高效利用（官方：前导列有约束时效率最高）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核三：SELECT name FROM t WHERE major = 1 AND minor = 2，索引 (major, minor) INCLUDE (name) 的好处是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">major 不再需要是前导列</button>
+            <button class="quiz-option">name 随索引存储——Index Only Scan 免回表</button>
+            <button class="quiz-option">name 参与排序</button>
+            <button class="quiz-option">可以跨表查询</button>
+          </div>
+          <div class="quiz-explain" hidden>查询列全部在「关键列 + INCLUDE 列」里 → 不用回表拿行——覆盖查询的标准配置。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核四：部分索引的谓词数据分布变了（常见值变了）怎么办？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">删掉表重建</button>
+            <button class="quiz-option">数据分布不会变</button>
+            <button class="quiz-option">部分索引会自动调整</button>
+            <button class="quiz-option">按官方说法需要重建索引以适应新分布（有维护负担）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：这样的索引可以偶尔被<strong>重建</strong>来适应新的数据分布，但会增加维护负担。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了索引进阶——继续学习 <a href="/common/database-pg/pg-09-全文检索">pg-09 · 全文检索</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0008-索引进阶',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `AI 建了部分索引 <code>ON (user_id) WHERE status != 'done'</code>，但按 user_id 查 done 订单的报表突然变慢。为什么？`,
+              source: '来源：postgres.cn 官方文档 §11.8 部分索引（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `部分索引只覆盖<strong>谓词内的行</strong>——查 done（被排除的值）<strong>不能用该索引</strong>（官方 access_log 例的原话逻辑）。报表查询必须包含与谓词一致的条件（status != 'done'）才会命中。审查规则：看到部分索引就问「所有查询路径的条件都与谓词一致吗」。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方说使用部分索引的一个主要原因是「避免索引常见值」。展开讲：为什么常见值不该进索引？两个收益是什么？`,
+              source: '来源：postgres.cn 官方文档 §11.8 部分索引（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `官方逻辑链：搜索常见值（占比几个百分点以上）的查询<strong>不会使用索引</strong>（走顺序扫更快）→ 这些行留在索引里纯属浪费。排除后：① <strong>减小索引尺寸</strong>、加速用它的查询；② <strong>加速表更新</strong>——索引不需要在所有情况下都被更新。前提：常见值可预知、数据分布稳定。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 建的索引：<code>CREATE INDEX ON orders(status, created_at, user_id, amount, note, ...共 9 列)</code> 说「查询要啥列都给上」。审查：官方对多列索引的约束是什么？哪里不对？`,
+              source: '来源：postgres.cn 官方文档 §11.3 多列索引（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `官方规则：多列 B-tree <strong>对前导（最左侧）列有约束时效率最高</strong>；且列数上限 <strong>32</strong>。9 列索引的问题不在超限，而在<strong>列序</strong>：status 后面的列只有在 status 有约束时才有用——「查询要啥给啥」会造成大量几乎永不使用、徒增写放大与存储的索引列。正确：按查询模式排前导列，仅覆盖高频组合；要覆盖列用 INCLUDE。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `软删除场景：90% 行 deleted = true，业务查询永远 WHERE deleted = false AND ...。设计索引方案并说明依据。`,
+              source: '来源：postgres.cn 官方文档 §11.8 部分索引（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `<strong>部分索引 + 谓词对齐</strong>：<code>CREATE INDEX ON t(...) WHERE deleted = false</code>——只索引活跃的 10%（官方「避免索引常见值」原则的直接应用：deleted=true 是常见值），索引小、更新快；所有查询把 <code>deleted = false</code> 写进 WHERE 保证谓词匹配（匹配不上就全表扫）。这是软删除表的标准优化，面试高频。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测部分索引与多列索引（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '① 建 access_log 官方原例，验证外网 IP 走部分索引、内网 IP 全表扫；② 多列索引 (a,b)：a 条件走索引、仅 b 条件全表扫；③ INCLUDE 列实现 Index Only Scan 免回表。',
+                accept: ['部分索引两条路径的 EXPLAIN 差异实测', '最左前缀行为实测（a 条件高效命中；仅 b 条件默认计划全扫、关顺序扫后退化为整索引扫描——都能解释）', 'Index Only Scan 出现且能解释'],
+              },
+              source: '任务基于官方文档 §11.8/§11.3 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>SET enable_seqscan=off</code> 后 EXPLAIN 对照；INCLUDE 例 <code>CREATE INDEX ON t(a, b) INCLUDE (name)</code> 查 a/b/name 观察 Index Only Scan。坑：小表上计划器倾向全表扫——塞够行数（1 万+）再 ANALYZE 对照才有意义。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/indexes-partial.html">postgres.cn · 11.8 部分索引</a> · <a href="http://www.postgres.cn/docs/current/indexes-multicolumn.html">11.3 多列索引</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/indexes-index-only-scans.html">11.9 只用索引的扫描和覆盖索引</a> · <a href="http://www.postgres.cn/docs/current/indexes-expressional.html">11.7 表达式索引</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/索引进阶速查表.html">索引进阶速查表</a>——两种索引要点一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/索引/">06.索引</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

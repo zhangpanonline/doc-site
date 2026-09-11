@@ -1,0 +1,60 @@
+---
+sidebar_position: 8
+title: 'pg-08 · 索引进阶'
+description: 'PostgreSQL 官方文档拓展 §11：部分索引（排除常见值）、多列索引与最左前缀、INCLUDE 列——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 索引进阶" desc="部分索引只索引有价值的行；多列索引靠最左前缀生效——渡一索引课的官方进阶。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §11.8「部分索引」与 §11.3「多列索引」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/indexes-partial.html) / [官方英文版](https://www.postgresql.org/docs/current/indexes-partial.html)）。
+
+:::
+
+## 部分索引：只索引一个子集
+
+官方定义：部分索引建立在表的**一个子集**上，子集由**谓词**（WHERE 条件）定义——索引中只包含符合谓词的行。
+
+官方给出的**主要动机**（原文）：**避免索引常见值**——占比超过几个百分点的常见值查询本来就不会走索引，把它们排除出索引：
+
+- **减小索引尺寸**，加速使用索引的查询
+- **加速表更新**：索引不需要在所有情况下都被更新
+
+官方原例（access_log 网页访问日志）：大部分访问来自内网 IP——建索引时排除内网范围：
+
+```sql
+CREATE INDEX access_log_idx ON access_log(url, client_ip)
+WHERE NOT (client_ip > inet '192.168.100.0' AND client_ip < inet '192.168.100.255');
+```
+
+- 外部 IP 的查询（`client_ip = '212.78.10.32'`）能走索引
+- 内网 IP 的查询（`client_ip = '192.168.100.23'`）**不能用**该索引
+- 官方提醒：部分索引**要求常见值可预知**——最适合数据分布不变的情况；分布变了要重建索引
+
+## 多列索引与最左前缀
+
+官方例：`CREATE INDEX ON test2 (major, minor)` 加速 `WHERE major = c AND minor = c` 类查询。
+
+官方要点：
+
+- B-tree、GiST、GIN、BRIN 支持多列索引；**最多 32 列**（含 INCLUDE 列）
+- 多列 B-tree 可服务「索引列任意子集」的查询，但**对前导（最左侧）列有约束时效率最高**——这就是"最左前缀"的官方出处
+- **INCLUDE 列**：非关键列挂在索引里（仅 B-tree）——覆盖查询（Index Only Scan）免回表，又不参与索引排序
+
+:::tip 与渡一课程的关系
+
+渡一《数据库》的索引课讲了 B+ 树原理、回表与最左前缀基础；本节是**官方进阶**：部分索引（排除常见值）、多列索引官方规则（32 列上限、INCLUDE）。
+
+:::
+
+## 官方原文
+
+- [postgres.cn：11.8 部分索引](http://www.postgres.cn/docs/current/indexes-partial.html)
+- [postgres.cn：11.3 多列索引](http://www.postgres.cn/docs/current/indexes-multicolumn.html)
+- [官方英文版：11.8 Partial Indexes](https://www.postgresql.org/docs/current/indexes-partial.html)
+
+配套学习：<a href="/teach/lessons/pg-0008-索引进阶.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/索引进阶速查表.html">📋 索引进阶速查表（可打印）</a>

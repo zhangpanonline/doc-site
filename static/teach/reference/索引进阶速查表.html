@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>索引进阶速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>索引进阶速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0008-索引进阶.html">《索引进阶互动教学课程》</a>使用。来源：官方文档 §11.8 + §11.3（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>部分索引</h2>
+      <pre>CREATE INDEX idx ON t(url, ip)
+WHERE NOT (ip > '192.168.100.0' AND ip < '192.168.100.255');</pre>
+      <table class="cmp-table">
+        <tr><th>要点</th><th>说明</th></tr>
+        <tr><td>动机</td><td>避免索引常见值（官方原文）</td></tr>
+        <tr><td>收益</td><td>索引更小 + 表更新更快（不必每次都维护）</td></tr>
+        <tr><td>陷阱</td><td>查询条件必须与谓词一致，否则走不上索引</td></tr>
+        <tr><td>前提</td><td>常见值可预知、数据分布稳定；变化要重建</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>多列索引</h2>
+      <table class="cmp-table">
+        <tr><th>要点</th><th>官方原文</th></tr>
+        <tr><td>效率最高场景</td><td>对前导（最左侧）列有约束时</td></tr>
+        <tr><td>列数上限</td><td>32 列（含 INCLUDE 列）</td></tr>
+        <tr><td>支持类型</td><td>B-tree / GiST / GIN / BRIN</td></tr>
+        <tr><td>INCLUDE 列</td><td>非关键列随索引存储 → Index Only Scan 免回表</td></tr>
+      </table>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§11.8 + §11.3）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>
