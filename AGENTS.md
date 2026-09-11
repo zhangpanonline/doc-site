@@ -50,8 +50,8 @@
 ## 反爬与 SEO（2026-09 上线，改动前必读）
 
 - 反爬体系四层已上线：`static/robots.txt`（君子协定）、`vercel.json` routes+mitigate（WAF 挑战）、`middleware.ts`（JS-cookie 挑战门）、控制台托管规则。完整清单与验证命令在 `anti-bot-ops.md`。
-- **AI 爬虫策略 = 方案 B（2026-09-11 用户选定）**：放行 AI 搜索/引用类（OAI-SearchBot/ChatGPT-User/PerplexityBot/Google-Extended），拦截 AI 训练类（GPTBot/CCBot/Bytespider/Amazonbot/meta 系等）。新增爬虫时按「引用带流量=放行、训练拿内容=拦截」归类。
-- **middleware.ts 的兼容性豁免是线上依赖**：搜索引擎/微信(MicroMessenger)/社交预览 UA 白名单、**AI 搜索/引用爬虫白名单（OAI-SearchBot/ChatGPT-User/PerplexityBot/Google-Extended，2026-09-11 方案 B）**、iframe/embed 嵌入式导航直通（fuel-records App 内嵌依赖）、BingPreview（必应图标）、`/api/*` 与带扩展名资源跳过——改动任何一条前先确认对应线上场景。
+- **AI 爬虫策略 = 方案 B（2026-09-11 用户选定）**：放行 AI 搜索/引用类（OAI-SearchBot/ChatGPT-User/PerplexityBot/Perplexity-User/Google-Extended 五个），拦截 AI 训练类（GPTBot/CCBot/Bytespider/Amazonbot/meta 系等；ClaudeBot/Bytespider 用户权衡后选择不放行）。新增爬虫时按「引用带流量=放行、训练拿内容=拦截」归类。
+- **middleware.ts 的兼容性豁免是线上依赖**：搜索引擎/微信(MicroMessenger)/社交预览 UA 白名单、**AI 搜索/引用爬虫白名单（OAI-SearchBot/ChatGPT-User/PerplexityBot/Perplexity-User/Google-Extended，2026-09-11 方案 B）**、iframe/embed 嵌入式导航直通（fuel-records App 内嵌依赖）、BingPreview（必应图标）、`/api/*` 与带扩展名资源跳过——改动任何一条前先确认对应线上场景。
 - 控制台配置不在代码里：**AI Bots → Log（方案 B，2026-09-11）**、Bot Protection → Challenge、速率限制 120 次/10s/IP → Challenge。**dashboard bypass 规则 = 单条规则多条件组**：路径（3 个验证文件 + /sitemap.xml + /robots.txt）+ UA（OAI-SearchBot/ChatGPT-User/PerplexityBot/Google-Extended 四个 AI 搜索爬虫），Hobby 自定义规则 3 条配额（vercel.json 2 条 + dashboard 1 条）已满。**2026-09-11 用户确认 360/搜狗/神马不收录**：middleware 白名单已移除、robots.txt 已显式拒绝。
 - **勿在 worktree 跑 `vercel link`**（会误建 Vercel 项目）；部署沿用现有项目。
 - SEO 状态：站长平台只做百度/谷歌/必应三家（验证文件在 static/）；360/搜狗/神马因需 ICP 备案放弃（2026-09-11 用户决定）。站点侧优化（社交卡片 img/social-card.png、JSON-LD、92 篇 description）已上线，新增文档遵守 description 规则即可。
