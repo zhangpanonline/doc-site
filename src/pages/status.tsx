@@ -370,22 +370,33 @@ function TrendChart({daily}: {daily: DailyPoint[]}) {
   );
 }
 
-/** 通用分布条形图（地区/浏览器/系统共用）：名称 + 横向条形 + 次数 */
-function BarList({title, items}: {title: string; items: {name: string; count: number}[]}) {
+/** 通用分布条形图（地区/浏览器/系统共用）：名称 + 横向条形 + 次数；
+ *  weakNames 里的项（未知/其他）置底并弱化显示，不删除数据 */
+function BarList({
+  title,
+  items,
+  weakNames,
+}: {
+  title: string;
+  items: {name: string; count: number}[];
+  weakNames?: string[];
+}) {
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...items.map(r => r.count));
+  const weak = new Set(weakNames ?? []);
+  const ordered = [...items.filter(r => !weak.has(r.name)), ...items.filter(r => weak.has(r.name))];
 
   return (
     <section className="card">
       <h2>{title}</h2>
-      {items.length === 0 ? (
+      {ordered.length === 0 ? (
         <p className="empty">暂无数据</p>
       ) : (
         <ul className="country-list">
-          {items.map((r, i) => (
+          {ordered.map((r, i) => (
             <li
               key={r.name}
-              className="country-row"
+              className={weak.has(r.name) ? 'country-row country-row--weak' : 'country-row'}
               tabIndex={0}
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(null)}
@@ -474,8 +485,10 @@ function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total:
   const scale = (c: number) => (c <= 0 ? -1 : Math.min(4, Math.max(0, Math.floor((Math.log(c) / logMax) * 5))));
 
   const statsByName = new Map<string, ProvinceStat>();
+  let unknownTotal = 0;
   for (const p of provinceStats) {
     if (p.region === '未知') {
+      unknownTotal += p.count;
       continue;
     }
     // 双保险：中文名再过一遍省/市后缀剥离，兼容源数据直接给「广东省」这类带后缀值
@@ -489,7 +502,10 @@ function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total:
     <section className="card">
       <div className="card-head">
         <h2>省份访问地图</h2>
-        <span className="card-note">颜色越深访问越多 · 悬停/聚焦查看详情</span>
+        <span className="card-note">
+          颜色越深访问越多 · 悬停/聚焦查看详情
+          {unknownTotal > 0 ? ` · 未知地区 ${fmt(unknownTotal)} 次（多为代理/机房出口）` : ''}
+        </span>
       </div>
       <div className="china-map">
         <svg
@@ -691,13 +707,14 @@ function IpTable({ips}: {ips: IpRow[]}) {
               <tbody>
                 {visible.map(r => {
                   const geo = [regionZh(r.region), regionZh(r.city)].filter(Boolean).join(' / ') || '未知';
+                  const weak = (v: string) => (v === '未知' || v === '其他' ? ' weak-cell' : '');
                   return (
                     <tr key={r.ip}>
                       <td className="mono">{r.ip}</td>
-                      <td>{geo}</td>
-                      <td>{r.browser}</td>
-                      <td>{r.app}</td>
-                      <td>{r.os}</td>
+                      <td className={weak(geo)}>{geo}</td>
+                      <td className={weak(r.browser)}>{r.browser}</td>
+                      <td className={weak(r.app)}>{r.app}</td>
+                      <td className={weak(r.os)}>{r.os}</td>
                       <td className="num">{fmt(r.count)}</td>
                       <td className="num">{fmt(r.visitors ?? 0)}</td>
                       <td className="num">{fmt(r.last7)}</td>
@@ -776,7 +793,9 @@ export default function StatusPage(): React.JSX.Element {
               </span>
               <span className="whoami-item">
                 <label>地区</label>
-                <b>{[regionZh(whoami.region), regionZh(whoami.city)].filter(Boolean).join(' / ') || '未知'}</b>
+                <b className={whoami.region || whoami.city ? undefined : 'whoami-weak'}>
+                  {[regionZh(whoami.region), regionZh(whoami.city)].filter(Boolean).join(' / ') || '未知'}
+                </b>
               </span>
               <span className="whoami-item">
                 <label>浏览器</label>
@@ -855,10 +874,15 @@ export default function StatusPage(): React.JSX.Element {
             <Kpi stats={stats} />
             <TrendChart daily={stats.daily} />
             <div className="status-grid">
-              <BarList title="系统分布" items={(stats.oss ?? []).map(o => ({name: o.os, count: o.count}))} />
+              <BarList
+                title="系统分布"
+                items={(stats.oss ?? []).map(o => ({name: o.os, count: o.count}))}
+                weakNames={['其他', '未知']}
+              />
               <BarList
                 title="浏览器分布"
                 items={(stats.browsers ?? []).map(b => ({name: b.browser, count: b.count}))}
+                weakNames={['其他', '未知']}
               />
               <BarList
                 title="地区分布"
@@ -866,6 +890,7 @@ export default function StatusPage(): React.JSX.Element {
                   name: regionZh(r.region),
                   count: r.count,
                 }))}
+                weakNames={['未知']}
               />
               <Paths paths={stats.paths} />
             </div>

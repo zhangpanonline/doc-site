@@ -344,6 +344,16 @@
   line-height: 1.6;
 }
 
+/* 未知/其他项弱化：置底行降色，条形减透明度 */
+.country-row--weak .country-name,
+.country-row--weak .country-value {
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+.country-row--weak .country-bar {
+  opacity: 0.45;
+}
+
 /* ---------- 双列表格 ---------- */
 
 .status-grid {
@@ -541,6 +551,17 @@ tr:last-child td {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.whoami-weak {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* 表格内「未知/其他」单元格弱化 */
+.weak-cell {
+  color: var(--text-muted);
+  opacity: 0.8;
 }
 
 /* ---------- 访问口令 ---------- */
