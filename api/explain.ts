@@ -70,11 +70,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const code = String(body.code ?? '').slice(0, 8000);
   const lang = String(body.lang ?? 'text').slice(0, 20);
+  // 课程上下文（当前小节/课程路径），让 AI 围绕本节主题讲解；参与缓存键，
+  // 同一段代码在不同小节出现时解释不同
+  const context = String(body.context ?? '').slice(0, 200);
   if (!code.trim()) {
     return res.status(400).json({error: 'empty code'});
   }
 
-  const hash = createHash('md5').update(`${lang}\n${code}`).digest('hex');
+  const hash = createHash('md5').update(`${lang}\n${code}\n${context}`).digest('hex');
   const admin = getSupabaseAdmin();
 
   // 缓存命中（30 天 TTL 内）：不再调用 AI；过期后下次点击自动重新生成
@@ -103,9 +106,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(502).json({error: 'model not resolved'});
   }
 
-  const prompt = `你是一名编程老师。请用通俗易懂的中文向零基础学员解释下面这段${lang}代码，要求：
+  const courseLine = context
+    ? `学生正在学习《AI 大全栈》课程的「${context}」这一节。请围绕本节正在讲的教学主题，重点讲清楚这段代码在本课知识点中的角色。`
+    : '';
+  const prompt = `你是一名编程老师。${courseLine}请用通俗易懂的中文向零基础学员解释下面这段${lang}代码，要求：
 1. 先用一句话概括这段代码做什么
-2. 再按行或按块解释关键点
+2. 结合${context ? '本节主题，' : ''}按行或按块解释关键点
 3. 最后指出一个最容易误解的地方
 不要使用 markdown 语法，纯文本输出，分段用空行，总长度 300 字以内。
 

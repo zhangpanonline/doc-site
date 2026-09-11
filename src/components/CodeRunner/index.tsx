@@ -133,28 +133,31 @@ export default function CodeRunner({language, code, staticNode}: Props): React.J
       <div className="cr-static">{staticNode}</div>
       <div className="cr-editor" ref={hostRef} hidden={!editing} />
       <div className="cr-toolbar" role="group" aria-label={`${spec.label} 代码运行工具`}>
-        <button type="button" className="cr-btn cr-btn-run" onClick={() => void onRun()} disabled={busy}>
-          <span aria-hidden="true">▶</span> 运行
-        </button>
-        <button
-          type="button"
-          className="cr-btn"
-          onClick={() => setEditing((v) => !v)}
-          disabled={busy}
-          aria-pressed={editing}>
-          <span aria-hidden="true">✎</span> {editing ? '收起编辑' : '编辑'}
-        </button>
-        <button
-          type="button"
-          className="cr-btn"
-          onClick={onReset}
-          disabled={busy || (!dirty && !editing && !hasOutput)}
-          title="还原原始代码并清空输出">
-          <span aria-hidden="true">↺</span> 重置
-        </button>
-        {statusLine && <span className="cr-status">{statusLine}</span>}
         <span className="cr-lang">{spec.label}</span>
-        {dirty && <span className="cr-dirty-dot" title="已修改（运行的是编辑后的代码）" />}
+        {statusLine && <span className="cr-status">{statusLine}</span>}
+        {/* 操作按钮靠右：margin-left:auto 吸收左侧空余空间 */}
+        <span className="cr-btns">
+          {dirty && <span className="cr-dirty-dot" title="已修改（运行的是编辑后的代码）" />}
+          <button type="button" className="cr-btn cr-btn-run" onClick={() => void onRun()} disabled={busy}>
+            <span aria-hidden="true">▶</span> 运行
+          </button>
+          <button
+            type="button"
+            className="cr-btn"
+            onClick={() => setEditing((v) => !v)}
+            disabled={busy}
+            aria-pressed={editing}>
+            <span aria-hidden="true">✎</span> {editing ? '收起编辑' : '编辑'}
+          </button>
+          <button
+            type="button"
+            className="cr-btn"
+            onClick={onReset}
+            disabled={busy || (!dirty && !editing && !hasOutput)}
+            title="还原原始代码并清空输出">
+            <span aria-hidden="true">↺</span> 重置
+          </button>
+        </span>
       </div>
       {hasOutput && (
         <div className="cr-out" role="region" aria-label="运行输出">

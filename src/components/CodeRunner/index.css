@@ -71,17 +71,17 @@
   border-right: 1px solid var(--course-border);
 }
 
-/* 工具条：细、低对比、像纸页下缘随手写下的批注 */
+/* 工具条：纸页下缘的批注，但字号与点击区保持舒适（不追求"小字笔记"） */
 .cr-toolbar {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 1px 6px 1px 8px;
+  gap: 4px;
+  padding: 2px 8px 2px 10px;
   border-top: 1px dashed var(--course-border); /* 虚线：手写笔记的撕口感 */
   background: var(--course-card);
-  font-size: 0.76rem;
-  line-height: 1.6;
-  min-height: 26px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  min-height: 36px;
   overflow-x: auto;
 }
 .cr-btn {
@@ -91,8 +91,8 @@
   color: var(--cr-muted);
   font: inherit;
   cursor: pointer;
-  padding: 1px 7px;
-  border-radius: 4px;
+  padding: 3px 10px;
+  border-radius: 5px;
   white-space: nowrap;
   transition: color 0.15s, background-color 0.15s;
 }
@@ -119,26 +119,31 @@
 }
 .cr-status {
   color: var(--cr-muted);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   white-space: nowrap;
-  margin-left: 4px;
+  margin-left: 10px;
 }
 .cr-lang {
-  margin-left: auto;
-  padding-left: 8px;
   color: var(--cr-muted);
   opacity: 0.7;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
 }
+/* 操作按钮簇：靠最右侧（吸收左侧空余空间） */
+.cr-btns {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .cr-dirty-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--cr-accent);
-  margin-left: 4px;
+  margin-right: 2px;
   flex: none;
 }
 @media (max-width: 640px) {

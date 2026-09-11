@@ -210,6 +210,10 @@ html[data-theme='dark'] body {
 /* ===== 代码块 AI 解释（朱批笔记样式） ===== */
 .code-ai {
   margin-top: 10px;
+  text-align: right; /* 触发按钮靠右（与运行工具条一致，右手操作顺手） */
+}
+.code-ai-note {
+  text-align: left; /* 笔记正文回到左对齐 */
 }
 .code-ai-btn {
   font: inherit;

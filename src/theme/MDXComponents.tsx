@@ -59,10 +59,17 @@ function AiExplain({code, lang}: {code: string; lang: string}) {
   const explain = async () => {
     setState('loading');
     try {
+      // 课程上下文：面包屑（单元/课程路径）+ 小节标题，让 AI 围绕本节主题讲解
+      const crumb = document
+        .querySelector('.theme-doc-breadcrumbs')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim();
+      const heading = document.querySelector('article h1')?.textContent?.trim();
+      const context = [crumb, heading].filter(Boolean).join(' · ');
       const res = await fetch('/api/explain', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({code, lang}),
+        body: JSON.stringify({code, lang, context}),
       });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
@@ -124,6 +131,20 @@ function PlainBlockWithAI(props: {children?: React.ReactNode}) {
 }
 
 function MDXPre(props: {children?: React.ReactNode}): React.JSX.Element {
+  // 全站代码块统一显示行号：给原 Code 元素直接注入 showLineNumbers 布尔 prop
+  //（CodeBlock 的 createCodeBlockMetadata 直接消费该 prop，最稳路径；
+  //  title="..."、{5,13} 高亮等既有 meta 不受影响）
+  const kids = React.Children.toArray(props.children);
+  if (kids.length === 1 && React.isValidElement(kids[0])) {
+    const codeEl = kids[0];
+    const p = codeEl.props as {showLineNumbers?: unknown};
+    if (p.showLineNumbers !== true) {
+      props = {
+        ...props,
+        children: React.cloneElement(codeEl as React.ReactElement<{showLineNumbers?: unknown}>, {showLineNumbers: true}),
+      };
+    }
+  }
   const {className, code} = parseCodeProps(props.children);
   const runnerLang = matchRunnerLanguage(className);
 
