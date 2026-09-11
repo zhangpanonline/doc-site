@@ -269,6 +269,117 @@ html[data-theme='dark'] body {
   word-break: break-word;
 }
 
+/* ===== AI 助教追问区（分层讲解下的定向深挖） ===== */
+.code-ai-asks {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--course-border);
+}
+.code-ai-asks-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--course-muted);
+  margin-bottom: 8px;
+}
+.code-ai-asks-done {
+  font-size: 13px;
+  color: var(--course-muted);
+}
+.code-ai-ask {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--course-accent-ink);
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--course-accent) 35%, transparent);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.code-ai-ask:hover:not(:disabled) {
+  border-color: var(--course-accent);
+  background: rgba(157, 59, 44, 0.04);
+}
+.code-ai-ask:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.code-ai-ask-letter {
+  flex: none;
+  font-weight: 700;
+  color: var(--course-accent);
+}
+.code-ai-follow {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--course-card);
+  border: 1px solid var(--course-border);
+  border-radius: 10px;
+}
+.code-ai-follow-q {
+  font-size: 12px;
+  color: var(--course-muted);
+  margin-bottom: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.code-ai-follow-a {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--course-fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.code-ai-next {
+  display: block;
+  margin-top: 8px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--course-accent-ink);
+  background: none;
+  border: none;
+  border-top: 1px dashed var(--course-border);
+  padding: 6px 0 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.code-ai-next:hover:not(:disabled) {
+  color: var(--course-accent);
+}
+.code-ai-note-act {
+  margin-top: 12px;
+  text-align: right;
+}
+.code-ai-note-box {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--course-card);
+  border: 1px solid var(--course-accent);
+  border-radius: 10px;
+}
+.code-ai-note-body {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--course-fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 8px;
+}
+.code-ai-err {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--course-bad);
+}
+
 /* 文字选区：朱批洗染，与纸墨世界一致 */
 ::selection {
   background: rgba(157, 59, 44, 0.16);

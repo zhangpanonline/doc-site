@@ -48,74 +48,229 @@ function parseCodeProps(children?: React.ReactNode): {className?: string; code?:
 }
 
 /**
- * 代码块 AI 解释：按钮挂在每个代码块下方，点击调用 /api/explain。
- * 服务端按代码哈希缓存，同一段代码只消耗一次 AI 额度。
+ * 代码块 AI 助教（分层讲解 + 定向答疑）：
+ * - 点「AI 解释」→ mode=init：分层输出 + 6 个追问按钮（服务端按代码哈希缓存 10 天）
+ * - 点追问按钮 → mode=followup：只深挖该方向（按钮问题全文随请求回传，AI 无需历史）
+ * - 追问 ≥1 次后可「生成结课笔记」→ mode=generate_note：汇总已问方向的结论
+ * 追问上限 5 次；已问方向（asked）随请求累积回传，由服务端拼进提示词。
  */
+
+interface AskButton {
+  letter: string;
+  question: string;
+}
+interface FollowupAnswer extends AskButton {
+  answer: string;
+}
+
+/** 从 init 输出里解析 A~F 追问按钮（每行一个，格式 "A. 问题"）；按钮区从正文切除 */
+function parseInit(raw: string): {text: string; buttons: AskButton[]} {
+  const lines = raw.split('\n');
+  const btnRe = /^([A-F])[\.、．]\s*(.+)$/;
+  const buttons: AskButton[] = [];
+  let cutAt = lines.length;
+  lines.forEach((line, i) => {
+    const m = btnRe.exec(line.trim());
+    if (m) {
+      if (buttons.length === 0) cutAt = i;
+      buttons.push({letter: m[1], question: m[2]});
+    }
+  });
+  return {text: lines.slice(0, cutAt).join('\n').trim(), buttons: buttons.slice(0, 6)};
+}
+
+/** 从追问回复里解析「还可以看：<字母>」引导 */
+function parseFollowNext(answer: string): string | null {
+  const m = /还可以看[：:]\s*([A-F])/.exec(answer);
+  return m ? m[1] : null;
+}
+
 function AiExplain({code, lang}: {code: string; lang: string}) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [text, setText] = useState('');
+  const [buttons, setButtons] = useState<AskButton[]>([]);
+  const [asked, setAsked] = useState<AskButton[]>([]);
+  const [answers, setAnswers] = useState<FollowupAnswer[]>([]);
+  const [note, setNote] = useState<string | null>(null);
   const [cached, setCached] = useState(false);
+  const [busy, setBusy] = useState<'init' | 'followup' | 'note' | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
-  const explain = async () => {
+  const MAX_FOLLOWUPS = 5;
+  const pageContext = () => {
+    const crumb = document
+      .querySelector('.theme-doc-breadcrumbs')
+      ?.textContent?.replace(/\s+/g, ' ')
+      .trim();
+    const heading = document.querySelector('article h1')?.textContent?.trim();
+    return {context: [crumb, heading].filter(Boolean).join(' · '), url: window.location.href};
+  };
+
+  const post = async (payload: Record<string, unknown>) => {
+    const res = await fetch('/api/explain', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as {error?: string};
+      throw new Error(data.error ?? `HTTP ${res.status}`);
+    }
+    return (await res.json()) as {explanation: string; cached?: boolean};
+  };
+
+  const init = async () => {
     setState('loading');
+    setBusy('init');
+    setErr(null);
     try {
-      // 课程上下文：面包屑（单元/课程路径）+ 小节标题，让 AI 围绕本节主题讲解
-      const crumb = document
-        .querySelector('.theme-doc-breadcrumbs')
-        ?.textContent?.replace(/\s+/g, ' ')
-        .trim();
-      const heading = document.querySelector('article h1')?.textContent?.trim();
-      const context = [crumb, heading].filter(Boolean).join(' · ');
-      // 页面完整地址（含锚点）：锚点 slug 即小节名，AI 据此刻画教学主题
-      const url = window.location.href;
-      const res = await fetch('/api/explain', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({code, lang, context, url}),
-      });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = (await res.json()) as {explanation: string; cached: boolean};
-      setText(data.explanation);
-      setCached(data.cached);
+      const {context, url} = pageContext();
+      const data = await post({code, lang, context, url});
+      const parsed = parseInit(data.explanation);
+      setText(parsed.text);
+      setButtons(parsed.buttons);
+      setCached(!!data.cached);
       setState('done');
-    } catch {
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
       setState('error');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const ask = async (letter: string, question: string) => {
+    setBusy('followup');
+    setErr(null);
+    try {
+      // 追问不依赖缓存：context/url 只影响 init，这里只回传已问方向与按钮问题全文
+      const data = await post({code, lang, mode: 'followup', buttonText: question, asked});
+      setAsked(prev => [...prev, {letter, question}]);
+      setAnswers(prev => [...prev, {letter, question, answer: data.explanation}]);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const genNote = async () => {
+    setBusy('note');
+    setErr(null);
+    try {
+      const data = await post({code, lang, mode: 'generate_note', asked});
+      setNote(data.explanation);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
     }
   };
 
   if (state === 'idle') {
     return (
       <div className="code-ai">
-        <button type="button" className="code-ai-btn" onClick={explain}>
+        <button type="button" className="code-ai-btn" onClick={() => void init()}>
           ✨ AI 解释这段代码
         </button>
       </div>
     );
   }
   if (state === 'loading') {
-    return <div className="code-ai code-ai-loading">🤖 AI 思考中…</div>;
+    return <div className="code-ai code-ai-loading">🤖 AI 助教思考中…</div>;
   }
   if (state === 'error') {
     return (
       <div className="code-ai">
-        <button type="button" className="code-ai-btn" onClick={explain}>
-          解释失败，点击重试
+        <div className="code-ai-err">{err ?? '出错了'}</div>
+        <button type="button" className="code-ai-btn" onClick={() => void init()}>
+          点击重试
         </button>
       </div>
     );
   }
+
+  const askedLetters = new Set(asked.map(a => a.letter));
+  const remaining = buttons.filter(b => !askedLetters.has(b.letter));
+  const canAskMore = asked.length < MAX_FOLLOWUPS && remaining.length > 0;
+  const noteText = note ? note.replace(/\[复制笔记\]/g, '').trim() : '';
+
   return (
     <div className="code-ai">
       <div className="code-ai-note">
         <div className="code-ai-head">
-          <span>AI 解释{cached ? ' · 已缓存' : ''}</span>
+          <span>AI 助教{cached ? ' · 已缓存' : ''}</span>
           <button type="button" className="code-ai-close" onClick={() => setState('idle')}>
             收起
           </button>
         </div>
         <div className="code-ai-body">{text}</div>
+
+        {buttons.length > 0 && (
+          <div className="code-ai-asks">
+            <div className="code-ai-asks-title">你可能想继续</div>
+            {canAskMore ? (
+              remaining.map(b => (
+                <button
+                  key={b.letter}
+                  type="button"
+                  className="code-ai-ask"
+                  disabled={busy !== null}
+                  onClick={() => void ask(b.letter, b.question)}>
+                  <span className="code-ai-ask-letter">{b.letter}</span>
+                  {b.question}
+                </button>
+              ))
+            ) : (
+              !remaining.length && <div className="code-ai-asks-done">六个方向都已聊过，可以生成结课笔记啦</div>
+            )}
+          </div>
+        )}
+
+        {answers.map((a, i) => (
+          <div key={i} className="code-ai-follow">
+            <div className="code-ai-follow-q">
+              <span className="code-ai-ask-letter">{a.letter}</span>
+              {a.question}
+            </div>
+            <div className="code-ai-follow-a">{a.answer}</div>
+            {(() => {
+              const nextLetter = parseFollowNext(a.answer);
+              const nextBtn = nextLetter ? buttons.find(b => b.letter === nextLetter && !askedLetters.has(b.letter)) : null;
+              return nextBtn ? (
+                <button
+                  type="button"
+                  className="code-ai-next"
+                  disabled={busy !== null}
+                  onClick={() => void ask(nextBtn.letter, nextBtn.question)}>
+                  继续：{nextBtn.question}
+                </button>
+              ) : null;
+            })()}
+          </div>
+        ))}
+
+        {asked.length > 0 && !note && (
+          <div className="code-ai-note-act">
+            <button type="button" className="code-ai-btn" disabled={busy !== null} onClick={() => void genNote()}>
+              {busy === 'note' ? '🤖 生成中…' : '📝 生成结课笔记'}
+            </button>
+          </div>
+        )}
+        {note && (
+          <div className="code-ai-note-box">
+            <div className="code-ai-note-body">{noteText}</div>
+            <button
+              type="button"
+              className="code-ai-btn"
+              onClick={() => {
+                void navigator.clipboard.writeText(noteText);
+              }}>
+              📋 复制笔记
+            </button>
+          </div>
+        )}
+        {err && <div className="code-ai-err">{err}</div>}
       </div>
     </div>
   );
