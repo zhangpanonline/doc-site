@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>服务器配置速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>服务器配置速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0016-服务器配置.html">《服务器配置互动教学课程》</a>使用。来源：官方文档 §19.1（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>参数语法（官方）</h2>
+      <table class="cmp-table">
+        <tr><th>类型</th><th>语法要点</th></tr>
+        <tr><td>布尔</td><td>on/off/true/false/yes/no/1/0 或任何无歧义前缀</td></tr>
+        <tr><td>字符串</td><td>单引号包裹；内部单引号双写</td></tr>
+        <tr><td>数字</td><td>小数值四舍五入；十六进制 0x、八进制 0；无千位分隔符</td></tr>
+        <tr><td>带单位数字</td><td>显式单位须写成字符串（'120 ms'）；内存单位 1024 进制（B/kB/MB/GB/TB）；时间 us/ms/s/min/h/d</td></tr>
+        <tr><td>枚举</td><td>固定值集合</td></tr>
+      </table>
+      <p>参数名<strong>大小写不敏感</strong>（官方原文）。</p>
+    </section>
+
+    <section>
+      <h2>会话级操作</h2>
+      <pre>SHOW work_mem;                          -- 查看当前值
+SET work_mem = '64MB';                   -- 仅当前会话（不影响其他）
+SET work_mem TO DEFAULT;                 -- 恢复默认
+SELECT current_setting('work_mem');      -- 函数等价 SHOW
+SELECT name, setting, unit, context FROM pg_settings;   -- 视图（context=生效级别）</pre>
+      <dl class="term-grid">
+        <dt>生效级别</dt>
+        <dd>context 列：postmaster=重启级（SET 报错）；user=会话可 SET。</dd>
+        <dt>持久化</dt>
+        <dd>ALTER SYSTEM SET / postgresql.conf——SET 只是会话本地。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§19.1）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

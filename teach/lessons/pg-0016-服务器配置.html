@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 服务器配置：参数五种类型语法、1024 进制内存单位、SET/SHOW/pg_settings（非渡一课程内容）">
+  <title>服务器配置 · 互动教学课程（官方文档拓展 pg-16）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>服务器配置</h1>
+      <p class="lesson-sub">来源：官方文档 §19.1 设置参数（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>背出参数的五种值类型与「参数名大小写不敏感」的官方规则</li>
+        <li>解释带单位数字的语法：内存单位 1024 进制、显式单位必须写成字符串</li>
+        <li>用 SET/SHOW/current_setting/pg_settings 做会话级调参，说出「不影响其他会话」</li>
+        <li>识别重启级参数与布尔值的无歧义前缀写法</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/config-setting.html">§19.1</a>。</p>
+
+      <div class="card">
+        <h3>参数名称与值（官方语法）</h3>
+        <ul class="pitfall-list">
+          <li><strong>所有参数名大小写不敏感</strong>；五种值类型：布尔/字符串/整数/浮点/枚举</li>
+          <li><strong>布尔</strong>：on/off/true/false/yes/no/1/0 或<strong>任何无歧义前缀</strong>（官方原文）</li>
+          <li><strong>带单位的数字</strong>：<strong>内存单位乘数是 1024 不是 1000</strong>（B/kB/MB/GB/TB）；时间单位 us/ms/s/min/h/d；显式单位须写成字符串（<code>'120 ms'</code>）</li>
+          <li><strong>数字</strong>：整数参数小数值四舍五入；十六进制 0x 前缀、八进制 0 前缀；<strong>不能用千位分隔符</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>会话级设置（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li><code>SHOW</code> 查看当前值（函数 <code>current_setting</code>）；<code>SET</code> 修改<strong>会话本地</strong>值——<strong>对其他会话没有影响</strong></li>
+          <li>部分参数只有<strong>超级用户/有 SET 特权者</strong>可设（官方原文）</li>
+          <li><code>pg_settings</code> 视图：类似 SHOW ALL、可过滤连接；<code>UPDATE ... SET setting</code> 等效 SET；<code>SET ... TO DEFAULT</code> 恢复默认</li>
+          <li>部分参数需重启——启动后不能被这些命令更改（官方原文）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 官方说参数名的大小写规则是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">必须全大写</button>
+            <button class="quiz-option">必须全小写</button>
+            <button class="quiz-option">大小写不敏感</button>
+            <button class="quiz-option">区分大小写</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：所有参数名都是<strong>大小写不敏感</strong>的。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 参数接受哪五种值类型（官方）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数字、文本、日期、JSON、XML</button>
+            <button class="quiz-option">只有数字和字符串</button>
+            <button class="quiz-option">任意类型</button>
+            <button class="quiz-option">布尔、字符串、整数、浮点数或枚举</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：每个参数都可以接受五种类型之一的值：布尔、字符串、整数、浮点数或枚举。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 内存单位的乘数是（官方原文）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">与磁盘厂商一致</button>
+            <button class="quiz-option">1024，不是 1000</button>
+            <button class="quiz-option">1000，不是 1024</button>
+            <button class="quiz-option">没有规定</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：<strong>内存单位的乘数是 1024，而不是 1000</strong>——'1GB' = 1024³ 字节，面试经典考点。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>SET work_mem = '64MB'</code> 的生效范围是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">仅当前会话本地，对其他会话没有影响（官方原文）</button>
+            <button class="quiz-option">整个集簇永久生效</button>
+            <button class="quiz-option">所有会话立即生效</button>
+            <button class="quiz-option">只对当前连接之后的会话</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：SET 命令允许修改可以在会话本地设置的参数的当前值；它<strong>对其他会话没有影响</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 时间值 <code>'120 ms'</code> 必须写成字符串的原因（官方）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不是必须的</button>
+            <button class="quiz-option">为了更慢</button>
+            <button class="quiz-option">语法规定：带显式单位的值必须写成字符串</button>
+            <button class="quiz-option">为了更安全</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：要使用显式单位，注意值<strong>必须被写成一个字符串（带有引号）</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 官方说部分参数谁才能 SET？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">任何用户都能设全部参数</button>
+            <button class="quiz-option">只有 root</button>
+            <button class="quiz-option">部分参数只有超级用户和被授予 SET 特权者</button>
+            <button class="quiz-option">只能写配置文件</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：许多参数可以通过任何用户设置，但有些只能由超级用户和被授予该参数上 SET 特权的用户设置。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 布尔参数的合法写法是（官方）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只能 1/0</button>
+            <button class="quiz-option">任意字符串</button>
+            <button class="quiz-option">只能 true/false</button>
+            <button class="quiz-option">on/off/true/false/yes/no/1/0 或任何无歧义前缀</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：布尔值可写成 on/off/true/false/yes/no/1/0（大小写不敏感）或这些值的任何无歧义前缀。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 官方说 UPDATE pg_settings SET setting 的效果等同于？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">重启数据库</button>
+            <button class="quiz-option">ALTER SYSTEM</button>
+            <button class="quiz-option">发出 SET 命令（官方原文）</button>
+            <button class="quiz-option">改配置文件</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：在这个视图上使用 UPDATE 并且指定更新 setting 列，其效果等同于发出 SET 命令。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. max_connections 这类参数在运行中 SET 会怎样（官方）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">延迟 5 分钟生效</button>
+            <button class="quiz-option">立即生效</button>
+            <button class="quiz-option">自动回滚</button>
+            <button class="quiz-option">部分参数在服务器启动后不能被更改——SET 报错，需改配置并重启</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：部分参数在服务器启动后不能被更改，并且因此不能被这些命令设置——重启级参数的典型。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，服务器配置就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核一：会话里 SET 的临时调参怎么恢复默认？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">无法恢复</button>
+            <button class="quiz-option">SET 参数 TO DEFAULT（官方）或结束会话</button>
+            <button class="quiz-option">只能重启</button>
+            <button class="quiz-option">改配置文件</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文给出了 SET configuration_parameter TO DEFAULT 的写法；会话级设置随连接结束自然消失。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核二：调 shared_buffers 写 <code>'2GB'</code> 与写 <code>2GB</code> 的区别？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">后者更快</button>
+            <button class="quiz-option">没有区别</button>
+            <button class="quiz-option">带显式单位必须写成字符串（官方）——不带引号会按默认单位解释或报错</button>
+            <button class="quiz-option">前者会四舍五入</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：显式指定单位时值必须写成一个字符串（带引号）；不带单位的裸数字按该设置的默认单位解释。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核三：临时给当前查询加大 work_mem 又不影响其他连接，正确姿势是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">ALTER SYSTEM</button>
+            <button class="quiz-option">重启数据库</button>
+            <button class="quiz-option">本会话 SET work_mem = '256MB'（会话本地，官方语义）</button>
+            <button class="quiz-option">改 postgresql.conf 后 reload</button>
+          </div>
+          <div class="quiz-explain" hidden>SET 只影响当前会话——「临时调大、用完 TO DEFAULT」的官方姿势；要永久生效才改配置文件/ALTER SYSTEM。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核四：排查「参数改了没生效」，按官方知识先检查什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">忽略继续</button>
+            <button class="quiz-option">直接重启</button>
+            <button class="quiz-option">参数是否重启级 + 当前值（SHOW/pg_settings 的 context 列）</button>
+            <button class="quiz-option">卸载重装</button>
+          </div>
+          <div class="quiz-explain" hidden>pg_settings 的 context 列标注参数生效级别（postmaster=重启、user=会话可 SET 等）——「改了没生效」先查这里。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对——官方文档拓展 16 节全部学完，回到<a href="/common/database/">数据库首页</a>回顾完整路径。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0016-服务器配置',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的调参脚本：<code>SET shared_buffers = '2GB'</code> 想给全库加内存。审查：按官方语义，哪里错了？`,
+              source: '来源：postgres.cn 官方文档 §19.1 设置参数（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `两处错：① shared_buffers 是<strong>重启级参数</strong>——官方原文「部分参数在服务器启动后不能被更改，因此不能被这些命令设置」；② 即便能 SET，官方语义也只是<strong>会话本地</strong>——「对其他会话没有影响」，给全库加内存根本做不到。正确：改 postgresql.conf（或 ALTER SYSTEM）+ 重启/按需 reload。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方对带单位的数字参数给了哪些语法规则？内存单位的进制是多少？`,
+              source: '来源：postgres.cn 官方文档 §19.1.1 参数名称和值（官方翻译·一手）· 检索 2026-09-11 · 层级：一手',
+              breakdown: `① 描述内存/时间的参数有<strong>隐含单位</strong>（裸数字按默认单位，查 pg_settings.unit）；② 显式单位必须<strong>写成字符串</strong>（'120 ms'），单位名大小写敏感；③ <strong>内存单位乘数是 1024 不是 1000</strong>（B/kB/MB/GB/TB）；④ 时间单位 us/ms/s/min/h/d。面试最爱考 1024 这条——'1GB' 是 1073741824 字节。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的「批量调参」脚本用 <code>UPDATE pg_settings SET setting = ...</code> 循环改参数。审查：这个写法的官方语义是什么？有没有风险？`,
+              source: '来源：postgres.cn 官方文档 §19.1.3 通过 SQL 影响参数（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `官方原文：UPDATE pg_settings 的 setting 列<strong>等同于发出 SET 命令</strong>——所以改的仍是<strong>会话本地</strong>值，不是持久化！风险：AI 以为改完就永久生效，其实连接一断全部还原；且重启级参数根本改不动（报错或无效）。持久化要用 <code>ALTER SYSTEM SET</code> 或改 postgresql.conf。审查规则：见 UPDATE pg_settings 先问「这是不是想持久化」。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：一个查询突然变慢，想临时给这个查询加 work_mem 排查，怎么做得「最小影响面」？`,
+              source: '来源：postgres.cn 官方文档 §19.1.3 通过 SQL 影响参数（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `官方语义的完美应用：<strong>会话级 SET</strong>——排查连接里 <code>SET work_mem = '256MB';</code> 只影响本会话（官方：对其他会话没有影响），跑完 <code>SET work_mem TO DEFAULT;</code> 恢复。全程不碰全局配置、不 reload、不影响生产其他连接。这也是调参的基本功：先会话级验证效果，再决定要不要全局。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测配置参数（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '① SHOW work_mem 看默认值；② SET work_mem = 64MB 后 SHOW 验证变化；③ 新开一个连接确认其仍是默认值（会话隔离）；④ 查 pg_settings 的 context 列，找出一个 postmaster（重启级）参数；⑤ 尝试 SET 该重启级参数观察报错。',
+                accept: ['SET 会话隔离实测（另一连接不受影响）', 'pg_settings.context 区分生效级别', '重启级参数 SET 报错信息能解释'],
+              },
+              source: '任务基于官方文档 §19.1 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>SHOW work_mem; SET work_mem = '64MB'; SHOW work_mem;</code>；另一连接 SHOW 验证隔离；<code>SELECT name, context, unit FROM pg_settings WHERE name IN ('work_mem','shared_buffers');</code>。坑：SET 重启级参数报「parameter cannot be changed now」类错误是<strong>预期行为</strong>；current_setting('app.tenant_id') 类自定义参数（pg-13 课用过）未 SET 时查询会报错，需要第二个参数给默认值。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/config-setting.html">postgres.cn · 19.1 设置参数</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/runtime-config-resource.html">19.4 资源消耗</a>（shared_buffers/work_mem）· <a href="http://www.postgres.cn/docs/current/view-pg-settings.html">pg_settings 视图</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/服务器配置速查表.html">服务器配置速查表</a>——语法与生效级别一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/PostgreSQL安装/">01.PostgreSQL安装</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

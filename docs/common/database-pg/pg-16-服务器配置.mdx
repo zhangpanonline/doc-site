@@ -1,0 +1,46 @@
+---
+sidebar_position: 16
+title: 'pg-16 · 服务器配置'
+description: 'PostgreSQL 官方文档拓展 §19.1：参数五种类型与语法、带单位数字 1024 进制、SET/SHOW/pg_settings——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 服务器配置" desc="postgresql.conf 的官方语法：参数类型、单位进制、会话级 SET——调参的第一课。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §19.1「设置参数」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/config-setting.html) / [官方英文版](https://www.postgresql.org/docs/current/config-setting.html)）。
+
+:::
+
+## 参数名称与值（官方语法）
+
+官方原文：**所有参数名都是大小写不敏感的**。每个参数接受**五种类型之一**的值：布尔、字符串、整数、浮点数或枚举。
+
+| 类型 | 官方语法要点 |
+|---|---|
+| **布尔** | `on/off/true/false/yes/no/1/0`（大小写不敏感），或这些值的**任何无歧义前缀** |
+| **字符串** | 通常单引号包裹；值内单引号双写；简单数字/标识符可省略引号 |
+| **数字** | 惯用格式；整数参数的小数值**四舍五入**；整数还接受十六进制（`0x` 开头）与八进制（`0` 开头）；**不能用千位分隔符** |
+| **带单位的数字** | 描述内存/时间的参数有隐含单位——**内存单位乘数是 1024 不是 1000**（官方原文）：`B/kB/MB/GB/TB`；时间单位 `us/ms/s/min/h/d`。显式单位必须写成字符串：`'120 ms'` |
+| **枚举** | 固定值集合 |
+
+内存参数写 `'8GB'` 是 8×1024³，不是 8×10⁹——面试经典考点。
+
+## 会话级设置（官方）
+
+官方原文：客户端连接后，PG 提供两个额外 SQL 命令**影响会话本地**的配置：
+
+- **SHOW**：查看任何参数的当前值——函数等价 `current_setting(name)`
+- **SET**：修改**会话本地**可设置参数的当前值——**对其他会话没有影响**；部分参数只有超级用户/有 SET 特权者可设——函数等价 `set_config(name, value, is_local)`
+- **pg_settings 视图**：查询类似 SHOW ALL 且更灵活（可过滤/连接）；`UPDATE pg_settings SET setting = ...` **等效于 SET**；`SET ... TO DEFAULT` 恢复默认
+- 部分参数需重启（postmaster 级）——启动后不能被这些命令更改（官方原文）
+
+## 官方原文
+
+- [postgres.cn：19.1 设置参数](http://www.postgres.cn/docs/current/config-setting.html)
+- [官方英文版：19.1 Setting Parameters](https://www.postgresql.org/docs/current/config-setting.html)
+
+配套学习：<a href="/teach/lessons/pg-0016-服务器配置.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/服务器配置速查表.html">📋 服务器配置速查表（可打印）</a>
