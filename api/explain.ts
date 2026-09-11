@@ -15,7 +15,8 @@ async function resolveModel(key: string): Promise<string | null> {
       signal: AbortSignal.timeout(10_000),
     });
     if (!r.ok) {
-      console.error('[explain] models list http', r.status);
+      const bodySnippet = (await r.text().catch(() => '')).slice(0, 200);
+      console.error('[explain] models list http', r.status, bodySnippet);
       return null;
     }
     const data = (await r.json()) as {models?: {name?: string}[]};

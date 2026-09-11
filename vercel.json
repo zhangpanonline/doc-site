@@ -4,6 +4,11 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "build",
   "installCommand": "pnpm install --ignore-scripts",
+  "functions": {
+    "api/explain.ts": {
+      "regions": ["iad1"]
+    }
+  },
   "routes": [
     {
       "src": "/(.*)",
