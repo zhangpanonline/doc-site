@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RETURNING 与 UPSERT 速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>RETURNING 与 UPSERT 速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0002-RETURNING与UPSERT.html">《RETURNING 与 UPSERT 互动教学课程》</a>使用。来源：官方文档 §6.4 + INSERT 命令参考（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>RETURNING 三场景</h2>
+      <table class="cmp-table">
+        <tr><th>场景</th><th>写法</th><th>返回</th></tr>
+        <tr><td>拿自增 id</td><td><code>INSERT INTO users(...) VALUES (...) RETURNING id;</code></td><td>新分配行的 id</td></tr>
+        <tr><td>拿更新后新值</td><td><code>UPDATE t SET x=x+1 WHERE ... RETURNING *;</code></td><td>修改后的新内容</td></tr>
+        <tr><td>批量插入拿 id</td><td><code>INSERT INTO t SELECT ... RETURNING id;</code></td><td>全部新行 id</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>UPSERT 语法骨架</h2>
+      <pre>INSERT INTO 表 (列...) VALUES (...)
+ON CONFLICT (冲突列 | ON CONSTRAINT 约束名 | 缺省)
+DO NOTHING | DO UPDATE SET 列 = EXCLUDED.列 [, ...]
+[WHERE 条件]
+[RETURNING ...]</pre>
+    </section>
+
+    <section>
+      <h2>术语速记</h2>
+      <dl class="term-grid">
+        <dt>RETURNING</dt>
+        <dd>改完直接拿回行，避免额外查询；内容规则同 SELECT 输出列表，<code>RETURNING *</code> 简写。</dd>
+        <dt>conflict_target</dt>
+        <dd>冲突检测目标：列/表达式列表、ON CONSTRAINT 约束名、部分索引 WHERE 谓词、或完全缺省（任意唯一冲突）。</dd>
+        <dt>DO NOTHING</dt>
+        <dd>冲突跳过、不报错——幂等批量导入。</dd>
+        <dt>DO UPDATE</dt>
+        <dd>冲突更新；SET 支持表达式/DEFAULT/子查询/ROW；可加 WHERE 精细控制。</dd>
+        <dt>EXCLUDED</dt>
+        <dd>引用「本应插入的那行」的列值——取新来的值，区别于表中现有值。</dd>
+        <dt>TOCTOU 竞态</dt>
+        <dd>「先查后写」在并发下的时间窗口问题——UPSERT 原子化解。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§6.4 + INSERT 命令参考）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

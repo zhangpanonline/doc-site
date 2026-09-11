@@ -1,0 +1,62 @@
+---
+sidebar_position: 2
+title: 'pg-02 · RETURNING 与 UPSERT'
+description: 'PostgreSQL 官方文档拓展 §6：RETURNING 子句（拿回修改后的行）与 ON CONFLICT UPSERT（幂等写入）——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ RETURNING 与 UPSERT" desc="一条语句完成「改 + 拿回结果」与「有则更新、无则插入」——PG 数据操纵的两个杀手锏。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §6.4「从修改的行中返回数据」与 INSERT 命令参考的 ON CONFLICT 子句（[postgres.cn 中文版](http://www.postgres.cn/docs/current/dml-returning.html) / [官方英文版](https://www.postgresql.org/docs/current/dml-returning.html)）。
+
+:::
+
+## RETURNING：改完直接拿回结果
+
+普通 INSERT/UPDATE/DELETE 只返回受影响行数；**RETURNING 子句**让语句把修改后的行直接返回，官方给出的价值：
+
+> 使用 RETURNING 可以**避免执行额外的数据库查询**来收集数据，尤其在难以可靠识别被修改行时更有价值。
+
+三个典型场景：
+
+| 场景 | 写法 | 返回 |
+|---|---|---|
+| 拿回自增主键 | `INSERT INTO users(firstname, lastname) VALUES ('Joe','Cool') RETURNING id;` | 新分配行的 id（官方原例，serial 列计算默认值时最方便） |
+| 拿回更新后的新值 | `UPDATE t SET x = x + 1 WHERE ... RETURNING *;` | **修改后**行的新内容（官方明确：UPDATE 中默认返回新内容） |
+| 批量插入拿全部 id | `INSERT INTO t SELECT ... RETURNING id;` | INSERT...SELECT 也支持 |
+
+`RETURNING` 的内容与 SELECT 输出列表规则相同：列名、值表达式、`RETURNING *` 简写都可用。
+
+## UPSERT：有则更新、无则插入
+
+INSERT 的 **ON CONFLICT** 子句在「违反唯一约束/唯一索引」时接管行为：
+
+```sql
+INSERT INTO users(id, name, email)
+VALUES (1, '张三', 'z@x.com')
+ON CONFLICT (email)          -- conflict_target：指定冲突检测目标
+DO UPDATE SET name = EXCLUDED.name, updated_at = now();
+```
+
+- **conflict_target** 四种指定方式：① 列（或表达式）列表；② `ON CONSTRAINT 约束名`；③ 部分唯一索引加 `WHERE 谓词`；④ 缺省（任意唯一冲突都触发）
+- **DO NOTHING**：冲突就跳过，什么都不改——适合幂等批量导入
+- **DO UPDATE SET**：冲突就更新。`SET` 支持表达式、`DEFAULT`、子查询、`ROW` 批量赋值；**`EXCLUDED`** 引用「本应插入的那行」的值
+- 精细控制：`DO UPDATE ... WHERE 条件`——只在满足条件时才更新（如"仅当新值更大才覆盖"）
+
+:::tip 与渡一课程的关系
+
+渡一《数据库》的 DML 课讲了 INSERT/UPDATE/DELETE 基础；本节是其**进阶**——RETURNING 与 UPSERT 是官方文档独有、且面试高频的内容。
+
+:::
+
+## 官方原文
+
+- [postgres.cn：6.4 从修改的行中返回数据](http://www.postgres.cn/docs/current/dml-returning.html)
+- [postgres.cn：INSERT 命令参考（ON CONFLICT）](http://www.postgres.cn/docs/current/sql-insert.html)
+- [官方英文版：6.4 Returning Data from Modified Rows](https://www.postgresql.org/docs/current/dml-returning.html)
+
+配套学习：<a href="/teach/lessons/pg-0002-RETURNING与UPSERT.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/RETURNING与UPSERT速查表.html">📋 RETURNING 与 UPSERT 速查表（可打印）</a>

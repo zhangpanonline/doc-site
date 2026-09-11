@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · RETURNING 与 UPSERT：拿回修改后的行、ON CONFLICT 幂等写入（非渡一课程内容）">
+  <title>RETURNING 与 UPSERT · 互动教学课程（官方文档拓展 pg-02）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>RETURNING 与 UPSERT</h1>
+      <p class="lesson-sub">来源：官方文档 §6.4 + INSERT 命令参考（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 RETURNING 的动机（官方原文：避免额外查询）与三大典型场景</li>
+        <li>写对 <code>ON CONFLICT ... DO NOTHING / DO UPDATE</code>，说清 conflict_target 的四种指定方式</li>
+        <li>解释 <code>EXCLUDED</code> 的语义，用 <code>WHERE</code> 子句做精细化的条件更新</li>
+        <li>识别「先 SELECT 再 INSERT/UPDATE」的竞态写法，并改写为 UPSERT</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/dml-returning.html">§6.4</a> 与 <a href="http://www.postgres.cn/docs/current/sql-insert.html">INSERT 命令参考</a>。</p>
+
+      <div class="card">
+        <h3>RETURNING：改完直接拿回行</h3>
+        <ul class="pitfall-list">
+          <li>官方动机：<strong>避免执行额外的数据库查询来收集数据</strong>，难以可靠识别被修改行时更有价值</li>
+          <li><strong>INSERT 返回默认数据</strong>：serial/identity 新分配的 id 最有用——<code>INSERT ... RETURNING id</code></li>
+          <li><strong>UPDATE 返回修改后的新内容</strong>（官方明确默认是新内容）；<code>RETURNING *</code> 简写按顺序取所有列</li>
+          <li>RETURNING 的写法与 SELECT 输出列表规则相同，<code>INSERT ... SELECT</code> 同样支持</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>UPSERT：ON CONFLICT</h3>
+        <ul class="pitfall-list">
+          <li><strong>DO NOTHING</strong>：冲突跳过——幂等批量导入</li>
+          <li><strong>DO UPDATE SET</strong>：冲突更新；<code>EXCLUDED.列名</code> 引用「本应插入的那行」的值</li>
+          <li><strong>conflict_target</strong>：列/表达式列表 · <code>ON CONSTRAINT 约束名</code> · 部分唯一索引 <code>WHERE 谓词</code> · 缺省（任意唯一冲突）</li>
+          <li><strong>WHERE 条件</strong>：<code>DO UPDATE ... WHERE 新值更大</code> 只更新满足条件的冲突行</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 官方文档说 RETURNING 的主要价值是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">避免执行额外的数据库查询来收集数据</button>
+            <button class="quiz-option">自动为表创建索引</button>
+            <button class="quiz-option">让 INSERT 语句执行得更快</button>
+            <button class="quiz-option">替代事务提交</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：使用 RETURNING 可以<strong>避免执行额外的数据库查询来收集数据</strong>，尤其在难以可靠识别被修改行时更有价值。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. <code>INSERT INTO users(...) VALUES (...) RETURNING id;</code> 中，id 是 serial 列时返回什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">该列的定义 DDL</button>
+            <button class="quiz-option">新分配行的 id（计算默认值的结果）</button>
+            <button class="quiz-option">客户端提供的 id 原值</button>
+            <button class="quiz-option">插入语句影响的行数</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原例：serial 列提供唯一标识符时，RETURNING 返回<strong>分配给新行的 ID</strong>——这正是「依赖计算的默认值」的典型场景。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. UPDATE 语句中 RETURNING 默认返回什么内容？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">新旧值各一行</button>
+            <button class="quiz-option">修改后行的新内容</button>
+            <button class="quiz-option">修改前的旧值</button>
+            <button class="quiz-option">只返回主键</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：在一个 UPDATE 中，提供给 RETURNING 的默认数据是<strong>修改后行的新内容</strong>。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. <code>ON CONFLICT DO NOTHING</code> 的行为是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">冲突时整条语句报错回滚</button>
+            <button class="quiz-option">冲突时把新行追加为重复行</button>
+            <button class="quiz-option">冲突时自动删除旧行再插入</button>
+            <button class="quiz-option">冲突的行被跳过，其他行照常插入</button>
+          </div>
+          <div class="quiz-explain" hidden">DO NOTHING = 什么都不做地<strong>跳过</strong>冲突行——幂等批量导入的标准姿势，不会报错也不会覆盖。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. <code>DO UPDATE SET name = EXCLUDED.name</code> 中，EXCLUDED 指什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">被排除在事务外的行</button>
+            <button class="quiz-option">本应插入的那一行（INSERT 提供的值）</button>
+            <button class="quiz-option">已删除的旧行</button>
+            <button class="quiz-option">表里所有冲突行</button>
+          </div>
+          <div class="quiz-explain" hidden"><code>EXCLUDED</code> 是 UPSERT 专用别名：引用<strong>「本应插入的那行」</strong>的列值——SET 里用它取「新来的值」，区别于表内现有行的值。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. conflict_target 的指定方式不包括下列哪种？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">列（或表达式）列表</button>
+            <button class="quiz-option">部分唯一索引加 WHERE 谓词</button>
+            <button class="quiz-option">ON CONSTRAINT 约束名</button>
+            <button class="quiz-option">指定按任意行数据内容冲突</button>
+          </div>
+          <div class="quiz-explain" hidden">官方语法三种：列/表达式列表、<code>ON CONSTRAINT 约束名</code>、部分索引谓词——外加<strong>完全缺省</strong>（任意唯一冲突都触发）。「按行数据内容」不是合法指定。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. AI 写「先 SELECT 查是否存在，再决定 INSERT 还是 UPDATE」。在并发场景这有什么问题？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有任何问题，只是代码长一点</button>
+            <button class="quiz-option">SELECT 会让表锁死</button>
+            <button class="quiz-option">查与写之间有竞态窗口：并发下两个请求都查到不存在，一个插入后另一个直接报唯一冲突</button>
+            <button class="quiz-option">INSERT 永远失败</button>
+          </div>
+          <div class="quiz-explain" hidden">SELECT 与 INSERT 之间其他事务可以插入同一行——这就是 <strong>TOCTOU 竞态</strong>。UPSERT 把「检测冲突 + 决定动作」交给数据库原子完成。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. <code>DO UPDATE SET score = EXCLUDED.score WHERE EXCLUDED.score &gt; users.score</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把所有冲突行都删除</button>
+            <button class="quiz-option">只要冲突就无条件覆盖</button>
+            <button class="quiz-option">语法错误，WHERE 不能用于 DO UPDATE</button>
+            <button class="quiz-option">仅当新分数更大时才更新（条件化覆盖）</button>
+          </div>
+          <div class="quiz-explain" hidden">DO UPDATE 支持 WHERE：<strong>只更新满足条件的冲突行</strong>——「只允许分数上涨」这类业务规则可以原子地落在一条 SQL 里。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 批量导入 CSV 时想「重复行静默跳过、并统计实际插入数」，最佳组合是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">禁用唯一约束再插入</button>
+            <button class="quiz-option">先 DELETE 全表再插入</button>
+            <button class="quiz-option">每条数据单独开事务重试</button>
+            <button class="quiz-option">ON CONFLICT DO NOTHING（RETURNING 可选统计插入数）</button>
+          </div>
+          <div class="quiz-explain" hidden">DO NOTHING 是幂等导入标准姿势；配合 <code>RETURNING</code> 可拿到实际插入的行做统计（跳过行不返回）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，RETURNING 与 UPSERT 就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核一：用户表以 email 唯一，需要「存在则更新昵称、不存在则插入」，正确的单条语句是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">INSERT INTO users(...) VALUES (...);（失败就让用户重试）</button>
+            <button class="quiz-option">DELETE FROM users WHERE email=...; INSERT INTO users(...) VALUES (...);</button>
+            <button class="quiz-option">INSERT INTO users(...) VALUES (...) ON CONFLICT (email) DO UPDATE SET nickname = EXCLUDED.nickname;</button>
+            <button class="quiz-option">UPDATE users SET nickname=... WHERE email=...（不存在时插入由应用再发一条）</button>
+          </div>
+          <div class="quiz-explain" hidden">UPSERT 一条语句原子完成：冲突检测走唯一约束（email），冲突时用 EXCLUDED 的新值更新。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核二：<code>INSERT ... ON CONFLICT DO UPDATE ... RETURNING id</code>，冲突被更新的行会返回吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">语句直接报错</button>
+            <button class="quiz-option">不会，RETURNING 只返回插入的行</button>
+            <button class="quiz-option">会，插入与更新的行都按 RETURNING 返回</button>
+            <button class="quiz-option">只返回冲突行</button>
+          </div>
+          <div class="quiz-explain" hidden">RETURNING 对整条语句生效：插入的行与 DO UPDATE 更新的行<strong>都会返回</strong>——拿回 id 用于后续逻辑时插入/更新路径统一。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三：积分系统要「只允许分数上涨」的幂等上报，为什么 WHERE 条件必须写在 DO UPDATE 里而不是应用层判断？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">冲突检测与条件判断必须原子完成，应用层判断仍有竞态窗口</button>
+            <button class="quiz-option">应用层判断会让 SQL 变慢</button>
+            <button class="quiz-option">写在哪都一样，只是风格问题</button>
+            <button class="quiz-option">WHERE 只能写在 DO UPDATE 里是语法规定</button>
+          </div>
+          <div class="quiz-explain" hidden">「检测冲突 + 比较新旧值 + 决定是否更新」必须在<strong>同一条语句的锁保护下</strong>完成；应用层先读再写，两个并发上报仍可能同时通过判断。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核四：表只有主键唯一约束，INSERT 省略 conflict_target 直接写 ON CONFLICT DO NOTHING，合法吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">合法但只能写 DO UPDATE</button>
+            <button class="quiz-option">不合法——必须指定列</button>
+            <button class="quiz-option">合法——缺省时任意唯一约束/索引冲突都触发</button>
+            <button class="quiz-option">会忽略所有冲突</button>
+          </div>
+          <div class="quiz-explain" hidden">conflict_target 可以<strong>完全缺省</strong>：此时任意唯一约束或唯一索引冲突都触发冲突动作——多约束场景的便捷写法。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了 RETURNING 与 UPSERT——继续学习 <a href="/common/database-pg/pg-03-子查询与集合运算">pg-03 · 子查询与集合运算</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0002-RETURNING与UPSERT',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `AI 写的注册逻辑：先 <code>SELECT id FROM users WHERE email = ?</code>，查不到再 <code>INSERT</code>。上线后偶发「duplicate key value violates unique constraint」报错。为什么？正确写法是什么？`,
+              source: '来源：postgres.cn 官方文档 §6.4 / INSERT 命令参考 ON CONFLICT（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `SELECT 与 INSERT 之间其他请求可能已插入同一 email——<strong>TOCTOU 竞态</strong>。正确：<code>INSERT ... ON CONFLICT (email) DO NOTHING/DO UPDATE ... RETURNING id</code>——冲突检测与动作由数据库<strong>原子</strong>完成，还能一次拿回 id。面试官听到「先查后插」就会追问并发，这是送分题。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `RETURNING 子句是干什么的？官方文档给出的动机与典型场景分别是什么？`,
+              source: '来源：postgres.cn 官方文档 §6.4（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `让 INSERT/UPDATE/DELETE 直接<strong>返回修改后的行</strong>，官方动机原文：<strong>「避免执行额外的数据库查询来收集数据」</strong>。典型场景：① INSERT RETURNING id 拿 serial 新分配的 id（官方原例）；② UPDATE RETURNING * 拿<strong>修改后的新内容</strong>；③ INSERT...SELECT RETURNING 批量插入拿全部 id。写法规则与 SELECT 输出列表相同。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的批量导入用了 <code>ON CONFLICT DO UPDATE</code>，但<strong>没写 conflict_target</strong>，表上有两个唯一约束。审查：这会有什么问题？DO NOTHING 与 DO UPDATE 这里该选哪个？`,
+              source: '来源：postgres.cn 官方文档 INSERT 命令参考 ON CONFLICT（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `缺省 conflict_target = <strong>任意唯一约束冲突都触发</strong>——导入场景通常只想按「业务键」（如订单号）判重，此时撞上别的唯一约束（如 uuid 列）也会被误判为重复并覆盖/跳过，行为不可控。修复：显式 <code>ON CONFLICT (订单号)</code>；语义上「重复就整行忽略」用 <strong>DO NOTHING</strong>，「重复要合并更新」才用 DO UPDATE。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `团队要做一个「幂等上报」接口：客户端可能重复提交同一事件。候选方案：① 应用层先查再写；② ON CONFLICT DO NOTHING；③ ON CONFLICT DO UPDATE。你选哪个？依据是什么？`,
+              source: '来源：postgres.cn 官方文档 INSERT 命令参考 ON CONFLICT（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `① 有竞态，排除；②/③ 都原子。选择依据：<strong>重复提交是否携带新数据</strong>——完全幂等（重复内容相同）选 DO NOTHING（跳过即可，无写放大）；带新数据（如状态流转、分数更新）选 DO UPDATE，必要时加 <code>WHERE</code> 条件（如只允许前进）。加分点：提到 RETURNING 统一拿结果、以及 conflict_target 要显式指定业务键。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测 UPSERT 全流程（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '建表（email 唯一 + serial id）→ 验证：① INSERT RETURNING id 拿到新 id；② 同 email 再插入报唯一冲突；③ ON CONFLICT (email) DO NOTHING 跳过且不报错；④ DO UPDATE SET ... RETURNING id 更新并返回；⑤ UPDATE ... RETURNING * 返回修改后的新值。',
+                accept: ['五个行为全部实测通过', '能解释 EXCLUDED 取的是「新来的值」', '能说清 DO NOTHING 与 DO UPDATE 的选择依据'],
+              },
+              source: '任务基于官方文档 §6.4 + INSERT 命令参考 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>CREATE TABLE u(id serial PRIMARY KEY, email text UNIQUE, name text);</code> 依次执行五个验证；DO UPDATE 里 <code>SET name = EXCLUDED.name</code> 再 <code>RETURNING id</code>。坑：conflict_target 写 (email) 才能按 email 判重；<code>EXCLUDED</code> 只在 ON CONFLICT 语境有效，别处引用会报错。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/dml-returning.html">postgres.cn · 6.4 从修改的行中返回数据</a> · <a href="http://www.postgres.cn/docs/current/sql-insert.html">INSERT 命令参考</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/dml-update.html">UPDATE</a> / <a href="http://www.postgres.cn/docs/current/dml-delete.html">DELETE</a> 的 RETURNING 细节</li>
+        <li><strong>打印参考</strong>：<a href="../reference/RETURNING与UPSERT速查表.html">RETURNING 与 UPSERT 速查表</a>——语法一次装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/DML/">04.DML</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>
