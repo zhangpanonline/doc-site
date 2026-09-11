@@ -41,6 +41,9 @@
   --ifm-link-color: var(--course-accent-ink);
   --ifm-link-hover-color: var(--course-accent);
   --ifm-code-background: var(--course-code-bg);
+  /* 行号槽背景：与 prism 主题内联注入的代码块底色（paperInkTheme #f8f5ed）对齐，
+     否则槽位会显示 Infima 默认色，左侧出现一条加深色块 */
+  --ifm-pre-background: #f8f5ed;
   --ifm-navbar-background-color: var(--course-card);
   --ifm-navbar-link-color: var(--course-fg);
   --ifm-navbar-link-hover-color: var(--course-accent);
@@ -108,6 +111,8 @@
   --ifm-link-color: var(--course-accent-ink);
   --ifm-link-hover-color: var(--course-accent);
   --ifm-code-background: var(--course-code-bg);
+  /* 行号槽背景：与 prism 深色代码块底色（paperInkTheme #211d14）对齐 */
+  --ifm-pre-background: #211d14;
   --ifm-navbar-background-color: var(--course-card);
   --ifm-navbar-link-color: var(--course-fg);
   --ifm-navbar-link-hover-color: var(--course-accent);

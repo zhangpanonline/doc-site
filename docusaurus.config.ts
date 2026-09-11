@@ -56,6 +56,11 @@ const config: Config = {
     hooks: {
       onBrokenMarkdownLinks: 'warn',
     },
+    // future.v4 会把 mdx1Compat.admonitions 默认关掉（v4 移除了 ::: 语法），
+    // 站点文档大量使用 :::note/:::tip——显式开启保留 MDX1 admonition 语法
+    mdx1Compat: {
+      admonitions: true,
+    },
   },
   themes: ['@docusaurus/theme-mermaid', '@easyops-cn/docusaurus-search-local'],
   i18n: {
