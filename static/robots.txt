@@ -75,6 +75,23 @@ Disallow: /
 User-agent: YouBot
 Disallow: /
 
+# ---------- 未提交站长平台的中文搜索蜘蛛 ----------
+# 360/搜狗/神马需 ICP 备案，2026-09-11 确认不收录，显式拒绝其蜘蛛。
+User-agent: Sogou web spider
+Disallow: /
+
+User-agent: Sogou inst spider
+Disallow: /
+
+User-agent: 360Spider
+Disallow: /
+
+User-agent: YisouSpider
+Disallow: /
+
+User-agent: Shenma
+Disallow: /
+
 # ---------- 通用脚本框架 / 营销抓取器 ----------
 User-agent: Scrapy
 Disallow: /
