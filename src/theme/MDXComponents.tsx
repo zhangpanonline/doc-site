@@ -66,10 +66,12 @@ function AiExplain({code, lang}: {code: string; lang: string}) {
         .trim();
       const heading = document.querySelector('article h1')?.textContent?.trim();
       const context = [crumb, heading].filter(Boolean).join(' · ');
+      // 页面完整地址（含锚点）：锚点 slug 即小节名，AI 据此刻画教学主题
+      const url = window.location.href;
       const res = await fetch('/api/explain', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({code, lang, context}),
+        body: JSON.stringify({code, lang, context, url}),
       });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
