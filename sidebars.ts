@@ -20,4 +20,24 @@ for (const c of courses) {
 // 岗位地图：不属于六个学习单元的板块，保持原平铺列表
 sidebars.jobs = ['jobs/agents', 'jobs/backend', 'jobs/devops', 'jobs/ai-coding', 'jobs/fullstack'];
 
+// 数据库官方文档拓展（非渡一课程）：追加到公共「数据库」侧边栏，分组标题标注来源
+sidebars.common.push(
+  {
+    type: 'html',
+    value: '<div class="menu-course-title">🔖 数据库 · PostgreSQL 官方文档拓展</div>',
+    defaultStyle: false,
+  },
+  'common/database-pg/pg-01-架构基础',
+  'common/database-pg/pg-02-RETURNING与UPSERT',
+  'common/database-pg/pg-03-子查询与集合运算',
+  'common/database-pg/pg-04-CTE与递归查询',
+  'common/database-pg/pg-05-数据类型-基础',
+  'common/database-pg/pg-06-数据类型-数组与jsonb',
+  'common/database-pg/pg-07-函数与窗口函数',
+  'common/database-pg/pg-08-索引进阶',
+  'common/database-pg/pg-09-全文检索',
+  'common/database-pg/pg-10-显式锁与死锁',
+  'common/database-pg/pg-11-EXPLAIN进阶',
+);
+
 export default sidebars;
