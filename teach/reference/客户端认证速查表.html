@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>客户端认证速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>客户端认证速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0012-客户端认证.html">《客户端认证互动教学课程》</a>使用。来源：官方文档 §20.1（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>pg_hba 条目</h2>
+      <pre># TYPE  DATABASE  USER  ADDRESS        METHOD
+host    all       all   127.0.0.1/32   trust
+host    all       all   10.0.0.0/24    scram-sha-256</pre>
+      <table class="cmp-table">
+        <tr><th>要点</th><th>说明</th></tr>
+        <tr><td>匹配</td><td>从上到下逐条匹配，命中第一条即生效</td></tr>
+        <tr><td>重载</td><td>pg_ctl reload / pg_reload_conf() / kill -HUP（启动与 SIGHUP 时读取）</td></tr>
+        <tr><td>trust</td><td>免认证——仅限本机回环开发</td></tr>
+        <tr><td>scram-sha-256</td><td>现代密码认证默认</td></tr>
+        <tr><td>peer</td><td>本机系统用户名与库用户名同名</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>排错速记</h2>
+      <dl class="term-grid">
+        <dt>连接被拒/超时</dt>
+        <dd>网络、端口、listen_addresses。</dd>
+        <dt>no pg_hba.conf entry</dt>
+        <dd>没有匹配的 hba 条目——加覆盖该来源地址的 host 条目。</dd>
+        <dt>password authentication failed</dt>
+        <dd>hba 已放行，密码/角色问题。</dd>
+        <dt>改完没生效</dt>
+        <dd>忘 reload（Windows 例外：立即生效）。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§20.1）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

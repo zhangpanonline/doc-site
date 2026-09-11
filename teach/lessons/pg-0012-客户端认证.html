@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 客户端认证：pg_hba.conf 主机认证、认证方法、热重载（非渡一课程内容）">
+  <title>客户端认证 · 互动教学课程（官方文档拓展 pg-12）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>客户端认证</h1>
+      <p class="lesson-sub">来源：官方文档 §20.1 pg_hba.conf（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 pg_hba.conf 的定位（官方：基于主机的身份验证、数据目录中）与读取时机</li>
+        <li>读懂一条 host 条目的五个字段，说出「从上到下匹配、命中即生效」的规则</li>
+        <li>对比常见认证方法（trust/scram-sha-256/peer），说出生产禁 trust 的官方依据</li>
+        <li>掌握改配置后的热重载三姿势（pg_ctl reload / pg_reload_conf() / kill -HUP）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/auth-pg-hba-conf.html">§20.1</a>。</p>
+
+      <div class="card">
+        <h3>pg_hba.conf（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li>客户端身份验证由 <strong>pg_hba.conf</strong> 控制，存储在<strong>集簇数据目录</strong>；<strong>HBA = 基于主机的身份验证</strong>（官方原文）</li>
+          <li>initdb 初始化时安装默认文件；可用 <code>hba_file</code> 参数改位置</li>
+          <li><strong>读取时机</strong>：启动时 + 主进程收到 <strong>SIGHUP</strong> 时——改完必须重载</li>
+          <li>重载三姿势（官方）：<code>pg_ctl reload</code> · <code>pg_reload_conf()</code> · <code>kill -HUP</code></li>
+          <li>Windows 例外：改动立即生效（官方原文注明）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>条目与匹配</h3>
+        <ul class="pitfall-list">
+          <li>五个字段：<code>TYPE DATABASE USER ADDRESS METHOD</code>（连接类型/数据库/用户/地址/认证方法）</li>
+          <li><strong>从上到下逐条匹配，命中第一条即生效</strong>——宽规则放前面会挡住后面的细规则</li>
+          <li>方法：<code>trust</code>（免认证，仅本机开发）/ <code>scram-sha-256</code>（现代密码默认）/ <code>peer</code>（本地同名系统用户）/ <code>cert</code>（证书）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. HBA 代表什么（官方）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">基于主机的身份验证（Host-Based Authentication）</button>
+            <button class="quiz-option">HTTP Basic Auth</button>
+            <button class="quiz-option">Host Block Access</button>
+            <button class="quiz-option">High Base Authentication</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：HBA 代表<strong>基于主机的身份验证</strong>（Host-Based Authentication）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. pg_hba.conf 默认存储在哪里？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">任何位置都行</button>
+            <button class="quiz-option">集簇的数据目录中</button>
+            <button class="quiz-option">用户主目录</button>
+            <button class="quiz-option">/etc/postgresql</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：pg_hba.conf 存储在<strong>集簇的数据目录</strong>中；也可用 hba_file 参数放别处。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 修改 pg_hba.conf 后，Unix 上需要做什么才生效？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">重新 initdb</button>
+            <button class="quiz-option">立即自动生效</button>
+            <button class="quiz-option">通知 postmaster 重读（pg_ctl reload / pg_reload_conf() / kill -HUP）</button>
+            <button class="quiz-option">重启操作系统</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：文件在启动以及主进程收到 SIGHUP 时被读取——改完要 <strong>pg_ctl reload / pg_reload_conf() / kill -HUP</strong> 通知重读。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. pg_hba 条目的匹配规则是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">从上到下逐条匹配，命中第一条即生效</button>
+            <button class="quiz-option">所有条目都满足才通过</button>
+            <button class="quiz-option">随机匹配一条</button>
+            <button class="quiz-option">优先级最高的条目</button>
+          </div>
+          <div class="quiz-explain" hidden>逐条顺序匹配、第一条命中即用——所以宽规则（如 host all all 0.0.0.0/0 trust）放前面会把后面的细规则全部挡死。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 生产环境用 trust 认证方法的官方层面风险是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">性能差</button>
+            <button class="quiz-option">任何匹配该条目的连接都免认证通过——无身份验证</button>
+            <button class="quiz-option">不支持远程连接</button>
+            <button class="quiz-option">会锁表</button>
+          </div>
+          <div class="quiz-explain" hidden>trust = 不做任何认证直接放行——只适合本机开发回环；放生产等于把门拆了。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 现代 PG 的默认密码认证方法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">password（明文）</button>
+            <button class="quiz-option">md5</button>
+            <button class="quiz-option">trust</button>
+            <button class="quiz-option">scram-sha-256</button>
+          </div>
+          <div class="quiz-explain" hidden>scram-sha-256 是现代的挑战-应答密码认证（PG 10+ 默认），md5 已不推荐。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 「远程连接被拒，日志显示 no pg_hba.conf entry」——最可能原因？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">端口冲突</button>
+            <button class="quiz-option">没有匹配该 连接类型/数据库/用户/地址 的条目</button>
+            <button class="quiz-option">数据库损坏</button>
+            <button class="quiz-option">密码错了</button>
+          </div>
+          <div class="quiz-explain" hidden>该报错的字面意思：没有 hba 条目匹配这次连接的四个维度——需要加 host 条目覆盖该来源地址。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. peer 认证方法的工作原理是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">本机连接时校验操作系统用户名与数据库用户名同名</button>
+            <button class="quiz-option">通过 LDAP</button>
+            <button class="quiz-option">输入任意密码</button>
+            <button class="quiz-option">通过证书</button>
+          </div>
+          <div class="quiz-explain" hidden>peer 只在本地 Unix 域套接字连接可用：系统用户与数据库用户名一致即通过——本机管理的常用方式。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 官方说 pg_hba.conf 的读取时机是（Unix）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">启动时 + 主进程收到 SIGHUP 时</button>
+            <button class="quiz-option">每条连接建立时都读</button>
+            <button class="quiz-option">只在 initdb 时读</button>
+            <button class="quiz-option">每 5 分钟轮询</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：在启动以及主服务器进程收到 SIGHUP 信号时，pg_hba.conf 文件会被读取——这也解释了为什么改完要 reload。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，客户端认证就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一：本机开发用 trust、远程用 scram-sha-256——两条 hba 条目该怎么排序？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">细规则在前：先 127.0.0.1/32 trust，再 0.0.0.0/0 scram-sha-256</button>
+            <button class="quiz-option">顺序无所谓</button>
+            <button class="quiz-option">宽规则在前更安全</button>
+            <button class="quiz-option">两条放一个文件不可能</button>
+          </div>
+          <div class="quiz-explain" hidden>顺序规则：先写具体地址的 trust 回环条目，再写全网段的 scram 条目——宽规则在前会把后面的全挡死。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核二：改完 pg_hba.conf 后新规则没生效，最可能忘了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">重启数据库服务器物理机</button>
+            <button class="quiz-option">改对了路径</button>
+            <button class="quiz-option">保存文件</button>
+            <button class="quiz-option">通知 postmaster 重读（reload）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方三姿势：pg_ctl reload / SELECT pg_reload_conf() / kill -HUP——忘 reload 是最高频运维坑。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核三：日志显示 password authentication failed for user X——与 hba 有关吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一定是 trust 的锅</button>
+            <button class="quiz-option">hba 已放行并选择了密码方法，失败在密码本身——检查密码/角色</button>
+            <button class="quiz-option">没有，hba 只负责拒绝连接</button>
+            <button class="quiz-option">一定是 hba 顺序错了</button>
+          </div>
+          <div class="quiz-explain" hidden>区分两类错误：no pg_hba entry = 没匹配条目（连接被拒）；password authentication failed = hba 放行后密码校验失败——排查方向完全不同。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四：host 条目五个字段的正确顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">USER DATABASE TYPE METHOD ADDRESS</button>
+            <button class="quiz-option">TYPE DATABASE USER ADDRESS METHOD</button>
+            <button class="quiz-option">DATABASE ADDRESS USER TYPE METHOD</button>
+            <button class="quiz-option">METHOD USER DATABASE ADDRESS TYPE</button>
+          </div>
+          <div class="quiz-explain" hidden>标准顺序：连接类型 / 数据库 / 用户 / 地址 / 认证方法——手写 hba 条目别写反。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了客户端认证——继续学习 <a href="/common/database-pg/pg-13-角色与权限">pg-13 · 角色与权限</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0012-客户端认证',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 生成的生产部署脚本把 <code>host all all 0.0.0.0/0 trust</code> 写在了 pg_hba.conf 第一行「方便远程连接」。审查：什么问题？`,
+              source: '来源：postgres.cn 官方文档 §20.1 pg_hba.conf（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `两条错叠加：① <strong>trust = 完全免认证</strong>——任何 IP 直连数据库，等于把门拆了；② 放在<strong>第一行</strong>且匹配全部——按官方「从上到下命中第一条即生效」的规则，后面所有安全条目形同虚设。正确：远程段用 <code>scram-sha-256</code>，trust 只给 127.0.0.1/32。AI 生成的部署配置是安全审查重灾区。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方文档说 pg_hba.conf 什么时候被读取？改完配置有哪三种方式让它生效？`,
+              source: '来源：postgres.cn 官方文档 §20.1 pg_hba.conf（官方翻译·一手）· 检索 2026-09-11 · 层级：一手',
+              breakdown: `官方原文：在<strong>启动</strong>以及主服务器进程收到 <strong>SIGHUP</strong> 信号时被读取。改完后的三姿势（官方原文）：<code>pg_ctl reload</code>、SQL 函数 <code>pg_reload_conf()</code>、或 <code>kill -HUP</code> 发信号。官方还注明 Windows 例外：改动对新连接立即生效。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 排查脚本把「连不上」一律归结为「密码错了」。审查：数据库连接失败的排查分层应该是什么？`,
+              source: '来源：postgres.cn 官方文档 §20.1 pg_hba.conf（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `按错误信息分层：① <strong>连接被拒/超时</strong>——网络、端口、listen_addresses；② <strong>no pg_hba.conf entry</strong>——没有匹配的 hba 条目（官方报错原文）；③ <strong>password authentication failed</strong>——hba 已放行、密码/角色问题。AI 生成排查脚本习惯一步归因，实际要按「网络 → hba → 认证」逐层排除。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `团队要接入新环境：本机开发免密、办公网密码登录、生产只允许堡垒机 IP 用证书。设计 pg_hba 规则并说明排序依据。`,
+              source: '来源：postgres.cn 官方文档 §20.1 pg_hba.conf（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `按<strong>从具体到宽泛</strong>排序（官方顺序规则的应用）：① <code>host all all 堡垒机IP/32 cert</code>；② <code>host all all 办公网段/24 scram-sha-256</code>；③ <code>host all all 127.0.0.1/32 trust</code>（回环免密）。原则：越具体的规则越靠前，最宽的兜底规则（拒绝或最严认证）放最后。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测认证链路（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '① 查看当前 pg_hba.conf 内容与默认条目；② 用 pg_reload_conf() 触发重载并确认生效；③ 观察两种错误的区别（构造一条不匹配的地址报 no entry、错误密码报 password failed）；④ 说清 trust 与 scram 的差异。',
+                accept: ['pg_reload_conf() 执行成功', '两类错误信息的差异能解释', '能读出默认 hba 条目里每条的含义'],
+              },
+              source: '任务基于官方文档 §20.1 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>SELECT pg_reload_conf();</code>；<code>SHOW hba_file;</code> 定位文件；docker 环境改文件后进容器 reload。坑：docker 里 hba 文件路径在容器内；错误密码测试别用真实账号（会触发失败计数）；trust 条目只在回环测试。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/auth-pg-hba-conf.html">postgres.cn · 20.1 pg_hba.conf 文件</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/auth-methods.html">20.3 认证方法</a>（scram/cert/peer 细节）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/客户端认证速查表.html">客户端认证速查表</a>——条目与重载一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/PostgreSQL安装/">01.PostgreSQL安装</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

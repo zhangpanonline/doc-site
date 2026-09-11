@@ -1,0 +1,47 @@
+---
+sidebar_position: 12
+title: 'pg-12 · 客户端认证'
+description: 'PostgreSQL 官方文档拓展 §20.1：pg_hba.conf 主机认证、认证方法选择、配置热重载——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 客户端认证" desc="谁可以连、用什么方式证明身份——pg_hba.conf 是数据库的第一道门。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §20.1「pg_hba.conf 文件」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/auth-pg-hba-conf.html) / [官方英文版](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html)）。
+
+:::
+
+## pg_hba.conf：基于主机的身份验证
+
+官方原文要点：
+
+- 客户端身份验证由配置文件控制，传统命名 **pg_hba.conf**，存储在集簇的**数据目录**中——**HBA = Host-Based Authentication（基于主机的身份验证）**
+- `initdb` 初始化时安装默认文件；也可放在别处（`hba_file` 参数）
+- **读取时机**：启动时 + 主服务器进程收到 **SIGHUP** 时——改完文件必须通知 postmaster 重读：`pg_ctl reload` / `pg_reload_conf()` / `kill -HUP`
+
+条目格式（host-based 逐条匹配）：
+
+```
+# TYPE  DATABASE  USER  ADDRESS  METHOD
+host    all       all   127.0.0.1/32   scram-sha-256
+```
+
+- **逐条从上到下匹配，命中第一条即生效**——顺序错误是经典事故（宽规则写前面，后面的细规则永远不生效）
+- METHOD 常见：`trust`（免认证，仅本机开发）、`scram-sha-256`（密码，现代默认）、`peer`（本地同名系统用户）、`cert`（证书）
+- 官方提醒：Windows 上修改立即生效；Unix 上必须 reload
+
+## 面试高频
+
+- "连不上数据库"排查顺序：连接性（端口/防火墙）→ pg_hba 条目是否匹配 → 认证方法/密码
+- 生产红线的官方依据：**不要用 trust**（任何匹配即通过）；改 hba 后忘 reload 是高频坑
+
+## 官方原文
+
+- [postgres.cn：20.1 pg_hba.conf 文件](http://www.postgres.cn/docs/current/auth-pg-hba-conf.html)
+- [官方英文版：20.1 The pg_hba.conf File](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html)
+
+配套学习：<a href="/teach/lessons/pg-0012-客户端认证.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/客户端认证速查表.html">📋 客户端认证速查表（可打印）</a>
