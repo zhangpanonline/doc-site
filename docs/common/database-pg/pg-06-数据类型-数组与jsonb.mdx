@@ -1,0 +1,60 @@
+---
+sidebar_position: 6
+title: 'pg-06 · 数据类型 · 数组与 jsonb'
+description: 'PostgreSQL 官方文档拓展 §8：数组类型的定义与查询、json 与 jsonb 的本质区别、jsonb 索引——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 数据类型 · 数组与 jsonb" desc="PG 的两大王牌：原生数组列与可索引的 jsonb——文档型需求不再需要 MongoDB。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §8.14「数组」与 §8.16「JSON 类型」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/arrays.html) / [官方英文版](https://www.postgresql.org/docs/current/arrays.html)）。
+
+:::
+
+## 数组：类型名加方括号
+
+官方原文：PostgreSQL 允许一个表中的列定义为**变长多维数组**，任何内建/用户定义/枚举/组合/范围类型或域都可以做数组。
+
+```sql
+CREATE TABLE sal_emp (
+    name            text,
+    pay_by_quarter  integer[],     -- 一维整数数组（官方原例）
+    schedule        text[][]       -- 二维文本数组
+);
+```
+
+官方细节：
+
+- 数组类型 = 元素类型名 + `[]`（`integer[]`、`text[][]`）
+- 尺寸声明 `integer[3][3]` 只是语法存在——**当前实现忽略任何提供的数组尺寸**（官方原文）
+- 数组字面量：`'{10000, 10000, 10000}'`；下标从 1 开始
+- 常用：`array_append` / 包含运算符 `@>` / `ANY` 查询数组内元素
+
+## json 与 jsonb：官方对比（面试必背）
+
+官方原文给出的核心区别，两条：
+
+1. **存储与效率**：`json` 存输入文本的**精准拷贝**，处理函数**每次执行都要重新解析**；`jsonb` 存**分解好的二进制格式**——输入稍慢（要转换），**处理快很多（不需重新解析），并且支持索引**
+2. **保真度**：`json` 保留记号间空格、对象键顺序、重复键；`jsonb` **不保留空格、不保留键顺序、重复键只留最后一个**
+
+官方结论原文：**「通常，大多数应用应该更愿意把 JSON 数据存储为 jsonb」**——除非有特殊需要（如遗留系统依赖对象键顺序）。
+
+配合 GIN 索引与包含查询（`@>`），jsonb 可以高效回答"哪些文档包含某字段"——这就是 PG 常被用作文档数据库的原因。
+
+:::tip 与渡一课程的关系
+
+渡一《数据库》课程未覆盖数组与 JSON 类型——本节为纯增量内容。RAG/Agent 应用里元数据、配置、灵活字段存 jsonb 是主流实践。
+
+:::
+
+## 官方原文
+
+- [postgres.cn：8.14 数组](http://www.postgres.cn/docs/current/arrays.html)
+- [postgres.cn：8.16 JSON 类型](http://www.postgres.cn/docs/current/datatype-json.html)
+- [官方英文版：8.14 Arrays](https://www.postgresql.org/docs/current/arrays.html)
+
+配套学习：<a href="/teach/lessons/pg-0006-数据类型-数组与jsonb.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/数据类型-数组与jsonb速查表.html">📋 数组与 jsonb 速查表（可打印）</a>

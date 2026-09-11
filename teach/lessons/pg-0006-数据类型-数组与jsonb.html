@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 数组与 jsonb：原生数组列、json 与 jsonb 官方对比、jsonb GIN 索引（非渡一课程内容）">
+  <title>数据类型 · 数组与 jsonb · 互动教学课程（官方文档拓展 pg-06）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>数据类型 · 数组与 jsonb</h1>
+      <p class="lesson-sub">来源：官方文档 §8.14 数组 + §8.16 JSON 类型（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>定义数组列（类型名加 []），说出「尺寸声明被忽略」的官方细节</li>
+        <li>复述 json 与 jsonb 的两条官方区别（效率 / 保真度），背出「大多数应用应该用 jsonb」的官方结论</li>
+        <li>给 jsonb 建 GIN 索引并解释为什么 jsonb 能索引而 json 不能</li>
+        <li>用包含查询（@&gt;）回答「哪些文档包含某字段」类问题</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/arrays.html">§8.14</a> 与 <a href="http://www.postgres.cn/docs/current/datatype-json.html">§8.16</a>。</p>
+
+      <div class="card">
+        <h3>数组（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li>列可以定义为<strong>变长多维数组</strong>（官方原文）；任意基类型都可做数组</li>
+          <li>写法：类型名 + <code>[]</code>（官方原例 <code>integer[]</code>、<code>text[][]</code>）</li>
+          <li><strong>尺寸声明被忽略</strong>：<code>integer[3][3]</code> 只是语法存在，当前实现不检查尺寸（官方原文）</li>
+          <li>字面量 <code>'{10000, 10000, 10000}'</code>；<code>@&gt;</code> 包含、<code>ANY</code> 遍历元素</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>json vs jsonb（官方两条区别）</h3>
+        <ul class="pitfall-list">
+          <li><strong>效率</strong>：json 存文本精准拷贝、每次处理重新解析；jsonb 存二进制分解格式、输入稍慢、<strong>处理快很多且支持索引</strong></li>
+          <li><strong>保真度</strong>：json 保留空格/键顺序/重复键；jsonb 不保留——<strong>重复键只留最后一个</strong></li>
+          <li><strong>官方结论</strong>：大多数应用应该更愿意把 JSON 数据存储为 <strong>jsonb</strong></li>
+          <li>jsonb + GIN 索引 + <code>@&gt;</code> 包含查询 = PG 当文档数据库的底气</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 定义一维整数数组列的正确写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">integer[]</button>
+            <button class="quiz-option">array(integer)</button>
+            <button class="quiz-option">[integer]</button>
+            <button class="quiz-option">list&lt;integer&gt;</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原例：<code>pay_by_quarter integer[]</code>——数组类型就是元素类型名后面加方括号。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 官方对 <code>integer[3][3]</code> 尺寸声明的说法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会自动扩容到 6x6</button>
+            <button class="quiz-option">当前实现忽略任何提供的数组尺寸</button>
+            <button class="quiz-option">只允许恰好 3x3</button>
+            <button class="quiz-option">超出尺寸会报错</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：CREATE TABLE 语法允许指定确切大小，但<strong>当前的实现忽略任何提供的数组尺寸</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 官方建议大多数应用把 JSON 数据存成？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">json</button>
+            <button class="quiz-option">text</button>
+            <button class="quiz-option">xml</button>
+            <button class="quiz-option">jsonb</button>
+          </div>
+          <div class="quiz-explain" hidden>官方结论原文：<strong>通常，大多数应用应该更愿意把 JSON 数据存储为 jsonb</strong>——除非有特殊的保真需求。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. json 存储与处理的效率特点是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每次处理都会缓存解析结果</button>
+            <button class="quiz-option">存输入文本的精准拷贝，处理函数每次执行都要重新解析</button>
+            <button class="quiz-option">不需要解析</button>
+            <button class="quiz-option">输入时转换、处理很快</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：json 存储输入文本的精准拷贝，处理函数必须在<strong>每次执行时重新解析</strong>该数据。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. jsonb 与 json 在保真度上的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者都保留键顺序与重复键</button>
+            <button class="quiz-option">jsonb 保留得更多</button>
+            <button class="quiz-option">jsonb 不保留空格、键顺序、重复键（只留最后一个）</button>
+            <button class="quiz-option">json 不保留任何格式</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：jsonb 不保留空格、不保留对象键的顺序、不保留重复的对象键——重复时只保留最后一个值。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 为什么 jsonb 支持索引而 json 基本不能？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">jsonb 数据量更小</button>
+            <button class="quiz-option">jsonb 是分解好的二进制格式，可被 GIN 索引结构访问</button>
+            <button class="quiz-option">json 类型禁止一切索引</button>
+            <button class="quiz-option">json 会自动压缩</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：jsonb 数据被存储在分解好的二进制格式中——GIN 可以索引其内部结构（键/值/路径），json 的文本拷贝没有可用结构。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 查询「tags 数组包含 admin 的用户」——数组列的正确写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">WHERE 'admin' = ANY(tags)（或 tags @&gt; ARRAY['admin']）</button>
+            <button class="quiz-option">WHERE tags LIKE '%admin%'</button>
+            <button class="quiz-option">WHERE tags = 'admin'</button>
+            <button class="quiz-option">WHERE 'admin' IN tags</button>
+          </div>
+          <div class="quiz-explain" hidden>数组元素查询用 <code>ANY</code>（= ANY(tags)）或包含运算 <code>@&gt;</code>——LIKE 对数组不适用。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. jsonb 列插入 <code>{"a": 1, "a": 2}</code> 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只保留最后一个值（重复键去重）</button>
+            <button class="quiz-option">两个键值都保留</button>
+            <button class="quiz-option">随机保留一个</button>
+            <button class="quiz-option">报语法错误</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：如果在输入中指定了重复的键，只有<strong>最后一个值会被保留</strong>——json 类型则全部保留。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 什么场景必须用 json 而不是 jsonb？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">需要索引的场景</button>
+            <button class="quiz-option">需要包含查询的场景</button>
+            <button class="quiz-option">遗留系统依赖对象键顺序/原始空格保真</button>
+            <button class="quiz-option">数据量大的场景</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：除非有特别特殊的需要（例如遗留的对象键顺序假设），大多数应用应该用 jsonb。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，数组与 jsonb 就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核一：设计「用户标签」与「灵活元数据」两列——分别是数组列与 jsonb。给出完整建表语句。</div>
+          <div class="quiz-options">
+            <button class="quiz-option">tags text[][] 与 meta xml</button>
+            <button class="quiz-option">tags json 与 meta text</button>
+            <button class="quiz-option">tags varchar(255) 逗号拼接 与 meta json</button>
+            <button class="quiz-option">tags text[] 与 meta jsonb（可用 GIN 索引 meta）</button>
+          </div>
+          <div class="quiz-explain" hidden>标签天然是数组（text[]，可 ANY 查询）；灵活元数据用 jsonb（可索引、处理快）——PG 原生的两类能力。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核二：「查所有 meta 里 role 为 admin 的文档」的 jsonb 高效写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">应用层把所有行读出来过滤</button>
+            <button class="quiz-option">meta->>'role' = 'admin'（无索引也很快）</button>
+            <button class="quiz-option">meta @&gt; '{"role": "admin"}'（配合 GIN 索引）</button>
+            <button class="quiz-option">把 meta 转成 text 再 LIKE</button>
+          </div>
+          <div class="quiz-explain" hidden><code>@&gt;</code> 包含查询配合 GIN 索引是 jsonb 的标准姿势；<code>->></code> 提取式写法走不了 GIN，大表会全扫。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核三：为什么说「有 jsonb 后很多文档型需求不必上 MongoDB」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">jsonb 自动分片</button>
+            <button class="quiz-option">jsonb 支持 JavaScript 查询</button>
+            <button class="quiz-option">jsonb 提供可索引的文档查询，同时保留关系库的事务/约束/关联能力</button>
+            <button class="quiz-option">jsonb 比 MongoDB 快一个数量级</button>
+          </div>
+          <div class="quiz-explain" hidden>文档型需求的核心是「按内容查文档」——jsonb + GIN 覆盖它；而关系模型的事务、约束、JOIN 依旧可用，两全其美。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核四：数组下标是从几开始的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">从 0 开始</button>
+            <button class="quiz-option">从 1 开始</button>
+            <button class="quiz-option">自定义下标</button>
+            <button class="quiz-option">取决于声明尺寸</button>
+          </div>
+          <div class="quiz-explain" hidden>PG 数组下标默认从 <strong>1</strong> 开始——与多数编程语言的 0 起始不同，写索引访问时别踩。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了数组与 jsonb——继续学习 <a href="/common/database-pg/pg-07-函数与窗口函数">pg-07 · 函数与窗口函数</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0006-数据类型-数组与jsonb',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 建的标签列用了 <code>varchar</code> 存逗号分隔的标签字符串，现在要查「包含 admin 标签的用户」。审查：这设计哪里错了？`,
+              source: '来源：postgres.cn 官方文档 §8.14 数组（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `逗号字符串查询只能 LIKE（'%admin%' 还会误匹配 'admin2'），不能索引、语义模糊。正确：<code>tags text[]</code> 数组列——<code>WHERE 'admin' = ANY(tags)</code> 或 <code>tags @> ARRAY['admin']</code>，配合 GIN 索引高效精确。AI 从「一切皆字符串」的惯性里生成逗号拼接列是高频设计债。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `json 与 jsonb 的官方区别是什么？背出两条区别与官方结论。`,
+              source: '来源：postgres.cn 官方文档 §8.16 JSON 类型（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `① <strong>效率</strong>：json 存文本精准拷贝、处理函数每次执行都重新解析；jsonb 存分解好的二进制格式——输入稍慢、<strong>处理快很多、支持索引</strong>。② <strong>保真度</strong>：json 保留空格/键顺序/重复键；jsonb 不保留、重复键只留最后一个。官方结论：<strong>大多数应用应该更愿意把 JSON 数据存储为 jsonb</strong>。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的查询：<code>WHERE meta->>'role' = 'admin'</code> 查 jsonb 列，表 500 万行全表扫。审查并给出优化方案。`,
+              source: '来源：postgres.cn 官方文档 §8.16 JSON 类型 + §8.14.4 jsonb 索引（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `<code>->></code> 提取写法无法使用 GIN 索引。优化：建 <code>CREATE INDEX ON t USING gin (meta);</code> 后改写为<strong>包含查询</strong> <code>WHERE meta @> '{"role": "admin"}'</code>——走索引。审查规则：jsonb 查询见到 ->> 提取式过滤先问「有没有 GIN + @> 的等价写法」。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `产品要存「订单的扩展属性」（不同品类字段不同，如服装有尺码、电子有保修期）。候选：① 加一堆可空列；② jsonb 列；③ EAV 表。你选哪个？`,
+              source: '来源：postgres.cn 官方文档 §8.16 JSON 类型（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `选 <strong>jsonb</strong>：可空列随品类膨胀（几十列 NULL、加字段要迁移）；EAV 表查询复杂、约束弱。jsonb 一个列装下灵活字段 + GIN 索引可查 + 配合 CHECK 约束兜底结构。注意：<strong>需要 JOIN/约束/高频聚合的字段别塞 jsonb</strong>（那是关系列的活）——灵活的部分才进 jsonb。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测数组与 jsonb（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '① 建 tags text[] 列，验证 ANY 与 @> 查询；② 建 meta jsonb 列，验证 @> 包含查询 + GIN 索引生效（EXPLAIN 看 Index Scan）；③ 验证 jsonb 重复键只留最后一个、键顺序不保留。',
+                accept: ['数组查询两种写法结果正确', 'EXPLAIN 显示 GIN 索引被使用', 'jsonb 保真度差异实测（重复键/顺序）'],
+              },
+              source: '任务基于官方文档 §8.14/§8.16 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>CREATE TABLE t(tags text[], meta jsonb); CREATE INDEX ON t USING gin(meta);</code> 后 <code>SET enable_seqscan=off; EXPLAIN SELECT ... WHERE meta @> '{"role":"admin"}';</code>。坑：@> 的右侧必须是合法 jsonb 字面量；数组字面量用单引号包花括号。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/arrays.html">postgres.cn · 8.14 数组</a> · <a href="http://www.postgres.cn/docs/current/datatype-json.html">8.16 JSON 类型</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/functions-json.html">9.16 JSON 函数和操作符</a> · <a href="http://www.postgres.cn/docs/current/functions-array.html">9.19 数组函数和操作符</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/数据类型-数组与jsonb速查表.html">数组与 jsonb 速查表</a>——语法与官方对比一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/DDL/">02.DDL</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

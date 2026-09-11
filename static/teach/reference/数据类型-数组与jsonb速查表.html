@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数组与 jsonb 速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>数组与 jsonb 速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0006-数据类型-数组与jsonb.html">《数组与 jsonb 互动教学课程》</a>使用。来源：官方文档 §8.14 + §8.16（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>数组速查</h2>
+      <table class="cmp-table">
+        <tr><th>操作</th><th>写法</th></tr>
+        <tr><td>定义</td><td><code>tags text[]</code>（类型名加 []；尺寸声明被忽略）</td></tr>
+        <tr><td>字面量</td><td><code>'{10000, 10000, 10000}'</code>（下标从 1 开始）</td></tr>
+        <tr><td>元素查询</td><td><code>'admin' = ANY(tags)</code></td></tr>
+        <tr><td>包含查询</td><td><code>tags @&gt; ARRAY['admin']</code></td></tr>
+        <tr><td>追加元素</td><td><code>array_append(tags, 'new')</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>json vs jsonb（官方对比）</h2>
+      <table class="cmp-table">
+        <tr><th>维度</th><th>json</th><th>jsonb</th></tr>
+        <tr><td>存储</td><td>文本精准拷贝</td><td>分解好的二进制格式</td></tr>
+        <tr><td>处理</td><td>每次重新解析</td><td>快很多，无需解析</td></tr>
+        <tr><td>索引</td><td>基本不可</td><td>支持（GIN）</td></tr>
+        <tr><td>空格/键序/重复键</td><td>全部保留</td><td>不保留，重复键留最后</td></tr>
+      </table>
+      <p>官方结论：<strong>大多数应用应该把 JSON 存为 jsonb</strong>。</p>
+    </section>
+
+    <section>
+      <h2>jsonb 标准姿势</h2>
+      <pre>CREATE INDEX ON t USING gin (meta);
+-- 包含查询（走 GIN）
+SELECT * FROM t WHERE meta @> '{"role": "admin"}';
+-- 提取（不走 GIN，避免在过滤里用）
+SELECT meta->>'role' FROM t;</pre>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§8.14 + §8.16）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>
