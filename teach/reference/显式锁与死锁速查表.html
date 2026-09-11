@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>显式锁与死锁速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>显式锁与死锁速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0010-显式锁与死锁.html">《显式锁与死锁互动教学课程》</a>使用。来源：官方文档 §13.3（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>锁分级</h2>
+      <table class="cmp-table">
+        <tr><th>级别</th><th>模式</th><th>要点</th></tr>
+        <tr><td>表级锁</td><td>ACCESS SHARE ~ ACCESS EXCLUSIVE</td><td>LOCK 命令显式获取；名字含 row 的也是表级锁（历史遗产）</td></tr>
+        <tr><td>行级锁</td><td>FOR UPDATE / FOR NO KEY UPDATE / FOR SHARE / FOR KEY SHARE</td><td>SELECT ... FOR UPDATE 原子化「先查后改」</td></tr>
+      </table>
+      <p>官方定位：显式锁用于<strong>MVCC 无法给出期望行为</strong>的情境；大多数命令自动取锁（TRUNCATE → ACCESS EXCLUSIVE）。</p>
+    </section>
+
+    <section>
+      <h2>死锁四原则</h2>
+      <dl class="term-grid">
+        <dt>自动检测</dt>
+        <dd>PG 检测死锁并终止其中一个事务（deadlock detected），不会无限挂起。</dd>
+        <dt>预防</dt>
+        <dd>一致的加锁顺序（破坏循环等待）、缩短事务、缩短锁持有时间。</dd>
+        <dt>应对</dt>
+        <dd>应用捕获死锁错误并重试——并发系统的正常现象。</dd>
+        <dt>观察</dt>
+        <dd>pg_locks 视图：granted = f 的行是「等待中」的锁。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§13.3）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

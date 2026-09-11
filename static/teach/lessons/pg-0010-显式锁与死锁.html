@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 显式锁与死锁：表级/行级锁、pg_locks 观察、FOR UPDATE 与死锁重试（非渡一课程内容）">
+  <title>显式锁与死锁 · 互动教学课程（官方文档拓展 pg-10）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>显式锁与死锁</h1>
+      <p class="lesson-sub">来源：官方文档 §13.3 显式锁定（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出官方对显式锁的定位（MVCC 无法给出期望行为的情境）与「命令自动取锁」的常识</li>
+        <li>分清表级锁与行级锁，说出「名字含 row 也是表级锁」的历史遗产细节</li>
+        <li>用 pg_locks 观察锁，用 SELECT ... FOR UPDATE 原子化「先查后改」</li>
+        <li>解释死锁的检测与应对（自动检测 + 应用重试），说出一致加锁顺序原则</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/explicit-locking.html">§13.3</a>。</p>
+
+      <div class="card">
+        <h3>显式锁的定位（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li>锁模式用于<strong>MVCC 无法给出期望行为的情境</strong>中、由应用控制的锁（官方原文）</li>
+          <li><strong>大多数命令自动获取恰当的锁</strong>——官方例：TRUNCATE 取得 ACCESS EXCLUSIVE 锁防止并发冲突</li>
+          <li><strong>pg_locks</strong> 系统视图：查看当前未解除的锁列表</li>
+          <li><code>LOCK TABLE ... IN 模式</code> 显式获取表级锁（手动锁定的入口）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>表级锁与行级锁</h3>
+        <ul class="pitfall-list">
+          <li><strong>表级锁</strong>：ACCESS SHARE ~ ACCESS EXCLUSIVE 多模式；名字含 row 的（ROW EXCLUSIVE 等）<strong>也是表级锁</strong>——官方原文「这些名称是历史遗产」</li>
+          <li><strong>行级锁</strong>：FOR UPDATE / FOR NO KEY UPDATE / FOR SHARE / FOR KEY SHARE——<code>SELECT ... FOR UPDATE</code> 把「先查后改」变原子</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>死锁（§13.3.4）</h3>
+        <ul class="pitfall-list">
+          <li>两个事务互相等待对方的锁 → <strong>PG 自动检测并终止其中一个</strong>（deadlock detected，不会无限挂起）</li>
+          <li>预防：<strong>一致的加锁顺序</strong>、缩短事务、缩短锁持有时间</li>
+          <li>应用侧：捕获死锁错误<strong>重试</strong>——死锁是并发系统正常现象</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 官方说显式锁用于什么情境？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">所有查询都必须手动加锁</button>
+            <button class="quiz-option">MVCC 无法给出期望行为的情境（应用控制的锁）</button>
+            <button class="quiz-option">替代索引</button>
+            <button class="quiz-option">替代事务</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：这些模式可以用于<strong>在 MVCC 无法给出期望行为的情境中</strong>由应用控制的锁。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 官方说大多数命令与锁的关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">需要应用显式加锁</button>
+            <button class="quiz-option">完全不使用锁</button>
+            <button class="quiz-option">自动获取恰当的锁（如 TRUNCATE 取 ACCESS EXCLUSIVE）</button>
+            <button class="quiz-option">只在提交时加锁</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：大多数命令会自动获取恰当的锁——官方例子：TRUNCATE 无法与其他操作并发，故取得 ACCESS EXCLUSIVE 锁。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 查看当前未解除的锁用哪个视图？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">pg_tables</button>
+            <button class="quiz-option">pg_indexes</button>
+            <button class="quiz-option">pg_stat_activity</button>
+            <button class="quiz-option">pg_locks</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：要检查当前未解除的锁列表，可以使用 <strong>pg_locks</strong> 系统视图。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. ROW EXCLUSIVE 是什么级别的锁？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">表级锁（名字含 row 是历史遗产）</button>
+            <button class="quiz-option">数据库级锁</button>
+            <button class="quiz-option">行级锁</button>
+            <button class="quiz-option">页级锁</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：所有锁模式都是表级锁，即使名字包含 row——这些名称是历史遗产。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 「先查余额再扣款」要原子化，标准写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">LOCK TABLE 全表</button>
+            <button class="quiz-option">SELECT ... FOR UPDATE（行级锁锁定检查行）</button>
+            <button class="quiz-option">SELECT 两次取平均</button>
+            <button class="quiz-option">先 UPDATE 再 SELECT</button>
+          </div>
+          <div class="quiz-explain" hidden>FOR UPDATE 锁定被检查的行——其他事务要改这行必须等，竞态窗口被锁闭合。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 两个事务互相等待对方持有的锁，PG 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两个都成功</button>
+            <button class="quiz-option">无限挂起直到重启</button>
+            <button class="quiz-option">随机回滚所有事务</button>
+            <button class="quiz-option">自动检测死锁并终止其中一个事务</button>
+          </div>
+          <div class="quiz-explain" hidden>PG 有死锁检测器：发现死锁即终止其中一个事务（deadlock detected）——不会无限等待。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 预防死锁最常用的工程手段是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把所有操作都放一个事务</button>
+            <button class="quiz-option">加超时后自杀</button>
+            <button class="quiz-option">禁用所有锁</button>
+            <button class="quiz-option">一致的加锁顺序（所有事务按相同顺序获取锁）</button>
+          </div>
+          <div class="quiz-explain" hidden>死锁四条件里的「循环等待」靠<strong>全局一致的加锁顺序</strong>破坏——最便宜且改动最小的预防。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 应用收到 deadlock detected 错误，正确的应对是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">捕获并重试事务（死锁是并发系统正常现象）</button>
+            <button class="quiz-option">永久缓存该错误</button>
+            <button class="quiz-option">立即重启数据库</button>
+            <button class="quiz-option">报警并人工处理</button>
+          </div>
+          <div class="quiz-explain" hidden>被终止的事务本来就该能安全重放——死锁在并发系统里是正常现象，<strong>重试</strong>是标准应对。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 转账 A→B 与 B→A 并发可能死锁；按账户 id 排序后按序 FOR UPDATE 的意义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">加快转账速度</button>
+            <button class="quiz-option">让 SQL 更短</button>
+            <button class="quiz-option">两事务按相同顺序取锁，破坏循环等待条件</button>
+            <button class="quiz-option">避免余额为负</button>
+          </div>
+          <div class="quiz-explain" hidden>先锁 id 小的行再锁大的——两个事务永远同序取锁，循环等待不可能发生。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，显式锁与死锁就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核一：为什么「SELECT ... FOR UPDATE」要放在事务里使用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了绕过 MVCC</button>
+            <button class="quiz-option">没有这个要求</button>
+            <button class="quiz-option">行级锁在事务结束时释放；事务外锁立即失效、没有保护意义</button>
+            <button class="quiz-option">FOR UPDATE 只能在事务里写</button>
+          </div>
+          <div class="quiz-explain" hidden>行锁随事务结束释放——锁的保护期必须覆盖「检查→修改→提交」的整个过程。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二：TRUNCATE 与 SELECT 并发执行时，官方说 TRUNCATE 会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">取得 ACCESS EXCLUSIVE 锁，等待其他操作完成（官方例）</button>
+            <button class="quiz-option">与 SELECT 并行无冲突</button>
+            <button class="quiz-option">自动改名为 DELETE</button>
+            <button class="quiz-option">跳过有 SELECT 的表</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：TRUNCATE 无法安全地与同一表上的其他操作并发执行，因此它在表上获得 ACCESS EXCLUSIVE 锁来强制。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核三：业务代码持有行锁期间又调了一个慢外部 API（2 秒）。问题在哪？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有影响</button>
+            <button class="quiz-option">只影响自己</button>
+            <button class="quiz-option">API 会更快</button>
+            <button class="quiz-option">锁持有时间被拉长——其他事务排队，死锁概率与阻塞都上升</button>
+          </div>
+          <div class="quiz-explain" hidden>官方预防原则之一就是「缩短锁的持有时间」——持锁期间做慢 IO 等于把所有竞争方都拖住。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四：pg_locks 里看到 grant = false 的一行，表示什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一个事务正在等待这个锁（未授予）</button>
+            <button class="quiz-option">锁损坏</button>
+            <button class="quiz-option">锁已释放</button>
+            <button class="quiz-option">死锁已发生</button>
+          </div>
+          <div class="quiz-explain" hidden>pg_locks 的 granted 字段：true=持有、false=<strong>等待中</strong>——排查锁等待时先看 grant=false 的行是谁在等谁。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了显式锁与死锁——继续学习 <a href="/common/database-pg/pg-11-EXPLAIN进阶">pg-11 · EXPLAIN 进阶与查询优化</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0010-显式锁与死锁',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `AI 写的扣库存逻辑：事务里 SELECT 查库存（无 FOR UPDATE）→ 应用判断 → UPDATE 扣减。压测出现超卖。为什么？正确姿势？`,
+              source: '来源：postgres.cn 官方文档 §13.3 显式锁定（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `READ COMMITTED 下两条 SELECT 读到同一库存、都通过判断、都 UPDATE——<strong>检查与修改之间的竞态窗口</strong>（MVCC 不保护「先读后写」的原子性）。这正是官方「MVCC 无法给出期望行为」的场景。修复：<code>SELECT ... FOR UPDATE</code> 锁住库存行（检查→扣减→提交都在锁内），或单条条件 UPDATE。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方说 PG 的锁分哪两级？「ROW EXCLUSIVE 是行级锁」这句话对吗？为什么？`,
+              source: '来源：postgres.cn 官方文档 §13.3 显式锁定（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `两级：<strong>表级锁</strong>（ACCESS SHARE 到 ACCESS EXCLUSIVE 多模式，LOCK 命令显式获取）与<strong>行级锁</strong>（FOR UPDATE/FOR NO KEY UPDATE/FOR SHARE/FOR KEY SHARE）。「ROW EXCLUSIVE 是行级锁」<strong>错</strong>——官方原文：所有锁模式都是表级锁，即使名字包含 row，这些名称是历史遗产。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写了两段代码：订单支付锁 order 行再锁 account 行；对账任务锁 account 行再锁 order 行。上线偶发 deadlock detected。审查：根因与修复？`,
+              source: '来源：postgres.cn 官方文档 §13.3.4 死锁（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `两条路径<strong>加锁顺序相反</strong> → 循环等待 → 死锁（PG 自动检测并终止其一，所以是「偶发报错」不是挂死）。修复：<strong>全局一致的加锁顺序</strong>（如都先 account 后 order，或按 id 排序取锁）；应用侧同时做好 deadlock 捕获重试（防御性兜底）。审查 AI 的多表事务：把所有路径的取锁顺序列出来对比，顺序不一致就是死锁隐患。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：PG 有 MVCC 了，为什么还需要显式锁？什么时候必须用 FOR UPDATE？`,
+              source: '来源：postgres.cn 官方文档 §13.3 显式锁定（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `MVCC 解决「读不阻塞写」，但不提供「<strong>读到的值在我写之前不变</strong>」的保证——<strong>读-判断-写</strong>三步跨越多个语句时，快照隔离不顶用。必须 FOR UPDATE 的场景：检查后修改（扣库存/余额）、条件性更新、跨表一致性调整。官方定位原文：锁模式用于<strong>MVCC 无法给出期望行为的情境</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测锁与死锁（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '① 事务 A SELECT ... FOR UPDATE 锁行后，事务 B 同条件 FOR UPDATE 阻塞（pg_locks 观察 grant=false）；② A 提交后 B 继续执行；③ 复现死锁：A 锁 1 等 2、B 锁 2 等 1，观察 deadlock detected；④ 按序取锁重试无死锁。',
+                accept: ['pg_locks 中观察到等待锁（grant = f）', '死锁被 PG 自动检测并终止', '一致顺序取锁后死锁消失'],
+              },
+              source: '任务基于官方文档 §13.3 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：两个 psql 会话交错（复用不可重复读实验的会话模式）；pg_locks 观察 <code>SELECT locktype, mode, granted FROM pg_locks WHERE relation = '表名'::regclass</code>。坑：死锁复现要精确控制两事务的锁获取时机（先各自拿第一把锁、再交叉拿第二把）；FOR UPDATE 的阻塞是「等待」不是报错，别和死锁混淆。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/explicit-locking.html">postgres.cn · 13.3 显式锁定</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/sql-lock.html">LOCK 命令参考</a> · <a href="http://www.postgres.cn/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE">SELECT 的锁定子句</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/显式锁与死锁速查表.html">显式锁与死锁速查表</a>——锁分级与死锁原则一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/事务/">05.事务</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

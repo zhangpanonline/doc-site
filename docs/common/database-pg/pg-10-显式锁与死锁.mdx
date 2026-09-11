@@ -1,0 +1,54 @@
+---
+sidebar_position: 10
+title: 'pg-10 · 显式锁与死锁'
+description: 'PostgreSQL 官方文档拓展 §13.3：表级/行级锁模式、pg_locks 视图、死锁与显式锁定——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 显式锁与死锁" desc="MVCC 覆盖不了的场景用显式锁；死锁的成因、观察与规避——事务课的官方进阶。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §13.3「显式锁定」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/explicit-locking.html) / [官方英文版](https://www.postgresql.org/docs/current/explicit-locking.html)）。
+
+:::
+
+## 为什么需要显式锁（官方定位）
+
+官方原文：PG 提供多种锁模式用于控制对表中数据的并发访问——这些模式可以用在 **MVCC 无法给出期望行为的情境**中（如应用需要"先检查再决定"的原子性、跨表一致性）。
+
+同时官方强调：**大多数 PostgreSQL 命令会自动获取恰当的锁**（原文例子：TRUNCATE 无法安全地与同一表上的其他操作并发执行，因此它获得一个 **ACCESS EXCLUSIVE** 锁）——绝大多数场景你不需要手动 LOCK。
+
+**观察锁**：`pg_locks` 系统视图列出当前所有未解除的锁。
+
+## 表级锁 vs 行级锁
+
+官方给出两级：
+
+| 级别 | 说明 | 高频点 |
+|---|---|---|
+| **表级锁** | 多种模式（ACCESS SHARE ~ ACCESS EXCLUSIVE）；`LOCK` 命令可显式获取 | 名字含 row 的（如 ROW EXCLUSIVE）**也是表级锁**——官方原文：这些名称是历史遗产 |
+| **行级锁** | 行级（FOR UPDATE / FOR NO KEY UPDATE / FOR SHARE / FOR KEY SHARE） | `SELECT ... FOR UPDATE` 是"先查后改"原子化的标准姿势 |
+
+## 死锁
+
+官方在 §13.3.4 专章讨论死锁：两个事务互相等待对方持有的锁。要点：
+
+- PG **自动检测死锁**并终止其中一个事务（报 deadlock detected）——不会无限挂起
+- 预防：**一致的加锁顺序**（所有事务按相同顺序获取锁）、缩短事务、减少锁的持有时间
+- 应用侧处理：捕获死锁错误并**重试**（死锁是并发系统的正常现象，重试是标准应对）
+
+:::tip 与渡一课程的关系
+
+渡一《数据库》的事务课讲了隔离级别；本节的**显式锁与死锁**是官方 §13.3 的进阶：什么时候必须 FOR UPDATE、死锁怎么观察与规避。
+
+:::
+
+## 官方原文
+
+- [postgres.cn：13.3 显式锁定](http://www.postgres.cn/docs/current/explicit-locking.html)
+- [官方英文版：13.3 Explicit Locking](https://www.postgresql.org/docs/current/explicit-locking.html)
+
+配套学习：<a href="/teach/lessons/pg-0010-显式锁与死锁.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/显式锁与死锁速查表.html">📋 显式锁与死锁速查表（可打印）</a>
