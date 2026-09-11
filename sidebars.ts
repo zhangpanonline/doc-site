@@ -21,7 +21,9 @@ for (const c of courses) {
 sidebars.jobs = ['jobs/agents', 'jobs/backend', 'jobs/devops', 'jobs/ai-coding', 'jobs/fullstack'];
 
 // 数据库官方文档拓展（非渡一课程）：追加到公共「数据库」侧边栏，分组标题标注来源
-sidebars.common.push(
+type SidebarItem = string | {type: string; value: string; defaultStyle: boolean};
+const commonSidebar = sidebars.common as SidebarItem[];
+commonSidebar.push(
   {
     type: 'html',
     value: '<div class="menu-course-title">🔖 数据库 · PostgreSQL 官方文档拓展</div>',

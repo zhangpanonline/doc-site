@@ -293,7 +293,7 @@ function skillHref(tag: string): string | null {
 }
 
 /** 技术栈 chip：有映射进学习路线，无映射纯文本 */
-function TagChip({tag}: {tag: string}): ReactNode {
+function TagChip({tag}: {tag: string; key?: React.Key}): ReactNode {
   const href = skillHref(tag);
   return href ? (
     <Link to={href} className="js-tag">
