@@ -2,7 +2,35 @@ import {createHash} from 'node:crypto';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {getSupabaseAdmin} from '../lib/supabase-admin';
 
-const MODEL = 'gemini-2.5-flash';
+/** 进程内缓存的已解析模型名（模型改名时自动适配，不必改代码） */
+let cachedModel: string | null = null;
+
+/** 运行时解析可用模型：2.5-flash > 任意 flash > 任意 gemini */
+async function resolveModel(key: string): Promise<string | null> {
+  if (cachedModel) {
+    return cachedModel;
+  }
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`, {
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!r.ok) {
+      console.error('[explain] models list http', r.status);
+      return null;
+    }
+    const data = (await r.json()) as {models?: {name?: string}[]};
+    const names = (data.models ?? [])
+      .map(m => m.name ?? '')
+      .filter(n => n.startsWith('models/'));
+    const pick =
+      names.find(n => n === 'models/gemini-2.5-flash') ?? names.find(n => n.includes('flash')) ?? names[0];
+    cachedModel = pick ? pick.replace(/^models\//, '') : null;
+    return cachedModel;
+  } catch (err) {
+    console.error('[explain] models list failed:', err);
+    return null;
+  }
+}
 
 /**
  * AI 代码解释：POST /api/explain {code, lang}
@@ -49,6 +77,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({error: 'GEMINI_API_KEY not set'});
   }
 
+  const model = await resolveModel(key);
+  if (!model) {
+    return res.status(502).json({error: 'model not resolved'});
+  }
+
   const prompt = `你是一名编程老师。请用通俗易懂的中文向零基础学员解释下面这段${lang}代码，要求：
 1. 先用一句话概括这段代码做什么
 2. 再按行或按块解释关键点
@@ -60,7 +93,7 @@ ${code}`;
 
   try {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(key)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
       {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -69,7 +102,8 @@ ${code}`;
       },
     );
     if (!r.ok) {
-      console.error('[explain] gemini http', r.status);
+      const bodySnippet = (await r.text().catch(() => '')).slice(0, 200);
+      console.error('[explain] gemini http', r.status, bodySnippet);
       return res.status(502).json({error: 'upstream failed'});
     }
     const data = (await r.json()) as {
@@ -88,7 +122,7 @@ ${code}`;
         lang,
         code_preview: code.slice(0, 300),
         explanation: text,
-        model: MODEL,
+        model,
       });
     } catch {
       // 缓存写入失败不影响本次返回
