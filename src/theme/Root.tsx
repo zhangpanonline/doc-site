@@ -155,6 +155,9 @@ function VisitTracker(): null {
   const {pathname} = useLocation();
 
   useEffect(() => {
+    if (pathname.startsWith('/status')) {
+      return; // 统计页自身不计入访问统计
+    }
     try {
       fetch('/api/track', {
         method: 'POST',

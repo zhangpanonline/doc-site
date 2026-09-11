@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import Layout from '@theme/Layout';
 import './status.css';
 
@@ -10,24 +10,30 @@ import './status.css';
  */
 
 type DailyPoint = {date: string; count: number};
-type Country = {country: string; count: number; regions: {region: string; count: number}[]};
+type Region = {region: string; count: number};
 type IpRow = {
   ip: string;
   count: number;
   first: string;
   last: string;
   last7: number;
-  country: string | null;
   region: string | null;
   city: string | null;
+  browser: string;
+  app: string;
+  os: string;
 };
 type PathRow = {path: string; count: number};
 type Stats = {
   total: number;
   unique_ips: number;
   today: number;
+  new_ips_today?: number;
+  new_regions_today?: number;
   daily: DailyPoint[];
-  countries: Country[];
+  regions?: Region[];
+  /** 旧版 SQL（003 之前）的兼容字段，regions 缺失时兜底 */
+  countries?: {country: string; count: number; regions: {region: string; count: number}[]}[];
   ips: IpRow[];
   paths: PathRow[];
   updated_at: string;
@@ -35,6 +41,17 @@ type Stats = {
 
 const TOKEN_KEY = 'status-token';
 const REFRESH_MS = 60_000;
+
+type WhoAmI = {
+  ip: string;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  browser: string;
+  app: string;
+  os: string;
+  history: {count: number; last7: number; first: string; last: string} | null;
+};
 
 function fmt(n: number): string {
   return n.toLocaleString('zh-CN');
@@ -134,17 +151,40 @@ function Kpi({stats}: {stats: Stats}) {
   const daily = stats.daily;
   const today = daily.length > 0 ? daily[daily.length - 1].count : 0;
   const yesterday = daily.length > 1 ? daily[daily.length - 2].count : 0;
-  const delta = today - yesterday;
+  const deltaVisits = today - yesterday;
+  const regionCount = stats.regions?.length ?? 0;
 
+  // 累计类指标（总访问量/独立 IP/地区数）的「较昨日」= 今日新增（累计量只能涨）
   const tiles: {label: string; value: string; delta?: {text: string; up: boolean}}[] = [
-    {label: '总访问量', value: fmt(stats.total)},
-    {label: '独立 IP', value: fmt(stats.unique_ips)},
+    {
+      label: '总访问量',
+      value: fmt(stats.total),
+      delta: today > 0 ? {text: `+${fmt(today)} 较昨日`, up: true} : undefined,
+    },
+    {
+      label: '独立 IP',
+      value: fmt(stats.unique_ips),
+      delta:
+        stats.new_ips_today != null && stats.new_ips_today > 0
+          ? {text: `+${fmt(stats.new_ips_today)} 较昨日`, up: true}
+          : undefined,
+    },
     {
       label: '今日访问',
       value: fmt(stats.today),
-      delta: delta === 0 ? undefined : {text: `${delta > 0 ? '+' : ''}${fmt(delta)} 较昨日`, up: delta > 0},
+      delta:
+        deltaVisits === 0
+          ? undefined
+          : {text: `${deltaVisits > 0 ? '+' : ''}${fmt(deltaVisits)} 较昨日`, up: deltaVisits > 0},
     },
-    {label: '国家 / 地区', value: fmt(stats.countries.length)},
+    {
+      label: '地区数',
+      value: fmt(regionCount),
+      delta:
+        stats.new_regions_today != null && stats.new_regions_today > 0
+          ? {text: `+${fmt(stats.new_regions_today)} 较昨日`, up: true}
+          : undefined,
+    },
   ];
 
   return (
@@ -310,57 +350,43 @@ function TrendChart({daily}: {daily: DailyPoint[]}) {
   );
 }
 
-/** 国家/地区分布：横向条形图，值直接标注在条形末端；地区细分常显前 3 个 */
-function Countries({countries}: {countries: Country[]}) {
+/** 地区分布：横向条形图，只按地区统计（不区分国家） */
+function Regions({regions}: {regions: Region[]}) {
   const [hover, setHover] = useState<number | null>(null);
-  const max = Math.max(1, ...countries.map(c => c.count));
+  const max = Math.max(1, ...regions.map(r => r.count));
 
   return (
     <section className="card">
-      <h2>国家 / 地区分布</h2>
-      {countries.length === 0 ? (
+      <h2>地区分布</h2>
+      {regions.length === 0 ? (
         <p className="empty">暂无数据</p>
       ) : (
         <ul className="country-list">
-          {countries.map((c, i) => {
-            const topRegions = c.regions.slice(0, 3);
-            const rest = c.regions.length - topRegions.length;
-            return (
-              <li
-                key={c.country}
-                className="country-row"
-                tabIndex={0}
-                onMouseEnter={() => setHover(i)}
-                onMouseLeave={() => setHover(null)}
-                onFocus={() => setHover(i)}
-                onBlur={() => setHover(null)}>
-                <span className="country-name" title={c.country}>
-                  {c.country}
-                  <span className="country-regions">
-                    {c.regions.length === 0
-                      ? '未知地区'
-                      : `${topRegions.map(r => `${r.region} ${fmt(r.count)}`).join(' · ')}${rest > 0 ? ` · +${rest} 地区` : ''}`}
-                  </span>
-                </span>
-                <span className="country-track">
-                  <span className="country-bar" style={{width: `${(c.count / max) * 100}%`}} />
-                </span>
-                <span className="country-value">{fmt(c.count)}</span>
-                {hover === i && (
-                  <div className="country-tooltip" role="status">
-                    <strong>
-                      {fmt(c.count)} 次 · {c.country}
-                    </strong>
-                    {c.regions.map(r => (
-                      <span key={r.region}>
-                        {r.region} — {fmt(r.count)} 次
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </li>
-            );
-          })}
+          {regions.map((r, i) => (
+            <li
+              key={r.region}
+              className="country-row"
+              tabIndex={0}
+              onMouseEnter={() => setHover(i)}
+              onMouseLeave={() => setHover(null)}
+              onFocus={() => setHover(i)}
+              onBlur={() => setHover(null)}>
+              <span className="country-name" title={r.region}>
+                {r.region}
+              </span>
+              <span className="country-track">
+                <span className="country-bar" style={{width: `${(r.count / max) * 100}%`}} />
+              </span>
+              <span className="country-value">{fmt(r.count)}</span>
+              {hover === i && (
+                <div className="country-tooltip" role="status">
+                  <strong>
+                    {fmt(r.count)} 次 · {r.region}
+                  </strong>
+                </div>
+              )}
+            </li>
+          ))}
         </ul>
       )}
     </section>
@@ -399,15 +425,87 @@ function Paths({paths}: {paths: PathRow[]}) {
   );
 }
 
+type SortKey = 'ip' | 'geo' | 'browser' | 'app' | 'os' | 'count' | 'last7' | 'freq' | 'first' | 'last';
+
+/** 表头排序图标：上下两个小三角，激活方向高亮 */
+function SortIcon({dir}: {dir: 1 | -1 | 0}) {
+  return (
+    <svg className="sort-icon" viewBox="0 0 10 14" aria-hidden="true">
+      <path d="M5 1 L9 6 H1 Z" fill={dir === 1 ? 'var(--series-1)' : 'var(--text-muted)'} />
+      <path d="M5 13 L1 8 H9 Z" fill={dir === -1 ? 'var(--series-1)' : 'var(--text-muted)'} />
+    </svg>
+  );
+}
+
 function IpTable({ips}: {ips: IpRow[]}) {
   const [showAll, setShowAll] = useState(false);
-  const visible = showAll ? ips : ips.slice(0, 20);
+  // 默认按最近访问降序（最新在最前）
+  const [sort, setSort] = useState<{key: SortKey; dir: 1 | -1}>({key: 'last', dir: -1});
+
+  const freqOf = (r: IpRow) =>
+    r.count / Math.max(1, Math.floor((Date.parse(r.last) - Date.parse(r.first)) / 86_400_000));
+
+  const sorted = useMemo(() => {
+    const val = (r: IpRow, k: SortKey): string | number => {
+      switch (k) {
+        case 'ip':
+          return r.ip;
+        case 'geo':
+          return [r.region, r.city].filter(Boolean).join(' / ') || '未知';
+        case 'browser':
+          return r.browser;
+        case 'app':
+          return r.app;
+        case 'os':
+          return r.os;
+        case 'count':
+          return r.count;
+        case 'last7':
+          return r.last7;
+        case 'freq':
+          return freqOf(r);
+        case 'first':
+          return Date.parse(r.first);
+        case 'last':
+          return Date.parse(r.last);
+      }
+    };
+    return [...ips].sort((a, b) => {
+      const va = val(a, sort.key);
+      const vb = val(b, sort.key);
+      const cmp =
+        typeof va === 'string' && typeof vb === 'string' ? va.localeCompare(vb, 'zh-CN') : (va as number) - (vb as number);
+      return cmp * sort.dir;
+    });
+  }, [ips, sort]);
+
+  const toggle = (key: SortKey) => {
+    setSort(s =>
+      s.key === key
+        ? {key, dir: s.dir === 1 ? -1 : 1}
+        : {key, dir: key === 'count' || key === 'last7' || key === 'freq' || key === 'last' ? -1 : 1},
+    );
+  };
+
+  const Th = ({k, label, align}: {k: SortKey; label: string; align?: 'num'}) => {
+    const active = sort.key === k;
+    return (
+      <th className={align} aria-sort={active ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}>
+        <button type="button" className="th-btn" onClick={() => toggle(k)}>
+          {label}
+          <SortIcon dir={active ? sort.dir : 0} />
+        </button>
+      </th>
+    );
+  };
+
+  const visible = showAll ? sorted : sorted.slice(0, 20);
 
   return (
     <section className="card">
       <div className="card-head">
         <h2>IP 明细</h2>
-        <span className="card-note">按访问次数排序 · 频率 = 总次数 ÷ 首次至最近的天数</span>
+        <span className="card-note">点击表头排序 · 频率 = 总次数 ÷ 首次至最近的天数</span>
       </div>
       {ips.length === 0 ? (
         <p className="empty">暂无数据</p>
@@ -417,27 +515,31 @@ function IpTable({ips}: {ips: IpRow[]}) {
             <table>
               <thead>
                 <tr>
-                  <th>IP</th>
-                  <th>地区</th>
-                  <th className="num">次数</th>
-                  <th className="num">近 7 天</th>
-                  <th className="num">频率（次/天）</th>
-                  <th className="num">首次访问</th>
-                  <th className="num">最近访问</th>
+                  <Th k="ip" label="IP" />
+                  <Th k="geo" label="地区" />
+                  <Th k="browser" label="浏览器" />
+                  <Th k="app" label="应用" />
+                  <Th k="os" label="系统" />
+                  <Th k="count" label="次数" align="num" />
+                  <Th k="last7" label="近 7 天" align="num" />
+                  <Th k="freq" label="频率（次/天）" align="num" />
+                  <Th k="first" label="首次访问" align="num" />
+                  <Th k="last" label="最近访问" align="num" />
                 </tr>
               </thead>
               <tbody>
                 {visible.map(r => {
-                  const geo = [r.country, r.region, r.city].filter(Boolean).join(' / ') || '未知';
-                  const days = Math.max(1, Math.floor((Date.parse(r.last) - Date.parse(r.first)) / 86_400_000));
-                  const freq = r.count / days;
+                  const geo = [r.region, r.city].filter(Boolean).join(' / ') || '未知';
                   return (
                     <tr key={r.ip}>
                       <td className="mono">{r.ip}</td>
                       <td>{geo}</td>
+                      <td>{r.browser}</td>
+                      <td>{r.app}</td>
+                      <td>{r.os}</td>
                       <td className="num">{fmt(r.count)}</td>
                       <td className="num">{fmt(r.last7)}</td>
-                      <td className="num">{r.count <= 1 ? '—' : freq.toFixed(1)}</td>
+                      <td className="num">{r.count <= 1 ? '—' : freqOf(r).toFixed(1)}</td>
                       <td className="num">{fmtClock(r.first)}</td>
                       <td className="num">{fmtClock(r.last)}</td>
                     </tr>
@@ -460,6 +562,20 @@ function IpTable({ips}: {ips: IpRow[]}) {
 export default function StatusPage(): React.JSX.Element {
   const {stats, stale, error, token, setToken, load} = useStats();
   const [tokenInput, setTokenInput] = useState('');
+  const [whoami, setWhoami] = useState<WhoAmI | null>(null);
+
+  useEffect(() => {
+    fetch('/api/whoami')
+      .then(res => (res.ok ? res.json() : null))
+      .then((d: WhoAmI | null) => {
+        if (d) {
+          setWhoami(d);
+        }
+      })
+      .catch(() => {
+        // 自述接口不可用时静默隐藏卡片
+      });
+  }, []);
 
   const saveToken = () => {
     try {
@@ -484,6 +600,51 @@ export default function StatusPage(): React.JSX.Element {
             刷新
           </button>
         </header>
+
+        {whoami && (
+          <section className="card">
+            <div className="card-head">
+              <h2>当前访客（你）</h2>
+              <span className="card-note">本页访问不计入统计</span>
+            </div>
+            <div className="whoami-grid">
+              <span className="whoami-item">
+                <label>IP</label>
+                <b className="mono">{whoami.ip || '未知'}</b>
+              </span>
+              <span className="whoami-item">
+                <label>地区</label>
+                <b>{[whoami.region, whoami.city].filter(Boolean).join(' / ') || '未知'}</b>
+              </span>
+              <span className="whoami-item">
+                <label>浏览器</label>
+                <b>{whoami.browser}</b>
+              </span>
+              <span className="whoami-item">
+                <label>应用</label>
+                <b>{whoami.app}</b>
+              </span>
+              <span className="whoami-item">
+                <label>系统</label>
+                <b>{whoami.os}</b>
+              </span>
+              {whoami.history ? (
+                <span className="whoami-item">
+                  <label>历史访问</label>
+                  <b>
+                    {fmt(whoami.history.count)} 次 · 近 7 天 {fmt(whoami.history.last7)} 次 · 首次{' '}
+                    {fmtClock(whoami.history.first)} · 最近 {fmtClock(whoami.history.last)}
+                  </b>
+                </span>
+              ) : (
+                <span className="whoami-item">
+                  <label>历史访问</label>
+                  <b>暂无记录</b>
+                </span>
+              )}
+            </div>
+          </section>
+        )}
 
         {error === 'unauthorized' && (
           <section className="card token-card">
@@ -532,7 +693,11 @@ export default function StatusPage(): React.JSX.Element {
             <Kpi stats={stats} />
             <TrendChart daily={stats.daily} />
             <div className="status-grid">
-              <Countries countries={stats.countries} />
+              <Regions
+                regions={
+                  stats.regions ?? (stats.countries ?? []).flatMap(c => c.regions ?? []) /* 旧版 SQL 兜底 */
+                }
+              />
               <Paths paths={stats.paths} />
             </div>
             <IpTable ips={stats.ips} />

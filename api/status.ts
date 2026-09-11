@@ -1,5 +1,6 @@
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {getSupabaseAdmin} from '../lib/supabase-admin';
+import {parseUA} from '../lib/ua';
 
 function firstValue(v: string | string[] | undefined): string {
   return Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
@@ -33,6 +34,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     if (error) {
       throw error;
+    }
+    // 富化 IP 明细：用最近一次访问的 UA 解析出浏览器/应用/系统，并剥掉原始 UA
+    if (Array.isArray(data.ips)) {
+      data.ips = data.ips.map((row) => {
+        const {user_agent, ...rest} = row;
+        return {...rest, ...parseUA(user_agent)};
+      });
     }
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json(data);
