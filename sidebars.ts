@@ -40,6 +40,11 @@ commonSidebar.push(
   'common/database-pg/pg-09-全文检索',
   'common/database-pg/pg-10-显式锁与死锁',
   'common/database-pg/pg-11-EXPLAIN进阶',
+  'common/database-pg/pg-12-客户端认证',
+  'common/database-pg/pg-13-角色与权限',
+  'common/database-pg/pg-14-备份与恢复',
+  'common/database-pg/pg-15-日常维护',
+  'common/database-pg/pg-16-服务器配置',
 );
 
 export default sidebars;
