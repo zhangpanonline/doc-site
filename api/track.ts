@@ -1,6 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {getSupabaseAdmin} from '../lib/supabase-admin';
+import {enrichGeo} from '../lib/geo';
 
 function firstHeader(v: string | string[] | undefined): string {
   return Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
@@ -45,13 +46,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Set-Cookie', `visitor_id=${visitorId}; Max-Age=31536000; Path=/; SameSite=Lax`);
   }
 
+  const country = (req.headers['x-vercel-ip-country'] as string) ?? null;
+  let region = (req.headers['x-vercel-ip-country-region'] as string) ?? null;
+  let city = (req.headers['x-vercel-ip-city'] as string) ?? null;
+  // Vercel 地理库缺省/市（数据中心、代理出口、部分 NAT 网段）时用第三方补齐（按 IP 缓存 30 天）
+  if (!region || !city) {
+    const geo = await enrichGeo(ip);
+    region = region ?? geo.region;
+    city = city ?? geo.city;
+  }
+
   try {
     await getSupabaseAdmin().from('visits').insert({
       ip,
       visitor_id: visitorId,
-      country: req.headers['x-vercel-ip-country'] ?? null,
-      region: req.headers['x-vercel-ip-country-region'] ?? null,
-      city: req.headers['x-vercel-ip-city'] ?? null,
+      country,
+      region,
+      city,
       path,
       user_agent: ua,
       referer: firstHeader(req.headers.referer).slice(0, 500) || null,

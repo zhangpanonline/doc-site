@@ -294,9 +294,9 @@ function TrendChart({daily}: {daily: DailyPoint[]}) {
                 {fmt(v)}
               </text>
             ))}
-            {/* X 轴刻度：每 5 天一个 */}
+            {/* X 轴刻度：每 5 天一个 + 最后一天（今天）必标 */}
             {daily.map((d, i) => {
-              const labeled = i % 5 === 0 && (i < n - 3 || i === n - 1);
+              const labeled = (i % 5 === 0 && i < n - 3) || i === n - 1;
               return labeled ? (
                 <text key={d.date} x={x(i)} y={H - 8} textAnchor="middle" fontSize="11" fill="var(--text-muted)">
                   {fmtDay(d.date)}
@@ -464,17 +464,21 @@ function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total:
     visitors: number;
   } | null>(null);
   const max = Math.max(1, ...provinceStats.map(p => p.count));
-  // 对数分档：访问量长尾分布下色阶更均匀
-  const scale = (c: number) => (c <= 0 ? -1 : Math.min(4, Math.floor((Math.log(c) / Math.log(max)) * 5)));
+  // 对数分档：访问量长尾分布下色阶更均匀。
+  // 注意 Math.log(max) 在 max=1（数据极少/全新数据库）时为 0，除以零会得 NaN →
+  // fill 变成非法 CSS 变量（省份黑块）；用 Math.max(2, max) 兜底
+  const logMax = Math.log(Math.max(2, max));
+  const scale = (c: number) => (c <= 0 ? -1 : Math.min(4, Math.max(0, Math.floor((Math.log(c) / logMax) * 5))));
 
   const statsByName = new Map<string, ProvinceStat>();
   for (const p of provinceStats) {
     if (p.region === '未知') {
       continue;
     }
-    const zh = regionZh(p.region);
-    if (!statsByName.has(zh)) {
-      statsByName.set(zh, p);
+    // 双保险：中文名再过一遍省/市后缀剥离，兼容源数据直接给「广东省」这类带后缀值
+    const key = stripSuffix(regionZh(p.region));
+    if (!statsByName.has(key)) {
+      statsByName.set(key, p);
     }
   }
 
