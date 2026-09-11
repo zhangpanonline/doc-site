@@ -54,6 +54,7 @@
 - **勿在 worktree 跑 `vercel link`**（会误建 Vercel 项目）；部署沿用现有项目。
 - SEO 状态：站长平台只做百度/谷歌/必应三家（验证文件在 static/）；360/搜狗/神马因需 ICP 备案放弃（2026-09-11 用户决定）。站点侧优化（社交卡片 img/social-card.png、JSON-LD、92 篇 description）已上线，新增文档遵守 description 规则即可。
 - IndexNow 已启用：key 文件在 `static/18cc253b5a5f858ee5ffe7b451a0533c.txt`；内容更新/新文档发布后跑 `bash scripts/indexnow-ping.sh [路径...]` 主动通知 Bing。
+- 百度主动推送：`BAIDU_PUSH_TOKEN=<token> bash scripts/baidu-push.sh`（token 在百度站长 → 资源提交 → 普通收录 → 推送接口；脚本读本地 build/sitemap.xml 全量推送，需先 pnpm build）。token 不入库，走环境变量。
 
 ## 其他
 
