@@ -27,7 +27,7 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--bg) url('/img/page-noise.png'); /* 与站点一致的纸纹（亮色） */
   color: var(--fg);
   font-family: var(--sans);
   font-size: 17px;
@@ -285,6 +285,30 @@ pre code { background: none; padding: 0; font-size: inherit; }
 .pitfall-list li { margin: .45rem 0; font-size: .95rem; }
 
 .print-badge { font-size: .82rem; color: var(--muted); }
+
+/* ---------- 深色（跟随系统设置；静态页无主题切换脚本） ---------- */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #262117;            /* 牛皮纸底（与站点 A 方案一致） */
+    --fg: #eae3d2;
+    --muted: #a99f8a;
+    --accent: #e8855f;
+    --accent-ink: #f2a080;
+    --ok: #7ecb8a;
+    --bad: #e08b7a;
+    --border: #403829;
+    --card: #312b20;
+    --code-bg: #312b20;
+    --highlight: #3b2f20;
+  }
+  body { background-image: url('/img/dark-noise.png'); }
+  pre { background: #211d14; } /* 代码块与站点深色同底 */
+  .quiz-option { background: #2b251b; }
+  .quiz-option.correct { background: rgba(126, 203, 138, .14); color: #9fd8a2; }
+  .quiz-option.wrong { background: rgba(224, 139, 122, .14); color: #e89a8a; }
+  .iv-answer { background: #2b251b; }
+}
 
 /* ---------- 打印 ---------- */
 

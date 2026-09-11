@@ -59,10 +59,11 @@
   --ifm-color-emphasis-300: #d8d0c0;
   --ifm-color-emphasis-600: var(--course-muted);
 
-  /* ===== 字体：标题宋体（讲义感），正文系统无衬线 ===== */
+  /* ===== 字体：标题宋体（讲义感），正文系统无衬线，代码手写等宽（霞鹜文楷 Mono） ===== */
   --ifm-heading-font-family: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "STSong", Georgia, "Times New Roman", serif;
-  --ifm-font-family-monospace: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "JetBrains Mono", "Courier New", monospace;
-  --ifm-code-font-size: 95%;
+  --ifm-font-family-monospace: "LXGW WenKai Mono GB Screen", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "JetBrains Mono", "Courier New", monospace;
+  --ifm-code-font-size: calc(95% + 1px); /* 在默认 95% 基础上再大 1px，手写体更易读 */
+  --ifm-pre-line-height: 1.8; /* 手写笔记的宽松行距 */
   --docusaurus-highlighted-code-line-bg: rgba(157, 59, 44, 0.08);
 
   /* ===== 滚动条：墨色淡描 ===== */
@@ -72,30 +73,32 @@
   --ifm-scrollbar-thumb-hover-background-color: rgba(45, 41, 38, 0.45);
 }
 
-/* ===== 暗色：深夜蓝墨 + 朱砂 ===== */
+/* ===== 深色：牛皮纸夜读 + 朱砂（A 方案：夜间暗度 + 暖色调 + 纸纹颗粒） ===== */
 [data-theme='dark'] {
-  --course-bg: #131621;            /* 蓝黑墨底 */
-  --course-fg: #e6e1d3;            /* 暖纸色文字 */
-  --course-muted: #8b90a5;         /* 青灰次要 */
-  --course-accent: #e07a5f;        /* 朱砂（亮化） */
-  --course-accent-ink: #f2a08a;    /* 链接朱砂 */
-  --course-border: #262b3d;        /* 墨蓝边线 */
-  --course-card: #1a1f2e;          /* 卡片面 */
-  --course-code-bg: #1b2133;       /* 代码底 */
-  --course-highlight: #34232b;     /* 朱批洗染高亮 */
+  --course-bg: #262117;            /* 牛皮纸底 */
+  --course-fg: #eae3d2;            /* 暖奶油文字 */
+  --course-muted: #a99f8a;         /* 暖灰次要 */
+  --course-accent: #e8855f;        /* 朱砂强调 */
+  --course-accent-ink: #f2a080;    /* 链接朱砂 */
+  --course-ok: #7ecb8a;            /* 答对绿（暗色提亮） */
+  --course-bad: #e08b7a;           /* 答错红（暗色提亮） */
+  --course-border: #403829;        /* 暖褐边线 */
+  --course-card: #312b20;          /* 卡片面 */
+  --course-code-bg: #312b20;       /* 代码底（行内 chip） */
+  --course-highlight: #3b2f20;     /* 朱批洗染高亮 */
 
   /* 墨块：暗色下同为卡片面 */
   --hero-bg: var(--course-card);
   --hero-fg: var(--course-fg);
-  --tile-bg: #1f2433;              /* 暗色单元卡片：亮于卡片面一层 */
+  --tile-bg: #363024;              /* 暗色单元卡片：亮于卡片面一层 */
 
-  --ifm-color-primary: #e07a5f;
-  --ifm-color-primary-dark: #c96548;
-  --ifm-color-primary-darker: #b55740;
-  --ifm-color-primary-darkest: #93452f;
-  --ifm-color-primary-light: #e88a71;
-  --ifm-color-primary-lighter: #ef9c85;
-  --ifm-color-primary-lightest: #f5b3a1;
+  --ifm-color-primary: #e8855f;
+  --ifm-color-primary-dark: #d3704b;
+  --ifm-color-primary-darker: #bd6240;
+  --ifm-color-primary-darkest: #9c5034;
+  --ifm-color-primary-light: #ec916f;
+  --ifm-color-primary-lighter: #f0a185;
+  --ifm-color-primary-lightest: #f5b8a0;
 
   --ifm-background-color: var(--course-bg);
   --ifm-background-surface-color: var(--course-card);
@@ -111,7 +114,7 @@
   --ifm-menu-color: var(--course-fg);
   --ifm-menu-color-active: var(--course-accent);
   --ifm-menu-color-background-active: var(--course-highlight);
-  --ifm-menu-color-background-hover: rgba(224, 122, 95, 0.08);
+  --ifm-menu-color-background-hover: rgba(232, 133, 95, 0.1);
   --ifm-toc-border-color: var(--course-border);
   --ifm-hr-border-color: var(--course-border);
   --ifm-table-border-color: var(--course-border);
@@ -119,11 +122,11 @@
   --ifm-blockquote-border-left-color: var(--course-accent);
   --ifm-color-emphasis-100: var(--course-code-bg);
   --ifm-color-emphasis-200: var(--course-border);
-  --ifm-color-emphasis-300: #343b52;
+  --ifm-color-emphasis-300: #4a4234;
   --ifm-color-emphasis-600: var(--course-muted);
-  --docusaurus-highlighted-code-line-bg: rgba(224, 122, 95, 0.12);
-  --ifm-scrollbar-thumb-background-color: rgba(230, 225, 211, 0.22);
-  --ifm-scrollbar-thumb-hover-background-color: rgba(230, 225, 211, 0.38);
+  --docusaurus-highlighted-code-line-bg: rgba(232, 133, 95, 0.14);
+  --ifm-scrollbar-thumb-background-color: rgba(234, 227, 210, 0.2);
+  --ifm-scrollbar-thumb-hover-background-color: rgba(234, 227, 210, 0.34);
 }
 
 /* ===== 导航栏：纸面 + 纸纹边线（去投影） ===== */
@@ -164,13 +167,52 @@
   border-right: 2px solid var(--course-accent);
 }
 
-/* ===== 代码块：纸底 + 纸纹边 ===== */
+/* ===== 代码块：手写笔记纸面——纸底 + 纸纹边 + 纸纹颗粒 + 轻抬纸影 ===== */
 .theme-code-block {
+  position: relative;
   border: 1px solid var(--course-border);
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(45, 41, 38, 0.06), 0 6px 18px rgba(45, 41, 38, 0.07);
 }
+/* 代码块：平铺浅纸底（无纹理；实际底色由 prism 主题内联注入 #f8f5ed） */
 .theme-code-block pre {
   background-color: var(--course-code-bg);
+}
+[data-theme='dark'] .theme-code-block {
+  box-shadow: none; /* 深夜蓝墨：保持平面感 */
+}
+
+/* 页面纸纹：html 与 body 同时铺同款纸纹（仅亮色），滚动全程画布与盒子都有纹理；
+   基色保持 --course-bg 不变 */
+html,
+body {
+  background-color: var(--course-bg);
+  background-image: url('/img/page-noise.png');
+}
+html[data-theme='dark'],
+html[data-theme='dark'] body {
+  background-image: url('/img/dark-noise.png'); /* 深色同款纸纹 */
+}
+
+/* 高亮行：朱批墨线，像批注时划下的记号 */
+.theme-code-block-highlighted-line {
+  position: relative;
+}
+.theme-code-block-highlighted-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--course-accent);
+}
+
+/* 文字选区：朱批洗染，与纸墨世界一致 */
+::selection {
+  background: rgba(157, 59, 44, 0.16);
+}
+[data-theme='dark'] ::selection {
+  background: rgba(232, 133, 95, 0.32);
 }
 
 /* ===== AI 大全栈 站点外壳（纸墨版） ===== */

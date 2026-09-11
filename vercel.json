@@ -1,8 +1,31 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "docusaurus-2",
   "buildCommand": "pnpm build",
   "outputDirectory": "build",
   "installCommand": "pnpm install --ignore-scripts",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": {
+            "re": ".*(headlesschrome|HeadlessChrome|phantomjs|python-requests|python-urllib|scrapy|curl/|Wget/|libwww-perl|okhttp|go-http-client|node-fetch|axios/|aiohttp|httpx|Java/).*"
+          }
+        }
+      ],
+      "mitigate": { "action": "challenge" }
+    },
+    {
+      "src": "/(.*)",
+      "missing": [
+        { "type": "header", "key": "user-agent" }
+      ],
+      "mitigate": { "action": "challenge" }
+    }
+  ],
   "redirects": [
     {
       "source": "/python/%e5%ae%89%e8%a3%85/:path*",
