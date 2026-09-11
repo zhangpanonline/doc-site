@@ -53,6 +53,7 @@
 - 控制台配置不在代码里：AI Bots → Deny、Bot Protection → Challenge、中文蜘蛛（360Spider/Sogou/YisouSpider/Shenma）bypass、速率限制 120 次/10s/IP → Challenge（Hobby 配额：自定义规则 3 条 + 限流 1 条，已满配）。
 - **勿在 worktree 跑 `vercel link`**（会误建 Vercel 项目）；部署沿用现有项目。
 - SEO 状态：百度/谷歌/必应站长平台已提交（验证文件在 static/）；360/搜狗/神马待用户操作。站点侧优化（社交卡片 img/social-card.png、JSON-LD、92 篇 description）已上线，新增文档遵守 description 规则即可。
+- IndexNow 已启用：key 文件在 `static/18cc253b5a5f858ee5ffe7b451a0533c.txt`；内容更新/新文档发布后跑 `bash scripts/indexnow-ping.sh [路径...]` 主动通知 Bing。
 
 ## 其他
 
