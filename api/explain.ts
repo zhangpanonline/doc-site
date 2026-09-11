@@ -5,7 +5,17 @@ import {getSupabaseAdmin} from '../lib/supabase-admin';
 /** 进程内缓存的已解析模型名（模型改名时自动适配，不必改代码） */
 let cachedModel: string | null = null;
 
-/** 运行时解析可用模型：2.5-flash > 任意 flash > 任意 gemini */
+/** gemini-X.Y-flash → [X, Y]，用于按版本选最新 */
+function versionOf(name: string): [number, number] {
+  const m = /gemini-(\d+)(?:\.(\d+))?/.exec(name);
+  return m ? [Number(m[1]), Number(m[2] ?? 0)] : [0, 0];
+}
+
+/**
+ * 运行时解析可用模型：优先版本号最高的非 lite flash 模型
+ * （旧版模型对「新用户」会 404 下线，但可能仍在列表里，不能写死名字），
+ * 退而求其次任意 flash、任意 gemini。
+ */
 async function resolveModel(key: string): Promise<string | null> {
   if (cachedModel) {
     return cachedModel;
@@ -24,7 +34,15 @@ async function resolveModel(key: string): Promise<string | null> {
       .map(m => m.name ?? '')
       .filter(n => n.startsWith('models/'));
     const pick =
-      names.find(n => n === 'models/gemini-2.5-flash') ?? names.find(n => n.includes('flash')) ?? names[0];
+      names
+        .filter(n => n.includes('flash') && !n.includes('lite') && !n.endsWith('-latest'))
+        .sort((a, b) => {
+          const va = versionOf(a);
+          const vb = versionOf(b);
+          return vb[0] - va[0] || vb[1] - va[1];
+        })[0] ??
+      names.find(n => n.includes('flash')) ??
+      names[0];
     cachedModel = pick ? pick.replace(/^models\//, '') : null;
     return cachedModel;
   } catch (err) {
