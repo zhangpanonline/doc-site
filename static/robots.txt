@@ -17,6 +17,9 @@ Allow: /
 User-agent: PerplexityBot
 Allow: /
 
+User-agent: Perplexity-User
+Allow: /
+
 User-agent: Google-Extended
 Allow: /
 
@@ -37,9 +40,6 @@ User-agent: CCBot
 Disallow: /
 
 User-agent: GoogleOther
-Disallow: /
-
-User-agent: Perplexity-User
 Disallow: /
 
 User-agent: Bytespider

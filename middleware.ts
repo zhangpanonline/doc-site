@@ -22,6 +22,7 @@ const ALLOWED_UA = [
   'oai-searchbot',
   'chatgpt-user',
   'perplexitybot',
+  'perplexity-user',
   'google-extended',
   // 注意：360Spider/Sogou/YisouSpider/Shenma 已于 2026-09-11 移除——
   // 其站长平台需 ICP 备案，用户决定不提交；留白名单只是伪造 UA 的攻击面
