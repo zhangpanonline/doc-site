@@ -57,34 +57,34 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 定义抽象类的标准做法是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">类名以 Abstract 开头即可</button>
             <button class="quiz-option">继承 ABC，抽象方法加 @abstractmethod</button>
-            <button class="quiz-option">使用 @abstractclass 装饰器</button>
+            <button class="quiz-option">类名以 Abstract 开头即可</button>
             <button class="quiz-option">继承 object 并全部写 pass</button>
+            <button class="quiz-option">使用 @abstractclass 装饰器</button>
           </div>
           <div class="quiz-explain" hidden>抽象类继承 <code>abc.ABC</code>，抽象方法用 <code>@abstractmethod</code> 标记。两者配合，实例化时才会被拦截。详见「定义抽象类」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">2. 直接实例化抽象类会怎样？</div>
           <div class="quiz-options">
-            <button class="quiz-option">警告后创建成功</button>
             <button class="quiz-option">ValueError</button>
-            <button class="quiz-option">正常创建，方法为空</button>
+            <button class="quiz-option">警告后创建成功</button>
             <button class="quiz-option">TypeError：不能实例化抽象类</button>
+            <button class="quiz-option">正常创建，方法为空</button>
           </div>
           <div class="quiz-explain" hidden><code>Animal()</code> 抛 <code>TypeError: Can't instantiate abstract class ...</code>——抽象类的存在意义就是「只当契约，不当实例」。详见「抽象类基础示例」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">3. 抽象类中可以包含普通方法吗？</div>
           <div class="quiz-options">
             <button class="quiz-option">不可以，必须全部是抽象方法</button>
-            <button class="quiz-option">可以定义，但子类不能调用</button>
             <button class="quiz-option">可以，子类直接继承使用默认实现</button>
+            <button class="quiz-option">可以定义，但子类不能调用</button>
             <button class="quiz-option">只有静态方法可以</button>
           </div>
           <div class="quiz-explain" hidden>抽象类可以有<strong>普通方法</strong>（默认实现），子类直接继承使用——如 Sequence 的 is_empty 就是普通方法。详见「定义抽象类」要点。</div>
@@ -93,34 +93,34 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 子类只实现了部分抽象方法，会发生什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">实例化时只报警告</button>
             <button class="quiz-option">子类仍是抽象类，不能实例化</button>
+            <button class="quiz-option">实例化时只报警告</button>
             <button class="quiz-option">未实现的方法用 pass 兜底</button>
             <button class="quiz-option">自动继承父类的抽象方法实现</button>
           </div>
           <div class="quiz-explain" hidden>漏掉任意抽象方法，子类<strong>仍是抽象类</strong>——实例化抛 TypeError。详见「子类必须实现所有抽象方法」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">5. 抽象属性 <code>salary</code> 的装饰器顺序是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">@property 在上，@abstractmethod 在下</button>
             <button class="quiz-option">只用 @abstractmethod 即可</button>
             <button class="quiz-option">@abstractmethod 在上，@property 在下</button>
             <button class="quiz-option">顺序无所谓</button>
+            <button class="quiz-option">@property 在上，@abstractmethod 在下</button>
           </div>
           <div class="quiz-explain" hidden>抽象属性写法：<code>@property</code> 在上、<code>@abstractmethod</code> 在下，顺序<strong>不能颠倒</strong>。详见「抽象属性」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">6. 抽象类最典型的应用场景是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">缓存计算结果</button>
             <button class="quiz-option">存放常量集合</button>
             <button class="quiz-option">定义插件接口/框架扩展点</button>
+            <button class="quiz-option">缓存计算结果</button>
             <button class="quiz-option">替代普通工具函数</button>
           </div>
           <div class="quiz-explain" hidden>抽象类常用于<strong>插件接口/框架扩展点</strong>：如 DataSource 定义 connect/read/close，MySQL/MongoDB 各自实现，调用方只认抽象类型。详见「实际应用场景」一节。</div>
@@ -129,12 +129,12 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. <code>class B(A)</code> 实现了全部抽象方法，<code>class C(B): pass</code>。C 能实例化吗？</div>
           <div class="quiz-options">
-            <button class="quiz-option">能，抽象方法已在 B 中实现</button>
-            <button class="quiz-option">能，但调用抽象方法会报错</button>
             <button class="quiz-option">不能，C 本身是抽象类</button>
+            <button class="quiz-option">能，但调用抽象方法会报错</button>
+            <button class="quiz-option">能，抽象方法已在 B 中实现</button>
             <button class="quiz-option">不能，C 没亲自实现抽象方法</button>
           </div>
           <div class="quiz-explain" hidden>抽象方法<strong>沿继承链生效</strong>：B 已实现全部抽象方法，B 及其子类 C 都不是抽象类——C 可直接实例化，调用方法沿 MRO 找到 B 的实现。详见「子类必须实现所有抽象方法」一节。</div>
@@ -143,19 +143,19 @@
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">8. 多态场景：<code>process_data(source: DataSource)</code> 接收抽象类型，传 MySQLSource 与 MongoDBSource 都能工作，靠的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">Python 不检查参数类型，随便传都行</button>
             <button class="quiz-option">两者都继承自同一个具体类</button>
+            <button class="quiz-option">Python 不检查参数类型，随便传都行</button>
             <button class="quiz-option">运行时自动转换类型</button>
             <button class="quiz-option">两者都实现了 DataSource 声明的全部抽象方法</button>
           </div>
           <div class="quiz-explain" hidden>抽象类契约 + 多态：两个数据源都实现了 connect/read/close 三个抽象方法（否则实例化都过不去），调用方才能「面向抽象编程」——这就是插件接口模式的完整闭环。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">9. 抽象基类里定义的普通方法 <code>describe</code> 内部调用了抽象方法 <code>self.area()</code>，子类只实现 area 后调用 describe，会发生什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">describe 也需要在子类重写</button>
             <button class="quiz-option">正常执行，self.area() 动态分发到子类实现</button>
+            <button class="quiz-option">describe 也需要在子类重写</button>
             <button class="quiz-option">报错，普通方法不能调用抽象方法</button>
             <button class="quiz-option">调用到 pass 空实现，返回 None</button>
           </div>
@@ -169,12 +169,12 @@
       <p>下面是《19.ABC》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核一（作业一·抽象缓存）：抽象基类 Cache 声明 get/set/delete 三个抽象方法，MemoryCache 用字典实现。下列做法中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">MemoryCache 不继承 Cache，自己独立实现</button>
-            <button class="quiz-option">只实现 get 和 set，delete 留到调用时再说</button>
             <button class="quiz-option">MemoryCache(Cache) 用字典实现全部三个抽象方法</button>
+            <button class="quiz-option">只实现 get 和 set，delete 留到调用时再说</button>
             <button class="quiz-option">Cache 不继承 ABC，只用注释说明接口</button>
           </div>
           <div class="quiz-explain" hidden>正确做法：<code>MemoryCache(Cache)</code> 继承抽象基类，<strong>三个方法全部实现</strong>（<code>get → dict.get(key)</code>；<code>set → 赋值</code>；<code>delete → del</code>）。第二个不继承就失去契约约束 ✗；第三个漏实现，实例化直接 TypeError ✗；第四个没有强制力 ✗。</div>
@@ -213,10 +213,10 @@ class MemoryCache(Cache):
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核二（作业二·抽象序列）：Sequence 声明 append/get/length/__iter__ 四个抽象方法，并带普通方法 is_empty（<code>return self.length() == 0</code>）。实现 ListSequence 时正确的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">__iter__ 用 yield 实现而不是 return iter(...)</button>
+            <button class="quiz-option">只实现 append 和 get 两个即可实例化</button>
             <button class="quiz-option">基于列表实现四个抽象方法，is_empty 直接继承使用</button>
             <button class="quiz-option">连 is_empty 也要在子类里重写一遍</button>
-            <button class="quiz-option">只实现 append 和 get 两个即可实例化</button>
+            <button class="quiz-option">__iter__ 用 yield 实现而不是 return iter(...)</button>
           </div>
           <div class="quiz-explain" hidden><code>ListSequence</code> 实现四个抽象方法（<code>__iter__</code> 直接 <code>return iter(self._data)</code>），普通方法 <code>is_empty</code> <strong>自动继承</strong>。第二个重复劳动 ✗；第三个漏两个方法，实例化 TypeError ✗；四个抽象方法必须全部实现。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -257,24 +257,24 @@ class ListSequence(Sequence):
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">考核三（作业三·思考题）：<code>class B(A)</code> 实现了 foo；<code>class C(B): pass</code>。执行 <code>c.foo(); c.bar()</code>（bar 是 A 的普通方法），输出是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">B.foo 然后 A.bar</button>
             <button class="quiz-option">实例化 C 直接 TypeError</button>
             <button class="quiz-option">A.foo 然后 A.bar</button>
-            <button class="quiz-option">B.foo 然后 A.bar</button>
             <button class="quiz-option">B.foo 然后 B.bar</button>
           </div>
           <div class="quiz-explain" hidden>C 没写任何方法，但 B 已实现抽象方法 foo，所以 <strong>C 可以实例化</strong>。调用沿 MRO 查找：<code>c.foo() → B.foo</code>（输出 B.foo）；<code>c.bar() → A.bar</code>（普通方法，输出 A.bar）。顺序：<strong>B.foo → A.bar</strong>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（思考题第二问）：<code>class D(A): pass</code>（A 有抽象方法 foo，D 不实现），执行 <code>d = D()</code> 会怎样？</div>
           <div class="quiz-options">
             <button class="quiz-option">SyntaxError</button>
             <button class="quiz-option">自动继承 A 的 pass 实现</button>
-            <button class="quiz-option">TypeError：不能实例化抽象类 D</button>
             <button class="quiz-option">正常创建，foo 调用时报错</button>
+            <button class="quiz-option">TypeError：不能实例化抽象类 D</button>
           </div>
           <div class="quiz-explain" hidden>D 没有实现抽象方法 foo，<strong>仍是抽象类</strong>——实例化抛 <code>TypeError: Can't instantiate abstract class D with abstract method foo</code>。错误在创建对象时就暴露，这正是抽象类的价值。</div>
         </div>

@@ -57,35 +57,35 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 迭代器（Iterator）必须实现哪两个方法？</div>
           <div class="quiz-options">
             <button class="quiz-option">__enter__ 和 __exit__</button>
-            <button class="quiz-option">__iter__ 和 __next__</button>
             <button class="quiz-option">__get__ 和 __set__</button>
             <button class="quiz-option">__add__ 和 __sub__</button>
+            <button class="quiz-option">__iter__ 和 __next__</button>
           </div>
           <div class="quiz-explain" hidden>迭代器实现 <code>__iter__</code>（返回迭代器自身）和 <code>__next__</code>（返回下一个值，耗尽抛 StopIteration）。详见「迭代器」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">2. 关于可迭代对象，说法正确的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">只有 list/tuple/dict 是可迭代对象</button>
+            <button class="quiz-option">实现 __next__ 就是可迭代对象</button>
             <button class="quiz-option">实现 __iter__ 且返回迭代器；迭代器也是可迭代对象</button>
             <button class="quiz-option">可迭代对象一定可以反复遍历</button>
-            <button class="quiz-option">实现 __next__ 就是可迭代对象</button>
           </div>
           <div class="quiz-explain" hidden>可迭代协议：实现 <code>__iter__()</code> 并返回迭代器。推理可知<strong>迭代器一定是可迭代对象</strong>（它实现了 __iter__）。可迭代对象不一定能反复遍历（迭代器自己就是一次性的）。详见「可迭代对象」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">3. 函数体内含有 <code>yield</code>，调用该函数会？</div>
           <div class="quiz-options">
-            <button class="quiz-option">立即执行函数体到结束</button>
+            <button class="quiz-option">返回生成器对象，函数体不立即执行</button>
             <button class="quiz-option">语法错误</button>
             <button class="quiz-option">返回第一个 yield 的值</button>
-            <button class="quiz-option">返回生成器对象，函数体不立即执行</button>
+            <button class="quiz-option">立即执行函数体到结束</button>
           </div>
           <div class="quiz-explain" hidden>含 <code>yield</code> 的函数是<strong>生成器函数</strong>：调用只返回 generator 对象（函数体一行都不执行），<code>next()</code> 才驱动执行到下一个 yield。详见「生成器函数」一节。</div>
         </div>
@@ -93,35 +93,35 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 迭代器耗尽后继续 <code>next()</code> 会怎样？</div>
           <div class="quiz-options">
-            <button class="quiz-option">从头重新开始</button>
+            <button class="quiz-option">抛出 StopIteration</button>
             <button class="quiz-option">返回 None</button>
             <button class="quiz-option">抛出 ValueError</button>
-            <button class="quiz-option">抛出 StopIteration</button>
+            <button class="quiz-option">从头重新开始</button>
           </div>
           <div class="quiz-explain" hidden>迭代器<strong>一次性</strong>：耗尽后 <code>next()</code> 抛 <code>StopIteration</code>——for 循环自动捕获它来结束循环。详见「可迭代对象：list」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">5. <code>range(1000000)</code> 为什么内存占用极小？</div>
           <div class="quiz-options">
-            <button class="quiz-option">惰性计算，只存 start/stop/step 三个值</button>
-            <button class="quiz-option">range 把所有数字放硬盘</button>
-            <button class="quiz-option">range 是特殊压缩格式的列表</button>
             <button class="quiz-option">range 根本不存储任何数据</button>
+            <button class="quiz-option">range 是特殊压缩格式的列表</button>
+            <button class="quiz-option">range 把所有数字放硬盘</button>
+            <button class="quiz-option">惰性计算，只存 start/stop/step 三个值</button>
           </div>
           <div class="quiz-explain" hidden>range 是<strong>可迭代对象</strong>，按需生成数字，内存里只存 start、stop、step——所以它还能切片、索引、重复遍历，但不像列表那样占内存。详见「range函数」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">6. <code>yield from sub_generator()</code> 的作用是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">结束当前生成器</button>
-            <button class="quiz-option">委托子生成器，逐一把它的值 yield 出去</button>
             <button class="quiz-option">把子生成器作为一个整体 yield</button>
             <button class="quiz-option">复制子生成器的代码</button>
+            <button class="quiz-option">结束当前生成器</button>
+            <button class="quiz-option">委托子生成器，逐一把它的值 yield 出去</button>
           </div>
           <div class="quiz-explain" hidden><code>yield from</code> 是 <code>for v in sub: yield v</code> 的语法糖——把子生成器的值<strong>逐个</strong>转发出去，递归扁平化靠的就是它。详见「链式调用」一节。</div>
         </div>
@@ -129,18 +129,18 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 生成器 <code>g</code> 被 <code>close()</code> 之后，再 <code>next(g)</code> 会怎样？</div>
           <div class="quiz-options">
-            <button class="quiz-option">抛出 GeneratorExit</button>
-            <button class="quiz-option">返回 None</button>
             <button class="quiz-option">重新从第一个 yield 开始</button>
             <button class="quiz-option">抛出 StopIteration</button>
+            <button class="quiz-option">返回 None</button>
+            <button class="quiz-option">抛出 GeneratorExit</button>
           </div>
           <div class="quiz-explain" hidden><code>close()</code> 在暂停处向生成器抛 <code>GeneratorExit</code> 终止它；之后 <code>next()</code> 得到 <strong>StopIteration</strong>——既不重来也不返回 None。详见第 15 课「生成器的一次性与关闭」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">8. 以下代码的输出是？
 <pre><code>def calculator():
     total = 0
@@ -156,20 +156,20 @@ print(calc.send(10))
 print(calc.send(20))</code></pre></div>
           <div class="quiz-options">
             <button class="quiz-option">0 → 10 → 20</button>
-            <button class="quiz-option">10 → 10 → 30</button>
             <button class="quiz-option">0 → 10 → 30</button>
+            <button class="quiz-option">10 → 10 → 30</button>
             <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>next(calc)</code> 启动，yield 出 total=0；<code>send(10)</code> 让 yield 表达式返回 10 → total=10 → yield 出 10；<code>send(20)</code> → total=30 → yield 出 30。顺序：<strong>0 → 10 → 30</strong>。send 给暂停的 yield 送值并继续执行。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">9. <code>it = iter([1, 2, 3])</code>，先 <code>next(it)</code> 一次，再 <code>list(it)</code> 的结果是？</div>
           <div class="quiz-options">
             <button class="quiz-option">[1, 2, 3]（从头开始）</button>
             <button class="quiz-option">[]（迭代器被 list 清空）</button>
-            <button class="quiz-option">[2, 3]（已消费的不再出现）</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">[2, 3]（已消费的不再出现）</button>
           </div>
           <div class="quiz-explain" hidden>迭代器是<strong>单向游标</strong>：<code>next(it)</code> 已消费 1，<code>list(it)</code> 从当前位置继续收集 → <strong>[2, 3]</strong>。这正是「迭代器一次性、无法回退」的直观体现——也是面试常问的「为什么 for 两次第二次为空」的根源。</div>
         </div>
@@ -182,13 +182,13 @@ print(calc.send(20))</code></pre></div>
       <p>📣 源作业还要求<strong>费曼复述</strong>：用你自己的话讲清「可迭代对象、迭代器、生成器」三者的概念与关系，讲不通的地方回到对话里让 AI 老师给你反馈。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核一（作业一·扁平化迭代器）：用生成器把任意嵌套列表扁平化，<code>list(flatten([1, [2, [3, 4], 5], 6]))</code> 应为 <code>[1, 2, 3, 4, 5, 6]</code>。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">用 return 递归收集结果，而不是 yield</button>
-            <button class="quiz-option">for 遍历：元素是列表则 yield from flatten(元素)，否则 yield 元素</button>
             <button class="quiz-option">只 yield 第一层元素，内层列表原样保留</button>
             <button class="quiz-option">for 遍历：元素是列表则 yield 该列表整体，否则 yield 元素</button>
+            <button class="quiz-option">用 return 递归收集结果，而不是 yield</button>
+            <button class="quiz-option">for 遍历：元素是列表则 yield from flatten(元素)，否则 yield 元素</button>
           </div>
           <div class="quiz-explain" hidden>正确答案：<code>for item in nested_list: if isinstance(item, list): yield from flatten(item) else: yield item</code>——<code>yield from</code> 把递归结果<strong>逐个</strong>转发。第二个 yield 的是子列表整体（嵌套没解开）✗；第三个 return 返回的是列表不是生成器 ✗；第四个只展开一层 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -206,12 +206,12 @@ print(list(flatten(nested)))
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核二（作业二·分页迭代器）：<code>paginated_query(25, 10)</code> 每次 yield 一页（列表），三页分别为 0-9、10-19、20-24。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">for start in range(0, total, page_size)：yield list(range(start, start+page_size))</button>
-            <button class="quiz-option">for start in range(0, total, page_size)：yield list(range(start, min(start+page_size, total)))</button>
             <button class="quiz-option">一次性 yield 整个 range(total)</button>
+            <button class="quiz-option">for start in range(0, total, page_size)：yield list(range(start, min(start+page_size, total)))</button>
             <button class="quiz-option">把每页转成字符串再 yield</button>
           </div>
           <div class="quiz-explain" hidden>正确答案用 <code>min(start + page_size, total)</code> 截住<strong>最后一页</strong>：25 个元素、每页 10 个 → 第三页是 20-24 共 5 个。第二个不截断，最后一页会多出 25-29 ✗；第三个没分页 ✗；第四个类型错误 ✗。</div>
@@ -230,7 +230,7 @@ for page in paginated_query(25, 10):
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核三（作业三·思考题）：以下代码执行到最后的 <code>print(next(g))</code> 会发生什么？
 <pre><code>def generator():
     print("准备 yield 1")
@@ -245,9 +245,9 @@ g.close()
 print(next(g))    # 这里会怎样？</code></pre></div>
           <div class="quiz-options">
             <button class="quiz-option">抛出 GeneratorExit</button>
+            <button class="quiz-option">抛出 StopIteration</button>
             <button class="quiz-option">返回 None</button>
             <button class="quiz-option">重新从 yield 1 开始</button>
-            <button class="quiz-option">抛出 StopIteration</button>
           </div>
           <div class="quiz-explain" hidden><code>g.close()</code> 在生成器暂停处抛出 <code>GeneratorExit</code> 终止它；此后对已关闭的生成器再 <code>next()</code>，得到 <strong>StopIteration</strong>——生成器既不会重来，也不会返回 None。</div>
         </div>
@@ -267,10 +267,10 @@ print(next(calc))       # 启动
 print(calc.send(10))    # ?
 print(calc.send(20))    # ?</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">0 和 10</button>
-            <button class="quiz-option">10 和 30</button>
             <button class="quiz-option">10 和 20</button>
+            <button class="quiz-option">10 和 30</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>推演：<code>next(calc)</code> 启动，yield 出 total=0；<code>send(10)</code> 让 <code>yield total</code> 表达式返回 10，total 变成 10，再 yield 出 <strong>10</strong>；<code>send(20)</code> 同理 total 变成 30，yield 出 <strong>30</strong>。<code>send</code> 给暂停的 yield 送值并继续执行。</div>
         </div>

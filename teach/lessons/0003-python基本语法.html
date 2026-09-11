@@ -65,24 +65,24 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. <code>print(type(42) == int)</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">True</button>
             <button class="quiz-option">False</button>
             <button class="quiz-option">字符串'int'</button>
             <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">True</button>
           </div>
           <div class="quiz-explain" hidden><code>type</code> 函数返回的不是字符串，而是<strong>类型对象</strong>：<code>type(42)</code> 得到 <code>&lt;class 'int'&gt;</code>，它 <code>== int</code> 成立，所以输出 <code>True</code>。详见《3.python基本语法》「type 函数」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">2. <code>print(int(3.9))</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">3.9</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">3</button>
             <button class="quiz-option">4</button>
+            <button class="quiz-option">3</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">3.9</button>
           </div>
           <div class="quiz-explain" hidden><code>int()</code> 把浮点数转整数时是<strong>截断小数</strong>，不是四舍五入：<code>int(3.9) → 3</code>。想四舍五入要用 <code>round()</code>。详见「变量类型转换」一节。</div>
         </div>
@@ -91,9 +91,9 @@
           <div class="quiz-prompt">3. <code>print(bool(""))</code> 的输出是？</div>
           <div class="quiz-options">
             <button class="quiz-option">False</button>
+            <button class="quiz-option">True</button>
             <button class="quiz-option">空字符串</button>
             <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">True</button>
           </div>
           <div class="quiz-explain" hidden>空字符串是<strong>假值</strong>：<code>bool("") → False</code>。假值清单：0、0.0、""、None、False，其余都是真值。详见「逻辑运算符」的真假值表。</div>
         </div>
@@ -101,35 +101,35 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. <code>print(5 / 2)</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">2</button>
             <button class="quiz-option">2.5</button>
+            <button class="quiz-option">2</button>
             <button class="quiz-option">2.0</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>/</code> 是「真除法」，<strong>总是返回 float</strong>：<code>5 / 2 → 2.5</code>。想要整数部分用 <code>//</code>（整除）：<code>5 // 2 → 2</code>。详见「算术运算符」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">5. <code>print(3 or 5)</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">False</button>
-            <button class="quiz-option">5</button>
             <button class="quiz-option">3</button>
             <button class="quiz-option">True</button>
+            <button class="quiz-option">5</button>
+            <button class="quiz-option">False</button>
           </div>
           <div class="quiz-explain" hidden><code>or</code> 的规则：第一个为真就<strong>返回第一个</strong>，否则返回第二个。<code>3</code> 为真，所以 <code>3 or 5 → 3</code>。注意 <code>0 or 5</code> 才是 <code>5</code>。详见「逻辑运算符」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">6. <code>print("A" &lt; "a")</code> 的输出是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">False</button>
             <button class="quiz-option">返回原字符串</button>
             <button class="quiz-option">True</button>
-            <button class="quiz-option">False</button>
-            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>字符串比较按<strong>字典序（ASCII 码）</strong>：'A' 的码值 65 小于 'a' 的 97，所以 <code>"A" &lt; "a" → True</code>。详见「比较运算符」一节。</div>
         </div>
@@ -137,29 +137,29 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. <code>print(1 &lt; 5 &lt; 3)</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">1</button>
-            <button class="quiz-option">True</button>
-            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">False</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">True</button>
+            <button class="quiz-option">1</button>
           </div>
           <div class="quiz-explain" hidden>链式比较等价于 <code>1 &lt; 5 and 5 &lt; 3</code>：前半成立但 <code>5 &lt; 3</code> 为假 → 整体 <strong>False</strong>。别被「1 &lt; 5」迷惑，链式比较要求<strong>每一环都成立</strong>。详见「链式比较」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">8. <code>print(bool("hello") and int(3.9))</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">True</button>
             <button class="quiz-option">"hello"</button>
-            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">True</button>
             <button class="quiz-option">3</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>跨知识点综合：<code>bool("hello")</code> 为 True（真值），<code>and</code> 第一个为真则<strong>返回第二个操作数</strong>——而 <code>int(3.9)</code> 是<strong>截断后的 3</strong>。所以整体输出 3，不是 True。两个坑叠一个。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">9. 执行以下代码，最后的输出是？
 <pre><code>x = 10
 x -= 3
@@ -167,10 +167,10 @@ x *= 2
 x /= 4
 print(x)</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">3.5</button>
             <button class="quiz-option">4.5</button>
             <button class="quiz-option">3</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">3.5</button>
           </div>
           <div class="quiz-explain" hidden>逐步推演：<code>10 - 3 = 7</code> → <code>7 × 2 = 14</code> → <code>14 / 4 = 3.5</code>（<code>/=</code> 让结果变 float）。连续赋值运算符按书写顺序逐个生效。</div>
         </div>
@@ -182,13 +182,13 @@ print(x)</code></pre></div>
       <p>下面是《3.python基本语法》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里（或纸上）算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核一（作业一·逻辑运算符陷阱）：<code>print("" and "hello")</code> 的输出是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">False</button>
             <button class="quiz-option">hello</button>
             <button class="quiz-option">空字符串</button>
             <button class="quiz-option">None</button>
+            <button class="quiz-option">False</button>
           </div>
           <div class="quiz-explain" hidden>空字符串 <code>""</code> 是「假值」，<code>and</code> 第一个为假就返回第一个——所以输出<strong>空字符串</strong>（屏幕上是一行空白，看不到任何字符）。对比：<code>"hi" and "hello" → "hello"</code>。</div>
         </div>
@@ -205,21 +205,21 @@ while n &lt;= 5:
     n += 1
 print(result)</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">3</button>
             <button class="quiz-option">15</button>
+            <button class="quiz-option">3</button>
             <button class="quiz-option">-3</button>
             <button class="quiz-option">0</button>
           </div>
           <div class="quiz-explain" hidden>逐轮推演：n=1（奇）result=-1 → n=2（偶）+2 → 1 → n=3（奇）-3 → -2 → n=4（偶）+4 → 2 → n=5（奇）-5 → <strong>-3</strong>。奇数减、偶数加，1..5 的交替和是 <strong>-3</strong>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（作业三·BMI 计算器）：标准为 18.5/24/28 三档边界。下列分类判断中，<strong>边界处理正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">bmi&gt;28 肥胖 → bmi&gt;24 超重 → bmi&gt;18.5 正常 → 否则偏瘦</button>
-            <button class="quiz-option">bmi&lt;18.5 偏瘦 → bmi&lt;24 正常 → bmi&lt;28 超重 → 否则肥胖</button>
             <button class="quiz-option">bmi&lt;=18.5 偏瘦 → bmi&lt;=24 正常 → bmi&lt;=28 超重 → 否则肥胖</button>
             <button class="quiz-option">bmi&lt;24 正常 → bmi&lt;18.5 偏瘦 → bmi&lt;28 超重 → 否则肥胖</button>
+            <button class="quiz-option">bmi&gt;28 肥胖 → bmi&gt;24 超重 → bmi&gt;18.5 正常 → 否则偏瘦</button>
+            <button class="quiz-option">bmi&lt;18.5 偏瘦 → bmi&lt;24 正常 → bmi&lt;28 超重 → 否则肥胖</button>
           </div>
           <div class="quiz-explain" hidden>标准是 18.5 ≤ BMI &lt; 24 为正常，所以 <code>bmi == 18.5</code> 必须落在「正常」档：<strong>第一个选项</strong>用 <code>&lt; 18.5</code> 判断偏瘦，18.5 落进下一档「正常」✓；第二个用 <code>&lt;= 18.5</code>，18.5 被误判为偏瘦 ✗；第三个 18.5 落进 else 偏瘦 ✗；第四个 17 会先命中 <code>&lt; 24</code> 被误判为正常 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -248,13 +248,13 @@ print(f"建议：{advice}")</code></pre>
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（作业四·素数筛选器）：素数 = 大于 1 且只能被 1 和自己整除的数。下列 <code>is_prime(n)</code> 实现中，<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">range(2, int(n**0.5)+1) 中遇 n%i==0 返回 True，循环完返回 False</button>
-            <button class="quiz-option">n&lt;2 返回 False；range(2, int(n**0.5)+1) 中遇 n%i==0 返回 False，循环完返回 True</button>
             <button class="quiz-option">range(2, n) 中遇 n%i!=0 立即返回 True，循环完返回 False</button>
             <button class="quiz-option">n&lt;2 返回 True；其余与第一个选项相同</button>
+            <button class="quiz-option">n&lt;2 返回 False；range(2, int(n**0.5)+1) 中遇 n%i==0 返回 False，循环完返回 True</button>
           </div>
           <div class="quiz-explain" hidden>验证关键样例：<code>n=2</code> 是素数 → 必须 True；<code>n=1</code> 不是 → 必须 False；<code>n=9</code> 不是 → 必须 False。只有<strong>第一个</strong>全对（n=2 时 range 为空直接返回 True；9 在 i=3 时被整除返回 False）。第二个把 9 判成素数 ✗；第三个把 1 判成素数 ✗；第四个把 2 判成非素数 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">

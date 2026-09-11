@@ -1,0 +1,7 @@
+{
+  "label": "数据库 · PostgreSQL 官方文档拓展",
+  "link": {
+    "type": "generated-index",
+    "description": "基于 postgres.cn（PostgreSQL 官方中文文档）的核心高频内容拓展，非渡一《数据库》课程。"
+  }
+}

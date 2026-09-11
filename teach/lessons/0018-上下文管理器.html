@@ -60,21 +60,21 @@
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. <code>with 表达式 as 变量名:</code> 首先调用的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">表达式的 __init__</button>
             <button class="quiz-option">表达式的 __exit__</button>
+            <button class="quiz-option">表达式的 __init__</button>
             <button class="quiz-option">直接执行代码块</button>
             <button class="quiz-option">表达式的 __enter__，返回值赋给变量名</button>
           </div>
           <div class="quiz-explain" hidden>进入 with 先调 <code>__enter__()</code>，其返回值赋给 as 后的变量；代码块结束后（无论异常与否）调 <code>__exit__</code>。详见「with 语句的等效形式」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">2. <code>__exit__</code> 返回 True 表示什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">资源释放失败</button>
-            <button class="quiz-option">代码块执行成功</button>
-            <button class="quiz-option">异常已被处理，不再向上传播</button>
             <button class="quiz-option">异常继续向上传播</button>
+            <button class="quiz-option">代码块执行成功</button>
+            <button class="quiz-option">资源释放失败</button>
+            <button class="quiz-option">异常已被处理，不再向上传播</button>
           </div>
           <div class="quiz-explain" hidden><code>__exit__</code> 返回 True 吞掉异常（如 SuppressError 忽略指定异常）；返回 False（或 None）则异常继续传播。详见「异常处理」一节。</div>
         </div>
@@ -83,9 +83,9 @@
           <div class="quiz-prompt">3. 自定义上下文管理器必须实现哪些方法？</div>
           <div class="quiz-options">
             <button class="quiz-option">__enter__ 和 __exit__ 两个都要</button>
-            <button class="quiz-option">__init__ 和 __del__ 两个都要</button>
-            <button class="quiz-option">只实现 __enter__ 即可</button>
             <button class="quiz-option">只实现 __exit__ 即可</button>
+            <button class="quiz-option">只实现 __enter__ 即可</button>
+            <button class="quiz-option">__init__ 和 __del__ 两个都要</button>
           </div>
           <div class="quiz-explain" hidden>必须<strong>同时实现</strong> <code>__enter__</code> 和 <code>__exit__</code>，缺一个 with 语句直接报错。详见「基本用法」一节的说明。</div>
         </div>
@@ -93,24 +93,24 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. <code>@contextmanager</code> 装饰的生成器中，yield 前后代码对应什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">yield 前后都是 __exit__</button>
             <button class="quiz-option">yield 前等于 __enter__，yield 后等于 __exit__</button>
             <button class="quiz-option">yield 前等于 __exit__，yield 后等于 __enter__</button>
+            <button class="quiz-option">yield 前后都是 __exit__</button>
             <button class="quiz-option">yield 前后都是 __enter__</button>
           </div>
           <div class="quiz-explain" hidden><code>yield</code> 之前是进入逻辑（<code>__enter__</code>），<code>yield</code> 之后是退出逻辑（<code>__exit__</code>）。详见「使用 @contextmanager 装饰器」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">5. with 块正常结束（无异常）时，<code>__exit__</code> 收到的三个参数是？</div>
           <div class="quiz-options">
             <button class="quiz-option">(Exception, 异常对象, 堆栈)</button>
+            <button class="quiz-option">(None, None, None)</button>
             <button class="quiz-option">(True, True, True)</button>
             <button class="quiz-option">不调用 __exit__</button>
-            <button class="quiz-option">(None, None, None)</button>
           </div>
           <div class="quiz-explain" hidden>无异常时 <code>__exit__(None, None, None)</code>；有异常时传 (异常类型, 异常值, 追踪信息)。用 exc_type is None 就能判断是否正常退出。详见「with 语句的等效形式」。</div>
         </div>
@@ -118,9 +118,9 @@
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">6. 同时使用两个上下文管理器的简洁写法是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">with A() and B():</button>
             <button class="quiz-option">只能嵌套写两层 with</button>
             <button class="quiz-option">with A(), with B():</button>
+            <button class="quiz-option">with A() and B():</button>
             <button class="quiz-option">with A() as a, B() as b:（一行逗号分隔）</button>
           </div>
           <div class="quiz-explain" hidden>Python 3.1+ 支持 <code>with A() as a, B() as b:</code> 一行并列（按顺序进入、逆序退出）。详见「多个上下文管理器」一节。</div>
@@ -129,33 +129,33 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. <code>with A() as a, B() as b:</code> 退出时 <code>__exit__</code> 的调用顺序是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">先 B 后 A（后进先出）</button>
-            <button class="quiz-option">同时调用</button>
             <button class="quiz-option">只调用 A 的</button>
             <button class="quiz-option">先 A 后 B（先进先出）</button>
+            <button class="quiz-option">同时调用</button>
+            <button class="quiz-option">先 B 后 A（后进先出）</button>
           </div>
           <div class="quiz-explain" hidden>多个上下文管理器按<strong>后进先出</strong>退出：B 的 <code>__exit__</code> 先执行，A 的后执行——与嵌套 with 的行为完全一致（一行写法只是语法糖）。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">8. <code>__exit__</code> 返回 False，而 with 块里抛了异常，会发生什么？</div>
           <div class="quiz-options">
+            <button class="quiz-option">程序立即退出</button>
+            <button class="quiz-option">__exit__ 不会被调用</button>
             <button class="quiz-option">异常继续向外传播</button>
             <button class="quiz-option">异常被吞掉</button>
-            <button class="quiz-option">__exit__ 不会被调用</button>
-            <button class="quiz-option">程序立即退出</button>
           </div>
           <div class="quiz-explain" hidden><code>__exit__</code> 返回 False（或 None）=「我没处理异常」——异常<strong>继续向外传播</strong>，就像没有 with 一样。返回 True 才是吞掉。这是资源清理型上下文管理器（TempDirectory）的标准选择。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">9. <code>@contextmanager</code> 中清理代码放在 yield 后但<strong>不在 finally</strong> 里，块内抛异常时会怎样？</div>
           <div class="quiz-options">
-            <button class="quiz-option">清理被跳过（异常从 yield 处抛入）</button>
             <button class="quiz-option">清理仍会执行</button>
+            <button class="quiz-option">清理被跳过（异常从 yield 处抛入）</button>
             <button class="quiz-option">异常被吞掉</button>
             <button class="quiz-option">语法错误</button>
           </div>
@@ -172,10 +172,10 @@
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核一（作业一·timer 计时）：用 <code>@contextmanager</code> 实现——<code>with timer("数据处理")</code> 块结束时打印 <code>数据处理 耗时: X.XXXX 秒</code>（异常时也要打印）。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">yield 后直接打印耗时，不放在 finally 里</button>
-            <button class="quiz-option">打印耗时放在 yield 之前</button>
-            <button class="quiz-option">yield 前记 start；try: yield 后 finally 打印耗时</button>
             <button class="quiz-option">用 __exit__ 里 except 吞掉所有异常后再打印</button>
+            <button class="quiz-option">yield 后直接打印耗时，不放在 finally 里</button>
+            <button class="quiz-option">yield 前记 start；try: yield 后 finally 打印耗时</button>
+            <button class="quiz-option">打印耗时放在 yield 之前</button>
           </div>
           <div class="quiz-explain" hidden>正确结构：<code>start = time.time(); try: yield; finally: print(耗时)</code>——finally 保证<strong>异常时也打印</strong>。第二个块里抛异常会跳过打印 ✗；第三个计的是 0 秒 ✗；第四个吞异常改变语义 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -200,12 +200,12 @@ with timer("数据处理"):
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核二（作业二·TempDirectory）：进入时创建临时目录（返回路径），退出时自动删除整个目录。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">__exit__ 返回 True 吞掉所有异常</button>
-            <button class="quiz-option">__exit__ 里只删除目录本身，不递归删除内容</button>
             <button class="quiz-option">__enter__ 里 mkdtemp 存路径并返回；__exit__ 里 rmtree 删除，返回 False</button>
+            <button class="quiz-option">__exit__ 里只删除目录本身，不递归删除内容</button>
             <button class="quiz-option">__enter__ 里创建目录但返回 self 而不是路径</button>
           </div>
           <div class="quiz-explain" hidden>正确结构：<code>__enter__</code> 里 <code>self.path = tempfile.mkdtemp()</code> 并 <code>return self.path</code>；<code>__exit__</code> 里 <code>shutil.rmtree(self.path)</code>（递归删内容）并 <code>return False</code>（不吞异常）。第二个拿到的是对象不是路径 ✗；第三个目录里的文件删不掉 ✗；第四个吞异常不合题意 ✗。</div>
@@ -233,7 +233,7 @@ print("临时目录已清理")</code></pre>
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（作业四·思考题1）：以下代码的输出是？
 <pre><code>@contextmanager
 def demo():
@@ -247,19 +247,19 @@ with demo():
     print("这行不会执行")</code></pre></div>
           <div class="quiz-options">
             <button class="quiz-option">进入 → 执行中 → 正常退出，然后 ValueError 向外抛出</button>
-            <button class="quiz-option">进入 → 执行中，随后 ValueError 向外抛出（正常退出不打印）</button>
-            <button class="quiz-option">进入 → 正常退出 → 执行中</button>
             <button class="quiz-option">进入 → 执行中，异常被吞掉不向外抛</button>
+            <button class="quiz-option">进入 → 正常退出 → 执行中</button>
+            <button class="quiz-option">进入 → 执行中，随后 ValueError 向外抛出（正常退出不打印）</button>
           </div>
           <div class="quiz-explain" hidden>块内 raise 后，<code>@contextmanager</code> 把异常<strong>从 yield 处抛进生成器</strong>——生成器不继续执行，<code>print("正常退出")</code> 被跳过，异常向外传播。完整输出：进入 → 执行中 → ValueError。这正是清理代码必须写进 <code>finally</code> 的原因（下一题）。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核四（作业四·思考题2）：把 demo 改成 <code>try: yield / except Exception as e: print(f"捕获异常: {e}") / finally: print("清理")</code>，with 块里同样 raise ValueError，输出是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">进入 → 执行中 → 捕获异常 → 清理 → 异常再抛出</button>
             <button class="quiz-option">进入 → 执行中 → 捕获异常: 出错了 → 清理，且异常不再向外抛</button>
             <button class="quiz-option">进入 → 执行中，程序崩溃无清理</button>
-            <button class="quiz-option">进入 → 执行中 → 捕获异常 → 清理 → 异常再抛出</button>
             <button class="quiz-option">进入 → 执行中 → 清理，异常仍然向外抛</button>
           </div>
           <div class="quiz-explain" hidden>except 把异常<strong>接住</strong>了：打印「捕获异常: 出错了」后生成器正常收尾，finally 打印「清理」——with 块像没发生过异常一样继续。这就是上下文管理器「吞异常」的完整演示（等价于 __exit__ 返回 True）。</div>

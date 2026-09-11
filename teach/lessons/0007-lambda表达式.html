@@ -60,30 +60,30 @@
           <div class="quiz-options">
             <button class="quiz-option">可以有任意多条语句</button>
             <button class="quiz-option">只能有一个表达式</button>
-            <button class="quiz-option">必须给函数起名字</button>
             <button class="quiz-option">必须用 return 返回结果</button>
+            <button class="quiz-option">必须给函数起名字</button>
           </div>
           <div class="quiz-explain" hidden>lambda 只能包含<strong>一个表达式</strong>，表达式的值自动返回（不能写 return）。lambda 是匿名函数，通常即用即走。详见「基本语法」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">2. <code>list(map(lambda x: x ** 2, [1, 2, 3]))</code> 的结果是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">[1, 2, 3]</button>
             <button class="quiz-option">map 对象本身</button>
             <button class="quiz-option">[1, 4, 9]</button>
-            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>map</code> 对每个元素执行 lambda：1→1、2→4、3→9。注意 <code>map</code> 本身返回<strong>迭代器</strong>，打印它只会看到 <code>&lt;map object...&gt;</code>——必须用 <code>list()</code> 转成列表。详见「map()」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">3. <code>callable(lambda: 1)</code> 的结果是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">None</button>
             <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">False</button>
             <button class="quiz-option">True</button>
-            <button class="quiz-option">None</button>
           </div>
           <div class="quiz-explain" hidden>lambda 本质是<strong>匿名函数</strong>，函数是可调用对象 → <code>callable</code> 返回 True。详见第 9 课「可调用对象」的前置呼应。</div>
         </div>
@@ -91,35 +91,35 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. <code>list(filter(lambda x: x % 2 == 0, [1, 2, 3, 4, 5]))</code> 的结果是？</div>
           <div class="quiz-options">
             <button class="quiz-option">[True, False, True, False, True]</button>
+            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">[1, 3, 5]</button>
             <button class="quiz-option">[2, 4]</button>
-            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden><code>filter</code> <strong>保留条件为 True 的元素</strong>：<code>x % 2 == 0</code> 筛选出偶数 2、4。注意它不是把条件结果返回给你，而是用条件过滤原序列。详见「filter()」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">5. <code>sorted(["banana", "pie", "Washington", "book"], key=lambda s: len(s))</code> 的结果是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">['pie', 'book', 'banana', 'Washington']</button>
             <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">['banana', 'pie', 'Washington', 'book']</button>
             <button class="quiz-option">['Washington', 'banana', 'book', 'pie']</button>
-            <button class="quiz-option">['pie', 'book', 'banana', 'Washington']</button>
           </div>
           <div class="quiz-explain" hidden>按 <code>len(s)</code> 升序：pie(3) → book(4) → banana(6) → Washington(10)。<code>key</code> 只是「排序依据」，结果仍是原元素本身。详见「sorted()」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">6. <code>max(students, key=lambda s: s["score"])</code> 返回的是什么？</div>
           <div class="quiz-options">
+            <button class="quiz-option">分数排序后的列表</button>
             <button class="quiz-option">最高的分数值</button>
             <button class="quiz-option">分数最高的整个字典</button>
             <button class="quiz-option">最高分的名字</button>
-            <button class="quiz-option">分数排序后的列表</button>
           </div>
           <div class="quiz-explain" hidden><code>max</code> 按 key 比较，但返回的是<strong>元素本身</strong>——分数最高的那个学生字典（如 <code>{'name': 'Bob', 'score': 92}</code>）。详见「max()/min()」一节。</div>
         </div>
@@ -127,37 +127,37 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. <code>sorted(["banana", "pie", "book"], key=lambda s: s[-1])</code> 的结果是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">['banana', 'pie', 'book']</button>
             <button class="quiz-option">['book', 'pie', 'banana']</button>
             <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">['banana', 'pie', 'book']</button>
             <button class="quiz-option">['pie', 'book', 'banana']</button>
           </div>
           <div class="quiz-explain" hidden>按<strong>最后一个字母</strong>排序：banana→a、pie→e、book→k，升序排列 → <strong>['banana', 'pie', 'book']</strong>。key 可以是任意表达式——这是「按任意维度排序」的通用套路。详见「sorted()」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">8. 以下代码的输出是？
 <pre><code>funcs = [lambda: i for i in range(3)]
 print([f() for f in funcs])</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">[0, 0, 0]</button>
             <button class="quiz-option">[2, 2, 2]</button>
+            <button class="quiz-option">[0, 0, 0]</button>
             <button class="quiz-option">[0, 1, 2]</button>
             <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>闭包<strong>延迟绑定</strong>陷阱：lambda 捕获的是变量 <code>i</code> 本身而不是当时的值——列表推导完成后 i=2，三个函数调用时都读到 2 → <strong>[2, 2, 2]</strong>。修复：<code>lambda i=i: i</code>（默认参数绑定值）。这是真实面试高频题。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">9. <code>list(map(lambda x: x ** 2, filter(lambda x: x % 2 == 0, range(6))))</code> 的结果是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">[0, 2, 4]</button>
             <button class="quiz-option">[0, 4, 16]</button>
-            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">[0, 1, 4, 9, 16, 25]</button>
+            <button class="quiz-option">[0, 2, 4]</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>由内向外读：<code>range(6)</code> → filter 留偶数 <code>[0, 2, 4]</code> → map 平方 → <strong>[0, 4, 16]</strong>。filter 与 map 可以流水线式串联，注意执行顺序是从里到外。</div>
         </div>
@@ -185,19 +185,19 @@ print([f() for f in funcs])</code></pre></div>
           <div class="quiz-options">
             <button class="quiz-option">['MacBook Pro', 'Dell XPS 13', 'ThinkPad X1']</button>
             <button class="quiz-option">['Dell XPS 13', 'MacBook Pro', 'ThinkPad X1']</button>
-            <button class="quiz-option">['Mi Band 8', 'Vivo TWS', 'OPPO Enco']</button>
             <button class="quiz-option">['ThinkPad X1', 'Legion Y9000', 'Surface Pro']</button>
+            <button class="quiz-option">['Mi Band 8', 'Vivo TWS', 'OPPO Enco']</button>
           </div>
           <div class="quiz-explain" hidden>价格前三：MacBook Pro 14999 → Dell XPS 13 10999 → ThinkPad X1 9999。代码：<code>sorted(products, key=lambda p: p["price"], reverse=True)[:3]</code>。注意 <code>reverse=True</code> 才是降序。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（作业·任务4）：XIAOMI 的所有产品共有几个？</div>
           <div class="quiz-options">
             <button class="quiz-option">7</button>
             <button class="quiz-option">5</button>
-            <button class="quiz-option">6</button>
             <button class="quiz-option">4</button>
+            <button class="quiz-option">6</button>
           </div>
           <div class="quiz-explain" hidden>XIAOMI 的产品：Xiaomi 14、Redmi K70、Mi Pad 6、Mi Band 8、Xiaomi Buds、Xiaomi Book——共 <strong>6</strong> 个。代码：<code>list(filter(lambda p: p["inc"] == "XIAOMI", products))</code> 再取 <code>len</code>（或 <code>map</code> 出名字得字符串列表）。</div>
         </div>
@@ -205,9 +205,9 @@ print([f() for f in funcs])</code></pre></div>
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核四（作业·任务7）：APPLE 公司的产品<strong>平均价格</strong>是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">4199.0</button>
-            <button class="quiz-option">6139.0</button>
             <button class="quiz-option">7150.0</button>
+            <button class="quiz-option">6139.0</button>
+            <button class="quiz-option">4199.0</button>
             <button class="quiz-option">5999.0</button>
           </div>
           <div class="quiz-explain" hidden>APPLE 有 5 款产品：(5999 + 14999 + 1899 + 4799 + 2999) / 5 = 30695 / 5 = <strong>6139.0</strong>。代码：先 <code>filter</code> 出该公司产品 → <code>map</code> 出价格列表 → <code>sum / len</code>。</div>

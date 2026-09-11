@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>架构基础速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>架构基础速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0001-架构基础.html">《架构基础互动教学课程》</a>使用。来源：官方教程 §1.2（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>术语表</h2>
+      <dl class="term-grid">
+        <dt>客户端/服务器模型</dt>
+        <dd>PG 的基础架构：服务器管理数据、客户端发起操作，跨主机经 TCP/IP 通信。</dd>
+        <dt>postgres 进程</dt>
+        <dd>数据库服务器程序：管理数据库文件、接受连接、代表客户端执行操作。</dd>
+        <dt>守护进程</dt>
+        <dd>最初的 postgres 进程：<strong>常驻</strong>，等待连接并 fork 连接进程。</dd>
+        <dt>连接进程</dt>
+        <dd>每个连接 fork 出的新进程：与客户端<strong>直接</strong>通信，会话结束即退出。</dd>
+        <dt>fork</dt>
+        <dd>进程复制创建：PG 为<strong>每个连接</strong> fork 一个进程（非线程）。</dd>
+        <dt>pg_stat_activity</dt>
+        <dd>系统视图：观察当前所有连接进程的 pid、状态与执行的语句。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>会话生命周期</h2>
+      <table class="cmp-table">
+        <tr><th>阶段</th><th>发生的事</th><th>关键点</th></tr>
+        <tr><td>① 等待</td><td>守护进程常驻监听连接</td><td>永远在运行</td></tr>
+        <tr><td>② 接入</td><td>新连接到来 → fork 新进程</td><td>每连接一个进程</td></tr>
+        <tr><td>③ 直连</td><td>客户端与新进程直接通信</td><td>不再经过守护进程</td></tr>
+        <tr><td>④ 结束</td><td>会话结束 → 连接进程退出</td><td>起起停停，守护进程不动</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>面试速记</h2>
+      <dl class="term-grid">
+        <dt>进程 vs 线程模型</dt>
+        <dd>PG 进程模型：隔离好、连接开销大 → 连接数敏感 → 连接池（PgBouncer）动机。</dd>
+        <dt>文件可见性</dt>
+        <dd>COPY/导入路径由<strong>服务器</strong>读取；客户端文件用 psql <code>\copy</code>。</dd>
+        <dt>观察命令</dt>
+        <dd><code>SELECT pid, usename, state FROM pg_stat_activity;</code> · <code>pg_terminate_backend(pid)</code> 杀掉指定连接。</dd>
+        <dt>客户端形态</dt>
+        <dd>psql / 图形界面 / Web 服务器 / 管理工具——任何发起连接的程序都是客户端。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（教程 §1.2）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

@@ -14,18 +14,24 @@ QCORRECT_RE = re.compile(r'(<div class="quiz-q" data-correct=")(\d+)(">)')
 
 
 def shuffle_one(block, seed):
-    """对一个 quiz-q 块做选项洗牌，返回新块与新正确下标。"""
+    """对一个 quiz-q 块做选项洗牌，返回新块与新正确下标。
+
+    幂等实现：排序键 = random(种子 + 选项文本)，只依赖选项内容而与当前顺序无关，
+    因此无论当前处于什么顺序，重跑都收敛到同一结果（正确选项以文本识别）。
+    """
     m = QCORRECT_RE.search(block)
     if not m:
         return block, None
-    correct = int(m.group(2))
+    correct_idx = int(m.group(2))
     buttons = BUTTON_RE.findall(block)
     if len(buttons) < 2:
         return block, None
-    order = list(range(len(buttons)))
-    random.Random(seed).shuffle(order)
-    new_correct = order.index(correct)
+    correct_text = buttons[correct_idx]
+    # 每个选项文本分配一个与顺序无关的确定性排名
+    rank = {b: random.Random(seed + '::' + b).random() for b in buttons}
+    order = sorted(range(len(buttons)), key=lambda i: rank[buttons[i]])
     new_buttons = [buttons[i] for i in order]
+    new_correct = new_buttons.index(correct_text)
     # 重建 quiz-options 内容
     def repl_buttons(match):
         return ('<div class="quiz-options">\n'

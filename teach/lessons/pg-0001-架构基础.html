@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 架构基础：客户端/服务器模型、postgres 守护进程与每连接进程模型（非渡一课程内容）">
+  <title>架构基础 · 互动教学课程（官方文档拓展 pg-01）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>架构基础</h1>
+      <p class="lesson-sub">来源：官方教程 §1.2（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>画出一次 PG 会话的两类角色（服务器进程 <code>postgres</code> 与客户端应用），说清各自职责</li>
+        <li>解释「每连接 fork 一个进程」的机制与「守护进程常驻、连接进程起起停停」的生命周期</li>
+        <li>说出进程模型与线程模型的取舍（隔离性 vs 连接开销），理解连接池的动机</li>
+        <li>识别跨主机部署时的文件可见性陷阱（COPY/导入路径以服务器为准）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方教程 <a href="http://www.postgres.cn/docs/current/tutorial-arch.html">§1.2 架构基础</a>。</p>
+
+      <div class="card">
+        <h3>客户端 / 服务器模型</h3>
+        <ul class="pitfall-list">
+          <li><strong>服务器进程</strong>：管理数据库文件、接受连接、代表客户端执行操作——程序名叫 <code>postgres</code></li>
+          <li><strong>客户端应用</strong>：psql 文本工具、图形界面、Web 服务器、管理工具——大部分由用户开发</li>
+          <li><strong>通信</strong>：跨主机走 <strong>TCP/IP</strong>；同机通常走 Unix 域套接字</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>进程模型（每连接一个进程）</h3>
+        <ul class="pitfall-list">
+          <li>最初的 <code>postgres</code> 是<strong>守护进程</strong>：始终运行，等待连接</li>
+          <li>每个新连接到来 → 守护进程 <strong>fork 一个新进程</strong>服务它</li>
+          <li>此后客户端与<strong>新进程直接通信</strong>，不再经过最初的 postgres 进程</li>
+          <li>会话结束连接进程退出：<strong>客户端与关联进程起起停停，守护进程永远在</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>两个面试常问推论</h3>
+        <ul class="pitfall-list">
+          <li><strong>进程模型 vs 线程模型</strong>：PG 每连接独立进程——隔离性好（一连接崩不影响他人），但每连接内存开销大 → 对连接数与连接复用敏感 → 连接池（PgBouncer 等）的动机</li>
+          <li><strong>文件可见性</strong>：客户机能访问的文件 ≠ 服务器能访问的文件；COPY/导入路径以服务器所在机器为准</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方 §1.2 覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. PostgreSQL 采用什么架构模型？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">纯嵌入式单进程模型</button>
+            <button class="quiz-option">仅内存键值模型</button>
+            <button class="quiz-option">无服务器（serverless）模型</button>
+            <button class="quiz-option">客户端/服务器模型</button>
+          </div>
+          <div class="quiz-explain" hidden>官方教程开篇明义：PostgreSQL 使用<strong>客户端/服务器模型</strong>——服务器进程管理数据、客户端发起操作。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 管理数据库文件、接受客户端连接的服务器程序叫什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">pgadmin</button>
+            <button class="quiz-option">psql</button>
+            <button class="quiz-option">postgres</button>
+            <button class="quiz-option">pgserverd</button>
+          </div>
+          <div class="quiz-explain" hidden>数据库服务器程序叫 <strong>postgres</strong>；psql 是<strong>客户端</strong>工具；pgAdmin 是图形客户端。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 客户端与服务器不在同一主机时，通过什么通信？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">仅 Unix 域套接字</button>
+            <button class="quiz-option">TCP/IP 网络连接</button>
+            <button class="quiz-option">共享内存</button>
+            <button class="quiz-option">本地文件交换</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：跨主机时通过 <strong>TCP/IP</strong> 网络连接通信；Unix 域套接字用于同机场景。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 每当一个新的客户端连接到来，守护进程会做什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">阻塞自身直到该连接关闭</button>
+            <button class="quiz-option">新建一个线程服务它</button>
+            <button class="quiz-option">把连接排队等待空闲</button>
+            <button class="quiz-option">fork 出一个新进程服务它</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：为每个连接启动（forks）一个<strong>新进程</strong>——这是 PG 与线程模型数据库的本质区别。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. 连接建立之后，客户端与谁直接通信？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">与所有服务器进程广播通信</button>
+            <button class="quiz-option">始终只与最初的 postgres 守护进程</button>
+            <button class="quiz-option">与 fork 出来的新服务器进程，不再经过最初的 postgres 进程</button>
+            <button class="quiz-option">不再需要任何进程</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：从 fork 开始，客户端和新服务器进程<strong>不再经过最初的 postgres 进程的干涉</strong>进行通信。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 客户端与服务器分机部署时，关于文件访问的说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两边的文件总是互通的</button>
+            <button class="quiz-option">客户机上能访问的文件，服务器机器上未必能访问</button>
+            <button class="quiz-option">服务器上能访问的文件客户机一定也能访问</button>
+            <button class="quiz-option">分机部署时不允许任何文件操作</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文提醒：<strong>客户机上可访问的文件未必能在服务器机器上访问</strong>——COPY/导入路径以服务器为准。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 相比线程模型数据库，PG 进程模型的典型代价是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">无法处理多个并发连接</button>
+            <button class="quiz-option">并发性能完全不如线程模型</button>
+            <button class="quiz-option">连接之间完全无法隔离</button>
+            <button class="quiz-option">每个连接独立进程，内存开销大、对连接数敏感</button>
+          </div>
+          <div class="quiz-explain" hidden>每连接一个进程 → <strong>隔离性好但内存开销大</strong>，连接数敏感——这正是连接池（PgBouncer）的必要性来源。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 关于守护进程与连接进程的生命周期，正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">连接进程常驻，守护进程随会话切换</button>
+            <button class="quiz-option">两者都随会话起起停停</button>
+            <button class="quiz-option">两者都常驻，直到服务器关闭</button>
+            <button class="quiz-option">守护进程常驻等待连接；连接进程随会话起起停停</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：<strong>守护者服务器进程总是运行并等待连接；客户端与关联的服务器进程起起停停</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 下列哪类不属于官方教程列举的典型客户端应用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">文本工具（psql）</button>
+            <button class="quiz-option">数据库服务器自身的 postgres 守护进程</button>
+            <button class="quiz-option">图形界面应用</button>
+            <button class="quiz-option">访问数据库显示网页的 Web 服务器</button>
+          </div>
+          <div class="quiz-explain" hidden>官方列举的客户端：文本工具、图形应用、Web 服务器、特制管理工具；<strong>postgres 守护进程是服务器端</strong>，不是客户端。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，架构基础就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核一：一次 PG 会话的完整生命周期，正确的顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">客户端连接 → 客户端进程并入服务器 → 常驻</button>
+            <button class="quiz-option">客户端连接 → 守护进程 fork 新进程 → 客户端与新进程直连 → 会话结束新进程退出</button>
+            <button class="quiz-option">客户端连接 → 守护进程自己全程服务 → 连接关闭守护进程退出</button>
+            <button class="quiz-option">客户端连接 → 每个 SQL 语句 fork 一个进程 → 语句结束进程退出</button>
+          </div>
+          <div class="quiz-explain" hidden>fork 发生在<strong>连接</strong>时（不是每条语句），会话结束连接进程退出；守护进程自始至终常驻。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核二：Web 服务上线后数据库连接数暴涨、内存告急。从本课的架构知识出发，最先该排查/引入什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">禁止客户端使用 TCP/IP</button>
+            <button class="quiz-option">把服务器换成线程模型数据库</button>
+            <button class="quiz-option">增大每个连接的内存配额</button>
+            <button class="quiz-option">检查连接复用并引入连接池（进程模型下连接开销大）</button>
+          </div>
+          <div class="quiz-explain" hidden">每连接一个进程 → 连接不复用则开销线性放大。标准解法：应用侧连接池（如 PgBouncer）复用连接。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核三：AI 写的导入脚本在客户端机器上执行 <code>COPY t FROM '/data/file.csv'</code> 报「文件不存在」。最可能的原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">COPY 命令只能导出不能导入</button>
+            <button class="quiz-option">该路径由服务器进程读取，服务器机器上没有这个文件</button>
+            <button class="quiz-option">客户端版本太旧不支持 COPY</button>
+            <button class="quiz-option">CSV 文件编码必须是 GBK</button>
+          </div>
+          <div class="quiz-explain" hidden">文件可见性陷阱：服务器执行的 COPY 读的是<strong>服务器所在机器</strong>的文件；客户机文件要用 <code>\\copy</code>（psql 客户端命令）中转。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核四：一个连接进程被 kill 掉，其他连接会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">该连接自动重连继续</button>
+            <button class="quiz-option">守护进程也随之退出</button>
+            <button class="quiz-option">只有该连接受影响，其他连接照常工作</button>
+            <button class="quiz-option">所有连接一起断开</button>
+          </div>
+          <div class="quiz-explain" hidden">进程隔离的收益：每个连接独立进程，<strong>单连接崩溃不影响其他连接与守护进程</strong>。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，架构基础就掌握了——继续学习 <a href="/common/database-pg/pg-02-RETURNING与UPSERT">pg-02 · RETURNING 与 UPSERT</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0001-架构基础',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的后端服务每个请求都新建一个连接，请求结束就断开。运行一段时间后数据库内存告警、新连接建立变慢。从 PG 架构角度解释为什么，并给出修复方向。`,
+              source: '来源：postgres.cn 官方教程 §1.2（官方翻译·一手）+ 官方英文 tutorial-arch.html · 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `PG 为<strong>每个连接 fork 一个独立进程</strong>（官方原文：forks a new process for each connection）——短连接风暴 = 频繁 fork/退出 + 峰值大量进程驻留内存。修复方向：<strong>连接池</strong>（PgBouncer 等）复用连接、应用层限制并发连接数。面试官爱听「进程模型 → 连接成本高 → 池化」这条因果链。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `描述一次 PostgreSQL 会话的两类角色与进程模型：postgres 守护进程、连接进程、客户端三者是什么关系？`,
+              source: '来源：postgres.cn 官方教程 §1.2（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `① <strong>postgres 守护进程</strong>：管理数据库文件、接受连接、常驻等待；② 新连接到来时守护进程 <strong>fork 一个新进程</strong>；③ 此后<strong>客户端与这个新进程直接通信，不再经过最初的 postgres 进程</strong>；④ 会话结束连接进程退出——「守护进程永远在，连接进程起起停停」（官方原文）。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的运维脚本在<strong>客户端机器</strong>上执行 <code>COPY orders FROM '/data/orders.csv'</code>，报文件不存在。它在客户端机器上明明能看到这个文件。审查并给出正确做法。`,
+              source: '来源：postgres.cn 官方教程 §1.2（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `官方原文提醒：<strong>客户机上可访问的文件，服务器机器上未必能访问</strong>。COPY 的路径由<strong>服务器进程</strong>读取——文件必须放在服务器机器（或共享存储）上。客户端本地文件应改用 psql 的 <code>\\copy</code>（客户端侧读取后送入）。AI 生成跨机运维脚本时这个坑一踩一个准。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `新项目部署 PG：应用是长连接多、并发可控的内部系统，团队在「直接连接」与「前置 PgBouncer 连接池」之间犹豫。按官方架构知识，你的建议与依据是什么？`,
+              source: '来源：postgres.cn 官方教程 §1.2（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `决策依据是<strong>每连接一个进程</strong>的成本：内部系统连接数少且复用 → 直连即可，引入池子徒增运维面；若未来出现连接数波动/多服务共享 → 再前置 PgBouncer（transaction 模式）。原则：<strong>先量化连接数与 churn，再决定要不要池</strong>——架构题的加分点是不为「看起来专业」引入组件。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 psql 观察 PG 的进程模型（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 15 分钟',
+                goal: '开两个并发 psql 连接，用 pg_stat_activity 观察：① 两个连接有不同 pid；② 杀掉其中一个连接后另一个不受影响；③ 说明守护进程与连接进程的对应关系。',
+                accept: ['pg_stat_activity 里看到两个不同 pid 的活跃连接', 'kill 一个连接后另一个连接查询正常', '能解释「每连接一个进程」的观察依据'],
+              },
+              source: '任务基于官方教程 §1.2 课程知识点 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>SELECT pid, usename, state FROM pg_stat_activity WHERE usename = current_user;</code> 看到自己两个连接的 pid；<code>SELECT pg_terminate_backend(<pid>)</code> 杀掉其一；另一连接继续查询正常。坑：pg_stat_activity 里也有后台进程（checkpointer 等），过滤 usename 只看自己的；docker 环境下宿主机 ps 看不到容器内进程，别用 ps 验证。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/tutorial-arch.html">postgres.cn · 1.2 架构基础</a> · <a href="https://www.postgresql.org/docs/current/tutorial-arch.html">官方英文版</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/runtime-config-connection.html">19.3 连接与认证参数</a>（max_connections 等）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/架构基础速查表.html">架构基础速查表</a>——会话生命周期一张图装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/PostgreSQL安装/">01.PostgreSQL安装</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

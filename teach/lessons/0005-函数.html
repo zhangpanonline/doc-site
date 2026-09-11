@@ -65,32 +65,32 @@
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 函数没有 <code>return</code> 语句时，调用它的返回值是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">数字 0</button>
-            <button class="quiz-option">None</button>
             <button class="quiz-option">空字符串</button>
+            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">None</button>
+            <button class="quiz-option">数字 0</button>
           </div>
           <div class="quiz-explain" hidden>没有 <code>return</code>（或 <code>return</code> 后不带值）的函数默认返回 <code>None</code>。详见「返回值」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">2. <code>def show_args(*args)</code> 中，<code>args</code> 的类型是？</div>
           <div class="quiz-options">
             <button class="quiz-option">列表 list</button>
             <button class="quiz-option">字典 dict</button>
-            <button class="quiz-option">集合 set</button>
             <button class="quiz-option">元组 tuple</button>
+            <button class="quiz-option">集合 set</button>
           </div>
           <div class="quiz-explain" hidden><code>*args</code> 把多余的位置参数收进一个<strong>元组</strong>：<code>show_args(1, 2, 3)</code> 内部 <code>args</code> 是 <code>(1, 2, 3)</code>。详见「可变参数」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">3. <code>def greet(greeting="Hello", name):</code> 会发生什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">定义正常，调用时报错</button>
-            <button class="quiz-option">定义时语法报错</button>
-            <button class="quiz-option">定义正常，调用也正常</button>
             <button class="quiz-option">name 自动获得默认值</button>
+            <button class="quiz-option">定义正常，调用也正常</button>
+            <button class="quiz-option">定义时语法报错</button>
+            <button class="quiz-option">定义正常，调用时报错</button>
           </div>
           <div class="quiz-explain" hidden><strong>默认参数必须放在非默认参数后面</strong>：<code>greeting="Hello"</code> 在前、<code>name</code> 在后，定义函数时就抛出 SyntaxError。详见「默认参数」一节。</div>
         </div>
@@ -98,23 +98,23 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. <code>def show_kwargs(**kwargs)</code> 中，<code>kwargs</code> 的类型是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">字典 dict</button>
             <button class="quiz-option">元组 tuple</button>
             <button class="quiz-option">列表 list</button>
-            <button class="quiz-option">字典 dict</button>
             <button class="quiz-option">集合 set</button>
           </div>
           <div class="quiz-explain" hidden><code>**kwargs</code> 把多余的关键字参数收进一个<strong>字典</strong>：<code>show_kwargs(name="Alice")</code> 内部 <code>kwargs</code> 是 <code>{'name': 'Alice'}</code>。详见「可变参数」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">5. <code>return min(numbers), max(numbers)</code> 返回的本质上是什么？</div>
           <div class="quiz-options">
+            <button class="quiz-option">元组</button>
             <button class="quiz-option">两个独立返回值</button>
             <button class="quiz-option">列表</button>
-            <button class="quiz-option">元组</button>
             <button class="quiz-option">字典</button>
           </div>
           <div class="quiz-explain" hidden><code>return a, b</code> 只是把 <code>a</code> 和 <code>b</code><strong>打包成元组</strong>返回；<code>x, y = f()</code> 是对元组解包。详见「多返回值」一节。</div>
@@ -124,9 +124,9 @@
           <div class="quiz-prompt">6. <code>person_info(name="Alice", 25, "北京")</code> 会发生什么？</div>
           <div class="quiz-options">
             <button class="quiz-option">语法报错</button>
-            <button class="quiz-option">正常执行</button>
-            <button class="quiz-option">运行时类型错误</button>
             <button class="quiz-option">25 和北京被忽略</button>
+            <button class="quiz-option">运行时类型错误</button>
+            <button class="quiz-option">正常执行</button>
           </div>
           <div class="quiz-explain" hidden><strong>位置参数不能出现在关键字参数之后</strong>：<code>name="Alice"</code> 后跟 <code>25</code> 会直接触发 SyntaxError。正确写法：位置参数在前——<code>person_info("Alice", 25, city="北京")</code>。详见「关键字参数」一节。</div>
         </div>
@@ -134,18 +134,18 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. <code>def demo(a, b=2, *args, **kwargs)</code>，调用 <code>demo(1, 3, 4, 5, x=10, y=20)</code> 后各参数的值是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">运行时报错（参数个数不匹配）</button>
             <button class="quiz-option">a=1，b=3，args=(4, 5, 10, 20)，kwargs={}</button>
             <button class="quiz-option">a=1，b=2，args=(3, 4, 5)，kwargs={'x': 10, 'y': 20}</button>
             <button class="quiz-option">a=1，b=3，args=(4, 5)，kwargs={'x': 10, 'y': 20}</button>
-            <button class="quiz-option">运行时报错（参数个数不匹配）</button>
           </div>
           <div class="quiz-explain" hidden>逐个分配：1 → a；3 覆盖默认值 → b=3；4、5 是多余位置参数 → <code>args=(4, 5)</code>；x/y 是关键字 → <code>kwargs</code>。注意 b 被<strong>位置传参覆盖</strong>，默认值 2 没用上。这是参数分配规则的完整演练。详见「参数顺序规则」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">8. 以下代码的输出是？
 <pre><code>def outer(x):
     def inner(y):
@@ -155,15 +155,15 @@
 add_5 = outer(5)
 print(add_5(10))</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">5</button>
-            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">10</button>
+            <button class="quiz-option">5</button>
             <button class="quiz-option">15</button>
+            <button class="quiz-option">运行时报错</button>
           </div>
           <div class="quiz-explain" hidden>闭包：<code>inner</code> 记住了外层变量 <code>x=5</code>，即使 <code>outer</code> 已返回。调用 <code>add_5(10)</code> 时 <code>5 + 10 = 15</code>——这就是「内部函数捕获外部变量」的经典用法（装饰器的基础）。详见第 4 课「闭包作用域」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">9. 以下代码的输出是？
 <pre><code>def f():
     return 1, 2
@@ -171,10 +171,10 @@ print(add_5(10))</code></pre></div>
 x, y = f()
 print(x * 10 + y)</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">12</button>
+            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">(10, 2)</button>
             <button class="quiz-option">102</button>
-            <button class="quiz-option">运行时报错</button>
+            <button class="quiz-option">12</button>
           </div>
           <div class="quiz-explain" hidden>多返回值 = 元组：<code>f()</code> 返回 <code>(1, 2)</code>，解包后 <code>x=1, y=2</code> → <code>1 × 10 + 2 = 12</code>。选项 102 是「字符串拼接」的错觉——这里是数字运算。</div>
         </div>
@@ -186,7 +186,7 @@ print(x * 10 + y)</code></pre></div>
       <p>下面是《5.函数》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">考核一（作业一·默认参数陷阱）：以下代码最后一行 <code>print(result1)</code> 输出是？
 <pre><code>def add_items(base, items=None, *tags):
     if items is None:
@@ -200,10 +200,10 @@ result1 = add_items(10)
 result2 = add_items(20, [1, 2], 30, 40)
 print(result1)</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">None</button>
             <button class="quiz-option">[10]</button>
             <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">[1, 2, 20, 30, 40]</button>
+            <button class="quiz-option">None</button>
           </div>
           <div class="quiz-explain" hidden>两次调用互不影响：第一次 <code>add_items(10)</code> 里 <code>items is None</code> 成立，<strong>新建列表</strong>后 append → <code>[10]</code>；第二次调用传入了自己的 <code>[1, 2]</code>，与 result1 无关。所以 result1 仍是 <strong>[10]</strong>。若默认值写成 <code>items=[]</code>，两次调用会共享同一列表，result1 就会被污染——这正是「可变默认值」陷阱。</div>
         </div>
@@ -224,14 +224,14 @@ merged = merge_data(data, a=5, b=[3], c="hello")
 print(merged)</code></pre></div>
           <div class="quiz-options">
             <button class="quiz-option">{'a': 15, 'b': [1, 2, 3], 'c': 'hello'}</button>
+            <button class="quiz-option">{'a': 5, 'b': [3], 'c': 'hello'}</button>
             <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">{'a': 10, 'b': [1, 2], 'c': 'hello'}</button>
-            <button class="quiz-option">{'a': 5, 'b': [3], 'c': 'hello'}</button>
           </div>
           <div class="quiz-explain" hidden>逐键推演：<code>a=5</code> → 键存在，<code>10 + 5 = 15</code>；<code>b=[3]</code> → 键存在，<code>[1, 2] + [3] = [1, 2, 3]</code>（列表相加是拼接）；<code>c="hello"</code> → 键不存在，直接放入。输出 <strong>{'a': 15, 'b': [1, 2, 3], 'c': 'hello'}</strong>。进阶注意：<code>base.copy()</code> 是<strong>浅拷贝</strong>——顶层字典被保护（a 键是重新赋值），但嵌套列表 b 与原 data <strong>共享</strong>，<code>result["b"] += [3]</code> 会顺带把原 data 的 b 也改成 <code>[1, 2, 3]</code>。想彻底隔离要用 <code>copy.deepcopy</code>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核三（作业三·多返回值与 enumerate）：以下代码 <code>print(result)</code> 输出是？
 <pre><code>def split_data(data):
     mid = len(data) // 2
@@ -252,20 +252,20 @@ result = second + [len(positions)]
 print(result)</code></pre></div>
           <div class="quiz-options">
             <button class="quiz-option">[4, 5, 6]</button>
-            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">[4, 5, 6, 3]</button>
+            <button class="quiz-option">运行时报错</button>
             <button class="quiz-option">[4, 5, 6, 85]</button>
           </div>
           <div class="quiz-explain" hidden><code>split_data</code> 从中间切开：second = <code>[4, 5, 6]</code>；<code>find_indices</code> 收集 85 出现的位置 <code>[0, 2, 4]</code>；<code>second + [len(positions)]</code> = <code>[4, 5, 6] + [3]</code> → <strong>[4, 5, 6, 3]</strong>。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（作业四·列表扁平化）：实现 <code>flatten</code>，把任意嵌套的列表展开为一维，如 <code>flatten([1, [2, 3], [[4], 5]])</code> 应返回 <code>[1, 2, 3, 4, 5]</code>。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">递归：元素是列表则 append(flatten(元素))，否则 append(元素)</button>
             <button class="quiz-option">只展开一层：内层嵌套列表保留原样</button>
-            <button class="quiz-option">递归：元素是列表则 extend(flatten(元素))，否则 append(元素)</button>
+            <button class="quiz-option">递归：元素是列表则 append(flatten(元素))，否则 append(元素)</button>
             <button class="quiz-option">不判断类型一律 append，原样收集不做展开</button>
+            <button class="quiz-option">递归：元素是列表则 extend(flatten(元素))，否则 append(元素)</button>
           </div>
           <div class="quiz-explain" hidden>关键是两个 API 的差别：<code>extend</code> 把内层列表的元素<strong>逐个并入</strong>，<code>append</code> 把内层列表<strong>整体作为一个元素</strong>。正确答案递归处理：<code>flatten([1, [2, 3], [[4], 5]])</code> → 1 直接 append，<code>[2, 3]</code> 递归展开后 extend → <code>[1, 2, 3]</code>，<code>[[4], 5]</code> 递归得到 <code>[4, 5]</code> 再 extend → <strong>[1, 2, 3, 4, 5]</strong>。第三个选项用 append 接递归结果，内层列表会变成嵌套元素 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">

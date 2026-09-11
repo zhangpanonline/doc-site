@@ -1,0 +1,49 @@
+---
+sidebar_position: 1
+title: 'pg-01 · 架构基础'
+description: 'PostgreSQL 官方教程 §1.2 拓展：客户端/服务器模型、postgres 守护进程与每连接进程模型——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 架构基础" desc="客户端/服务器模型、postgres 守护进程、每连接一个进程——理解 PG 一切行为的入口。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方教程 §1.2「架构基础」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/tutorial-arch.html) / [官方英文版](https://www.postgresql.org/docs/current/tutorial-arch.html)）。
+
+:::
+
+## 客户端/服务器模型
+
+PostgreSQL 使用 **客户端/服务器（C/S）模型**。一次会话由两类角色组成：
+
+- **服务器进程**：管理数据库文件、接受客户端连接、代表客户端在数据库上执行操作。这个服务器程序就叫 **`postgres`**
+- **客户端应用**：形态多样——文本工具（psql）、图形界面、通过访问数据库显示网页的 Web 服务器、特制的管理工具。除随 PG 发布的工具外，绝大部分是用户开发的
+
+客户端与服务器可以部署在**不同主机**上，此时通过 **TCP/IP** 网络连接通信。同机部署时通常走 Unix 域套接字（更快）。
+
+:::warning 文件可见性陷阱
+
+客户端与服务器分机部署时，**客户机上能访问的文件，服务器机器上未必能访问**。凡是由服务器读取/写入文件的操作（如 `COPY ... FROM '/path'`、导入导出），路径都以**服务器所在机器**为准——这是跨机环境最常见的排查坑。
+
+:::
+
+## 进程模型：每连接一个进程
+
+PostgreSQL 服务器需要处理来自多个客户端的**并发连接**，它的做法是：
+
+1. **守护进程常驻**：最初的 `postgres` 进程始终运行，等待客户端连接
+2. **每连接 fork**：每当一个新连接到来，守护进程 **fork 出一个新进程**来服务它
+3. **建立后直连**：从这一刻起，客户端与这个新进程**直接通信，不再经过最初的 postgres 进程**（守护进程只负责"接生"，不参与后续对话）
+4. 会话结束，对应的连接进程随之退出——**客户端与关联进程起起停停，守护进程永远在**
+
+> 进程模型 vs 线程模型：MySQL 等采用线程模型（连接共享进程），PG 每连接一个独立进程——**隔离性好（一个连接崩不影响其他），但连接的内存开销大**，对"连接数"和"连接复用"更敏感。这是后续学习连接池（如 PgBouncer）的动机。
+
+## 官方原文
+
+- [postgres.cn：1.2. 架构基础](http://www.postgres.cn/docs/current/tutorial-arch.html)
+- [PostgreSQL 官方英文文档：1.2. Architectural Fundamentals](https://www.postgresql.org/docs/current/tutorial-arch.html)
+
+配套学习：<a href="/teach/lessons/pg-0001-架构基础.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/架构基础速查表.html">📋 架构基础速查表（可打印）</a>

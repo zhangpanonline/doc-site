@@ -61,24 +61,24 @@
 
       <h3>🌱 初级 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 没有索引时，WHERE 条件查询的执行方式是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">随机抽几行比对后返回</button>
             <button class="quiz-option">把查询结果缓存起来直接复用</button>
-            <button class="quiz-option">数据库自动猜测结果，直接返回</button>
+            <button class="quiz-option">随机抽几行比对后返回</button>
             <button class="quiz-option">全表扫描：一行一行比对条件</button>
+            <button class="quiz-option">数据库自动猜测结果，直接返回</button>
           </div>
           <div class="quiz-explain" hidden>无索引 = <strong>全表扫描</strong>（EXPLAIN 里 type=ALL）：把整张表一行行读出来比对 WHERE。50 万行最多比对 50 万次——这就是索引演示「测试 1」慢的原因。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">2. 索引最形象的比喻是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">书的页码</button>
             <button class="quiz-option">书的目录——先查目录再翻页</button>
-            <button class="quiz-option">书的封底</button>
             <button class="quiz-option">书的封面</button>
+            <button class="quiz-option">书的封底</button>
+            <button class="quiz-option">书的页码</button>
           </div>
           <div class="quiz-explain" hidden>索引 = <strong>目录</strong>：数据是书页，索引是「关键字 → 页码」的映射。B+ 树就是精心组织的目录结构，让「查目录」本身也只要几次 IO。</div>
         </div>
@@ -86,10 +86,10 @@
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">3. 创建索引的主要代价是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">会锁住整张表永远无法写入</button>
-            <button class="quiz-option">查询会变慢</button>
-            <button class="quiz-option">占磁盘空间，且每次增删改都要维护索引、写变慢</button>
             <button class="quiz-option">数据量会翻倍增长</button>
+            <button class="quiz-option">会锁住整张表永远无法写入</button>
+            <button class="quiz-option">占磁盘空间，且每次增删改都要维护索引、写变慢</button>
+            <button class="quiz-option">查询会变慢</button>
           </div>
           <div class="quiz-explain" hidden>代价：① 索引文件<strong>占空间</strong>；② <strong>写操作变慢</strong>——INSERT/UPDATE/DELETE 除了改数据还要同步维护索引结构。所以「索引不是越多越好」，只为高频查询字段建。</div>
         </div>
@@ -97,35 +97,35 @@
 
       <h3>🌿 中级 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 演示脚本里，建完索引后为什么还要执行 ANALYZE？</div>
           <div class="quiz-options">
-            <button class="quiz-option">更新统计信息，让优化器知道索引存在、做出正确执行计划</button>
             <button class="quiz-option">ANALYZE 是创建索引的必要语法之一</button>
+            <button class="quiz-option">更新统计信息，让优化器知道索引存在、做出正确执行计划</button>
             <button class="quiz-option">不 ANALYZE 索引会被自动删除</button>
             <button class="quiz-option">ANALYZE 会压缩索引文件节省空间</button>
           </div>
           <div class="quiz-explain" hidden>优化器靠<strong>统计信息</strong>（数据分布、行数、索引）选择执行计划。刚建索引时统计信息过时，可能仍选全表扫描。ANALYZE 刷新统计后，优化器才会正确选索引路径。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">5. 时间范围查询 <code>WHERE created_at &gt;= '2024-06-01' AND created_at &lt; '2024-07-01'</code>，B+ 树索引为什么特别高效？</div>
           <div class="quiz-options">
-            <button class="quiz-option">时间列的数据量天然就小</button>
             <button class="quiz-option">定位起点后顺着叶子链表连续扫，不用全表翻</button>
-            <button class="quiz-option">这个查询其实用不到索引</button>
+            <button class="quiz-option">时间列的数据量天然就小</button>
             <button class="quiz-option">数据库会自动预计算查询结果</button>
+            <button class="quiz-option">这个查询其实用不到索引</button>
           </div>
           <div class="quiz-explain" hidden>B+ 树叶子节点<strong>按 key 有序且用链表相连</strong>：先走树找到 '2024-06-01' 的位置（几次 IO），然后沿链表一路读到 '2024-07-01' 之前——只碰相关页，这正是演示里速度差几个数量级的原因。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">6. EXPLAIN 输出中表示「全表扫描」的 type 是？</div>
           <div class="quiz-options">
             <button class="quiz-option">range——表示扫描全表</button>
             <button class="quiz-option">eq_ref——表示全表扫描</button>
-            <button class="quiz-option">index——表示没用到任何索引</button>
             <button class="quiz-option">ALL——性能最差，需要优化</button>
+            <button class="quiz-option">index——表示没用到任何索引</button>
           </div>
           <div class="quiz-explain" hidden>type 从好到差：system &gt; const &gt; eq_ref &gt; ref &gt; <strong>range</strong> &gt; index &gt; <strong>ALL</strong>。ALL = 全表扫描（最差）；本演示中建索引后应看到 range（范围扫描）或更好的类型。index 是只扫索引树（比 ALL 好一点但仍是全量）。</div>
         </div>
@@ -136,32 +136,32 @@
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 为什么磁盘数据库用 B+ 树而不是普通二叉树/红黑树？</div>
           <div class="quiz-options">
+            <button class="quiz-option">数据库厂商的历史习惯，没有技术原因</button>
             <button class="quiz-option">普通二叉树查找复杂度更低</button>
             <button class="quiz-option">红黑树在磁盘上无法存储</button>
-            <button class="quiz-option">数据库厂商的历史习惯，没有技术原因</button>
             <button class="quiz-option">B+ 树矮：非叶子只存 key，一次 IO 读更多，磁盘 IO 次数少</button>
           </div>
           <div class="quiz-explain" hidden>磁盘的性能瓶颈是 <strong>IO 次数</strong>（每次寻道+传输），不是比较次数。二叉树/红黑树是为内存设计的，节点多、树高、IO 多。B+ 树非叶子只存 key，一个 16KB 页能装几百个 key，树高 2~4 层即可容纳千万行——查询只需 2~4 次 IO。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">8. 哪种写法会让 created_at 上的索引失效？</div>
           <div class="quiz-options">
             <button class="quiz-option">WHERE created_at &gt;= '2024-06-01'</button>
-            <button class="quiz-option">WHERE created_at BETWEEN '2024-06-01' AND '2024-07-01'</button>
-            <button class="quiz-option">ORDER BY created_at</button>
             <button class="quiz-option">WHERE created_at + interval '1 day' &gt; '2024-06-01'——对索引列做运算</button>
+            <button class="quiz-option">ORDER BY created_at</button>
+            <button class="quiz-option">WHERE created_at BETWEEN '2024-06-01' AND '2024-07-01'</button>
           </div>
           <div class="quiz-explain" hidden>对<strong>索引列做运算/函数</strong>会破坏「值 → 位置」的直接映射，优化器只能放弃索引（可改写为 <code>created_at &gt; '2024-06-01' - interval '1 day'</code> 把运算挪到常量侧）。同理 LIKE '%xxx'、隐式类型转换也会失效。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">9. 复合索引 (a, b) 上查询 <code>WHERE b = 1</code>，会怎样？</div>
           <div class="quiz-options">
             <button class="quiz-option">数据库报错：复合索引必须先查第二列</button>
-            <button class="quiz-option">违反最左前缀，索引失效退化为全表扫描</button>
-            <button class="quiz-option">自动拆成两个单列索引使用</button>
             <button class="quiz-option">正常走复合索引，效率与查 a 一样</button>
+            <button class="quiz-option">自动拆成两个单列索引使用</button>
+            <button class="quiz-option">违反最左前缀，索引失效退化为全表扫描</button>
           </div>
           <div class="quiz-explain" hidden>复合索引先按 a 排序、再按 b——<strong>跳过 a 直接查 b，索引失去排序定位能力</strong>（最左前缀原则）。范围查询还会中断后续列的匹配。所以设计复合索引时，把等值、高频的列放最左。</div>
         </div>
@@ -173,13 +173,13 @@
       <p>本节源课程没有作业，下面四道题由《06.索引》的演示脚本改编——<strong>这就是本课的最终考核</strong>。规则：不查资料，先在脑中推演演示的每一步，再点击核对。全部答对且能讲清理由，才算过关。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核一：演示的正确步骤顺序是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">插数据 → 建索引 → ANALYZE → EXPLAIN 测试</button>
-            <button class="quiz-option">插 50 万行 → ANALYZE → 无索引 EXPLAIN → 建索引 → ANALYZE → 有索引 EXPLAIN</button>
             <button class="quiz-option">EXPLAIN 测试 → 插数据 → 建索引</button>
             <button class="quiz-option">建索引 → 插数据 → EXPLAIN 测试 → 删索引</button>
+            <button class="quiz-option">插 50 万行 → ANALYZE → 无索引 EXPLAIN → 建索引 → ANALYZE → 有索引 EXPLAIN</button>
+            <button class="quiz-option">插数据 → 建索引 → ANALYZE → EXPLAIN 测试</button>
           </div>
           <div class="quiz-explain" hidden>正确流程：① 灌 50 万行 → ② ANALYZE 刷新统计 → ③ 无索引 EXPLAIN（type=ALL，慢）→ ④ CREATE INDEX → ⑤ 再次 ANALYZE（让优化器感知）→ ⑥ 有索引 EXPLAIN（走索引，快）→ ⑦ DROP INDEX 清理。对照组必须控制变量。</div>
         </div>
@@ -195,24 +195,24 @@
           <div class="quiz-explain" hidden>PG 里全表扫描显示 <strong>Seq Scan</strong>（= type:ALL）。50 万行要一页页全读，执行时间以百毫秒计。这正是「测试 1」与「测试 2」对比的基线。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核三：建索引后，同一句时间范围查询的执行计划应变为？</div>
           <div class="quiz-options">
+            <button class="quiz-option">并行 Seq Scan，用更多 CPU 换速度</button>
+            <button class="quiz-option">Hash Join 扫描</button>
             <button class="quiz-option">Index Range Scan：走 B+ 树定位起点后按叶子链表扫描</button>
             <button class="quiz-option">还是 Seq Scan，只是更快了</button>
-            <button class="quiz-option">Hash Join 扫描</button>
-            <button class="quiz-option">并行 Seq Scan，用更多 CPU 换速度</button>
           </div>
           <div class="quiz-explain" hidden>有 B+ 树索引后，范围查询走 <strong>Index Range Scan</strong>（type=range）：树中定位起点 → 叶子链表连续扫到终点，只读相关页面，耗时从「扫 50 万行」降到「扫命中区间」。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四：演示结束后为什么要 DROP INDEX idx_order_created_at？</div>
           <div class="quiz-options">
-            <button class="quiz-option">索引会自动过期，删不删都一样</button>
-            <button class="quiz-option">恢复原始状态：演示索引并非真实业务所需，留着徒增写入开销</button>
-            <button class="quiz-option">不删的话数据库下次启动会报错</button>
             <button class="quiz-option">为了让 EXPLAIN 结果更准确</button>
+            <button class="quiz-option">索引会自动过期，删不删都一样</button>
+            <button class="quiz-option">不删的话数据库下次启动会报错</button>
+            <button class="quiz-option">恢复原始状态：演示索引并非真实业务所需，留着徒增写入开销</button>
           </div>
           <div class="quiz-explain" hidden>演示用的索引是<strong>临时实验</strong>：真实业务里是否要这个索引要按查询模式评估。留着它，之后每次写订单都要额外维护——所以演示完清理掉（测试数据 DELETE 同理）。这也呼应「索引不是越多越好」。</div>
         </div>

@@ -57,35 +57,35 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. <code>x: int = "hello"</code> 运行时会发生什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">自动转成 int</button>
-            <button class="quiz-option">SyntaxError</button>
             <button class="quiz-option">抛 TypeError</button>
+            <button class="quiz-option">自动转成 int</button>
             <button class="quiz-option">正常运行，类型检查器才会警告</button>
+            <button class="quiz-option">SyntaxError</button>
           </div>
           <div class="quiz-explain" hidden>Python 是动态语言，<strong>运行时不强制</strong>类型标注；类型检查工具（如 IDE 的 typeCheckingMode）会在编码期提示。详见「变量类型标注」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">2. 返回值可能是 str 也可能是 None，正确的标注是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">Any[str]</button>
-            <button class="quiz-option">Union[str, None] 不能用 | 写法</button>
-            <button class="quiz-option">Optional[str] 或 str | None</button>
             <button class="quiz-option">str</button>
+            <button class="quiz-option">Union[str, None] 不能用 | 写法</button>
+            <button class="quiz-option">Any[str]</button>
+            <button class="quiz-option">Optional[str] 或 str | None</button>
           </div>
           <div class="quiz-explain" hidden><code>Optional[str]</code> 即 <code>Union[str, None]</code>，3.10+ 可直接写 <code>str | None</code>。详见「Optional 和 Union」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">3. 回调参数「接收两个 int 返回 int」的标注是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">(int, int) -&gt; int 直接写在参数位置</button>
             <button class="quiz-option">Callable[[int, int], int]</button>
-            <button class="quiz-option">Function[[int, int], int]</button>
             <button class="quiz-option">Callable[int, int]</button>
+            <button class="quiz-option">Function[[int, int], int]</button>
+            <button class="quiz-option">(int, int) -&gt; int 直接写在参数位置</button>
           </div>
           <div class="quiz-explain" hidden><code>Callable[[参数类型列表], 返回类型]</code>——<code>Callable[[int, int], int]</code> 表示接收两个 int 返回 int 的可调用对象。详见「Callable 和回调函数」一节。</div>
         </div>
@@ -93,24 +93,24 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 泛型类 <code>Stack[T]</code> 中，T 的定义方式是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">T 是内置的泛型参数名</button>
             <button class="quiz-option">T = Generic("T")，类继承 TypeVar[T]</button>
-            <button class="quiz-option">直接 class Stack[T] 不需要别的声明</button>
             <button class="quiz-option">T = TypeVar("T")，类继承 Generic[T]</button>
+            <button class="quiz-option">直接 class Stack[T] 不需要别的声明</button>
+            <button class="quiz-option">T 是内置的泛型参数名</button>
           </div>
           <div class="quiz-explain" hidden>泛型三步：<code>T = TypeVar("T")</code> 声明类型变量；<code>class Stack(Generic[T])</code> 参数化；使用时 <code>Stack[int]</code>。详见「泛型」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">5. 方法返回「本类的新实例」，返回值标注用？</div>
           <div class="quiz-options">
+            <button class="quiz-option">-&gt; this</button>
             <button class="quiz-option">无法标注</button>
             <button class="quiz-option">-&gt; 自己的类名（3.11 前必须加引号）</button>
             <button class="quiz-option">-&gt; Self</button>
-            <button class="quiz-option">-&gt; this</button>
           </div>
           <div class="quiz-explain" hidden><code>typing.Self</code>（3.11+）表示返回本类实例；旧写法是字符串前向引用 <code>-&gt; "Point"</code>。两者都正确，Self 更通用（子类也成立）。详见「类与自定义类型」一节。</div>
         </div>
@@ -118,10 +118,10 @@
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">6. TypedDict 适合标注什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">任意键值对的字典</button>
             <button class="quiz-option">函数的参数列表</button>
-            <button class="quiz-option">固定键结构的字典（如 API 返回数据）</button>
             <button class="quiz-option">类的实例属性</button>
+            <button class="quiz-option">固定键结构的字典（如 API 返回数据）</button>
+            <button class="quiz-option">任意键值对的字典</button>
           </div>
           <div class="quiz-explain" hidden><code>TypedDict</code> 描述<strong>键结构固定</strong>的字典（每个键的类型分别声明），用于 API 响应等结构化数据。详见「TypedDict API 接口定义」一节。</div>
         </div>
@@ -133,8 +133,8 @@
           <div class="quiz-prompt">7. <code>def f(items: List) -&gt; Dict</code> 的问题是什么？</div>
           <div class="quiz-options">
             <button class="quiz-option">裸容器无类型参数，检查器无法推断元素类型</button>
-            <button class="quiz-option">运行时会强制类型检查</button>
             <button class="quiz-option">List/Dict 不是合法的标注类型</button>
+            <button class="quiz-option">运行时会强制类型检查</button>
             <button class="quiz-option">没有语法问题</button>
           </div>
           <div class="quiz-explain" hidden>裸 <code>List</code>/<code>Dict</code> 没带类型参数，等于「不知道里面是什么」——应写 <code>list[dict[str, Any]]</code> 等完整形式。这就是考核四思考题的考点。</div>
@@ -143,21 +143,21 @@
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">8. 泛型 <code>Cache[K, V]</code> 的 <code>get</code> 返回 <code>Optional[V]</code>，实现中用 <code>self._data.get(key)</code> 是因为？</div>
           <div class="quiz-options">
-            <button class="quiz-option">避免返回默认值</button>
-            <button class="quiz-option">键不存在时返回 None，与 Optional[V] 类型一致</button>
-            <button class="quiz-option">下标访问更快</button>
             <button class="quiz-option">get 是字典唯一的方法</button>
+            <button class="quiz-option">键不存在时返回 None，与 Optional[V] 类型一致</button>
+            <button class="quiz-option">避免返回默认值</button>
+            <button class="quiz-option">下标访问更快</button>
           </div>
           <div class="quiz-explain" hidden><code>dict.get(key)</code> 键不存在返回 <strong>None</strong>——恰好满足 <code>Optional[V]</code>（V 或 None）的语义；用 <code>self._data[key]</code> 会 KeyError，与标注不符。类型标注与实现要互相印证。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">9. TypedDict 嵌套：<code>AppConfig</code> 里 <code>db: DatabaseConfig</code>（另一个 TypedDict），检查器能验证嵌套结构吗？</div>
           <div class="quiz-options">
-            <button class="quiz-option">不能，TypedDict 只校验第一层</button>
             <button class="quiz-option">只能嵌套普通 dict 标注</button>
             <button class="quiz-option">能，TypedDict 支持嵌套逐层校验</button>
             <button class="quiz-option">嵌套 TypedDict 会语法报错</button>
+            <button class="quiz-option">不能，TypedDict 只校验第一层</button>
           </div>
           <div class="quiz-explain" hidden>TypedDict <strong>可以嵌套</strong>：先定义 <code>DatabaseConfig(TypedDict)</code>，再在 <code>AppConfig</code> 里引用它——检查器会逐层校验键的类型，多层级 API 结构也能完整建模。</div>
         </div>
@@ -169,24 +169,24 @@
       <p>下面是《20.类型标注》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确标注，再点击核对。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核一（作业一·函数标注）：<code>calculate_bmi(weight, height)</code> 与 <code>get_grade(score) -&gt; "A"/"B"/.../</code>，下列标注中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">weight: int, height: int → int</button>
+            <button class="quiz-option">weight: float, height: float → float；score: int → str</button>
             <button class="quiz-option">weight: float, height: float → str</button>
             <button class="quiz-option">都不标注，靠函数名自解释</button>
-            <button class="quiz-option">weight: float, height: float → float；score: int → str</button>
-            <button class="quiz-option">weight: int, height: int → int</button>
           </div>
           <div class="quiz-explain" hidden>BMI 计算输入是浮点（体重/身高），返回 <code>weight / height**2</code> 也是 float → <code>(weight: float, height: float) -&gt; float</code>；<code>get_grade</code> 接收分数（int）返回等级字符串（str）→ <code>(score: int) -&gt; str</code>。第二个把身高体重当 int 会丢精度 ✗；第三个返回值错 ✗。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核二（作业二·泛型缓存）：<code>Cache[K, V]</code> 的 set 存值、get 返回 Optional[V]、clear 清空。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">Cache 不继承 Generic[K, V]</button>
-            <button class="quiz-option">get 用 self._data[key] 直接下标访问</button>
             <button class="quiz-option">self._data: dict[K, V]；set 赋值；get 用 .get(key) 返回 Optional[V]</button>
             <button class="quiz-option">_data 标注为 dict 不带类型参数</button>
+            <button class="quiz-option">get 用 self._data[key] 直接下标访问</button>
           </div>
           <div class="quiz-explain" hidden>正确实现：<code>class Cache(Generic[K, V])</code>，<code>self._data: dict[K, V] = {}</code>；<code>get</code> 用 <code>self._data.get(key)</code>（键不存在返回 None，正好匹配 <code>Optional[V]</code>）。第二个键不存在会 KeyError ✗；第三个类型参数失效 ✗；第四个检查器推断不了 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -214,9 +214,9 @@ class Cache(Generic[K, V]):
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核三（作业三·TypedDict）：AppConfig 含 app_name(str)、debug(bool)、db(DatabaseConfig)——db 又含 host/port/username/password/database。下列标注中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">TypedDict 里嵌套 TypedDict 会报错，改用 dict</button>
             <button class="quiz-option">用 Dict[str, Any] 一笔带过 db</button>
             <button class="quiz-option">AppConfig 里把 db 标成 str</button>
+            <button class="quiz-option">TypedDict 里嵌套 TypedDict 会报错，改用 dict</button>
             <button class="quiz-option">先定义 DatabaseConfig(TypedDict) 五个字段，再定义 AppConfig 引用它</button>
           </div>
           <div class="quiz-explain" hidden><strong>TypedDict 可以嵌套</strong>：先定义 <code>class DatabaseConfig(TypedDict)</code>（host: str, port: int, username: str, password: str, database: str），再 <code>class AppConfig(TypedDict)</code> 里写 <code>db: DatabaseConfig</code>。第二个丢失结构信息 ✗；第三个 Any 等于放弃检查 ✗；第四个说法错误 ✗。</div>
@@ -238,13 +238,13 @@ class AppConfig(TypedDict):
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核四（作业四·思考题）：<code>def process_data(items: List) -&gt; Dict</code> 与 <code>def find_max(a: int, b: int) -&gt; int | None</code>（相等时返回 None），哪项标注需要修改？</div>
           <div class="quiz-options">
-            <button class="quiz-option">两者都需要修改</button>
-            <button class="quiz-option">find_max 应改为 int；process_data 没问题</button>
-            <button class="quiz-option">process_data 的裸 List/Dict 要带类型参数；find_max 标注正确</button>
             <button class="quiz-option">两者都正确，不用改</button>
+            <button class="quiz-option">find_max 应改为 int；process_data 没问题</button>
+            <button class="quiz-option">两者都需要修改</button>
+            <button class="quiz-option">process_data 的裸 List/Dict 要带类型参数；find_max 标注正确</button>
           </div>
           <div class="quiz-explain" hidden><code>List</code>/<code>Dict</code> 裸用时检查器不知道元素类型——应写 <code>items: list[dict[str, Any]]</code>、返回 <code>dict[Any, Any]</code>（或更精确的 TypedDict）。<code>find_max</code> 相等时返回 None，标注 <code>int | None</code> <strong>完全正确</strong>——返回值本来就可能是 None。</div>
         </div>

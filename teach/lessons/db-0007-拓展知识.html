@@ -62,35 +62,35 @@
 
       <h3>🌱 初级 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 视图（View）与物化视图（Materialized View）的区别是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">两者完全一样，只是名字不同</button>
+            <button class="quiz-option">物化视图是视图的旧版叫法，已废弃</button>
             <button class="quiz-option">视图是存 SQL 的虚拟表（实时）；物化视图把结果存成物理表（快但非实时）</button>
             <button class="quiz-option">视图存数据，物化视图存 SQL</button>
-            <button class="quiz-option">物化视图是视图的旧版叫法，已废弃</button>
-            <button class="quiz-option">两者完全一样，只是名字不同</button>
           </div>
           <div class="quiz-explain" hidden>视图 = <strong>虚拟表</strong>：只存查询定义，每次查都现场算（实时、慢查询也实时慢）。物化视图 = <strong>结果落地成物理表</strong>：查得快，但数据是上次刷新的快照——适合大报表、定时刷新的看板。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">2. VACUUM 的作用是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">回收 MVCC 死元组、释放空间、更新统计——保洁工</button>
-            <button class="quiz-option">给数据库做杀毒扫描</button>
-            <button class="quiz-option">加密敏感数据列</button>
             <button class="quiz-option">压缩备份文件</button>
+            <button class="quiz-option">回收 MVCC 死元组、释放空间、更新统计——保洁工</button>
+            <button class="quiz-option">加密敏感数据列</button>
+            <button class="quiz-option">给数据库做杀毒扫描</button>
           </div>
           <div class="quiz-explain" hidden>MVCC 下 DELETE/UPDATE 产生 dead tuple，空间不自动回收。VACUUM 定期<strong>清理旧版本、回收磁盘、更新统计信息</strong>——频繁更新/删除的表变慢、磁盘不释放时想到它（autovacuum 会自动跑）。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">3. 图数据库最适合的场景是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">全文检索</button>
             <button class="quiz-option">存订单流水这类强事务数据</button>
             <button class="quiz-option">好友关系、最短路径、推荐这类深度关联查询</button>
             <button class="quiz-option">缓存热点数据</button>
+            <button class="quiz-option">全文检索</button>
           </div>
           <div class="quiz-explain" hidden>图数据库 = <strong>节点 + 边</strong>，天生擅长多跳关联（几度人脉、最短路径、商品推荐）。订单流水要强 ACID 用关系型；热点缓存用 Redis；全文检索用 PG 的 tsvector 或专门引擎。</div>
         </div>
@@ -98,35 +98,35 @@
 
       <h3>🌿 中级 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 审计日志（对某表的每次修改自动记录）最适合用哪个能力？</div>
           <div class="quiz-options">
-            <button class="quiz-option">触发器——插/改/删时自动执行记录逻辑</button>
+            <button class="quiz-option">BRIN 索引</button>
             <button class="quiz-option">FDW 外部表</button>
             <button class="quiz-option">CTE 表达式</button>
-            <button class="quiz-option">BRIN 索引</button>
+            <button class="quiz-option">触发器——插/改/删时自动执行记录逻辑</button>
           </div>
           <div class="quiz-explain" hidden>触发器 = <strong>表上插/改/删时自动执行的逻辑</strong>：审计日志、数据同步、自动更新 updated_at 都是典型用法。注意它逻辑隐蔽、难调试，慎用。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">5. 时间序列日志（TB 级、天然按时间有序、只做范围查询），最合适的索引是？</div>
           <div class="quiz-options">
             <button class="quiz-option">Hash 索引</button>
-            <button class="quiz-option">B+ 树单列索引</button>
-            <button class="quiz-option">GIN 索引</button>
             <button class="quiz-option">BRIN 索引——按物理块范围建索引，极小、极快</button>
+            <button class="quiz-option">GIN 索引</button>
+            <button class="quiz-option">B+ 树单列索引</button>
           </div>
           <div class="quiz-explain" hidden>BRIN = Block Range Index：<strong>按磁盘块范围</strong>记「这块的数据范围」，占空间极小，适合「超大表 + 数据天然有序（时间序列日志）+ 范围查询」的组合。GIN/GiST 面向 JSONB/数组/全文/地理；Hash 只管等值。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">6. 想在 PG 里直接查另一个 MySQL 库的表做临时报表，用什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">表继承</button>
-            <button class="quiz-option">物化视图</button>
             <button class="quiz-option">FDW 外部表——把外部数据源映射成本地表一样查</button>
             <button class="quiz-option">逻辑复制</button>
+            <button class="quiz-option">物化视图</button>
+            <button class="quiz-option">表继承</button>
           </div>
           <div class="quiz-explain" hidden>FDW（Foreign Data Wrapper）= <strong>外部表</strong>：在 PG 里像查本地表一样查 MySQL/Oracle/CSV——跨库整合、数据迁移、临时报表的利器。逻辑复制是持续同步，不是「查」；表继承是父子表结构复用。</div>
         </div>
@@ -134,13 +134,13 @@
 
       <h3>🎯 高级 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 学生表里同时存「院系ID」和「院系名称」，违反哪条范式？怎么修？</div>
           <div class="quiz-options">
-            <button class="quiz-option">没有违反任何范式</button>
-            <button class="quiz-option">违反 1NF：院系名称列可以再分</button>
-            <button class="quiz-option">违反 3NF：院系名称传递依赖于院系ID，应拆出院系表</button>
             <button class="quiz-option">违反 2NF：主键不能完全确定院系名称</button>
+            <button class="quiz-option">违反 3NF：院系名称传递依赖于院系ID，应拆出院系表</button>
+            <button class="quiz-option">违反 1NF：院系名称列可以再分</button>
+            <button class="quiz-option">没有违反任何范式</button>
           </div>
           <div class="quiz-explain" hidden>学生表主键是学号；「院系名称」不直接依赖学号，而是依赖<strong>非主键列院系ID</strong> → <strong>传递依赖 → 违反 3NF</strong>。修法：拆出「院系表（ID, 名称）」，学生表只留院系ID 外键。</div>
         </div>
@@ -148,21 +148,21 @@
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">8. 订单明细表主键 (订单ID, 商品ID)，但「商品名称」列只依赖商品ID——违反哪条？</div>
           <div class="quiz-options">
-            <button class="quiz-option">违反 3NF：商品名称与订单ID 有传递依赖</button>
+            <button class="quiz-option">违反 1NF：商品名称不是原子值</button>
             <button class="quiz-option">没有违反，商品名称放这里很合理</button>
             <button class="quiz-option">违反 2NF：只依赖复合主键的一部分（部分依赖）</button>
-            <button class="quiz-option">违反 1NF：商品名称不是原子值</button>
+            <button class="quiz-option">违反 3NF：商品名称与订单ID 有传递依赖</button>
           </div>
           <div class="quiz-explain" hidden>复合主键下，<strong>非主键列必须依赖「整个」主键</strong>。商品名称只依赖 (订单ID, 商品ID) 中的商品ID → 部分依赖 → 违反 2NF。修法：商品名称放商品表，明细表只留商品ID 外键（这正是电商数据库设计里的做法）。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">9. 「一行里电话列存 138xxx, 139xxx 两个号码」违反哪条范式？</div>
           <div class="quiz-options">
+            <button class="quiz-option">违反 3NF</button>
             <button class="quiz-option">没有违反，存逗号分隔很高效</button>
             <button class="quiz-option">违反 1NF——列不可再分，一个格子一个值</button>
             <button class="quiz-option">违反 2NF</button>
-            <button class="quiz-option">违反 3NF</button>
           </div>
           <div class="quiz-explain" hidden>1NF 要求<strong>列原子性</strong>：一个格子只存一个值，不存数组/逗号串。多电话的正确设计：拆电话子表（用户 1:N 电话）。逗号串之后按号码查询、去重都会很痛苦。</div>
         </div>
@@ -174,46 +174,46 @@
       <p>本节源课程没有作业，下面四道题由《07.拓展知识》内容改编——<strong>这就是本课的最终考核</strong>。规则：不查资料，先在脑中作答，再点击核对。全部答对且能讲清理由，才算过关。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">考核一（能力选配）：下列「场景 → 能力」配对，全部正确的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">读写分离灾备→复制；超大时间序列表→BRIN；审计日志→触发器</button>
-            <button class="quiz-option">读写分离灾备→物化视图；超大时间序列表→B+树；审计日志→CTE</button>
             <button class="quiz-option">读写分离灾备→FDW；超大时间序列表→分区；审计日志→VACUUM</button>
+            <button class="quiz-option">读写分离灾备→复制；超大时间序列表→BRIN；审计日志→触发器</button>
             <button class="quiz-option">读写分离灾备→触发器；超大时间序列表→GIN；审计日志→复制</button>
+            <button class="quiz-option">读写分离灾备→物化视图；超大时间序列表→B+树；审计日志→CTE</button>
           </div>
           <div class="quiz-explain" hidden>配对：<strong>流/逻辑复制 → 读写分离与灾备</strong>；<strong>BRIN → 天然有序的巨表范围查询</strong>；<strong>触发器 → 审计日志</strong>。另两组也常用：表分区 → 按时间淘汰的超大表；物化视图 → 定时刷新的统计看板。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">考核二（选型）：社交 App 的「好友关系 + 二度人脉推荐」，主数据库之外应该补什么？</div>
           <div class="quiz-options">
-            <button class="quiz-option">键值数据库存好友列表</button>
-            <button class="quiz-option">图数据库——多跳关系遍历正是它的主场</button>
             <button class="quiz-option">再加一台关系型数据库做分库</button>
             <button class="quiz-option">列族数据库</button>
+            <button class="quiz-option">键值数据库存好友列表</button>
+            <button class="quiz-option">图数据库——多跳关系遍历正是它的主场</button>
           </div>
           <div class="quiz-explain" hidden>「谁认识谁、几度可达」是典型的<strong>图问题</strong>（节点+边），图数据库的多跳遍历远快于关系型的多层 JOIN 递归。主库仍用关系型存用户资料；好友图放 Neo4j 类图库是业界常见组合。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">考核三（范式诊断）：下面哪张表设计同时违反了 2NF 和 3NF？</div>
           <div class="quiz-options">
-            <button class="quiz-option">order_items(order_id, sku_id, quantity, price)——quantity/price 依赖整个联合主键</button>
-            <button class="quiz-option">category(id, name, description)——每列都直接依赖 id</button>
             <button class="quiz-option">orders(id, customer_id, customer_name)——customer_name 部分依赖非主键、传递依赖 customer_id</button>
+            <button class="quiz-option">category(id, name, description)——每列都直接依赖 id</button>
+            <button class="quiz-option">order_items(order_id, sku_id, quantity, price)——quantity/price 依赖整个联合主键</button>
             <button class="quiz-option">users(id, username, email)——主键单列，每列都原子</button>
           </div>
           <div class="quiz-explain" hidden>orders 表里 customer_name 不直接依赖主键 id，而是依赖非主键列 customer_id → <strong>传递依赖（3NF）</strong>；若换个角度按联合主键审视也是<strong>部分依赖（2NF）</strong>。修法：customer 信息拆进 customers 表，orders 只留 customer_id。其余三项是合规设计。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">考核四（能力辨析）：大报表查询很慢，且业务能接受数据延迟 1 小时，最佳优化是？</div>
           <div class="quiz-options">
+            <button class="quiz-option">物化视图 + 定时刷新——结果落地成物理表，查询直接读</button>
+            <button class="quiz-option">给报表 SQL 每列都加 GIN 索引</button>
             <button class="quiz-option">把报表 SQL 改成视图，查询就快了</button>
             <button class="quiz-option">用 CTE 把报表 SQL 拆小，性能自然提升</button>
-            <button class="quiz-option">给报表 SQL 每列都加 GIN 索引</button>
-            <button class="quiz-option">物化视图 + 定时刷新——结果落地成物理表，查询直接读</button>
           </div>
           <div class="quiz-explain" hidden>能接受延迟 → <strong>物化视图</strong>：复杂聚合先算好存成物理表（每小时 REFRESH），查询变「读表」。普通视图每次现场算，不解决慢；CTE 只改善可读性；GIN 是 JSONB/全文索引，不是万能加速器。</div>
         </div>

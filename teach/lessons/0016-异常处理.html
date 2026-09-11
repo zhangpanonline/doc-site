@@ -54,35 +54,35 @@
 
       <h3>🌱 初级测验 · 概念</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. <code>else</code> 子句什么时候执行？</div>
           <div class="quiz-options">
-            <button class="quiz-option">异常被捕获之后</button>
             <button class="quiz-option">只有未捕获异常时</button>
-            <button class="quiz-option">try 中没有异常发生时</button>
+            <button class="quiz-option">异常被捕获之后</button>
             <button class="quiz-option">无论有无异常都执行</button>
+            <button class="quiz-option">try 中没有异常发生时</button>
           </div>
           <div class="quiz-explain" hidden><code>else</code> 只在 try <strong>没有</strong>抛出异常时执行；<code>finally</code> 才是无论怎样都执行。详见「异常的捕获」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="0">
+        <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">2. <code>except Exception</code> 能捕获 <code>ZeroDivisionError</code> 吗？</div>
           <div class="quiz-options">
-            <button class="quiz-option">能，因为 ZeroDivisionError 是 Exception 的子类</button>
-            <button class="quiz-option">不能，必须精确写 ZeroDivisionError</button>
-            <button class="quiz-option">只能捕获 Exception 本身</button>
             <button class="quiz-option">会直接崩溃</button>
+            <button class="quiz-option">只能捕获 Exception 本身</button>
+            <button class="quiz-option">不能，必须精确写 ZeroDivisionError</button>
+            <button class="quiz-option">能，因为 ZeroDivisionError 是 Exception 的子类</button>
           </div>
           <div class="quiz-explain" hidden>异常有层次结构：<code>ZeroDivisionError → ArithmeticError → Exception</code>。捕获父类会连子类一起捕获——但应尽量精确捕获。详见「异常类型」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">3. 自定义异常的规范做法是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">不用继承，直接 class 定义</button>
+            <button class="quiz-option">继承 Exception 或其子类</button>
             <button class="quiz-option">继承 BaseException</button>
             <button class="quiz-option">继承 object</button>
-            <button class="quiz-option">继承 Exception 或其子类</button>
+            <button class="quiz-option">不用继承，直接 class 定义</button>
           </div>
           <div class="quiz-explain" hidden>自定义异常继承 <code>Exception</code>（常规异常基类）；<code>BaseException</code> 还包含 SystemExit/KeyboardInterrupt，不应用于业务异常。详见「自定义异常」一节。</div>
         </div>
@@ -90,24 +90,24 @@
 
       <h3>🌿 中级测验 · 应用</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. except 里写 <code>raise</code>（不带任何异常）表示？</div>
           <div class="quiz-options">
+            <button class="quiz-option">重新抛出当前正在处理的异常</button>
             <button class="quiz-option">抛出新的 RuntimeError</button>
             <button class="quiz-option">结束异常处理</button>
             <button class="quiz-option">语法错误</button>
-            <button class="quiz-option">重新抛出当前正在处理的异常</button>
           </div>
           <div class="quiz-explain" hidden>裸 <code>raise</code> 重新抛出<strong>当前异常</strong>（常用于记录日志后继续上抛）。详见「主动抛出异常」一节。</div>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">5. 多个 except 子句的书写顺序建议是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">只能写一个 except</button>
-            <button class="quiz-option">任意顺序都一样</button>
-            <button class="quiz-option">先宽泛（父类），后具体（子类）</button>
             <button class="quiz-option">先具体（子类），后宽泛（父类）</button>
+            <button class="quiz-option">任意顺序都一样</button>
+            <button class="quiz-option">只能写一个 except</button>
+            <button class="quiz-option">先宽泛（父类），后具体（子类）</button>
           </div>
           <div class="quiz-explain" hidden>匹配按书写顺序进行：父类在前会把子类异常「抢走」，后面的 except 永远不执行。应<strong>先具体后宽泛</strong>。</div>
         </div>
@@ -115,10 +115,10 @@
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">6. <code>raise RuntimeError("B") from e</code> 后，<code>B.__cause__</code> 是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">RuntimeError 自己</button>
             <button class="quiz-option">None</button>
-            <button class="quiz-option">原来的异常 e</button>
             <button class="quiz-option">字符串 "B"</button>
+            <button class="quiz-option">原来的异常 e</button>
+            <button class="quiz-option">RuntimeError 自己</button>
           </div>
           <div class="quiz-explain" hidden><code>from e</code> 显式关联异常链：新异常的 <code>__cause__</code> 指向 e。不用 from 的隐式关联则只设置 <code>__context__</code>。详见「异常链」一节。</div>
         </div>
@@ -126,7 +126,7 @@
 
       <h3>🎯 高级测验 · 综合</h3>
       <div class="quiz">
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 以下代码输出什么？
 <pre><code>def f():
     try:
@@ -137,29 +137,29 @@
 print(f())</code></pre></div>
           <div class="quiz-options">
             <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">先 1 再 2</button>
             <button class="quiz-option">2（finally 的 return 覆盖 try 的）</button>
             <button class="quiz-option">1（try 的 return 先生效）</button>
+            <button class="quiz-option">先 1 再 2</button>
           </div>
           <div class="quiz-explain" hidden>经典陷阱：<strong>finally 中的 return 会覆盖 try 中的 return</strong>——输出 2。这就是面试反复强调的「finally 只做清理，不要 return」的原因。</div>
         </div>
 
-        <div class="quiz-q" data-correct="2">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">8. 以下代码的输出是？
 <pre><code>try:
     raise ValueError("错误A")
 except ValueError:
     raise RuntimeError("错误B") from None</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">SyntaxError</button>
-            <button class="quiz-option">RuntimeError 且 __context__ 是 ValueError（链保留）</button>
             <button class="quiz-option">RuntimeError 且 __cause__ 是 None（异常链显示被抑制）</button>
+            <button class="quiz-option">RuntimeError 且 __context__ 是 ValueError（链保留）</button>
+            <button class="quiz-option">SyntaxError</button>
             <button class="quiz-option">ValueError 继续传播</button>
           </div>
           <div class="quiz-explain" hidden><code>from None</code> 是「显式<strong>断开</strong>异常链」：新异常的 <code>__cause__</code> 被设为 None，并<strong>抑制异常链的显示</strong>（traceback 里不再出现「原异常」段落）——用于不想暴露内部异常的场景。注意内部 <code>__context__</code> 属性仍会保留原异常，但对外的「链」已被断开。对比 <code>from e</code>（显式关联）与不带 from（隐式 <code>__context__</code>）。</div>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">9. 以下代码的输出是？
 <pre><code>def safe_divide(a, b):
     try:
@@ -172,10 +172,10 @@ except ValueError:
 
 print(safe_divide("10", 2))</code></pre></div>
           <div class="quiz-options">
-            <button class="quiz-option">打印 5.0</button>
             <button class="quiz-option">先打印 参数类型错误，再打印 None</button>
-            <button class="quiz-option">只打印 None</button>
+            <button class="quiz-option">打印 5.0</button>
             <button class="quiz-option">抛出 TypeError</button>
+            <button class="quiz-option">只打印 None</button>
           </div>
           <div class="quiz-explain" hidden>"10" / 2 触发 <strong>TypeError</strong> → except 打印「参数类型错误」并 return None → 外层 print 打印 None。两个 except 按异常类型<strong>分流处理</strong>，各自返回不同结果——这是源作业一的完整行为。</div>
         </div>
@@ -187,13 +187,13 @@ print(safe_divide("10", 2))</code></pre></div>
       <p>下面是《16.异常处理》源课程作业的三道实现题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
 
       <div class="quiz">
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">考核一（作业一·安全除法）：<code>safe_divide</code> 要求——除以 0 返回 0；参数类型错误打印 "参数类型错误" 并返回 None。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">只捕获 Exception 统一返回 0</button>
+            <button class="quiz-option">先 except ZeroDivisionError 返回 0，再 except TypeError 打印并返回 None</button>
             <button class="quiz-option">不捕获异常，直接 a / b</button>
             <button class="quiz-option">两个 except 交换顺序，TypeError 在前</button>
-            <button class="quiz-option">先 except ZeroDivisionError 返回 0，再 except TypeError 打印并返回 None</button>
+            <button class="quiz-option">只捕获 Exception 统一返回 0</button>
           </div>
           <div class="quiz-explain" hidden>正确结构：<code>try: return a / b</code>，<code>except ZeroDivisionError: return 0</code>，<code>except TypeError: print("参数类型错误"); return None</code>。两种异常类型<strong>分别处理</strong>返回不同结果才是题意。第三个把 TypeError 也当 0，返回值错 ✗；第四个直接崩 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -218,8 +218,8 @@ print(safe_divide("10", 2))  # 参数类型错误
           <div class="quiz-prompt">考核二（作业二·重试装饰器）：<code>@retry(max_attempts=3, delay=1)</code>——函数抛异常则等 delay 秒重试，最多重试 3 次，最后一次仍失败则抛出该异常。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
             <button class="quiz-option">for 循环 1..max_attempts：成功 return；失败且是最后一次就 raise，否则 sleep 后继续</button>
-            <button class="quiz-option">只 try 一次，失败就 raise</button>
             <button class="quiz-option">循环重试但不 sleep，失败后直接 raise</button>
+            <button class="quiz-option">只 try 一次，失败就 raise</button>
             <button class="quiz-option">失败后无论第几次都吞掉异常返回 None</button>
           </div>
           <div class="quiz-explain" hidden>正确结构：<code>for attempt in range(1, max_attempts + 1): try: return func(...) except Exception as e: if attempt == max_attempts: raise; time.sleep(delay)</code>——成功即返回；最后一次失败<strong>重新抛出</strong>。第二个吞异常 ✗；第三个没重试 ✗；第四个没等待也没重试 ✗。</div>
@@ -242,13 +242,13 @@ def retry(max_attempts, delay=1):
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="1">
+        <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">考核三（作业三·银行账户）：withdraw 要求——冻结抛 AccountFrozenError；金额 ≤ 0 抛 ValueError；余额不足抛 InsufficientFundsError；成功后扣款。下列实现中<strong>正确</strong>的是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">只检查余额不足，其余不检查</button>
-            <button class="quiz-option">依次检查冻结 → 金额 ≤ 0 → 余额不足，通过后扣款</button>
-            <button class="quiz-option">用 assert 实现全部检查</button>
             <button class="quiz-option">检查了条件但忘记扣款</button>
+            <button class="quiz-option">用 assert 实现全部检查</button>
+            <button class="quiz-option">依次检查冻结 → 金额 ≤ 0 → 余额不足，通过后扣款</button>
+            <button class="quiz-option">只检查余额不足，其余不检查</button>
           </div>
           <div class="quiz-explain" hidden>正确顺序：<code>if self.frozen: raise AccountFrozenError(...)</code> → <code>if amount &lt;= 0: raise ValueError(...)</code> → <code>if amount &gt; self.balance: raise InsufficientFundsError(...)</code> → 全部通过才 <code>self.balance -= amount</code>。第二个漏了两个条件 ✗；第三个余额永远不变 ✗；第四个 assert 可被 -O 优化掉，且类型不符题意 ✗。</div>
           <details class="quiz-explain" style="border-left-color:var(--accent)">
@@ -277,13 +277,13 @@ class BankAccount:
           </details>
         </div>
 
-        <div class="quiz-q" data-correct="3">
+        <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">考核四（异常链预测）：<code>raise RuntimeError("错误B") from e</code>（e 是捕获的 ValueError）后，捕获 RuntimeError 时 <code>__cause__</code> 与 <code>__context__</code> 分别是？</div>
           <div class="quiz-options">
-            <button class="quiz-option">两者都是 None</button>
+            <button class="quiz-option">__cause__ 是 ValueError；__context__ 是 None</button>
             <button class="quiz-option">两者都是 ValueError</button>
             <button class="quiz-option">__cause__ 是 None；__context__ 是 ValueError</button>
-            <button class="quiz-option">__cause__ 是 ValueError；__context__ 是 None</button>
+            <button class="quiz-option">两者都是 None</button>
           </div>
           <div class="quiz-explain" hidden><code>from e</code> 是<strong>显式关联</strong>：<code>__cause__</code> 指向 e，<code>__context__</code> 不设置（None）。对比：不用 from 的隐式关联只设置 <code>__context__</code>。详见「异常链」一节。</div>
         </div>
