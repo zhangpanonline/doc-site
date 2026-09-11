@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 日常维护：VACUUM 四个职责、标准与 FULL 变体、ANALYZE 与 autovacuum（非渡一课程内容）">
+  <title>日常维护 · 互动教学课程（官方文档拓展 pg-15）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>日常维护</h1>
+      <p class="lesson-sub">来源：官方文档 §24.1 日常清理（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>背出官方给出的 VACUUM 四个职责（回收空间/统计/可见性映射/防事务 ID 回卷）</li>
+        <li>对比标准 VACUUM 与 VACUUM FULL 的空间回收、速度与并发差异</li>
+        <li>解释 VACUUM 与 ANALYZE 的分工及 autovacuum 的角色</li>
+        <li>从「事务 ID 回卷」理解 VACUUM 为什么是必须项而不是可选项</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/routine-vacuuming.html">§24.1</a>。</p>
+
+      <div class="card">
+        <h3>VACUUM 四个职责（官方原文）</h3>
+        <ul class="pitfall-list">
+          <li>① <strong>恢复或重用</strong>被更新/删除行占用的磁盘空间</li>
+          <li>② <strong>更新统计信息</strong>（规划器使用）——与 ANALYZE 职责重叠，可分开调</li>
+          <li>③ <strong>更新可见性映射</strong>——加速 Index Only Scan</li>
+          <li>④ <strong>防事务 ID 回卷</strong>导致的老旧数据丢失（官方原文）</li>
+          <li>官方补充：每个原因指示<strong>不同的频率和范围</strong>执行 VACUUM</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>两种变体与配套</h3>
+        <ul class="pitfall-list">
+          <li><strong>标准 VACUUM</strong>：回收死元组空间供重用；快；<strong>可与生产操作并行</strong>（官方原文）；<strong>实测补充</strong>：会截断表<strong>尾部</strong>的空页——删除的是表尾数据时文件也会变小（pg16 实测 3.6MB→40KB），中部空洞则要 FULL</li>
+          <li><strong>VACUUM FULL</strong>：收回更多空间、压缩表文件（含中部空洞）；<strong>慢得多</strong>；需独占锁——生产慎用</li>
+          <li><strong>ANALYZE</strong>：收集统计（随机样本），规划器估算的基础</li>
+          <li><strong>autovacuum</strong>：后台自动执行 VACUUM/ANALYZE 的守护进程——手动只是补充或替代（官方原文）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 官方说 VACUUM 必须怎样执行？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">定期处理每一个表</button>
+            <button class="quiz-option">永远不用执行</button>
+            <button class="quiz-option">只在建表时执行一次</button>
+            <button class="quiz-option">只在出问题时执行</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：PostgreSQL 的 VACUUM 命令出于几个原因必须<strong>定期处理每一个表</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. VACUUM 的四个职责中，哪一个与「规划器估算」相关？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">更新被查询规划器使用的数据统计信息</button>
+            <button class="quiz-option">回收磁盘空间</button>
+            <button class="quiz-option">更新可见性映射</button>
+            <button class="quiz-option">防事务 ID 回卷</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：更新被 PostgreSQL 查询规划器使用的数据统计信息——ANALYZE 的职责所在。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 「更新可见性映射」的收益是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">压缩数据</button>
+            <button class="quiz-option">加密数据</button>
+            <button class="quiz-option">加速只用索引的扫描（Index Only Scan）</button>
+            <button class="quiz-option">加快全表扫</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：更新可见性映射，它可以加速只用索引的扫描。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 标准 VACUUM 与 VACUUM FULL 的官方对比是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">FULL 收回更多但慢得多；标准版可与生产操作并行</button>
+            <button class="quiz-option">标准版收回更多</button>
+            <button class="quiz-option">两者完全相同</button>
+            <button class="quiz-option">FULL 更快</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：VACUUM FULL 可以收回更多磁盘空间但是运行起来更慢；标准形式可以和生产数据库操作并行运行。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. autovacuum 的角色（官方）是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">备份工具</button>
+            <button class="quiz-option">后台自动执行 VACUUM 与 ANALYZE 的守护进程</button>
+            <button class="quiz-option">连接池</button>
+            <button class="quiz-option">手动执行的快捷方式</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：手动 VACUUM 用于对守护进程（autovacuum）的活动进行补充或者替换。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 官方说四个职责的执行频率应该怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只在月初执行</button>
+            <button class="quiz-option">每个原因指示以不同的频率和范围执行</button>
+            <button class="quiz-option">完全随机</button>
+            <button class="quiz-option">全部一起每次全量执行</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：每一个原因都将指示以<strong>不同的频率和范围</strong>执行 VACUUM 操作——因此 VACUUM 与 ANALYZE 可以分开调度。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 「事务 ID 回卷」的危害是（官方）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只是性能问题</button>
+            <button class="quiz-option">老旧数据丢失（官方原文：保护老旧数据不会由于事务 ID 回卷而丢失）</button>
+            <button class="quiz-option">磁盘满</button>
+            <button class="quiz-option">没有危害</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：保护老旧数据不会由于事务 ID 回卷或多元组 ID 回卷而丢失——这是 VACUUM 是「必须项」的原因。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 表膨胀严重（海量死元组），想彻底压缩表文件，但生产不能长时间停机。怎么办？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">直接 VACUUM FULL（停机也要压）</button>
+            <button class="quiz-option">什么都不做</button>
+            <button class="quiz-option">删除表重建</button>
+            <button class="quiz-option">标准 VACUUM 回收重用空间（不停机）；择维护窗口再 FULL 或用 pg_repack 在线重建</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文「标准 VACUUM 可与生产并行」——先标准版止损；FULL 需独占锁，放维护窗口或用 pg_repack 在线替代。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 某表频繁 UPDATE，autovacuum 被关闭，长期不 VACUUM。会依次出现哪些症状？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只影响备份</button>
+            <button class="quiz-option">毫无影响</button>
+            <button class="quiz-option">只影响权限</button>
+            <button class="quiz-option">表膨胀（死元组堆积）→ 全表扫变慢 → 统计过期选错计划 → 最终可能触发防回卷紧急 VACUUM</button>
+          </div>
+          <div class="quiz-explain" hidden>四职责逐一失守：空间不回收、统计不更新、可见性映射陈旧、回卷风险累积——官方「必须定期处理每一个表」的原因链。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，日常维护就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核一：VACUUM 与 ANALYZE 的分工是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者完全等价</button>
+            <button class="quiz-option">VACUUM 管统计</button>
+            <button class="quiz-option">ANALYZE 是 VACUUM 的别名</button>
+            <button class="quiz-option">VACUUM 管空间/可见性/防回卷；ANALYZE 管统计信息（可分开调）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方四个职责中统计信息只是其一，且「每个原因指示不同的频率和范围」——所以两者独立可调。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二：DELETE 十万行后表文件没变小，该怎么理解与处理？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">死元组仍在：标准 VACUUM 回收空间供重用（文件大小不变属正常）；要缩文件才需要 FULL</button>
+            <button class="quiz-option">需要重启</button>
+            <button class="quiz-option">磁盘坏了</button>
+            <button class="quiz-option">数据没删掉</button>
+          </div>
+          <div class="quiz-explain" hidden>标准 VACUUM 的语义就是「恢复或重用」而非缩小文件——文件缩小是 VACUUM FULL 的活，且代价大。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核三：Index Only Scan 突然退化为回表（多出 heap fetch），VACUUM 四职责里哪个相关？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">空间回收</button>
+            <button class="quiz-option">统计信息</button>
+            <button class="quiz-option">防回卷</button>
+            <button class="quiz-option">可见性映射过期——VACUUM 更新它才能免回表</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：更新可见性映射，它可以加速只用索引的扫描——映射陈旧时优化器无法确认行可见性，只能回表。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核四：监控发现某表 n_dead_tup 持续增长且 autovacuum 迟迟不触发。合理的干预顺序？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">重启数据库</button>
+            <button class="quiz-option">先手动 VACUUM 该表止损，再排查 autovacuum 阈值/长事务阻塞原因</button>
+            <button class="quiz-option">删表</button>
+            <button class="quiz-option">立即 VACUUM FULL</button>
+          </div>
+          <div class="quiz-explain" hidden>先止损（手动 VACUUM 并行安全），再治本（autovacuum 配置或长事务/复制槽阻塞）——官方「手动是补充或替代」的正确用法。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了日常维护——继续学习 <a href="/common/database-pg/pg-16-服务器配置">pg-16 · 服务器配置</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0015-日常维护',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `AI 写的「表瘦身」脚本：大表 UPDATE 后直接跑 <code>VACUUM FULL</code>，结果生产查询全被阻塞。审查：错在哪？正确姿势？`,
+              source: '来源：postgres.cn 官方文档 §24.1 日常清理（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `官方原文：<strong>标准 VACUUM 可以和生产操作并行运行；VACUUM FULL 收回更多但慢得多</strong>（且需独占锁）。生产白天直接 FULL = 停表。正确：先标准 VACUUM（并行安全、回收空间供重用）；真要压缩文件——放维护窗口 FULL，或 pg_repack 在线重建。AI 生成运维脚本把 FULL 当日常命令是最常见事故。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方说 VACUUM 必须定期处理每一个表，四个原因分别是什么？`,
+              source: '来源：postgres.cn 官方文档 §24.1 日常清理（官方翻译·一手）· 检索 2026-09-11 · 层级：一手',
+              breakdown: `官方原文四条：① <strong>恢复或重用</strong>被更新/删除行占用的磁盘空间；② <strong>更新统计信息</strong>（规划器用）；③ <strong>更新可见性映射</strong>（加速 Index Only Scan）；④ <strong>防事务 ID 回卷</strong>导致老旧数据丢失。并强调：每个原因指示<strong>不同的频率和范围</strong>——这是 VACUUM 与 ANALYZE 分家的依据。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的监控只盯「磁盘使用率」，没盯任何 VACUUM 指标。审查：按官方四个职责，应该补哪些观测点？`,
+              source: '来源：postgres.cn 官方文档 §24.1 日常清理（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `对照四职责补观测：① <code>pg_stat_user_tables</code> 的 <strong>n_dead_tup / n_live_tup</strong>（死元组堆积=空间问题）；② <strong>last_analyze</strong> 时效（统计过期=计划劣化）；③ <strong>n_ins_since_vacuum</strong> 类计数（可见性映射陈旧→IOS 退化）；④ <strong>autovacuum 运行日志/age(relfrozenxid)</strong>（回卷风险）。磁盘满了才报警 = 已经晚了。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：autovacuum 开着的，还需要人工管 VACUUM 吗？你的分层答案？`,
+              source: '来源：postgres.cn 官方文档 §24.1 日常清理（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `官方定位：手动 VACUUM 用于对守护进程活动进行<strong>补充或者替换</strong>。分层：① 默认<strong>信任 autovacuum</strong> + 监控其指标（dead_tup 趋势、触发延迟）；② 特例手动介入：批量 DDL 后立即 ANALYZE、大事务/复制槽阻塞导致 autovacuum 失效、维护窗口主动清理；③ 高频小表可调低阈值。原则：先看懂 autovacuum 在干什么，再决定手动补什么。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测 VACUUM 行为（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '① 建表灌数、大 DELETE 后观察 n_dead_tup 上升；② 标准 VACUUM 后 n_dead_tup 清零且表文件大小基本不变（空间供重用）；③ 对比 VACUUM FULL 后文件变小；④ ANALYZE 后统计信息更新。',
+                accept: ['n_dead_tup 上升与清零实测', '标准 VACUUM 与 FULL 对文件大小的差异能解释', '能说清 VACUUM 与 ANALYZE 的分工'],
+              },
+              source: '任务基于官方文档 §24.1 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>SELECT n_dead_tup, last_vacuum FROM pg_stat_user_tables WHERE relname = '...';</code>；大 DELETE 后复查；<code>VACUUM t;</code> 再看；文件大小 <code>pg_relation_size('t')</code> 对照 FULL。坑：autovacuum 可能自己先跑了（观察 last_autovacuum 时间戳）；小表的文件大小变化不明显，用万行级数据。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/routine-vacuuming.html">postgres.cn · 24.1 日常清理</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/runtime-config-autovacuum.html">19.10 自动清理配置</a> · <a href="http://www.postgres.cn/docs/current/routine-reindex.html">24.2 重建索引</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/日常维护速查表.html">日常维护速查表</a>——四职责与两变体一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/DDL/">02.DDL</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

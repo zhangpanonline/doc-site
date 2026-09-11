@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>日常维护速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>日常维护速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0015-日常维护.html">《日常维护互动教学课程》</a>使用。来源：官方文档 §24.1（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>VACUUM 四职责</h2>
+      <table class="cmp-table">
+        <tr><th>职责</th><th>失守的症状</th></tr>
+        <tr><td>恢复/重用空间</td><td>n_dead_tup 堆积、表膨胀、全表扫变慢</td></tr>
+        <tr><td>更新统计信息</td><td>估算偏差、规划器选错计划（ANALYZE）</td></tr>
+        <tr><td>更新可见性映射</td><td>Index Only Scan 退化、回表增多</td></tr>
+        <tr><td>防事务 ID 回卷</td><td>老旧数据丢失风险</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>两变体 + 配套</h2>
+      <table class="cmp-table">
+        <tr><th>命令</th><th>空间</th><th>并发</th></tr>
+        <tr><td>VACUUM</td><td>回收供重用（文件不变小）</td><td>与生产操作并行（官方）</td></tr>
+        <tr><td>VACUUM FULL</td><td>压缩表文件（收回更多）</td><td>慢得多，需独占锁</td></tr>
+        <tr><td>ANALYZE</td><td>—</td><td>收集统计（随机样本）</td></tr>
+      </table>
+      <p>autovacuum：后台自动执行；手动只是<strong>补充或替换</strong>（官方原文）。</p>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§24.1）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

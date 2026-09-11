@@ -1,0 +1,54 @@
+---
+sidebar_position: 15
+title: 'pg-15 · 日常维护'
+description: 'PostgreSQL 官方文档拓展 §24.1：VACUUM 的四个职责、标准与 FULL 两种变体、ANALYZE 统计——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 日常维护" desc="VACUUM 为什么必须定期跑——四个官方职责 + 两种变体的取舍。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §24.1「日常清理」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/routine-vacuuming.html) / [官方英文版](https://www.postgresql.org/docs/current/routine-vacuuming.html)）。
+
+:::
+
+## VACUUM 的四个职责（官方原文）
+
+官方原文：PostgreSQL 的 VACUUM 命令出于几个原因必须**定期处理每一个表**：
+
+1. **恢复或重用**被已更新或已删除行所占用的磁盘空间
+2. **更新**被查询规划器使用的**数据统计信息**
+3. **更新可见性映射**，它可以加速只用索引的扫描（Index Only Scan 的前提）
+4. **保护老旧数据**不会由于**事务 ID 回卷**（或多元组 ID 回卷）而丢失
+
+官方补充：每一个原因都指示以**不同的频率和范围**执行 VACUUM——所以 VACUUM 与 ANALYZE 可分开调。
+
+## 两种变体（官方）
+
+| 变体 | 收回空间 | 速度 | 并发 |
+|---|---|---|---|
+| **标准 VACUUM** | 回收死元组空间供重用 | 快 | 可与生产操作（SELECT/INSERT/UPDATE/DELETE）**并行**运行 |
+| **VACUUM FULL** | 收回更多、压缩表文件 | 慢得多 | 需要独占锁，生产慎用 |
+
+官方原文：VACUUM FULL 可以收回更多磁盘空间但运行起来更慢；标准形式可以和生产数据库操作并行运行。
+
+## 配套要点
+
+- **ANALYZE**：收集统计信息（随机样本）——规划器估算的基础（衔接 pg-11 的统计过期问题）
+- **autovacuum**：后台自动执行 VACUUM/ANALYZE 的守护进程——绝大多数场景靠它，手动是补充或替代（官方原文）
+
+:::tip 与渡一课程的关系
+
+渡一《数据库》的 DDL 课提过「DELETE 后表没变小（MVCC 死元组）」，本节是**官方 §24.1 的系统化展开**：为什么必须 VACUUM、四种职责、FULL 的代价。
+
+:::
+
+## 官方原文
+
+- [postgres.cn：24.1 日常清理](http://www.postgres.cn/docs/current/routine-vacuuming.html)
+- [官方英文版：24.1 Routine Vacuuming](https://www.postgresql.org/docs/current/routine-vacuuming.html)
+
+配套学习：<a href="/teach/lessons/pg-0015-日常维护.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/日常维护速查表.html">📋 日常维护速查表（可打印）</a>
