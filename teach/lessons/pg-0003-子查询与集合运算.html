@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 子查询与集合运算：标量/相关子查询、EXISTS 与 IN、UNION/INTERSECT/EXCEPT（非渡一课程内容）">
+  <title>子查询与集合运算 · 互动教学课程（官方文档拓展 pg-03）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>子查询与集合运算</h1>
+      <p class="lesson-sub">来源：官方文档 §7.2 表表达式 + §7.4 组合查询（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出子查询的四种形态（标量 / FROM / EXISTS / IN）与各自的适用场景</li>
+        <li>解释「外层列名范围扩展到内层」的含义，写出相关子查询</li>
+        <li>写对 UNION / INTERSECT / EXCEPT，说清 ALL 变体的去重差异与「并操作兼容」要求</li>
+        <li>识别标量子查询返回多行、NOT IN 含 NULL 等典型陷阱</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/queries-table-expressions.html">§7.2</a> 与 <a href="http://www.postgres.cn/docs/current/queries-union.html">§7.4</a>。</p>
+
+      <div class="card">
+        <h3>子查询四形态</h3>
+        <ul class="pitfall-list">
+          <li><strong>标量子查询</strong>：当做一个<strong>值表达式</strong>用——必须恰好返回一行一列</li>
+          <li><strong>FROM 子查询</strong>：子查询结果作为派生表，外层继续 JOIN/过滤/聚合</li>
+          <li><strong>EXISTS</strong>：存在匹配行即为真；内层引用外层列 → <strong>相关子查询</strong></li>
+          <li><strong>IN</strong>：等值匹配集合；NULL 三值逻辑是经典陷阱</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>集合运算三兄弟（官方原文）</h3>
+        <ul class="pitfall-list">
+          <li><strong>UNION</strong>：把 query2 结果<strong>附加</strong>到 query1 结果，并<strong>删除所有重复行</strong>（像 DISTINCT）——除非用 UNION ALL</li>
+          <li><strong>INTERSECT</strong>：返回<strong>同时存在于两个查询结果中</strong>的行</li>
+          <li><strong>EXCEPT</strong>：返回在 query1 中但<strong>不在 query2 中</strong>的行（差集）</li>
+          <li><strong>并操作兼容</strong>：两查询必须<strong>返回相同数量的列且类型兼容</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 官方文档说标量子查询可以当作什么来使用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一个值表达式</button>
+            <button class="quiz-option">一个事务</button>
+            <button class="quiz-option">一个独立的表</button>
+            <button class="quiz-option">一个索引</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：把标量子查询当做一个<strong>值表达式</strong>来用——放在 SELECT 列表或比较运算右侧。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. <code>EXISTS (SELECT 1 FROM t2 WHERE c2 &gt; fdt.c1)</code> 中，内层引用了外层的 fdt.c1。这叫什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">嵌套子查询</button>
+            <button class="quiz-option">派生表</button>
+            <button class="quiz-option">相关子查询</button>
+            <button class="quiz-option">递归查询</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：外层查询的列名范围<strong>扩展到它的内层查询</strong>——里层引用外层列就是相关子查询，是 EXISTS 类题目的核心。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. UNION 与 UNION ALL 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有区别，只是写法不同</button>
+            <button class="quiz-option">UNION ALL 会排序，UNION 不会</button>
+            <button class="quiz-option">UNION 去重（像 DISTINCT），UNION ALL 保留全部行</button>
+            <button class="quiz-option">UNION ALL 只允许两个表，UNION 允许多个</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：UNION 附加结果后<strong>删除所有重复行，就像 DISTINCT 做的那样，除非你使用了 UNION ALL</strong>。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. INTERSECT 返回什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两个查询结果的并集</button>
+            <button class="quiz-option">同时存在于两个查询结果中的行</button>
+            <button class="quiz-option">两个查询的所有行</button>
+            <button class="quiz-option">第一个查询独有的行</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：INTERSECT 返回那些<strong>同时存在于 query1 和 query2 的结果中的行</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. EXCEPT 的语义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两个查询的交集</button>
+            <button class="quiz-option">在 query2 中但不在 query1 中的行</button>
+            <button class="quiz-option">在 query1 中但不在 query2 中的行（差集）</button>
+            <button class="quiz-option">两个查询的并集</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：EXCEPT 返回所有在 query1 的结果中<strong>但不在 query2 的结果中</strong>的行——两个查询的「差」。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 官方对「并操作兼容」的要求是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两个查询必须返回完全相同的行</button>
+            <button class="quiz-option">两个查询返回相同数量的列，且对应列类型兼容</button>
+            <button class="quiz-option">没有要求，任何查询都能组合</button>
+            <button class="quiz-option">两个查询必须来自同一张表</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：为了计算并、交、差，两个查询必须是「并操作兼容的」——<strong>返回相同数量的列且类型兼容</strong>。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 标量子查询返回了两行，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">自动取第一行，不报错</button>
+            <button class="quiz-option">返回 NULL，不报错</button>
+            <button class="quiz-option">报错——标量子查询必须恰好返回一行</button>
+            <button class="quiz-option">返回两行做笛卡尔积</button>
+          </div>
+          <div class="quiz-explain" hidden">标量子查询被当作<strong>单个值</strong>使用，返回多行时数据库无法把它压成一个值——直接报错。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 合并两个月的日志表做统计，行数必须精确。应该用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">EXCEPT</button>
+            <button class="quiz-option">INTERSECT</button>
+            <button class="quiz-option">UNION ALL（不去重，行数精确）</button>
+            <button class="quiz-option">UNION（去重更干净）</button>
+          </div>
+          <div class="quiz-explain" hidden">日志行即使内容相同也是不同事件——UNION 的去重会<strong>吞掉重复行</strong>；统计场景必须 UNION ALL 保真，也更快。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 「找出有未结订单的客户」——下列哪种写法语义最直接？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">WHERE c.id IN (SELECT id FROM orders WHERE id IS NOT NULL)</button>
+            <button class="quiz-option">WHERE c.id = (SELECT customer_id FROM orders LIMIT 1)</button>
+            <button class="quiz-option">WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id AND o.status = 'open')</button>
+            <button class="quiz-option">WHERE c.id BETWEEN 1 AND 100</button>
+          </div>
+          <div class="quiz-explain" hidden">「存在关联行」的语义用 EXISTS 最直接（短路、不受 NULL 影响）；相关子查询里 o.customer_id = c.id 把内外层关联起来。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，子查询与集合运算就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核一：EXCEPT 返回空集说明什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">语句语法错误</button>
+            <button class="quiz-option">query2 是空表</button>
+            <button class="quiz-option">query1 的所有行都存在于 query2 中（query1 ⊆ query2）</button>
+            <button class="quiz-option">query1 与 query2 完全不同</button>
+          </div>
+          <div class="quiz-explain" hidden">差集为空 = query1 没有「query2 之外」的行 = query1 的行全在 query2 里——「包含关系」的判断技巧。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核二：`SELECT a FROM t1 UNION SELECT b FROM t2` 报类型错误。最可能的原因？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">UNION 不能用于两张不同的表</button>
+            <button class="quiz-option">UNION 只能作用于主键列</button>
+            <button class="quiz-option">两表行数不同</button>
+            <button class="quiz-option">a 与 b 类型不兼容（违反并操作兼容）</button>
+          </div>
+          <div class="quiz-explain" hidden">并操作兼容要求<strong>列数相同且对应列类型兼容</strong>——text 与 integer 直接组合会报类型错误，需要显式转换。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三：相关子查询与普通子查询的执行方式差异是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">相关子查询引用外层列，需按外层每一行重新求值</button>
+            <button class="quiz-option">相关子查询会被缓存</button>
+            <button class="quiz-option">两者执行方式完全相同</button>
+            <button class="quiz-option">相关子查询只执行一次，普通子查询每次执行</button>
+          </div>
+          <div class="quiz-explain" hidden">相关子查询里层引用外层列（官方：外层列名范围扩展），因此<strong>依赖外层当前行</strong>——语义上逐行相关，这正是 EXISTS 短路的意义。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核四：三个查询的列数分别是 2、2、3，两两 UNION 合法的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">任何两两组合都合法</button>
+            <button class="quiz-option">2 列与 3 列的也能 UNION</button>
+            <button class="quiz-option">都不合法，UNION 必须三查询列数一致</button>
+            <button class="quiz-option">只有两个 2 列的查询能 UNION</button>
+          </div>
+          <div class="quiz-explain" hidden">并操作兼容要求两查询<strong>列数相同</strong>——2 与 2 可以，2 与 3 直接报错。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了子查询与集合运算——继续学习 <a href="/common/database-pg/pg-04-CTE与递归查询">pg-04 · CTE 与递归查询</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0003-子查询与集合运算',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的「合并两个月日志做统计」用了 <code>UNION</code>，结果行数比两个月之和少。为什么？该用什么？`,
+              source: '来源：postgres.cn 官方文档 §7.4 组合查询（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `官方原文：UNION 会<strong>删除结果中所有重复的行，就像 DISTINCT 做的那样</strong>——内容相同的日志行（同时间戳同消息）被去重吞掉。统计场景要<strong>行数保真</strong>：用 <code>UNION ALL</code>（不去重、还更快）。面试口诀：内容相同=同一件事用 UNION，内容相同=不同事件用 UNION ALL。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方文档说「外层查询的列名范围扩展到它的内层查询」。这句话怎么理解？结合 EXISTS 举个例子。`,
+              source: '来源：postgres.cn 官方文档 §7.2 表表达式（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `内层子查询<strong>可以直接引用外层 FROM 派生的列</strong>——官方例子 <code>EXISTS (SELECT c1 FROM t2 WHERE c2 &gt; fdt.c1)</code>：内层用了外层的 fdt.c1 做比较。这就是<strong>相关子查询</strong>的官方依据：内层按外层当前行求值，EXISTS 找到一行即可短路。官方还补充：必要时限定列名（fdt.c1）能增加清晰度。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的报表：<code>SELECT name, (SELECT score FROM exam WHERE exam.uid = u.id) FROM users u;</code> 跑出「more than one row returned by a subquery」。审查：问题在哪？怎么修？`,
+              source: '来源：postgres.cn 官方文档 §7.2 表表达式（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `<strong>标量子查询必须恰好返回一行</strong>——一个用户考了两次，子查询返回两行直接报错。修复取决于业务语义：① 取最近一次 <code>ORDER BY exam_time DESC LIMIT 1</code>；② 聚合（avg/max）；③ 改用 JOIN + 聚合或 EXISTS。AI 写报表最爱「列里塞子查询」，审查时先问「内层可能多行吗」。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：IN 和 EXISTS 怎么选？各适合什么场景？`,
+              source: '来源：postgres.cn 官方文档 §7.2 表表达式（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `<strong>IN</strong>：拿一个<strong>值集合</strong>做等值匹配——集合固定/较小、语义是「x 属于 {…}」时直观（子查询返回 NULL 有陷阱，注意 NOT IN）；<strong>EXISTS</strong>：语义是「<strong>存在关联行</strong>」——带外层关联条件（相关子查询）、关心存在性而非具体值时更合适，短路且不受 NULL 干扰。选型原则：按<strong>语义</strong>选，再谈性能。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测集合运算（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '建两张表：① UNION 与 UNION ALL 的重复行差异实测；② INTERSECT/EXCEPT 结果验证；③ 列数不同 UNION 报错的报错信息；④ 标量子查询返回多行报错复现。',
+                accept: ['四种集合运算行为全部实测', '能说出 UNION 去重的观察结果', '两种报错的错误信息能解释'],
+              },
+              source: '任务基于官方文档 §7.2/§7.4 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>SELECT 1 UNION SELECT 1</code> 一行 vs <code>UNION ALL</code> 两行；INTERSECT/EXCEPT 用两张小表对照；列数不同的 UNION 观察「each UNION query must have the same number of columns」。坑：UNION 的去重包含 NULL 行也参与比较；EXCEPT 有方向性（query1 - query2）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/queries-table-expressions.html">postgres.cn · 7.2 表表达式</a> · <a href="http://www.postgres.cn/docs/current/queries-union.html">7.4 组合查询</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/functions-subquery.html">9.23 子查询表达式</a>（ANY/SOME/ALL）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/子查询与集合运算速查表.html">子查询与集合运算速查表</a>——四形态与三兄弟一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/DML/">04.DML</a>（渡一课程，NOT IN 陷阱在其中有讲）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

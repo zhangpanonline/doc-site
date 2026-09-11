@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>子查询与集合运算速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>子查询与集合运算速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0003-子查询与集合运算.html">《子查询与集合运算互动教学课程》</a>使用。来源：官方文档 §7.2 + §7.4（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>子查询四形态</h2>
+      <table class="cmp-table">
+        <tr><th>形态</th><th>位置</th><th>关键语义</th><th>陷阱</th></tr>
+        <tr><td>标量子查询</td><td>SELECT 列表 / 比较右侧</td><td>当作一个值表达式</td><td>必须恰好一行一列，多行报错</td></tr>
+        <tr><td>FROM 子查询</td><td>FROM 中</td><td>作为派生表</td><td>派生表建议起别名</td></tr>
+        <tr><td>EXISTS</td><td>WHERE 中</td><td>存在匹配行即为真</td><td>相关子查询：内层引用外层列</td></tr>
+        <tr><td>IN</td><td>WHERE 中</td><td>等值匹配集合</td><td>NOT IN 遇 NULL 返回空集</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>集合运算三兄弟</h2>
+      <table class="cmp-table">
+        <tr><th>运算</th><th>语义</th><th>去重</th><th>ALL 变体</th></tr>
+        <tr><td>UNION</td><td>附加（并）</td><td>去重（同 DISTINCT）</td><td>UNION ALL 保留全部</td></tr>
+        <tr><td>INTERSECT</td><td>共同行（交）</td><td>去重</td><td>INTERSECT ALL</td></tr>
+        <tr><td>EXCEPT</td><td>query1 独有行（差）</td><td>去重</td><td>EXCEPT ALL</td></tr>
+      </table>
+      <p>并操作兼容：两查询<strong>列数相同、对应列类型兼容</strong>，否则报错。</p>
+    </section>
+
+    <section>
+      <h2>面试速记</h2>
+      <dl class="term-grid">
+        <dt>相关子查询</dt>
+        <dd>内层引用外层列（官方：外层列名范围扩展到内层）；按外层当前行求值。</dd>
+        <dt>UNION vs UNION ALL</dt>
+        <dd>内容相同=同一件事用 UNION；内容相同=不同事件（日志/统计）用 UNION ALL。</dd>
+        <dt>IN vs EXISTS</dt>
+        <dd>按语义选：值集合匹配用 IN；存在关联行用 EXISTS（短路、不受 NULL 干扰）。</dd>
+        <dt>包含判断技巧</dt>
+        <dd>EXCEPT 返回空集 ⇔ query1 的行全在 query2 中。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§7.2 + §7.4）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

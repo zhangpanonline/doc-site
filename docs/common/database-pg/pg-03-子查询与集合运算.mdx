@@ -1,0 +1,58 @@
+---
+sidebar_position: 3
+title: 'pg-03 · 子查询与集合运算'
+description: 'PostgreSQL 官方文档拓展 §7：标量/相关子查询、EXISTS 与 IN、UNION/INTERSECT/EXCEPT 集合运算——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 子查询与集合运算" desc="查询里嵌套查询，查询之间做并交差——复杂报表的两种核心拼装方式。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §7.2「表表达式」（子查询部分）与 §7.4「组合查询」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/queries-table-expressions.html) / [官方英文版](https://www.postgresql.org/docs/current/queries-table-expressions.html)）。
+
+:::
+
+## 子查询：查询里嵌套查询
+
+官方文档在 §7.2 表表达式中系统介绍了子查询的四种形态：
+
+| 形态 | 用法 | 关键语义 |
+|---|---|---|
+| **标量子查询** | 当做一个**值表达式**用（SELECT 列表、WHERE 比较的右侧） | 必须恰好返回一行一列，多行直接报错 |
+| **FROM 子查询** | 子查询结果作为派生表参与外层查询 | 外层可继续 JOIN/过滤/聚合 |
+| **EXISTS** | `WHERE EXISTS (SELECT ...)` | 存在匹配行即为真；内层列引用外层（**相关子查询**） |
+| **IN** | `WHERE x IN (SELECT ...)` | 等值匹配集合；注意 NULL 三值逻辑陷阱 |
+
+官方特别指出：**外层查询的列名范围会扩展到内层查询**——内层可以引用外层 FROM 派生的列（如 `EXISTS (SELECT c1 FROM t2 WHERE c2 > fdt.c1)` 里的 `fdt.c1`）。这种"里层引用外层"的写法叫**相关子查询**，是 EXISTS 类题目的核心。
+
+## 集合运算：UNION / INTERSECT / EXCEPT
+
+官方 §7.4 原文语法与语义：
+
+```sql
+query1 UNION [ALL] query2      -- 并：query2 结果附加到 query1 结果
+query1 INTERSECT [ALL] query2  -- 交：两者都有的行
+query1 EXCEPT [ALL] query2     -- 差：query1 有而 query2 没有的行
+```
+
+- **UNION**：附加 + **删除所有重复行**（效果同 DISTINCT）；**UNION ALL** 保留全部行（不去重、更快）
+- **INTERSECT**：共同行，默认同样去重
+- **EXCEPT**：差集（query1 独有的行），同样默认去重
+- **并操作兼容**（官方硬性要求）：两个查询必须**返回相同数量的列，且对应列类型兼容**——列数不同或类型不兼容直接报错
+
+:::tip 与渡一课程的关系
+
+渡一《数据库》的 DML 课讲了 WHERE/HAVING/JOIN 基础；本节的**子查询（标量/相关/EXISTS）与集合运算**是官方 §7 的进阶内容，面试高频（NOT IN 陷阱、IN vs EXISTS 选型、UNION 与 UNION ALL 取舍）。
+
+:::
+
+## 官方原文
+
+- [postgres.cn：7.2 表表达式（子查询）](http://www.postgres.cn/docs/current/queries-table-expressions.html)
+- [postgres.cn：7.4 组合查询](http://www.postgres.cn/docs/current/queries-union.html)
+- [官方英文版：7.2 Table Expressions](https://www.postgresql.org/docs/current/queries-table-expressions.html)
+
+配套学习：<a href="/teach/lessons/pg-0003-子查询与集合运算.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/子查询与集合运算速查表.html">📋 子查询与集合运算速查表（可打印）</a>
