@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CTE 与递归查询速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>CTE 与递归查询速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0004-CTE与递归查询.html">《CTE 与递归查询互动教学课程》</a>使用。来源：官方文档 §7.8（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>递归 CTE 模板</h2>
+      <pre>WITH RECURSIVE 名(列...) AS (
+    -- 非递归项（种子，不可引用自身）
+    SELECT ... FROM 表 WHERE 根条件
+    UNION ALL
+    -- 递归项（可引用自身；必须有终止条件）
+    SELECT ... FROM 表 e JOIN 名 r ON e.父键 = r.键 WHERE 深度限制
+)
+SELECT ... FROM 名;</pre>
+    </section>
+
+    <section>
+      <h2>求值五步（官方原文）</h2>
+      <table class="cmp-table">
+        <tr><th>步骤</th><th>动作</th></tr>
+        <tr><td>①</td><td>算非递归项；UNION（非 ALL）去重</td></tr>
+        <tr><td>②</td><td>剩余行 → 结果 + 工作表</td></tr>
+        <tr><td>③</td><td>工作表非空则循环：用它替换递归自引用，算递归项</td></tr>
+        <tr><td>④</td><td>UNION 去重（含与历史结果重复）；剩余行 → 结果 + 中间表</td></tr>
+        <tr><td>⑤</td><td>中间表替换工作表、清空中间表 → 回到 ③</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>面试速记</h2>
+      <dl class="term-grid">
+        <dt>形式铁律</dt>
+        <dd>非递归项 + UNION [ALL] + 递归项；只有递归项能引用自身输出。</dd>
+        <dt>UNION vs UNION ALL</dt>
+        <dd>UNION 每轮去重（开销大）；UNION ALL 不去重（快，但终止条件必须有效，否则无限循环）。</dd>
+        <dt>终止</dt>
+        <dd>递归项一轮无输出 → 工作表为空 → 终止；防御：深度上限、statement_timeout、防环标记。</dd>
+        <dt>适用场景</dt>
+        <dd>分层/树形结构（组织树、BOM、目录树）；纯读取让数据库做，带业务逻辑回应用层。</dd>
+        <dt>本质</dt>
+        <dd>RECURSIVE 内部是迭代评估，不是函数递归调用。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§7.8）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,62 @@
+---
+sidebar_position: 4
+title: 'pg-04 · CTE 与递归查询'
+description: 'PostgreSQL 官方文档拓展 §7.8：WITH 辅助语句、递归 CTE 的工作表求值机制、树形结构查询——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ CTE 与递归查询" desc="WITH 让复杂查询可读可复用；WITH RECURSIVE 用一条 SQL 遍历整棵树。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §7.8「WITH 查询」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/queries-with.html) / [官方英文版](https://www.postgresql.org/docs/current/queries-with.html)）。
+
+:::
+
+## WITH：给查询起名字
+
+`WITH` 提供了一种书写辅助语句的方式——把复杂的子查询拆成带名字的 CTE（公用表表达式），主查询像引用表一样引用它们，让嵌套多层的 SQL 变得可读、可复用。
+
+## WITH RECURSIVE：递归查询
+
+官方给出的经典形式：
+
+```sql
+WITH RECURSIVE t(n) AS (
+    VALUES (1)                                  -- 非递归项
+    UNION ALL
+    SELECT n+1 FROM t WHERE n < 100             -- 递归项（引用自身输出）
+)
+SELECT sum(n) FROM t;                           -- 5050
+```
+
+**形式要求**（官方原文）：递归 CTE 总是一个**非递归项**，然后 **UNION（或 UNION ALL）**，再然后一个**递归项**——其中**只有递归项能够包含对查询自身输出的引用**。
+
+**求值机制**（官方原文的五步循环）：
+
+1. 计算非递归项；对 UNION（非 UNION ALL）抛弃重复行
+2. 剩余行放入**结果**，同时放入临时**工作表**
+3. 只要工作表不为空就重复：用**当前工作表内容替换递归自引用**，计算递归项
+4. 对 UNION 去重（含与之前结果的重复）；剩余行进结果，并放入**中间表**
+5. 用中间表内容替换工作表、清空中间表，回到第 3 步
+
+官方特别提醒：RECURSIVE 在内部是**迭代评估**的；递归查询通常用于处理**分层或树形结构**数据——官方原例是 BOM 部件展开（查一个产品的所有直接和间接子部件）。
+
+:::warning UNION ALL 与终止条件
+
+用 **UNION ALL** 时不去重——如果递归项没有有效的终止条件（WHERE 无输出才停止），查询会**无限循环**直到资源耗尽。递归 CTE 必须有明确的终止条件。
+
+:::
+
+## 与渡一课程的关系
+
+渡一《数据库》课程未覆盖 CTE 与递归查询——本节为纯增量内容，面试高频（递归 CTE 写树遍历、CTE 内做 DML 等）。
+
+## 官方原文
+
+- [postgres.cn：7.8 WITH 查询](http://www.postgres.cn/docs/current/queries-with.html)
+- [官方英文版：7.8 WITH Queries](https://www.postgresql.org/docs/current/queries-with.html)
+
+配套学习：<a href="/teach/lessons/pg-0004-CTE与递归查询.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/CTE与递归查询速查表.html">📋 CTE 与递归查询速查表（可打印）</a>

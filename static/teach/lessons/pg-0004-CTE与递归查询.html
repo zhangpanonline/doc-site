@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · CTE 与递归查询：WITH 辅助语句、递归 CTE 工作表求值机制、树形结构遍历（非渡一课程内容）">
+  <title>CTE 与递归查询 · 互动教学课程（官方文档拓展 pg-04）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>CTE 与递归查询</h1>
+      <p class="lesson-sub">来源：官方文档 §7.8 WITH 查询（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 CTE 的作用（辅助语句：复杂查询拆解、可读可复用）</li>
+        <li>写出标准递归 CTE（非递归项 UNION/UNION ALL 递归项），解释「只有递归项能引用自身输出」</li>
+        <li>复述官方五步工作表求值机制，说明 UNION 与 UNION ALL 在递归中的去重差异</li>
+        <li>识别无终止条件的无限递归风险，用递归 CTE 做树形结构查询</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/queries-with.html">§7.8</a>。</p>
+
+      <div class="card">
+        <h3>递归 CTE 的形式与求值（官方原文）</h3>
+        <ul class="pitfall-list">
+          <li><strong>形式</strong>：非递归项 + <code>UNION [ALL]</code> + 递归项；<strong>只有递归项能引用查询自身输出</strong></li>
+          <li><strong>五步循环</strong>：算非递归项 → 入结果+工作表 → 循环（工作表替换自引用算递归项 → 去重 → 入结果+中间表 → 中间表替换工作表）直到工作表为空</li>
+          <li><strong>去重差异</strong>：UNION 每轮去重；UNION ALL 不去重——终止条件无效时<strong>无限循环</strong></li>
+          <li><strong>本质</strong>：RECURSIVE 在内部是<strong>迭代评估</strong>；适用<strong>分层/树形结构</strong>（官方 BOM 部件展开原例）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>官方原例：1 到 100 求和</h3>
+        <pre>WITH RECURSIVE t(n) AS (
+    VALUES (1)
+    UNION ALL
+    SELECT n+1 FROM t WHERE n &lt; 100
+)
+SELECT sum(n) FROM t;   -- 5050</pre>
+        <p style="margin:0">工作表每步只有一行、取值 1→100；第 100 步 WHERE 无输出，查询终止。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. 官方文档说 WITH 提供了一种什么样的书写方式？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">创建索引的简写</button>
+            <button class="quiz-option">替代事务的方式</button>
+            <button class="quiz-option">创建视图的简写</button>
+            <button class="quiz-option">书写辅助语句（为子查询起名）的方式</button>
+          </div>
+          <div class="quiz-explain" hidden>WITH 把子查询拆成带名字的辅助语句，主查询像引用表一样引用——复杂 SQL 的可读性基石。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 递归 CTE 的标准形式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">非递归项与递归项用 WHERE 连接</button>
+            <button class="quiz-option">两个递归项用 JOIN 连接</button>
+            <button class="quiz-option">任意多个子查询随意排列</button>
+            <button class="quiz-option">非递归项 + UNION（或 UNION ALL）+ 递归项</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：一个递归 WITH 查询的通常形式总是一个<strong>非递归项，然后是 UNION（或 UNION ALL），再然后是一个递归项</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 递归 CTE 中，哪部分可以引用查询自身的输出？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只有非递归项</button>
+            <button class="quiz-option">只有递归项</button>
+            <button class="quiz-option">两个项都不可以</button>
+            <button class="quiz-option">两个项都可以</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：其中<strong>只有递归项能够包含对于查询自身输出的引用</strong>——非递归项引用自身会直接报错。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 官方五步求值机制中，「工作表」的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">存放最终结果</button>
+            <button class="quiz-option">下一轮计算递归项时，用它替换递归自引用</button>
+            <button class="quiz-option">只用于去重</button>
+            <button class="quiz-option">存放非递归项的结果</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：用<strong>当前工作表的内容替换递归自引用</strong>来计算递归项——工作表就是「上一轮新产生的行」。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 递归中 UNION 与 UNION ALL 的去重差异是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">递归中只能用 UNION ALL</button>
+            <button class="quiz-option">UNION 每轮抛弃重复行；UNION ALL 不去重</button>
+            <button class="quiz-option">两者行为完全一致</button>
+            <button class="quiz-option">UNION ALL 去重更彻底</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：对 UNION（但不对 UNION ALL）抛弃重复行——去重差异直接影响「能否终止」。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 官方说 RECURSIVE 在内部是如何执行的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">迭代评估（一轮一轮循环）</button>
+            <button class="quiz-option">转换为存储过程</button>
+            <button class="quiz-option">真正的函数递归调用</button>
+            <button class="quiz-option">并行分片计算</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：RECURSIVE 允许递归指定查询，但在内部这样的查询是<strong>迭代评估的</strong>。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 官方举的 BOM 例子说明递归查询适合什么场景？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">跨表聚合</button>
+            <button class="quiz-option">分层或树形结构数据（如查所有直接与间接子部件）</button>
+            <button class="quiz-option">数据备份</button>
+            <button class="quiz-option">随机抽样</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：递归查询通常用于处理<strong>分层或树形结构</strong>数据；BOM 例查产品的所有直接和间接子部件。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 递归项用 UNION ALL 且 WHERE 条件永远为真，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">返回 NULL</button>
+            <button class="quiz-option">数据库自动检测并终止</button>
+            <button class="quiz-option">只返回第一轮结果</button>
+            <button class="quiz-option">无限循环，直到资源耗尽或被强制终止</button>
+          </div>
+          <div class="quiz-explain" hidden>UNION ALL 不去重、工作表永远非空 → <strong>无限递归</strong>。递归 CTE 必须有明确终止条件（WHERE 无输出才停）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 官方 1..100 求和的例子在第 100 步终止，直接原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">n &lt; 100 条件导致该轮无输出，工作表为空</button>
+            <button class="quiz-option">递归最多执行 100 轮</button>
+            <button class="quiz-option">数据库发现结果超过 100 行</button>
+            <button class="quiz-option">UNION ALL 自动去重了</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：在第 100 步，由于 WHERE 子句导致<strong>没有输出</strong>，因此查询终止——工作表为空的判定。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，CTE 与递归查询就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核一：员工表（id, name, manager_id），要列出 CEO 的所有层级下属。递归 CTE 的递归项里应该写什么关联？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">JOIN 员工表 ON e.manager_id = 递归CTE.id（逐层下钻）</button>
+            <button class="quiz-option">WHERE e.id = 固定值</button>
+            <button class="quiz-option">JOIN 部门表按部门关联</button>
+            <button class="quiz-option">GROUP BY 部门</button>
+          </div>
+          <div class="quiz-explain" hidden>树形结构的标准模式：递归项把「上一轮的员工 id」当作下一轮的 manager_id——每轮向下钻一层。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核二：求值机制的完整顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只算非递归项一次</button>
+            <button class="quiz-option">非递归项 → 结果+工作表 → 循环（工作表替换自引用算递归项 → 去重 → 结果+中间表 → 中间表替换工作表）</button>
+            <button class="quiz-option">非递归项与递归项并行计算</button>
+            <button class="quiz-option">递归项 → 非递归项 → 去重 → 结果</button>
+          </div>
+          <div class="quiz-explain" hidden>官方五步：先非递归项播种，再以工作表为「上一轮」循环扩展，直到工作表为空。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核三：为什么递归 CTE 里通常推荐 UNION ALL 而非 UNION？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">UNION 不允许递归</button>
+            <button class="quiz-option">UNION ALL 免去每轮去重开销；且树形数据天然无重复（前提：终止条件正确）</button>
+            <button class="quiz-option">UNION ALL 更安全</button>
+            <button class="quiz-option">UNION 语法会报错</button>
+          </div>
+          <div class="quiz-explain" hidden>UNION 每轮全量去重有开销；树形结构（每条路径天然唯一）用 UNION ALL 更快——代价是要自己保证终止条件。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核四：CTE 在同一个 WITH 里定义了两个辅助语句，后面的可以引用前面的吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">可以——后面的 CTE 可引用前面定义的 CTE</button>
+            <button class="quiz-option">只有递归 CTE 能互相引用</button>
+            <button class="quiz-option">不可以——每个 CTE 完全独立</button>
+            <button class="quiz-option">只有主查询能引用 CTE</button>
+          </div>
+          <div class="quiz-explain" hidden>WITH 里按声明顺序组织：后面的辅助语句可以引用前面已声明的 CTE——复杂查询的层层拆解就是靠这个。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了 CTE 与递归查询——继续学习 <a href="/common/database-pg/pg-05-数据类型-基础">pg-05 · 数据类型 · 基础</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0004-CTE与递归查询',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `AI 写的递归 CTE 用了 UNION ALL，但递归项的 JOIN 条件写错，查询卡死跑不完。为什么 UNION ALL 会无限循环？怎么防御？`,
+              source: '来源：postgres.cn 官方文档 §7.8 WITH 查询（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `UNION ALL <strong>不去重</strong>——工作表每轮都有新行，终止只能靠「递归项 WHERE 无输出 → 工作表为空」。JOIN 条件错（如关联列写反）会让同一批行反复进入工作表 → 无限循环。防御：① 递归项必须有单调推进的终止条件；② 开发时设 <code>statement_timeout</code>；③ 对「可能成环」的图数据加访问标记/深度上限（如 n &lt; 100）。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `复述官方文档对递归 CTE 求值机制的五步描述。`,
+              source: '来源：postgres.cn 官方文档 §7.8 WITH 查询（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `① 计算<strong>非递归项</strong>，UNION 去重；② 剩余行入<strong>结果 + 工作表</strong>；③ 工作表非空则循环：用<strong>当前工作表内容替换递归自引用</strong>算递归项；④ UNION 去重（含与历史结果的重复），剩余行入结果 + <strong>中间表</strong>；⑤ 中间表替换工作表、清空中间表，回到 ③。官方补充：RECURSIVE 在内部是<strong>迭代评估</strong>。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的树遍历：递归 CTE 的<strong>非递归项</strong>里也写了 <code>FROM 自身CTE名</code>。审查：这能跑吗？为什么？`,
+              source: '来源：postgres.cn 官方文档 §7.8 WITH 查询（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `不能——官方原文：<strong>只有递归项能够包含对于查询自身输出的引用</strong>。非递归项是「种子」，它引用自身在语义上无起点（先有鸡还是先有蛋），PG 直接报错。AI 把种子行写成自引用是常见笔误：种子必须是<strong>可独立求值的固定行集</strong>（如 CEO 那一行、根节点）。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `团队要查「组织树所有下属」：方案 A 应用层递归循环逐层查；方案 B 一条递归 CTE。你选哪个？依据是什么？`,
+              source: '来源：postgres.cn 官方文档 §7.8 WITH 查询（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `默认选 <strong>B</strong>：一次往返、数据库侧迭代（官方：内部迭代评估），避免 N 次查询的网络开销与代码递归复杂度。选 A 的场景：需要<strong>逐层副作用</strong>（每层做业务处理）、深度极小且层数固定、或数据量太大需要流式处理。原则：纯读取的树遍历让数据库做，带业务逻辑的遍历才回应用层。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测递归 CTE（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '① 官方 1..100 求和例跑出 5050；② 建员工表（manager_id 树）写递归 CTE 查出某经理的全部下属并统计层数；③ 把终止条件去掉验证无限递归（用 statement_timeout 兜底终止）。',
+                accept: ['求和与树遍历结果正确', '能画出工作表逐轮扩展的过程', '无限递归能被 statement_timeout 终止且你能解释原因'],
+              },
+              source: '任务基于官方文档 §7.8 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>WITH RECURSIVE org(id, name, depth) AS (种子 UNION ALL SELECT e.id, e.name, o.depth+1 FROM emp e JOIN org o ON e.manager_id = o.id) SELECT ...</code>；无限递归实验先 <code>SET statement_timeout = '2s'</code>。坑：树里有环（A 管 B、B 管 A）时 UNION ALL 也会死循环——加 depth &lt; 10 之类的深度上限。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/queries-with.html">postgres.cn · 7.8 WITH 查询</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/queries-with.html#QUERIES-WITH-MODIFYING">数据修改语句中的 WITH</a>（CTE 里做 DML）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/CTE与递归查询速查表.html">CTE 与递归查询速查表</a>——求值五步与模板一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/DML/">04.DML</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>
