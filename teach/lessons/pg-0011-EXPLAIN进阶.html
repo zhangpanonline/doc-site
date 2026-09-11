@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · EXPLAIN 进阶：查询计划与规划器、ANALYZE 估算对照、统计信息与估算偏差（非渡一课程内容）">
+  <title>EXPLAIN 进阶与查询优化 · 互动教学课程（官方文档拓展 pg-11）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>EXPLAIN 进阶与查询优化</h1>
+      <p class="lesson-sub">来源：官方文档 §14.1 使用 EXPLAIN（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出官方对查询计划与规划器的定位（计划选择对性能绝对关键）</li>
+        <li>用 EXPLAIN ANALYZE 做「估算 vs 实际」对照，定位规划器估错之处</li>
+        <li>解释官方注意事项：估算为何有偏差（随机样本统计 + 平台相关）</li>
+        <li>从「行数数量级对不上」判断统计信息过期并 ANALYZE 表</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/using-explain.html">§14.1</a>。</p>
+
+      <div class="card">
+        <h3>官方定位与工具</h3>
+        <ul class="pitfall-list">
+          <li>每个查询产生一个<strong>查询计划</strong>；选择正确计划对性能<strong>绝对关键</strong>——系统内置复杂<strong>规划器</strong>（官方原文）</li>
+          <li><code>EXPLAIN</code>：察看计划（估算成本与行数）；<strong>阅读查询计划是一门艺术</strong>（官方原文）</li>
+          <li>输出格式：默认 <strong>text</strong>；程序分析用 XML/JSON/YAML 机器可读格式</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>EXPLAIN ANALYZE：估算 vs 实际</h3>
+        <ul class="pitfall-list">
+          <li>ANALYZE 选项：<strong>实际执行查询</strong>，显示每个计划节点<strong>真实行数与真实运行时间</strong>，同时保留估算值（官方原文）</li>
+          <li>两相对照：<code>(cost=... rows=10)</code> 估算 vs <code>(actual time=... rows=98000)</code> 实测——估错一目了然</li>
+          <li><strong>官方注意事项</strong>：估算与行数略有不同是常态——ANALYZE 统计是<strong>随机样本不是精确值</strong>；成本<strong>依赖平台</strong></li>
+          <li>判断标准：看<strong>数量级</strong>——估算 10 行实际 10 万行 = 统计过期，该 <code>ANALYZE 表</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 官方说选择正确的查询计划对性能意味着什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只影响磁盘空间</button>
+            <button class="quiz-option">绝对是最关键的（官方原文）</button>
+            <button class="quiz-option">与性能无关</button>
+            <button class="quiz-option">只是锦上添花</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：选择正确的计划来匹配查询结构和数据的属性对于好的性能来说<strong>绝对是最关键的</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. EXPLAIN 命令的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">察看规划器为查询生成的查询计划</button>
+            <button class="quiz-option">优化查询并改写 SQL</button>
+            <button class="quiz-option">重建统计信息</button>
+            <button class="quiz-option">执行查询并缓存结果</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：你可以使用 EXPLAIN 命令察看规划器为任何查询生成的查询计划。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 官方说阅读查询计划是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一门艺术，要求一些经验来掌握</button>
+            <button class="quiz-option">一键自动完成</button>
+            <button class="quiz-option">只有 DBA 需要</button>
+            <button class="quiz-option">已经过时</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：阅读查询计划是<strong>一门艺术</strong>，它要求一些经验来掌握——但本节覆盖基础。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. EXPLAIN ANALYZE 与普通 EXPLAIN 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">ANALYZE 实际执行查询，显示每个节点的真实行数与真实时间（并保留估算）</button>
+            <button class="quiz-option">没有区别</button>
+            <button class="quiz-option">ANALYZE 版本不显示成本</button>
+            <button class="quiz-option">ANALYZE 版本更快</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：EXPLAIN 实际执行查询，显示每个计划节点内累积的<strong>真实行数和真实运行时间</strong>，以及普通 EXPLAIN 显示的相同估算值。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 官方说估算成本与行数可能略有不同的原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">EXPLAIN 是猜的</button>
+            <button class="quiz-option">统计信息是随机样本而非精确值；成本依赖平台</button>
+            <button class="quiz-option">统计信息完全不可靠</button>
+            <button class="quiz-option">数据库有 bug</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：ANALYZE 的统计信息是<strong>随机样本而不是精确值</strong>，并且成本本质上在某种程度上<strong>依赖于平台</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 想给程序分析 EXPLAIN 输出，官方建议用什么格式？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只能 text</button>
+            <button class="quiz-option">截图</button>
+            <button class="quiz-option">PDF</button>
+            <button class="quiz-option">机器可读格式（XML、JSON 或 YAML）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：把输出交给程序做进一步分析，应该使用<strong>机器可读输出格式（XML、JSON 或 YAML）</strong>；text 是给人读的。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. EXPLAIN ANALYZE 显示估算 rows=10 但 actual rows=98000。这说明什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">EXPLAIN 不准确是必然的</button>
+            <button class="quiz-option">数量级对不上——统计信息过期，该 ANALYZE 表</button>
+            <button class="quiz-option">正常的样本偏差，忽略即可</button>
+            <button class="quiz-option">数据库坏了</button>
+          </div>
+          <div class="quiz-explain" hidden>估算偏差几倍是常态，但<strong>数量级</strong>对不上（10 vs 10 万）就是统计过期——规划器依据错误统计选错计划，ANALYZE 表刷新统计。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 生产环境排查慢查询，直接跑 EXPLAIN ANALYZE 有什么风险？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会修改数据</button>
+            <button class="quiz-option">会锁表</button>
+            <button class="quiz-option">没有风险</button>
+            <button class="quiz-option">ANALYZE 实际执行查询——大查询会真跑一遍，消耗生产资源</button>
+          </div>
+          <div class="quiz-explain" hidden>ANALYZE 选项真的执行查询（官方原文）——生产上先普通 EXPLAIN 看计划，确认无副作用再上 ANALYZE。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 查询优化的标准流程（结合本课方法论）是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">EXPLAIN 看计划 → 找异常节点 → ANALYZE 对照实况 → 对症下药（索引/改写/ANALYZE）</button>
+            <button class="quiz-option">重启数据库</button>
+            <button class="quiz-option">直接加索引</button>
+            <button class="quiz-option">删掉慢查询</button>
+          </div>
+          <div class="quiz-explain" hidden>官方方法论：先看规划器选了什么（EXPLAIN）、再看实际发生了什么（ANALYZE）、再决定干预——盲目加索引是反面教材。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，EXPLAIN 进阶就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核一：EXPLAIN 输出里 (cost=4.65..118.50) 两个数字分别是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">最小与最大行数</button>
+            <button class="quiz-option">启动成本（返回第一行前）与总成本</button>
+            <button class="quiz-option">两个节点的成本</button>
+            <button class="quiz-option">估算与实际成本</button>
+          </div>
+          <div class="quiz-explain" hidden>官方例（Nested Loop cost=4.65..118.50）：区间形式是<strong>启动成本..总成本</strong>——优化排序/首行延迟看前者，全量看后者。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核二：官方文档的示例数据经过了什么处理？为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">随机抽样了数据</button>
+            <button class="quiz-option">没有特别处理</button>
+            <button class="quiz-option">删除了索引</button>
+            <button class="quiz-option">VACUUM ANALYZE——保证统计信息新鲜，示例计划才可复现</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：示例来自回归测试数据库，经过一次 <strong>VACUUM ANALYZE</strong>——统计新鲜计划才可信。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三：看到计划里的 Seq Scan 是否一定需要优化？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Seq Scan 是语法错误</button>
+            <button class="quiz-option">是，Seq Scan 永远该消灭</button>
+            <button class="quiz-option">是，说明索引坏了</button>
+            <button class="quiz-option">看情况，小表/返回大比例行时顺序扫本来就是最优</button>
+          </div>
+          <div class="quiz-explain" hidden>官方方法论是「对照数据属性」：小表或要读大部分行时顺序扫最快——计划好坏看匹配不匹配数据，不是看节点名字。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核四：一个查询有时快有时慢（同一 SQL），EXPLAIN 相关的最可能原因？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">SQL 每次都不同</button>
+            <button class="quiz-option">规划器根据参数/统计选择了不同计划（计划不稳定）</button>
+            <button class="quiz-option">硬件在变</button>
+            <button class="quiz-option">索引自动重建</button>
+          </div>
+          <div class="quiz-explain" hidden>同一 SQL 不同参数/统计变化 → 规划器可能切换计划（这正是 EXPLAIN 要观察的对象）——官方「选择正确计划」的难度就在这。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对——本课是官方文档拓展的收官课，11 节全部学完，回到<a href="/common/database/">数据库首页</a>回顾完整路径。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0011-EXPLAIN进阶',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `AI 写的慢查询排查：在生产库上直接跑 <code>EXPLAIN ANALYZE</code> 分析一条大表聚合查询，把生产打慢了。审查：错在哪？正确顺序是什么？`,
+              source: '来源：postgres.cn 官方文档 §14.1 使用 EXPLAIN（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `官方原文：ANALYZE 选项会<strong>实际执行查询</strong>——大查询在生产上真跑一遍，IO/CPU 实打实。正确顺序：① 先普通 <code>EXPLAIN</code>（只看计划不执行）定位可疑节点；② 必要时才 ANALYZE，且先评估执行代价；③ 生产更稳妥的是在从库/影子环境 ANALYZE。AI 生成排查脚本最爱直接 ANALYZE，是「排查把库查崩」的经典事故。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方文档说 EXPLAIN ANALYZE 的输出有什么特殊价值？估算与实测怎么对照？`,
+              source: '来源：postgres.cn 官方文档 §14.1 使用 EXPLAIN（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
+              breakdown: `官方原文：ANALYZE 选项下 EXPLAIN <strong>实际执行查询</strong>，显示<strong>每个计划节点内累积的真实行数和真实运行时间</strong>，同时保留普通 EXPLAIN 的估算值——同一节点上 (rows=估算) vs (actual rows=实测) 并列，规划器「估错」的地方直接暴露（估算 10 行实测 10 万行 = 统计过期）。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 说「EXPLAIN 显示 cost 很高，所以给这张表每个查询列都建了索引」。审查：按官方方法论，这个推理哪里不对？`,
+              source: '来源：postgres.cn 官方文档 §14.1 使用 EXPLAIN（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `官方定位：选择正确计划要匹配<strong>查询结构和数据的属性</strong>。cost 高不高要看<strong>对照实际负载</strong>——高成本可能合理（大结果集）；「每列建索引」反而制造写放大。正确流程：EXPLAIN 找<strong>哪个节点</strong>是瓶颈（全表扫？排序？回表？）→ 针对该节点的谓词/连接列建索引 → ANALYZE 验证变化。无差别建索引是「用成本最高的方式优化」。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：估算行数与实际行数差多少算「统计信息过期」？你的判断标准与动作？`,
+              source: '来源：postgres.cn 官方文档 §14.1 使用 EXPLAIN（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+              breakdown: `官方依据：ANALYZE 统计是<strong>随机样本</strong>、成本依赖平台——所以<strong>几倍偏差是常态</strong>，不追绝对一致。判断标准：<strong>数量级</strong>（10 倍以上且持续偏差，尤其导致计划明显变差时）即视为过期。动作：<code>ANALYZE 表名</code>（或 VACUUM ANALYZE）刷新统计 → 再看计划是否回归。定期 ANALYZE（autovacuum 默认做）是统计新鲜度的保障。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测 EXPLAIN 方法论（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '① 建万行表：EXPLAIN 看全表扫计划（不执行）；② EXPLAIN ANALYZE 对照估算与 actual rows；③ 加索引后同查询计划变化（Index Scan）；④ 故意制造统计过期（插入大量行不 ANALYZE）观察估算严重偏差，ANALYZE 后恢复。',
+                accept: ['能区分 EXPLAIN 与 ANALYZE 的执行差异', '估算 vs actual 对照能读', '统计过期与恢复的实验能复现并解释'],
+              },
+              source: '任务基于官方文档 §14.1 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>CREATE TABLE ... INSERT 万行; EXPLAIN SELECT ...; EXPLAIN ANALYZE SELECT ...;</code> 对照 rows 与 actual rows；插大量行不 ANALYZE 再看估算偏差，<code>ANALYZE t;</code> 后复查。坑：小表 ANALYZE 的样本偏差更大属正常（官方随机样本提醒）；对照索引效果时记得 ANALYZE 后再 EXPLAIN。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/using-explain.html">postgres.cn · 14.1 使用 EXPLAIN</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/planner-stats.html">14.2 规划器使用的统计信息</a> · <a href="http://www.postgres.cn/docs/current/runtime-config-query.html">19.7 查询规划配置</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/EXPLAIN进阶速查表.html">EXPLAIN 进阶速查表</a>——方法论一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/索引/">06.索引</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

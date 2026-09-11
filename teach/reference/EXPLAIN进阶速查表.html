@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EXPLAIN 进阶速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>EXPLAIN 进阶速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0011-EXPLAIN进阶.html">《EXPLAIN 进阶互动教学课程》</a>使用。来源：官方文档 §14.1（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>两个命令</h2>
+      <table class="cmp-table">
+        <tr><th>命令</th><th>执行查询？</th><th>输出</th></tr>
+        <tr><td>EXPLAIN</td><td>否</td><td>计划 + 估算（cost / rows）</td></tr>
+        <tr><td>EXPLAIN ANALYZE</td><td>是（官方原文）</td><td>计划 + 估算 + 每节点真实行数与时间（actual）</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>优化方法论</h2>
+      <dl class="term-grid">
+        <dt>定位</dt>
+        <dd>官方：选择正确计划对性能绝对关键；阅读计划是一门艺术。</dd>
+        <dt>流程</dt>
+        <dd>EXPLAIN 看计划 → 找异常节点（全扫/排序/回表）→ ANALYZE 对照实况 → 对症下药（索引/改写/ANALYZE 表）。</dd>
+        <dt>估算偏差</dt>
+        <dd>官方：统计是随机样本、成本依赖平台——几倍偏差常态；<strong>数量级</strong>对不上才判「统计过期」。</dd>
+        <dt>生产红线</dt>
+        <dd>ANALYZE 真执行查询——大查询先普通 EXPLAIN，必要时在从库 ANALYZE。</dd>
+        <dt>输出格式</dt>
+        <dd>人读 text；程序分析用 XML/JSON/YAML。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§14.1）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>
