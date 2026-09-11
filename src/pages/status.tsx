@@ -32,6 +32,8 @@ type Stats = {
   new_regions_today?: number;
   daily: DailyPoint[];
   regions?: Region[];
+  browsers?: {browser: string; count: number}[];
+  oss?: {os: string; count: number}[];
   /** 旧版 SQL（003 之前）的兼容字段，regions 缺失时兜底 */
   countries?: {country: string; count: number; regions: {region: string; count: number}[]}[];
   ips: IpRow[];
@@ -350,29 +352,29 @@ function TrendChart({daily}: {daily: DailyPoint[]}) {
   );
 }
 
-/** 地区分布：横向条形图，只按地区统计（不区分国家） */
-function Regions({regions}: {regions: Region[]}) {
+/** 通用分布条形图（地区/浏览器/系统共用）：名称 + 横向条形 + 次数 */
+function BarList({title, items}: {title: string; items: {name: string; count: number}[]}) {
   const [hover, setHover] = useState<number | null>(null);
-  const max = Math.max(1, ...regions.map(r => r.count));
+  const max = Math.max(1, ...items.map(r => r.count));
 
   return (
     <section className="card">
-      <h2>地区分布</h2>
-      {regions.length === 0 ? (
+      <h2>{title}</h2>
+      {items.length === 0 ? (
         <p className="empty">暂无数据</p>
       ) : (
         <ul className="country-list">
-          {regions.map((r, i) => (
+          {items.map((r, i) => (
             <li
-              key={r.region}
+              key={r.name}
               className="country-row"
               tabIndex={0}
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(null)}
               onFocus={() => setHover(i)}
               onBlur={() => setHover(null)}>
-              <span className="country-name" title={r.region}>
-                {r.region}
+              <span className="country-name" title={r.name}>
+                {r.name}
               </span>
               <span className="country-track">
                 <span className="country-bar" style={{width: `${(r.count / max) * 100}%`}} />
@@ -381,7 +383,7 @@ function Regions({regions}: {regions: Region[]}) {
               {hover === i && (
                 <div className="country-tooltip" role="status">
                   <strong>
-                    {fmt(r.count)} 次 · {r.region}
+                    {fmt(r.count)} 次 · {r.name}
                   </strong>
                 </div>
               )}
@@ -693,11 +695,18 @@ export default function StatusPage(): React.JSX.Element {
             <Kpi stats={stats} />
             <TrendChart daily={stats.daily} />
             <div className="status-grid">
-              <Regions
-                regions={
-                  stats.regions ?? (stats.countries ?? []).flatMap(c => c.regions ?? []) /* 旧版 SQL 兜底 */
-                }
+              <BarList
+                title="地区分布"
+                items={(stats.regions ?? (stats.countries ?? []).flatMap(c => c.regions ?? [])).map(r => ({
+                  name: r.region,
+                  count: r.count,
+                }))}
               />
+              <BarList
+                title="浏览器分布"
+                items={(stats.browsers ?? []).map(b => ({name: b.browser, count: b.count}))}
+              />
+              <BarList title="系统分布" items={(stats.oss ?? []).map(o => ({name: o.os, count: o.count}))} />
               <Paths paths={stats.paths} />
             </div>
             <IpTable ips={stats.ips} />

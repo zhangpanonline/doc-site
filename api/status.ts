@@ -42,6 +42,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return {...rest, ...parseUA(user_agent)};
       });
     }
+
+    // 浏览器/系统分布：拉取全量 UA 在 API 层解析聚合（不改表结构；
+    // 本站量级下每次全量扫描可接受，量大后可改为写入时落列）
+    const {data: uas, error: uaErr} = await getSupabaseAdmin().from('visits').select('user_agent');
+    if (!uaErr && Array.isArray(uas)) {
+      const browserMap = new Map<string, number>();
+      const osMap = new Map<string, number>();
+      for (const row of uas) {
+        const {browser, os} = parseUA(row.user_agent as string);
+        browserMap.set(browser, (browserMap.get(browser) ?? 0) + 1);
+        osMap.set(os, (osMap.get(os) ?? 0) + 1);
+      }
+      data.browsers = [...browserMap.entries()]
+        .map(([browser, count]) => ({browser, count}))
+        .sort((a, b) => b.count - a.count);
+      data.oss = [...osMap.entries()]
+        .map(([os, count]) => ({os, count}))
+        .sort((a, b) => b.count - a.count);
+    }
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json(data);
   } catch (err) {
