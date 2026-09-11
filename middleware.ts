@@ -13,14 +13,12 @@ import { next } from '@vercel/functions';
 
 /** 白名单 UA 子串（小写匹配）：搜索引擎 + 微信 + 社交预览 + 可用性监控 */
 const ALLOWED_UA = [
-  // 搜索引擎（保留收录）
+  // 搜索引擎（保留收录：仅已提交站长平台的三家）
   'googlebot',
   'bingbot',
   'baiduspider',
-  'sogou', // Sogou web spider / inst spider
-  '360spider',
-  'yisouspider',
-  'shenma',
+  // 注意：360Spider/Sogou/YisouSpider/Shenma 已于 2026-09-11 移除——
+  // 其站长平台需 ICP 备案，用户决定不提交；留白名单只是伪造 UA 的攻击面
   'yandexbot',
   'duckduckbot',
   'applebot',
