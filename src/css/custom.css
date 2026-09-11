@@ -285,6 +285,32 @@ html[data-theme='dark'] body {
   font-size: 13px;
   color: var(--course-muted);
 }
+.code-ai-free {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.code-ai-free-input {
+  flex: 1;
+  font: inherit;
+  font-size: 13px;
+  color: var(--course-fg);
+  background: var(--course-card);
+  border: 1px dashed color-mix(in srgb, var(--course-accent) 35%, transparent);
+  border-radius: 8px;
+  padding: 5px 10px;
+  outline: none;
+}
+.code-ai-free-input:focus {
+  border-color: var(--course-accent);
+}
+.code-ai-free-input::placeholder {
+  color: var(--course-muted);
+  opacity: 0.7;
+}
+.code-ai-free-input:disabled {
+  opacity: 0.55;
+}
 .code-ai-ask {
   display: flex;
   align-items: baseline;

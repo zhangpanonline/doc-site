@@ -117,6 +117,7 @@ function AiExplain({code, lang}: {code: string; lang: string}) {
   const [cached, setCached] = useState(false);
   const [busy, setBusy] = useState<'init' | 'followup' | 'note' | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [freeText, setFreeText] = useState('');
 
   const storeKey = `${SESSION_PREFIX}${lang}:${hashCode(code)}`;
 
@@ -218,6 +219,13 @@ function AiExplain({code, lang}: {code: string; lang: string}) {
     }
   };
 
+  const submitFree = async () => {
+    const q = freeText.trim();
+    if (!q || busy !== null || asked.length >= MAX_FOLLOWUPS) return;
+    setFreeText('');
+    await ask('追问', q);
+  };
+
   const genNote = async () => {
     setBusy('note');
     setErr(null);
@@ -287,6 +295,28 @@ function AiExplain({code, lang}: {code: string; lang: string}) {
               ))
             ) : (
               !remaining.length && <div className="code-ai-asks-done">六个方向都已聊过，可以生成结课笔记啦</div>
+            )}
+            {asked.length < MAX_FOLLOWUPS && (
+              <div className="code-ai-free">
+                <input
+                  className="code-ai-free-input"
+                  placeholder="自由追问（100 字内，回车发送）"
+                  value={freeText}
+                  maxLength={100}
+                  disabled={busy !== null}
+                  onChange={e => setFreeText(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) void submitFree();
+                  }}
+                />
+                <button
+                  type="button"
+                  className="code-ai-btn"
+                  disabled={busy !== null || !freeText.trim()}
+                  onClick={() => void submitFree()}>
+                  追问
+                </button>
+              </div>
             )}
           </div>
         )}
