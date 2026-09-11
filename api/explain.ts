@@ -2,24 +2,25 @@ import {createHash} from 'node:crypto';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {getSupabaseAdmin} from '../lib/supabase-admin';
 
-/** 进程内缓存的已解析模型名（模型改名时自动适配，不必改代码） */
-let cachedModel: string | null = null;
+/** 进程内缓存的候选模型列表（模型改名时自动适配，不必改代码） */
+let cachedModels: string[] | null = null;
 
-/** gemini-X.Y-flash → [X, Y]，用于按版本选最新 */
+/** gemini-X.Y-flash → [X, Y]，用于按版本排序 */
 function versionOf(name: string): [number, number] {
   const m = /gemini-(\d+)(?:\.(\d+))?/.exec(name);
   return m ? [Number(m[1]), Number(m[2] ?? 0)] : [0, 0];
 }
 
 /**
- * 运行时解析可用模型：优先版本号最高的非 lite flash 模型
- * （旧版模型对「新用户」会 404 下线，但可能仍在列表里，不能写死名字），
- * 退而求其次任意 flash、任意 gemini。
+ * 解析可用模型候选（优先级降序，最多 3 个）：版本最高的非 lite flash 优先，
+ * 其余 flash 依次兜底——高峰时段单一模型 503「需求过高」时轮换下一个。
+ * 解析失败时用内置兜底名单（旧版模型对「新用户」可能 404，但先试再说）。
  */
-async function resolveModel(key: string): Promise<string | null> {
-  if (cachedModel) {
-    return cachedModel;
+async function resolveModelCandidates(key: string): Promise<string[]> {
+  if (cachedModels) {
+    return cachedModels;
   }
+  const fallback = ['gemini-2.5-flash', 'gemini-flash-latest'];
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`, {
       signal: AbortSignal.timeout(8_000),
@@ -27,27 +28,29 @@ async function resolveModel(key: string): Promise<string | null> {
     if (!r.ok) {
       const bodySnippet = (await r.text().catch(() => '')).slice(0, 200);
       console.error('[explain] models list http', r.status, bodySnippet);
-      return null;
+      cachedModels = fallback;
+      return fallback;
     }
     const data = (await r.json()) as {models?: {name?: string}[]};
     const names = (data.models ?? [])
       .map(m => m.name ?? '')
-      .filter(n => n.startsWith('models/'));
-    const pick =
-      names
-        .filter(n => n.includes('flash') && !n.includes('lite') && !n.endsWith('-latest'))
-        .sort((a, b) => {
-          const va = versionOf(a);
-          const vb = versionOf(b);
-          return vb[0] - va[0] || vb[1] - va[1];
-        })[0] ??
-      names.find(n => n.includes('flash')) ??
-      names[0];
-    cachedModel = pick ? pick.replace(/^models\//, '') : null;
-    return cachedModel;
+      .filter(n => n.startsWith('models/'))
+      .map(n => n.replace(/^models\//, ''));
+    const ranked = names
+      .filter(n => n.includes('flash') && !n.includes('lite') && !n.endsWith('-latest'))
+      .sort((a, b) => {
+        const va = versionOf(a);
+        const vb = versionOf(b);
+        return vb[0] - va[0] || vb[1] - va[1];
+      })
+      .concat(names.filter(n => n.includes('flash') && n.endsWith('-latest')))
+      .slice(0, 3);
+    cachedModels = ranked.length > 0 ? ranked : fallback;
+    return cachedModels;
   } catch (err) {
     console.error('[explain] models list failed:', err);
-    return null;
+    cachedModels = fallback;
+    return fallback;
   }
 }
 
@@ -101,8 +104,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({error: 'GEMINI_API_KEY not set'});
   }
 
-  const model = await resolveModel(key);
-  if (!model) {
+  const models = await resolveModelCandidates(key);
+  if (models.length === 0) {
     return res.status(502).json({error: 'model not resolved'});
   }
 
@@ -118,10 +121,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 代码：
 ${code}`;
 
-  // 503/429（高峰限流）退避重试，最多 2 次。
-  // 时间预算：模型解析(≤8s) + 缓存查询 + 2×(AI 20s + 退避 0.4s) ≈ 50s，
+  // 多候选轮换：高峰时段单一模型 503「需求过高」，换下一个模型重试。
+  // 时间预算：模型解析(≤8s) + 缓存查询 + 3×(AI 15s + 退避 1.5s) ≈ 58s，
   // 必须留余量给函数上限（vercel.json maxDuration 60s），否则整体 504。
-  for (let attempt = 0; attempt < 2; attempt++) {
+  let lastDetail = '';
+  for (const model of models) {
     try {
       const r = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
@@ -133,18 +137,19 @@ ${code}`;
             // 输出上限 300 字 ≈ 800 token：防止模型失控拖到超时
             generationConfig: {maxOutputTokens: 800},
           }),
-          signal: AbortSignal.timeout(20_000),
+          signal: AbortSignal.timeout(15_000),
         },
       );
       if (!r.ok) {
-        const bodySnippet = (await r.text().catch(() => '')).slice(0, 200);
-        if ((r.status === 503 || r.status === 429) && attempt < 1) {
-          console.error('[explain] gemini http', r.status, 'retrying', attempt + 1);
-          await new Promise(res => setTimeout(res, 400));
-          continue;
+        const bodySnippet = (await r.text().catch(() => '')).slice(0, 300);
+        lastDetail = `[${model}] ${r.status} ${bodySnippet}`;
+        if (r.status === 503 || r.status === 429) {
+          console.error('[explain] gemini http', r.status, model, 'try next');
+          await new Promise(res => setTimeout(res, 1500));
+          continue; // 高峰限流：换下一个候选模型
         }
-        console.error('[explain] gemini http', r.status, bodySnippet);
-        return res.status(502).json({error: 'upstream failed'});
+        console.error('[explain] gemini http', r.status, model, bodySnippet);
+        return res.status(502).json({error: 'upstream failed', detail: lastDetail});
       }
       const data = (await r.json()) as {
         candidates?: {content?: {parts?: {text?: string}[]}}[];
@@ -154,7 +159,8 @@ ${code}`;
         .join('')
         .trim();
       if (!text) {
-        return res.status(502).json({error: 'empty upstream'});
+        lastDetail = `[${model}] empty upstream`;
+        continue; // 空响应：换下一个候选
       }
       try {
         await admin.from('code_explanations').upsert({
@@ -170,13 +176,11 @@ ${code}`;
       }
       return res.status(200).json({explanation: text, cached: false});
     } catch (err) {
-      if (attempt < 1) {
-        await new Promise(res => setTimeout(res, 400));
-        continue;
-      }
-      console.error('[explain] failed:', err);
-      return res.status(502).json({error: 'upstream failed'});
+      lastDetail = `[${model}] ${err instanceof Error ? err.message : String(err)}`;
+      console.error('[explain] attempt failed:', model, err);
+      // 超时/网络错误：换下一个候选模型
     }
   }
-  return res.status(502).json({error: 'upstream failed'});
+  console.error('[explain] all models failed:', lastDetail);
+  return res.status(502).json({error: 'upstream overloaded', detail: lastDetail.slice(0, 300)});
 }
