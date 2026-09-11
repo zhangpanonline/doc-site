@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 备份与恢复：pg_dump SQL 转储思想、远程备份与特权要求、pg_restore 细粒度恢复（非渡一课程内容）">
+  <title>备份与恢复 · 互动教学课程（官方文档拓展 pg-14）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>备份与恢复</h1>
+      <p class="lesson-sub">来源：官方文档 §25.1 SQL 转储（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>复述官方对 SQL 转储的定义（SQL 命令文件重建同状态数据库）</li>
+        <li>说清 pg_dump 是普通客户端应用——可远程备份、需读权限（超级用户）</li>
+        <li>写出备份与恢复的基本命令，说出 custom 格式的细粒度恢复价值</li>
+        <li>说出「备份必须演练恢复」的工程原则与 pg_dumpall 的用途</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/backup-dump.html">§25.1</a>。</p>
+
+      <div class="card">
+        <h3>SQL 转储（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li>思想：创建<strong>由 SQL 命令组成的文件</strong>，回放后<strong>重建与转储时状态一样的数据库</strong>（官方原文）</li>
+          <li>基本用法：<code>pg_dump dbname &gt; dumpfile</code>（输出到标准输出）；恢复：<code>psql dbname &lt; dumpfile</code></li>
+          <li><strong>pg_dump 是普通客户端应用</strong>——可在<strong>任何能访问该库的远端主机</strong>上备份（官方原文）</li>
+          <li>特权：pg_dump 不跑特殊权限——必须对备份对象<strong>有读权限</strong>，备份全库几乎总要以<strong>超级用户</strong>运行</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>格式与工具</h3>
+        <ul class="pitfall-list">
+          <li>纯文本外，pg_dump 支持<strong>其他格式</strong>——支持<strong>并行与细粒度的对象恢复</strong>（如单表恢复，官方原文）</li>
+          <li><code>pg_restore</code>：从 custom 格式恢复，<code>-t 表名</code> 只恢复指定对象</li>
+          <li><code>pg_dumpall</code>：转储<strong>整个集簇</strong>（含角色与表空间）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 官方说 SQL 转储方法的思想是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">镜像磁盘</button>
+            <button class="quiz-option">压缩数据文件</button>
+            <button class="quiz-option">创建 SQL 命令文件，回放后重建与转储时状态一样的数据库</button>
+            <button class="quiz-option">复制数据目录</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：思想是创建一个由 SQL 命令组成的文件，回馈给服务器时重建与转储时状态一样的数据库。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. pg_dump 的定位（官方）是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">普通的 PostgreSQL 客户端应用</button>
+            <button class="quiz-option">服务器端守护进程</button>
+            <button class="quiz-option">存储过程</button>
+            <button class="quiz-option">内核模块</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：pg_dump 是一个普通的 PostgreSQL 客户端应用（尽管是个相当聪明的东西）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 官方说 pg_dump 的输出默认去哪里？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据库日志</button>
+            <button class="quiz-option">标准输出</button>
+            <button class="quiz-option">临时表</button>
+            <button class="quiz-option">系统剪贴板</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：pg_dump 把结果输出到标准输出——因此基本用法是 pg_dump dbname &gt; dumpfile。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 官方说 pg_dump 备份整个数据库几乎总要以什么身份运行？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">普通用户即可</button>
+            <button class="quiz-option">只读副本用户</button>
+            <button class="quiz-option">任何匿名角色</button>
+            <button class="quiz-option">数据库超级用户（必须有备份对象的读权限）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：pg_dump 不会以任何特殊权限运行——必须有想备份的表的读权限，备份整个库几乎总要以超级用户运行。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 官方说 pg_dump 可以在哪里运行备份？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只能在容器内</button>
+            <button class="quiz-option">必须登录数据库服务器主机</button>
+            <button class="quiz-option">只能本机回环</button>
+            <button class="quiz-option">任何可以访问该数据库的远端主机</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：你可以在任何可以访问该数据库的远端主机上进行备份工作——客户端应用的直接推论。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 只恢复一张表，官方推荐的工具链是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">重新 pg_dump 一次</button>
+            <button class="quiz-option">custom 格式转储 + pg_restore -t 表名</button>
+            <button class="quiz-option">纯文本转储 + psql 全量回放</button>
+            <button class="quiz-option">手工复制数据文件</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：pg_dump 可以用其他格式创建文件以支持并行和<strong>细粒度的对象恢复</strong>——pg_restore -t 正是单表恢复姿势。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 「备份必须演练恢复」的原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不演练备份更快</button>
+            <button class="quiz-option">演练能压缩备份</button>
+            <button class="quiz-option">官方强制要求</button>
+            <button class="quiz-option">没验证过恢复流程的备份可能在关键时刻才发现回放失败</button>
+          </div>
+          <div class="quiz-explain" hidden>转储文件「能回放」才算备份——从未演练恢复的备份在灾难时才发现问题（权限/版本/损坏），等于没有备份。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. pg_dumpall 与 pg_dump 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">pg_dumpall 更快</button>
+            <button class="quiz-option">pg_dumpall 转储整个集簇（含角色与表空间）</button>
+            <button class="quiz-option">pg_dumpall 只备份表</button>
+            <button class="quiz-option">没有区别</button>
+          </div>
+          <div class="quiz-explain" hidden>pg_dump 按库转储；pg_dumpall 覆盖整个集簇——角色/表空间这类集簇级对象只能靠它。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. pg_dump 是逻辑备份。什么场景它不够用（要上文件系统级/PITR）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">任何场景都够用</button>
+            <button class="quiz-option">小数据库</button>
+            <button class="quiz-option">超大数据量 + 极短恢复窗口要求</button>
+            <button class="quiz-option">开发环境</button>
+          </div>
+          <div class="quiz-explain" hidden>逻辑转储回放 = 重新执行全部 SQL——超大库恢复可能数小时；需要快速恢复用官方 §25.2/§25.3 的文件系统级备份或 PITR。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，备份与恢复就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核一：备份命令 <code>pg_dump dbname &gt; dumpfile</code> 的正确恢复命令是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">pg_dump dumpfile &gt; dbname</button>
+            <button class="quiz-option">psql dbname &lt; dumpfile</button>
+            <button class="quiz-option">psql dumpfile &gt; dbname</button>
+            <button class="quiz-option">直接复制 dumpfile 到数据目录</button>
+          </div>
+          <div class="quiz-explain" hidden>转储文件是 SQL 命令流——用 psql 回放进目标库；方向别反。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二：备份时表正在被写入，pg_dump 的一致性靠什么保证？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">MVCC 快照：转储在单个事务里看到一致的时间点数据</button>
+            <button class="quiz-option">停止写入</button>
+            <button class="quiz-option">锁住所有表直到备份结束</button>
+            <button class="quiz-option">没有保证</button>
+          </div>
+          <div class="quiz-explain" hidden>pg_dump 在单事务快照下工作——转储的库是「某一时刻」的一致视图，写入不阻塞（MVCC 的应用）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">考核三：用非超级用户做部分备份（只备份自己的 schema），官方怎么说？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">完全不可能</button>
+            <button class="quiz-option">只能超级用户</button>
+            <button class="quiz-option">可以——特权不足时可使用 -n schema 等限定范围备份有权限的对象</button>
+            <button class="quiz-option">必须关闭数据库</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：没有足够特权备份整个库时，仍可使用诸如 -n schema 的方式限定范围——读权限决定能备份什么。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核四：cron 里每天 pg_dump 到本地磁盘，还有哪些风险要补？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">cron 不可靠</button>
+            <button class="quiz-option">没有风险</button>
+            <button class="quiz-option">备份会拖垮数据库</button>
+            <button class="quiz-option">单机存储：服务器故障同归于尽——需异地存放 + 定期恢复演练 + 失败告警</button>
+          </div>
+          <div class="quiz-explain" hidden>备份三件套：异机存储（防单点）、失败告警（备份静默失败是最危险）、恢复演练（能回放才算数）。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了备份与恢复——继续学习 <a href="/common/database-pg/pg-15-日常维护">pg-15 · 日常维护</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0014-备份与恢复',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的备份脚本输出纯文本转储到本地磁盘，每天覆盖昨天的文件。审查：这套「备份」的三个隐患？`,
+              source: '来源：postgres.cn 官方文档 §25.1 SQL 转储（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `① <strong>单机存储</strong>：服务器盘坏 = 备份与数据同归于尽（需异地/对象存储）；② <strong>每日覆盖</strong>：只能回到昨天，保留策略缺失（如 7 天滚动）；③ <strong>从未演练恢复</strong>：转储文件能否回放（权限/版本/完整性）没验证过。官方思想「回放重建同状态数据库」——能回放才算备份。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方说 pg_dump 是「普通的客户端应用」——这句话带来哪两个实用推论？`,
+              source: '来源：postgres.cn 官方文档 §25.1 SQL 转储（官方翻译·一手）· 检索 2026-09-11 · 层级：一手',
+              breakdown: `官方原文直接给出两个推论：① 可以在<strong>任何能访问该数据库的远端主机</strong>上执行备份（无需登录服务器主机）；② 它<strong>不跑任何特殊权限</strong>——能备份什么取决于你有没有读权限，备份全库几乎总要以超级用户运行。理解这两点，备份机的部署位置与账号策略就清楚了。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的恢复演练：只抽查了「转储文件存在且大小 > 0」。审查：这算验证过备份吗？合格的演练应该怎样？`,
+              source: '来源：postgres.cn 官方文档 §25.1 SQL 转储（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `文件存在 ≠ 能回放。合格演练：在<strong>独立环境完整回放</strong>（psql 回放转储）→ 抽查关键表行数与业务校验 → 记录回放耗时（为 RTO 兜底）→ 定期自动化。官方定义「回放后重建与转储时状态一样的数据库」就是验收标准——拿它对照，不是拿文件大小对照。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：生产库备份方案怎么设计？从官方 SQL 转储出发，给出分层答案。`,
+              source: '来源：postgres.cn 官方文档 §25.1 SQL 转储（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `三层：① <strong>每日逻辑转储</strong>（pg_dump custom 格式——支持细粒度恢复），异地存储 + 保留策略；② <strong>恢复演练</strong>自动化（回放 + 校验）；③ 数据量大/窗口紧再叠加<strong>文件系统级/PITR</strong>（官方 §25.2/25.3）与流复制。原则：先保证「能恢复」，再谈「恢复多快」。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测备份恢复全链路（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '① pg_dump 转储当前库到文件；② 建新库回放恢复；③ 对比两库表数与抽样行数一致；④ custom 格式 + pg_restore -t 恢复单表。',
+                accept: ['转储与恢复命令执行成功', '恢复库的关键表行数与源库一致', '单表恢复成功且不影响其他表'],
+              },
+              source: '任务基于官方文档 §25.1 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>pg_dump -Fc -f backup.dump admin</code>；<code>createdb restore_test; pg_restore -d restore_test backup.dump</code>；对比 <code>SELECT count(*) FROM ...</code>；单表 <code>pg_restore -d restore_test -t 表名 backup.dump</code>。坑：docker 环境下文件路径在容器内；恢复目标库要清空或新建；custom 格式恢复必须用 pg_restore 而不是 psql。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/backup-dump.html">postgres.cn · 25.1 SQL 转储</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/backup-file.html">25.2 文件系统级备份</a> · <a href="http://www.postgres.cn/docs/current/continuous-archiving.html">25.3 连续归档与 PITR</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/备份与恢复速查表.html">备份与恢复速查表</a>——命令与原则一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/PostgreSQL安装/">01.PostgreSQL安装</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+---
+sidebar_position: 14
+title: 'pg-14 · 备份与恢复'
+description: 'PostgreSQL 官方文档拓展 §25.1：pg_dump SQL 转储思想、基本用法与特权要求、恢复流程——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 备份与恢复" desc="pg_dump 的 SQL 转储思想：一份命令文件，随时重建整个数据库。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §25.1「SQL 转储」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/backup-dump.html) / [官方英文版](https://www.postgresql.org/docs/current/backup-dump.html)）。
+
+:::
+
+## pg_dump：SQL 转储（官方思想）
+
+官方原文开宗明义：
+
+> SQL 转储方法的思想是创建一个由 **SQL 命令组成的文件**——当把这个文件回馈给服务器时，服务器将利用其中的 SQL 命令**重建与转储时状态一样的数据库**。
+
+基本用法（官方原文）：
+
+```bash
+pg_dump dbname > dumpfile          # 结果输出到标准输出
+psql dbname < dumpfile             # 恢复：把文件回放给服务器
+```
+
+官方要点：
+
+- **pg_dump 是普通客户端应用**——可以在**任何能访问该数据库的远端主机**上做备份（不用登录服务器主机）
+- pg_dump 不跑任何特殊权限：**必须对备份对象有读权限**——备份整个库几乎总要以**超级用户**运行（官方原文）
+- 除纯文本外，pg_dump 还支持**其他格式**（custom 等）以支持**并行恢复与细粒度的对象恢复**（如只恢复一张表）
+- `pg_dumpall`：转储整个集簇（含角色与表空间）
+
+## 面试高频
+
+- **备份的恢复演练**：备份没测过恢复 = 没有备份（转储文件可回放才算数）
+- 大数据量/停机窗口敏感 → 文件系统级备份或 PITR（官方后续章节），pg_dump 是逻辑层方案
+- 恢复单张表：custom 格式 + `pg_restore -t`
+
+## 官方原文
+
+- [postgres.cn：25.1 SQL 转储](http://www.postgres.cn/docs/current/backup-dump.html)
+- [官方英文版：25.1 SQL Dump](https://www.postgresql.org/docs/current/backup-dump.html)
+
+配套学习：<a href="/teach/lessons/pg-0014-备份与恢复.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/备份与恢复速查表.html">📋 备份与恢复速查表（可打印）</a>

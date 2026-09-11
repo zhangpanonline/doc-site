@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>备份与恢复速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>备份与恢复速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0014-备份与恢复.html">《备份与恢复互动教学课程》</a>使用。来源：官方文档 §25.1（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>基本命令</h2>
+      <pre># 备份（纯文本，输出到标准输出）
+pg_dump dbname &gt; dumpfile
+
+# 备份（custom 格式，支持细粒度恢复）
+pg_dump -Fc -f backup.dump dbname
+
+# 恢复
+psql dbname &lt; dumpfile            # 纯文本
+pg_restore -d dbname backup.dump   # custom 格式
+pg_restore -d dbname -t 表名 backup.dump   # 单表恢复
+
+# 整个集簇（含角色与表空间）
+pg_dumpall &gt; cluster.dump</pre>
+    </section>
+
+    <section>
+      <h2>原则速记</h2>
+      <dl class="term-grid">
+        <dt>官方思想</dt>
+        <dd>SQL 命令文件，回放后重建与转储时状态一样的数据库。</dd>
+        <dt>客户端应用</dt>
+        <dd>可在任何能访问库的远端主机备份；需读权限，全库备份几乎总用超级用户。</dd>
+        <dt>备份三件套</dt>
+        <dd>异机存储 + 失败告警 + 恢复演练（能回放才算数）。</dd>
+        <dt>选型</dt>
+        <dd>常规用逻辑转储（pg_dump）；超大库/短窗口上文件系统级或 PITR（§25.2/25.3）。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（§25.1）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>
