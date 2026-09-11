@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {Fragment, useEffect, useState} from 'react';
 import type {ReactNode} from 'react';
 import Link from '@docusaurus/Link';
 import {jobs} from '@site/data/jobs';
@@ -293,7 +293,7 @@ function skillHref(tag: string): string | null {
 }
 
 /** 技术栈 chip：有映射进学习路线，无映射纯文本 */
-function TagChip({tag}: {tag: string; key?: React.Key}): ReactNode {
+function TagChip({tag}: {tag: string}): ReactNode {
   const href = skillHref(tag);
   return href ? (
     <Link to={href} className="js-tag">
@@ -547,7 +547,9 @@ export function JobStageStats({unit}: {unit: string}): ReactNode {
             {common.length > 0 ? (
               <span className="js-intersect-tags">
                 {common.map(tag => (
-                  <TagChip key={tag} tag={tag} />
+                  <Fragment key={tag}>
+                    <TagChip tag={tag} />
+                  </Fragment>
                 ))}
               </span>
             ) : (

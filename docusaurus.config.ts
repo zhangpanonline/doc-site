@@ -63,6 +63,7 @@ const config: Config = {
     },
   },
   themes: ['@docusaurus/theme-mermaid', '@easyops-cn/docusaurus-search-local'],
+  plugins: ['./src/plugins/seo-jsonld'],
   i18n: {
     defaultLocale: 'zh',
     locales: ['zh'],
