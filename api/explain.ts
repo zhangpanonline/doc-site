@@ -6,7 +6,7 @@ import {getSupabaseAdmin} from '../lib/supabase-admin';
  * AI 助教（分层讲解 + 定向答疑）：
  * - mode=init：首次解释（5 层输出 + 6 个追问按钮），按代码+上下文+URL 哈希缓存 10 天
  * - mode=followup：学员点了某个追问按钮（buttonText 携带完整问题文本，避免回传历史），
- *   只深挖该方向 80~150 字 + 「还可以看」引导一行；不缓存
+ *   只深挖该方向 80~150 字；不缓存
  * - mode=generate_note：结课笔记（汇总已问方向的结论）；不缓存
  * 模型：智谱 GLM-4-Flash 优先（ZHIPU_API_KEY），Gemini 多候选兜底。
  * 已问方向由客户端累积后随请求回传（asked），后端拼进提示词——AI 无需重读历史，省 token。
@@ -32,9 +32,6 @@ const SYSTEM_PROMPT = `你是本课程网站的助教，职责是用"分层讲�
 【追问回复】
 - 只深入回答学员选中的那一个问题方向，不要重新展开全部。
 - 回答控制在 80~150 字，连同必要的最小示例代码。
-- 结尾用一行"还可以看：<字母>"，引导一次点击（绝不罗列全部 6 个）；
-  「还可以看」必须指向与本答复最相关、且尚未被问过的选项，禁止总是给 A；
-  若本次追问与预设方向都不相关（自由追问），可省略该行。
 - 若问题指向已解答过的地方，用一句话指回原位置，不再重复。
 
 【整体强约束】
@@ -289,20 +286,6 @@ async function callLlm(
   throw new Error(`upstream overloaded: ${lastDetail.slice(0, 300)}`);
 }
 
-/**
- * 「还可以看」机械兜底：模型可能偷懒总写 A、或指回已问过的方向。
- * 已问过的字母 → 换成第一个未问过的；全部问完 → 删除该行。
- */
-function fixFollowNext(text: string, askedLabels: string[]): string {
-  const m = /(还可以看[：:]\s*)([A-F])/.exec(text);
-  if (!m) return text;
-  const used = new Set(askedLabels);
-  if (!used.has(m[2])) return text; // 指向未问过的：保留
-  const next = ['A', 'B', 'C', 'D', 'E', 'F'].find(l => !used.has(l));
-  if (!next) return text.replace(m[0], '');
-  return text.replace(m[0], `${m[1]}${next}`);
-}
-
 // ---------- 每 IP 每日追问限额（防脚本刷免费额度；表缺失时优雅跳过） ----------
 
 const DAILY_LIMIT = 50;
@@ -350,7 +333,7 @@ function buildUserPrompt(mode: Mode, opts: {
     return `【第一次解释】按「分层输出」要求完整讲解下面这段${lang}代码。\n${courseLine}${urlLine}\n代码：\n${code}`;
   }
   if (mode === 'followup') {
-    return `【追问回复】已问方向：\n${stateLines || '（尚无）'}\n学员本次追问：${buttonText}\n按「追问回复」要求输出 80~150 字定向深挖；若与预设方向相关，最后一行给出「还可以看：<字母>」，否则省略该行。\n\n代码：\n${shortCode}`;
+    return `【追问回复】已问方向：\n${stateLines || '（尚无）'}\n学员本次追问：${buttonText}\n按「追问回复」要求输出 80~150 字定向深挖。\n\n代码：\n${shortCode}`;
   }
   return `【结课】输出结课笔记。学员问过的点（须在笔记里逐一给出结论）：\n${stateLines || '（没有追问）'}\n\n代码：\n${shortCode}`;
 }
@@ -422,8 +405,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const {text, model} = await callLlm(prompt, params);
-    // 追问回复的「还可以看」做机械兜底（模型可能总写 A 或指回已问方向）
-    const finalText = mode === 'followup' ? fixFollowNext(text, asked.map(a => a.label)) : text;
 
     if (mode === 'init') {
       try {
@@ -439,7 +420,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 缓存写入失败不影响本次返回
       }
     }
-    return res.status(200).json({explanation: finalText, mode, cached: false});
+    return res.status(200).json({explanation: text, mode, cached: false});
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.startsWith('no AI keys configured')) {

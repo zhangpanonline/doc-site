@@ -79,12 +79,6 @@ function parseInit(raw: string): {text: string; buttons: AskButton[]} {
   return {text: lines.slice(0, cutAt).join('\n').trim(), buttons: buttons.slice(0, 6)};
 }
 
-/** 从追问回复里解析「还可以看：<字母>」引导 */
-function parseFollowNext(answer: string): string | null {
-  const m = /还可以看[：:]\s*([A-F])/.exec(answer);
-  return m ? m[1] : null;
-}
-
 /** 简易字符串哈希（仅用于 localStorage 会话键） */
 function hashCode(s: string): string {
   let h = 5381;
@@ -328,19 +322,6 @@ function AiExplain({code, lang}: {code: string; lang: string}) {
               {a.question}
             </div>
             <div className="code-ai-follow-a">{a.answer}</div>
-            {(() => {
-              const nextLetter = parseFollowNext(a.answer);
-              const nextBtn = nextLetter ? buttons.find(b => b.letter === nextLetter && !askedLetters.has(b.letter)) : null;
-              return nextBtn ? (
-                <button
-                  type="button"
-                  className="code-ai-next"
-                  disabled={busy !== null}
-                  onClick={() => void ask(nextBtn.letter, nextBtn.question)}>
-                  继续：{nextBtn.question}
-                </button>
-              ) : null;
-            })()}
           </div>
         ))}
 

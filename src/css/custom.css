@@ -364,23 +364,6 @@ html[data-theme='dark'] body {
   white-space: pre-wrap;
   word-break: break-word;
 }
-.code-ai-next {
-  display: block;
-  margin-top: 8px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--course-accent-ink);
-  background: none;
-  border: none;
-  border-top: 1px dashed var(--course-border);
-  padding: 6px 0 0;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-}
-.code-ai-next:hover:not(:disabled) {
-  color: var(--course-accent);
-}
 .code-ai-note-act {
   margin-top: 12px;
   text-align: right;
