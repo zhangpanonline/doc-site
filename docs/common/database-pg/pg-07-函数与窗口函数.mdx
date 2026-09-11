@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §9 + 教程 §3.5：format 与 stri
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 函数与窗口函数" desc="format 拼字符串、string_agg 聚合文本、窗口函数做分组内计算——报表 SQL 的三板斧。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方教程 §3.5「窗口函数」与官方文档 §9.4「字符串函数」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/tutorial-window.html) / [官方英文版](https://www.postgresql.org/docs/current/tutorial-window.html)）。
-
-:::
+</Admonition>
 
 ## 字符串函数速选
 
@@ -42,11 +41,9 @@ FROM empsalary;
 
 高频窗口函数：`ROW_NUMBER()`（行号）、`RANK()`/`DENSE_RANK()`（排名，并列时 RANK 跳号 DENSE_RANK 不跳）、`SUM(...) OVER (ORDER BY ...)`（累积和）。
 
-:::warning 窗口函数的限制
-
+<Admonition type="warning" title="窗口函数的限制">
 窗口函数在 WHERE / GROUP BY / HAVING 之后求值——**不能直接写在 WHERE 里**（要过滤窗口结果须包一层子查询/CTE）。
-
-:::
+</Admonition>
 
 ## 官方原文
 

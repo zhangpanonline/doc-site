@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §8：字符类型三兄弟、日期
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 数据类型 · 基础" desc="varchar 还是 text？timestamp 带不带时区？钱用 numeric 还是 float？——建表选型的第一课。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §8.3「字符类型」与 §8.5「日期/时间类型」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/datatype-character.html) / [官方英文版](https://www.postgresql.org/docs/current/datatype-character.html)）。
-
-:::
+</Admonition>
 
 ## 字符类型：varchar(n) / char(n) / text
 
@@ -24,11 +23,9 @@ import {CommonBanner} from '@site/src/components/CourseUI';
 - **text 是 PostgreSQL 的原生字符串类型**——官方原文：大多数内置字符串函数都声明为接受/返回 text；varchar 在行为上像是 text 的 domain
 - `varchar` 不指定长度 = 接受任意长度；`bpchar` 是 PG 扩展的 char 别名
 
-:::tip 选型建议（面试高频）
-
+<Admonition type="tip" title="选型建议（面试高频）">
 无长度限制要求用 **text**（原生、无性能差异）；需要数据库层强制长度上限用 **varchar(n)**；char(n) 的补空格行为在现代实践中几乎不用（比较/拼接时的空格是坑）。
-
-:::
+</Admonition>
 
 ## 日期时间：时区是核心分水岭
 

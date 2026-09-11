@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §24.1：VACUUM 的四个职责、�
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 日常维护" desc="VACUUM 为什么必须定期跑——四个官方职责 + 两种变体的取舍。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §24.1「日常清理」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/routine-vacuuming.html) / [官方英文版](https://www.postgresql.org/docs/current/routine-vacuuming.html)）。
-
-:::
+</Admonition>
 
 ## VACUUM 的四个职责（官方原文）
 
@@ -40,11 +39,9 @@ import {CommonBanner} from '@site/src/components/CourseUI';
 - **ANALYZE**：收集统计信息（随机样本）——规划器估算的基础（衔接 pg-11 的统计过期问题）
 - **autovacuum**：后台自动执行 VACUUM/ANALYZE 的守护进程——绝大多数场景靠它，手动是补充或替代（官方原文）
 
-:::tip 与渡一课程的关系
-
+<Admonition type="tip" title="与渡一课程的关系">
 渡一《数据库》的 DDL 课提过「DELETE 后表没变小（MVCC 死元组）」，本节是**官方 §24.1 的系统化展开**：为什么必须 VACUUM、四种职责、FULL 的代价。
-
-:::
+</Admonition>
 
 ## 官方原文
 

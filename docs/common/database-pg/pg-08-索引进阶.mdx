@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §11：部分索引（排除常见�
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 索引进阶" desc="部分索引只索引有价值的行；多列索引靠最左前缀生效——渡一索引课的官方进阶。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §11.8「部分索引」与 §11.3「多列索引」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/indexes-partial.html) / [官方英文版](https://www.postgresql.org/docs/current/indexes-partial.html)）。
-
-:::
+</Admonition>
 
 ## 部分索引：只索引一个子集
 
@@ -45,11 +44,9 @@ WHERE NOT (client_ip > inet '192.168.100.0' AND client_ip < inet '192.168.100.25
 - 多列 B-tree 可服务「索引列任意子集」的查询，但**对前导（最左侧）列有约束时效率最高**——这就是"最左前缀"的官方出处
 - **INCLUDE 列**：非关键列挂在索引里（仅 B-tree）——覆盖查询（Index Only Scan）免回表，又不参与索引排序
 
-:::tip 与渡一课程的关系
-
+<Admonition type="tip" title="与渡一课程的关系">
 渡一《数据库》的索引课讲了 B+ 树原理、回表与最左前缀基础；本节是**官方进阶**：部分索引（排除常见值）、多列索引官方规则（32 列上限、INCLUDE）。
-
-:::
+</Admonition>
 
 ## 官方原文
 

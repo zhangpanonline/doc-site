@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §14.1：查询计划与规划器、
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ EXPLAIN 进阶与查询优化" desc="读查询计划的艺术：估算 vs 实际、EXPLAIN ANALYZE 的用法、统计信息是怎么来的。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §14.1「使用 EXPLAIN」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/using-explain.html) / [官方英文版](https://www.postgresql.org/docs/current/using-explain.html)）。
-
-:::
+</Admonition>
 
 ## 查询计划与规划器（官方定位）
 
@@ -43,11 +42,9 @@ WHERE t1.unique1 < 10 AND t1.unique2 = t2.unique2;
 
 所以：估算行数（rows）与实际行数（actual rows）出现几倍偏差是常态——真正要看的是**数量级**是否对得上（估算 10 行实际 10 万行，说明统计信息过期，该 `ANALYZE` 表了）。
 
-:::tip 与渡一课程的关系
-
+<Admonition type="tip" title="与渡一课程的关系">
 渡一《数据库》的索引课用 EXPLAIN 验证过索引命中；本节是官方 §14.1 的**系统化进阶**：规划器/估算/ANALYZE 对照/统计信息——查询优化的完整方法论入口。
-
-:::
+</Admonition>
 
 ## 官方原文
 

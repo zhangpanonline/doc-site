@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §7：标量/相关子查询、EXIST
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 子查询与集合运算" desc="查询里嵌套查询，查询之间做并交差——复杂报表的两种核心拼装方式。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §7.2「表表达式」（子查询部分）与 §7.4「组合查询」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/queries-table-expressions.html) / [官方英文版](https://www.postgresql.org/docs/current/queries-table-expressions.html)）。
-
-:::
+</Admonition>
 
 ## 子查询：查询里嵌套查询
 
@@ -43,11 +42,9 @@ query1 EXCEPT [ALL] query2     -- 差：query1 有而 query2 没有的行
 - **EXCEPT**：差集（query1 独有的行），同样默认去重
 - **并操作兼容**（官方硬性要求）：两个查询必须**返回相同数量的列，且对应列类型兼容**——列数不同或类型不兼容直接报错
 
-:::tip 与渡一课程的关系
-
+<Admonition type="tip" title="与渡一课程的关系">
 渡一《数据库》的 DML 课讲了 WHERE/HAVING/JOIN 基础；本节的**子查询（标量/相关/EXISTS）与集合运算**是官方 §7 的进阶内容，面试高频（NOT IN 陷阱、IN vs EXISTS 选型、UNION 与 UNION ALL 取舍）。
-
-:::
+</Admonition>
 
 ## 官方原文
 

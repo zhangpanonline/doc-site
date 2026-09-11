@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §6：RETURNING 子句（拿回修�
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ RETURNING 与 UPSERT" desc="一条语句完成「改 + 拿回结果」与「有则更新、无则插入」——PG 数据操纵的两个杀手锏。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §6.4「从修改的行中返回数据」与 INSERT 命令参考的 ON CONFLICT 子句（[postgres.cn 中文版](http://www.postgres.cn/docs/current/dml-returning.html) / [官方英文版](https://www.postgresql.org/docs/current/dml-returning.html)）。
-
-:::
+</Admonition>
 
 ## RETURNING：改完直接拿回结果
 
@@ -47,11 +46,9 @@ DO UPDATE SET name = EXCLUDED.name, updated_at = now();
 - **DO UPDATE SET**：冲突就更新。`SET` 支持表达式、`DEFAULT`、子查询、`ROW` 批量赋值；**`EXCLUDED`** 引用「本应插入的那行」的值
 - 精细控制：`DO UPDATE ... WHERE 条件`——只在满足条件时才更新（如"仅当新值更大才覆盖"）
 
-:::tip 与渡一课程的关系
-
+<Admonition type="tip" title="与渡一课程的关系">
 渡一《数据库》的 DML 课讲了 INSERT/UPDATE/DELETE 基础；本节是其**进阶**——RETURNING 与 UPSERT 是官方文档独有、且面试高频的内容。
-
-:::
+</Admonition>
 
 ## 官方原文
 

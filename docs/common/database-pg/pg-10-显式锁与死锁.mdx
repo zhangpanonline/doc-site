@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §13.3：表级/行级锁模式、pg
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 显式锁与死锁" desc="MVCC 覆盖不了的场景用显式锁；死锁的成因、观察与规避——事务课的官方进阶。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §13.3「显式锁定」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/explicit-locking.html) / [官方英文版](https://www.postgresql.org/docs/current/explicit-locking.html)）。
-
-:::
+</Admonition>
 
 ## 为什么需要显式锁（官方定位）
 
@@ -40,11 +39,9 @@ import {CommonBanner} from '@site/src/components/CourseUI';
 - 预防：**一致的加锁顺序**（所有事务按相同顺序获取锁）、缩短事务、减少锁的持有时间
 - 应用侧处理：捕获死锁错误并**重试**（死锁是并发系统的正常现象，重试是标准应对）
 
-:::tip 与渡一课程的关系
-
+<Admonition type="tip" title="与渡一课程的关系">
 渡一《数据库》的事务课讲了隔离级别；本节的**显式锁与死锁**是官方 §13.3 的进阶：什么时候必须 FOR UPDATE、死锁怎么观察与规避。
-
-:::
+</Admonition>
 
 ## 官方原文
 

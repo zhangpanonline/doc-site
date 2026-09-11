@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方教程 §1.2 拓展：客户端/服务器模型�
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 架构基础" desc="客户端/服务器模型、postgres 守护进程、每连接一个进程——理解 PG 一切行为的入口。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方教程 §1.2「架构基础」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/tutorial-arch.html) / [官方英文版](https://www.postgresql.org/docs/current/tutorial-arch.html)）。
-
-:::
+</Admonition>
 
 ## 客户端/服务器模型
 
@@ -24,11 +23,9 @@ PostgreSQL 使用 **客户端/服务器（C/S）模型**。一次会话由两类
 
 客户端与服务器可以部署在**不同主机**上，此时通过 **TCP/IP** 网络连接通信。同机部署时通常走 Unix 域套接字（更快）。
 
-:::warning 文件可见性陷阱
-
+<Admonition type="warning" title="文件可见性陷阱">
 客户端与服务器分机部署时，**客户机上能访问的文件，服务器机器上未必能访问**。凡是由服务器读取/写入文件的操作（如 `COPY ... FROM '/path'`、导入导出），路径都以**服务器所在机器**为准——这是跨机环境最常见的排查坑。
-
-:::
+</Admonition>
 
 ## 进程模型：每连接一个进程
 

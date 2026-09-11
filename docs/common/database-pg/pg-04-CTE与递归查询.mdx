@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §7.8：WITH 辅助语句、递归 C
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ CTE 与递归查询" desc="WITH 让复杂查询可读可复用；WITH RECURSIVE 用一条 SQL 遍历整棵树。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §7.8「WITH 查询」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/queries-with.html) / [官方英文版](https://www.postgresql.org/docs/current/queries-with.html)）。
-
-:::
+</Admonition>
 
 ## WITH：给查询起名字
 
@@ -44,11 +43,9 @@ SELECT sum(n) FROM t;                           -- 5050
 
 官方特别提醒：RECURSIVE 在内部是**迭代评估**的；递归查询通常用于处理**分层或树形结构**数据——官方原例是 BOM 部件展开（查一个产品的所有直接和间接子部件）。
 
-:::warning UNION ALL 与终止条件
-
+<Admonition type="warning" title="UNION ALL 与终止条件">
 用 **UNION ALL** 时不去重——如果递归项没有有效的终止条件（WHERE 无输出才停止），查询会**无限循环**直到资源耗尽。递归 CTE 必须有明确的终止条件。
-
-:::
+</Admonition>
 
 ## 与渡一课程的关系
 

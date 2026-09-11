@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §12：tsvector/tsquery 与 @@ 匹�
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 全文检索" desc="PG 内置全文检索：tsvector 存词位、tsquery 存查询、@@ 匹配、GIN 加速。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §12「全文检索」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/textsearch-intro.html) / [官方英文版](https://www.postgresql.org/docs/current/textsearch-intro.html)）。
-
-:::
+</Admonition>
 
 ## 全文检索的组成（官方介绍）
 
@@ -49,11 +48,9 @@ SELECT to_tsvector('english', 'The quick brown fox')
 - 索引：`CREATE INDEX ON t USING gin(to_tsvector('english', body));`——查询侧必须用**完全相同**的表达式才能命中
 - 中文分词需要 `pg_jieba`/`zhparser` 等扩展（内置解析器主要面向空格分词语言）
 
-:::tip 与渡一课程的关系
-
+<Admonition type="tip" title="与渡一课程的关系">
 渡一《数据库》课程未覆盖全文检索——本节为纯增量内容。搜索功能（文章/商品/日志检索）不再需要外挂 Elasticsearch 的轻量场景，PG 内置方案即可。
-
-:::
+</Admonition>
 
 ## 官方原文
 

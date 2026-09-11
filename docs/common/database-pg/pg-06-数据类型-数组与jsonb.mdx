@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §8：数组类型的定义与查询
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 数据类型 · 数组与 jsonb" desc="PG 的两大王牌：原生数组列与可索引的 jsonb——文档型需求不再需要 MongoDB。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 §8.14「数组」与 §8.16「JSON 类型」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/arrays.html) / [官方英文版](https://www.postgresql.org/docs/current/arrays.html)）。
-
-:::
+</Admonition>
 
 ## 数组：类型名加方括号
 
@@ -45,11 +44,9 @@ CREATE TABLE sal_emp (
 
 配合 GIN 索引与包含查询（`@>`），jsonb 可以高效回答"哪些文档包含某字段"——这就是 PG 常被用作文档数据库的原因。
 
-:::tip 与渡一课程的关系
-
+<Admonition type="tip" title="与渡一课程的关系">
 渡一《数据库》课程未覆盖数组与 JSON 类型——本节为纯增量内容。RAG/Agent 应用里元数据、配置、灵活字段存 jsonb 是主流实践。
-
-:::
+</Admonition>
 
 ## 官方原文
 

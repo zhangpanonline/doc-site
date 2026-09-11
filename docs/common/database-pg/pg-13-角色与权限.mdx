@@ -5,15 +5,14 @@ description: 'PostgreSQL 官方文档拓展 §5.7/GRANT：GRANT 两种变体、P
 displayed_sidebar: common
 ---
 
+import Admonition from '@theme/Admonition';
 import {CommonBanner} from '@site/src/components/CourseUI';
 
 <CommonBanner title="🗄️ 角色与权限" desc="谁能看什么、谁能改什么——GRANT 的两种变体 + 行级安全 RLS 的多租户隔离。" />
 
-:::note 🔖 来源声明
-
+<Admonition type="note" title="🔖 来源声明">
 本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 GRANT 命令参考与 §5.8「行安全策略」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/sql-grant.html) / [官方英文版](https://www.postgresql.org/docs/current/sql-grant.html)）。
-
-:::
+</Admonition>
 
 ## GRANT：两种变体（官方）
 
@@ -46,11 +45,9 @@ CREATE POLICY tenant_isolation ON orders
   USING (tenant_id = current_setting('app.tenant_id')::int);
 ```
 
-:::tip 与渡一课程的关系
-
+<Admonition type="tip" title="与渡一课程的关系">
 渡一《数据库》课程未覆盖权限与 RLS——本节为纯增量内容。SaaS 多租户、数据隔离面试题的官方标准答案都在这。
-
-:::
+</Admonition>
 
 ## 官方原文
 
