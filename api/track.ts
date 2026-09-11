@@ -1,3 +1,4 @@
+import {randomUUID} from 'node:crypto';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {getSupabaseAdmin} from '../lib/supabase-admin';
 
@@ -37,9 +38,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // body 解析失败时按根路径记录
   }
 
+  // 访客去重：匿名 visitor_id cookie（一年有效）。代理换 IP 时同一访客不虚增
+  let visitorId = req.cookies?.visitor_id as string | undefined;
+  if (!visitorId) {
+    visitorId = randomUUID();
+    res.setHeader('Set-Cookie', `visitor_id=${visitorId}; Max-Age=31536000; Path=/; SameSite=Lax`);
+  }
+
   try {
     await getSupabaseAdmin().from('visits').insert({
       ip,
+      visitor_id: visitorId,
       country: req.headers['x-vercel-ip-country'] ?? null,
       region: req.headers['x-vercel-ip-country-region'] ?? null,
       city: req.headers['x-vercel-ip-city'] ?? null,

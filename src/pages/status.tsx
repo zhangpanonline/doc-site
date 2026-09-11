@@ -16,6 +16,7 @@ type Region = {region: string; count: number};
 type IpRow = {
   ip: string;
   count: number;
+  visitors: number;
   first: string;
   last: string;
   last7: number;
@@ -26,12 +27,14 @@ type IpRow = {
   os: string;
 };
 type PathRow = {path: string; count: number; last?: string};
-type ProvinceStat = {region: string; count: number; ips: number};
+type ProvinceStat = {region: string; count: number; ips: number; visitors: number};
 type Stats = {
   total: number;
   unique_ips: number;
+  unique_visitors?: number;
   today: number;
   new_ips_today?: number;
+  new_visitors_today?: number;
   new_regions_today?: number;
   daily: DailyPoint[];
   regions?: Region[];
@@ -173,6 +176,14 @@ function Kpi({stats}: {stats: Stats}) {
       delta:
         stats.new_ips_today != null && stats.new_ips_today > 0
           ? {text: `+${fmt(stats.new_ips_today)} 较昨日`, up: true}
+          : undefined,
+    },
+    {
+      label: '独立访客',
+      value: fmt(stats.unique_visitors ?? stats.unique_ips),
+      delta:
+        stats.new_visitors_today != null && stats.new_visitors_today > 0
+          ? {text: `+${fmt(stats.new_visitors_today)} 较昨日`, up: true}
           : undefined,
     },
     {
@@ -433,7 +444,7 @@ function Paths({paths}: {paths: PathRow[]}) {
   );
 }
 
-type SortKey = 'ip' | 'geo' | 'browser' | 'app' | 'os' | 'count' | 'last7' | 'freq' | 'first' | 'last';
+type SortKey = 'ip' | 'geo' | 'browser' | 'app' | 'os' | 'count' | 'visitors' | 'last7' | 'freq' | 'first' | 'last';
 
 /* ---------- 中国地图 ---------- */
 
@@ -444,9 +455,14 @@ const PROVINCES_BY_KEY = new Map(CHINA_PROVINCES.map(p => [stripSuffix(p.name), 
 
 /** 中国地图：省份按访问量着朱砂色阶（越深越多），图上只标数字，悬停浮窗展示详情 */
 function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total: number}) {
-  const [hover, setHover] = useState<{x: number; y: number; name: string; count: number; ips: number} | null>(
-    null,
-  );
+  const [hover, setHover] = useState<{
+    x: number;
+    y: number;
+    name: string;
+    count: number;
+    ips: number;
+    visitors: number;
+  } | null>(null);
   const max = Math.max(1, ...provinceStats.map(p => p.count));
   // 对数分档：访问量长尾分布下色阶更均匀
   const scale = (c: number) => (c <= 0 ? -1 : Math.min(4, Math.floor((Math.log(c) / Math.log(max)) * 5)));
@@ -494,12 +510,12 @@ function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total:
                 aria-label={stat ? `${zh}：${stat.count} 次` : `${zh}：暂无数据`}
                 onMouseEnter={() => {
                   if (stat) {
-                    setHover({x: p.cx, y: p.cy, name: zh, count: stat.count, ips: stat.ips});
+                    setHover({x: p.cx, y: p.cy, name: zh, count: stat.count, ips: stat.ips, visitors: stat.visitors});
                   }
                 }}
                 onFocus={() => {
                   if (stat) {
-                    setHover({x: p.cx, y: p.cy, name: zh, count: stat.count, ips: stat.ips});
+                    setHover({x: p.cx, y: p.cy, name: zh, count: stat.count, ips: stat.ips, visitors: stat.visitors});
                   }
                 }}
                 onMouseLeave={() => setHover(null)}
@@ -540,6 +556,7 @@ function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total:
               {hover.name} · {fmt(hover.count)} 次
             </strong>
             <span>独立 IP：{fmt(hover.ips)}</span>
+            <span>独立访客：{fmt(hover.visitors ?? 0)}</span>
             <span>占总访问：{total > 0 ? ((hover.count / total) * 100).toFixed(1) : '0.0'}%</span>
           </div>
         )}
@@ -581,6 +598,8 @@ function IpTable({ips}: {ips: IpRow[]}) {
           return r.os;
         case 'count':
           return r.count;
+        case 'visitors':
+          return r.visitors ?? 0;
         case 'last7':
           return r.last7;
         case 'freq':
@@ -604,7 +623,7 @@ function IpTable({ips}: {ips: IpRow[]}) {
     setSort(s =>
       s.key === key
         ? {key, dir: s.dir === 1 ? -1 : 1}
-        : {key, dir: key === 'count' || key === 'last7' || key === 'freq' || key === 'last' ? -1 : 1},
+        : {key, dir: key === 'count' || key === 'visitors' || key === 'last7' || key === 'freq' || key === 'last' ? -1 : 1},
     );
   };
 
@@ -642,6 +661,7 @@ function IpTable({ips}: {ips: IpRow[]}) {
                   <Th k="app" label="应用" />
                   <Th k="os" label="系统" />
                   <Th k="count" label="次数" align="num" />
+                  <Th k="visitors" label="访客数" align="num" />
                   <Th k="last7" label="近 7 天" align="num" />
                   <Th k="freq" label="频率（次/天）" align="num" />
                   <Th k="first" label="首次访问" align="num" />
@@ -659,6 +679,7 @@ function IpTable({ips}: {ips: IpRow[]}) {
                       <td>{r.app}</td>
                       <td>{r.os}</td>
                       <td className="num">{fmt(r.count)}</td>
+                      <td className="num">{fmt(r.visitors ?? 0)}</td>
                       <td className="num">{fmt(r.last7)}</td>
                       <td className="num">{r.count <= 1 ? '—' : freqOf(r).toFixed(1)}</td>
                       <td className="num">{fmtClock(r.first)}</td>
