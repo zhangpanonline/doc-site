@@ -20,8 +20,10 @@ as $$
     from day_bounds b
     cross join generate_series(0, p_days - 1) as g(i)
     left join public.visits v
-      on v.created_at >= (b.today - (p_days - 1) + g.i) at time zone 'Asia/Shanghai'
-     and v.created_at <  ((b.today - (p_days - 1) + g.i) + 1) at time zone 'Asia/Shanghai'
+      -- 注意：date AT TIME ZONE 会先把 date 转成 UTC 零点再换时区（边界整体 +8h 错位）；
+      -- 必须显式 ::timestamp 后再 AT TIME ZONE，才是「上海零点」的正确瞬间
+      on v.created_at >= ((b.today - (p_days - 1) + g.i)::timestamp) at time zone 'Asia/Shanghai'
+     and v.created_at <  ((b.today - (p_days - 1) + g.i + 1)::timestamp) at time zone 'Asia/Shanghai'
     group by 1
   ),
   regions as (
@@ -82,26 +84,26 @@ as $$
     'unique_ips', (select count(distinct ip)::int from public.visits),
     'unique_visitors', (select count(distinct coalesce(visitor_id, 'ip:' || ip))::int from public.visits),
     'today',      (select count(*)::int from public.visits
-                   where created_at >= date_trunc('day', now() at time zone 'Asia/Shanghai')),
+                   where created_at >= (date_trunc('day', now() at time zone 'Asia/Shanghai')) at time zone 'Asia/Shanghai'),
     'new_ips_today', (
       select count(*)::int from (
         select 1 from public.visits
         group by ip
-        having min(created_at) >= date_trunc('day', now() at time zone 'Asia/Shanghai')
+        having min(created_at) >= (date_trunc('day', now() at time zone 'Asia/Shanghai')) at time zone 'Asia/Shanghai'
       ) t
     ),
     'new_visitors_today', (
       select count(*)::int from (
         select 1 from public.visits
         group by coalesce(visitor_id, 'ip:' || ip)
-        having min(created_at) >= date_trunc('day', now() at time zone 'Asia/Shanghai')
+        having min(created_at) >= (date_trunc('day', now() at time zone 'Asia/Shanghai')) at time zone 'Asia/Shanghai'
       ) t
     ),
     'new_regions_today', (
       select count(*)::int from (
         select 1 from public.visits
         group by coalesce(region, '未知')
-        having min(created_at) >= date_trunc('day', now() at time zone 'Asia/Shanghai')
+        having min(created_at) >= (date_trunc('day', now() at time zone 'Asia/Shanghai')) at time zone 'Asia/Shanghai'
       ) t
     ),
     'daily',      (select coalesce(jsonb_agg(jsonb_build_object('date', d, 'count', c) order by d), '[]'::jsonb) from daily),

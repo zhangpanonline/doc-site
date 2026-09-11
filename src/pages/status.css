@@ -235,8 +235,7 @@
 }
 
 .trend-tooltip {
-  position: absolute;
-  transform: translate(-50%, -100%);
+  position: fixed;
   pointer-events: none;
   background: var(--tooltip-bg);
   color: var(--tooltip-ink);
@@ -492,8 +491,7 @@ tr:last-child td {
 }
 
 .map-tooltip {
-  position: absolute;
-  transform: translate(-50%, -115%);
+  position: fixed;
   pointer-events: none;
   background: var(--tooltip-bg);
   color: var(--tooltip-ink);

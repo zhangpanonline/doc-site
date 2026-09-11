@@ -1,6 +1,7 @@
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {getSupabaseAdmin} from '../lib/supabase-admin';
 import {parseUA} from '../lib/ua';
+import {enrichGeo} from '../lib/geo';
 
 function firstHeader(v: string | string[] | undefined): string {
   return Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
@@ -21,6 +22,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const ip =
     firstHeader(req.headers['x-real-ip']) ||
     firstHeader(req.headers['x-forwarded-for']).split(',')[0].trim();
+
+  // 与 track 一致：Vercel 头缺省/市时用第三方补齐（按 IP 缓存 30 天）
+  let region = (req.headers['x-vercel-ip-country-region'] as string) ?? null;
+  let city = (req.headers['x-vercel-ip-city'] as string) ?? null;
+  if (!region || !city) {
+    const geo = await enrichGeo(ip);
+    region = region ?? geo.region;
+    city = city ?? geo.city;
+  }
 
   let history: {count: number; last7: number; first: string; last: string} | null = null;
   try {
@@ -46,8 +56,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   return res.status(200).json({
     ip,
     country: req.headers['x-vercel-ip-country'] ?? null,
-    region: req.headers['x-vercel-ip-country-region'] ?? null,
-    city: req.headers['x-vercel-ip-city'] ?? null,
+    region,
+    city,
     ...parseUA(ua),
     history,
   });

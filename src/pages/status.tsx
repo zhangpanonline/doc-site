@@ -219,7 +219,7 @@ function Kpi({stats}: {stats: Stats}) {
 
 /** 近 30 天访问趋势：单序列折线 + 十字准星 tooltip（悬停/键盘焦点均可） */
 function TrendChart({daily}: {daily: DailyPoint[]}) {
-  const [hover, setHover] = useState<number | null>(null);
+  const [hover, setHover] = useState<{idx: number; cx: number; cy: number} | null>(null);
 
   if (daily.length === 0) {
     return (
@@ -273,7 +273,7 @@ function TrendChart({daily}: {daily: DailyPoint[]}) {
               const rect = e.currentTarget.getBoundingClientRect();
               const px = ((e.clientX - rect.left) / rect.width) * W;
               const idx = Math.max(0, Math.min(n - 1, Math.round((px - padL) / step)));
-              setHover(idx);
+              setHover({idx, cx: e.clientX, cy: e.clientY});
             }}
             onMouseLeave={() => setHover(null)}>
             {/* 网格线：一步离表面的灰色，1px 实线 */}
@@ -321,10 +321,10 @@ function TrendChart({daily}: {daily: DailyPoint[]}) {
             {/* 十字准星 + 悬停点 */}
             {hover !== null && (
               <g>
-                <line x1={x(hover)} y1={padT} x2={x(hover)} y2={baseline} stroke="var(--text-muted)" strokeWidth="1" />
+                <line x1={x(hover.idx)} y1={padT} x2={x(hover.idx)} y2={baseline} stroke="var(--text-muted)" strokeWidth="1" />
                 <circle
-                  cx={x(hover)}
-                  cy={y(daily[hover].count)}
+                  cx={x(hover.idx)}
+                  cy={y(daily[hover.idx].count)}
                   r="4.5"
                   fill="var(--series-1)"
                   stroke="var(--surface-1)"
@@ -344,7 +344,10 @@ function TrendChart({daily}: {daily: DailyPoint[]}) {
                 tabIndex={0}
                 role="img"
                 aria-label={`${fmtDay(d.date)}：${fmt(d.count)} 次`}
-                onFocus={() => setHover(i)}
+                onFocus={e => {
+                  const r = e.currentTarget.getBoundingClientRect();
+                  setHover({idx: i, cx: r.left + r.width / 2, cy: r.top + r.height / 2});
+                }}
                 onBlur={() => setHover(null)}
               />
             ))}
@@ -354,11 +357,11 @@ function TrendChart({daily}: {daily: DailyPoint[]}) {
               className="trend-tooltip"
               role="status"
               style={{
-                left: `${Math.min(94, Math.max(6, (x(hover) / W) * 100))}%`,
-                top: `${(y(daily[hover].count) / H) * 100}%`,
+                left: Math.min(hover.cx + 14, window.innerWidth - 190),
+                top: Math.max(8, hover.cy - 14),
               }}>
-              <strong>{fmt(daily[hover].count)} 次</strong>
-              <span>{fmtDay(daily[hover].date)}</span>
+              <strong>{fmt(daily[hover.idx].count)} 次</strong>
+              <span>{fmtDay(daily[hover.idx].date)}</span>
             </div>
           )}
         </div>
@@ -456,8 +459,8 @@ const PROVINCES_BY_KEY = new Map(CHINA_PROVINCES.map(p => [stripSuffix(p.name), 
 /** 中国地图：省份按访问量着朱砂色阶（越深越多），图上只标数字，悬停浮窗展示详情 */
 function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total: number}) {
   const [hover, setHover] = useState<{
-    x: number;
-    y: number;
+    cx: number;
+    cy: number;
     name: string;
     count: number;
     ips: number;
@@ -494,10 +497,7 @@ function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total:
           role="img"
           aria-label="中国省份访问量地图"
           onMouseMove={e => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            setHover(h =>
-              h ? {...h, x: ((e.clientX - rect.left) / rect.width) * 720, y: ((e.clientY - rect.top) / rect.height) * 470} : h,
-            );
+            setHover(h => (h ? {...h, cx: e.clientX, cy: e.clientY} : h));
           }}>
           {CHINA_PROVINCES.map(p => {
             const zh = stripSuffix(p.name);
@@ -512,14 +512,30 @@ function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total:
                 fillRule="evenodd"
                 tabIndex={0}
                 aria-label={stat ? `${zh}：${stat.count} 次` : `${zh}：暂无数据`}
-                onMouseEnter={() => {
+                onMouseEnter={e => {
                   if (stat) {
-                    setHover({x: p.cx, y: p.cy, name: zh, count: stat.count, ips: stat.ips, visitors: stat.visitors});
+                    const r = e.currentTarget.ownerSVGElement?.getBoundingClientRect();
+                    setHover({
+                      cx: r ? r.left + (p.cx / 720) * r.width : p.cx,
+                      cy: r ? r.top + (p.cy / 470) * r.height : p.cy,
+                      name: zh,
+                      count: stat.count,
+                      ips: stat.ips,
+                      visitors: stat.visitors,
+                    });
                   }
                 }}
-                onFocus={() => {
+                onFocus={e => {
                   if (stat) {
-                    setHover({x: p.cx, y: p.cy, name: zh, count: stat.count, ips: stat.ips, visitors: stat.visitors});
+                    const r = e.currentTarget.ownerSVGElement?.getBoundingClientRect();
+                    setHover({
+                      cx: r ? r.left + (p.cx / 720) * r.width : p.cx,
+                      cy: r ? r.top + (p.cy / 470) * r.height : p.cy,
+                      name: zh,
+                      count: stat.count,
+                      ips: stat.ips,
+                      visitors: stat.visitors,
+                    });
                   }
                 }}
                 onMouseLeave={() => setHover(null)}
@@ -553,8 +569,8 @@ function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total:
             className="map-tooltip"
             role="status"
             style={{
-              left: `${Math.min(94, Math.max(6, (hover.x / 720) * 100))}%`,
-              top: `${(hover.y / 470) * 100}%`,
+              left: Math.min(hover.cx + 14, window.innerWidth - 240),
+              top: Math.max(8, hover.cy + 14),
             }}>
             <strong>
               {hover.name} · {fmt(hover.count)} 次
