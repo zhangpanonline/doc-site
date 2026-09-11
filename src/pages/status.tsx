@@ -1,5 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import Layout from '@theme/Layout';
+import {regionZh} from '../../lib/regions';
+import {CHINA_PROVINCES, CHINA_VIEWBOX} from '../components/chinaMap';
 import './status.css';
 
 /**
@@ -23,7 +25,8 @@ type IpRow = {
   app: string;
   os: string;
 };
-type PathRow = {path: string; count: number};
+type PathRow = {path: string; count: number; last?: string};
+type ProvinceStat = {region: string; count: number; ips: number};
 type Stats = {
   total: number;
   unique_ips: number;
@@ -34,6 +37,7 @@ type Stats = {
   regions?: Region[];
   browsers?: {browser: string; count: number}[];
   oss?: {os: string; count: number}[];
+  province_stats?: ProvinceStat[];
   /** 旧版 SQL（003 之前）的兼容字段，regions 缺失时兜底 */
   countries?: {country: string; count: number; regions: {region: string; count: number}[]}[];
   ips: IpRow[];
@@ -398,7 +402,7 @@ function BarList({title, items}: {title: string; items: {name: string; count: nu
 function Paths({paths}: {paths: PathRow[]}) {
   return (
     <section className="card">
-      <h2>访问路径 Top {paths.length}</h2>
+      <h2>最近访问路径 Top {paths.length}</h2>
       {paths.length === 0 ? (
         <p className="empty">暂无数据</p>
       ) : (
@@ -408,6 +412,7 @@ function Paths({paths}: {paths: PathRow[]}) {
               <tr>
                 <th>路径</th>
                 <th className="num">次数</th>
+                <th className="num">最近访问</th>
               </tr>
             </thead>
             <tbody>
@@ -417,6 +422,7 @@ function Paths({paths}: {paths: PathRow[]}) {
                     <a href={p.path}>{p.path}</a>
                   </td>
                   <td className="num">{fmt(p.count)}</td>
+                  <td className="num">{p.last ? fmtClock(p.last) : '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -428,6 +434,119 @@ function Paths({paths}: {paths: PathRow[]}) {
 }
 
 type SortKey = 'ip' | 'geo' | 'browser' | 'app' | 'os' | 'count' | 'last7' | 'freq' | 'first' | 'last';
+
+/* ---------- 中国地图 ---------- */
+
+const stripSuffix = (name: string) =>
+  name.replace(/(壮族自治区|回族自治区|维吾尔自治区|特别行政区|自治区|省|市)$/, '');
+
+const PROVINCES_BY_KEY = new Map(CHINA_PROVINCES.map(p => [stripSuffix(p.name), p]));
+
+/** 中国地图：省份按访问量着朱砂色阶（越深越多），图上只标数字，悬停浮窗展示详情 */
+function ChinaMap({provinceStats, total}: {provinceStats: ProvinceStat[]; total: number}) {
+  const [hover, setHover] = useState<{x: number; y: number; name: string; count: number; ips: number} | null>(
+    null,
+  );
+  const max = Math.max(1, ...provinceStats.map(p => p.count));
+  // 对数分档：访问量长尾分布下色阶更均匀
+  const scale = (c: number) => (c <= 0 ? -1 : Math.min(4, Math.floor((Math.log(c) / Math.log(max)) * 5)));
+
+  const statsByName = new Map<string, ProvinceStat>();
+  for (const p of provinceStats) {
+    if (p.region === '未知') {
+      continue;
+    }
+    const zh = regionZh(p.region);
+    if (!statsByName.has(zh)) {
+      statsByName.set(zh, p);
+    }
+  }
+
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h2>省份访问地图</h2>
+        <span className="card-note">颜色越深访问越多 · 悬停/聚焦查看详情</span>
+      </div>
+      <div className="china-map">
+        <svg
+          viewBox={CHINA_VIEWBOX}
+          role="img"
+          aria-label="中国省份访问量地图"
+          onMouseMove={e => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setHover(h =>
+              h ? {...h, x: ((e.clientX - rect.left) / rect.width) * 720, y: ((e.clientY - rect.top) / rect.height) * 470} : h,
+            );
+          }}>
+          {CHINA_PROVINCES.map(p => {
+            const zh = stripSuffix(p.name);
+            const stat = statsByName.get(zh);
+            const step = scale(stat?.count ?? 0);
+            return (
+              <path
+                key={p.name}
+                className="map-path"
+                d={p.d}
+                fill={step < 0 ? 'var(--map-neutral)' : `var(--map-ramp-${step})`}
+                fillRule="evenodd"
+                tabIndex={0}
+                aria-label={stat ? `${zh}：${stat.count} 次` : `${zh}：暂无数据`}
+                onMouseEnter={() => {
+                  if (stat) {
+                    setHover({x: p.cx, y: p.cy, name: zh, count: stat.count, ips: stat.ips});
+                  }
+                }}
+                onFocus={() => {
+                  if (stat) {
+                    setHover({x: p.cx, y: p.cy, name: zh, count: stat.count, ips: stat.ips});
+                  }
+                }}
+                onMouseLeave={() => setHover(null)}
+                onBlur={() => setHover(null)}
+              />
+            );
+          })}
+          {CHINA_PROVINCES.map(p => {
+            const stat = statsByName.get(stripSuffix(p.name));
+            if (!stat || stat.count <= 0) {
+              return null;
+            }
+            const step = scale(stat.count);
+            return (
+              <text
+                key={p.name}
+                x={p.cx}
+                y={p.cy}
+                className="map-label"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill={step >= 3 ? 'var(--map-label-on-strong)' : 'var(--text-primary)'}
+                aria-hidden="true">
+                {stat.count}
+              </text>
+            );
+          })}
+        </svg>
+        {hover && (
+          <div
+            className="map-tooltip"
+            role="status"
+            style={{
+              left: `${Math.min(94, Math.max(6, (hover.x / 720) * 100))}%`,
+              top: `${(hover.y / 470) * 100}%`,
+            }}>
+            <strong>
+              {hover.name} · {fmt(hover.count)} 次
+            </strong>
+            <span>独立 IP：{fmt(hover.ips)}</span>
+            <span>占总访问：{total > 0 ? ((hover.count / total) * 100).toFixed(1) : '0.0'}%</span>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
 /** 表头排序图标：上下两个小三角，激活方向高亮 */
 function SortIcon({dir}: {dir: 1 | -1 | 0}) {
@@ -531,7 +650,7 @@ function IpTable({ips}: {ips: IpRow[]}) {
               </thead>
               <tbody>
                 {visible.map(r => {
-                  const geo = [r.region, r.city].filter(Boolean).join(' / ') || '未知';
+                  const geo = [regionZh(r.region), regionZh(r.city)].filter(Boolean).join(' / ') || '未知';
                   return (
                     <tr key={r.ip}>
                       <td className="mono">{r.ip}</td>
@@ -616,7 +735,7 @@ export default function StatusPage(): React.JSX.Element {
               </span>
               <span className="whoami-item">
                 <label>地区</label>
-                <b>{[whoami.region, whoami.city].filter(Boolean).join(' / ') || '未知'}</b>
+                <b>{[regionZh(whoami.region), regionZh(whoami.city)].filter(Boolean).join(' / ') || '未知'}</b>
               </span>
               <span className="whoami-item">
                 <label>浏览器</label>
@@ -695,21 +814,22 @@ export default function StatusPage(): React.JSX.Element {
             <Kpi stats={stats} />
             <TrendChart daily={stats.daily} />
             <div className="status-grid">
-              <BarList
-                title="地区分布"
-                items={(stats.regions ?? (stats.countries ?? []).flatMap(c => c.regions ?? [])).map(r => ({
-                  name: r.region,
-                  count: r.count,
-                }))}
-              />
+              <BarList title="系统分布" items={(stats.oss ?? []).map(o => ({name: o.os, count: o.count}))} />
               <BarList
                 title="浏览器分布"
                 items={(stats.browsers ?? []).map(b => ({name: b.browser, count: b.count}))}
               />
-              <BarList title="系统分布" items={(stats.oss ?? []).map(o => ({name: o.os, count: o.count}))} />
+              <BarList
+                title="地区分布"
+                items={(stats.regions ?? (stats.countries ?? []).flatMap(c => c.regions ?? [])).map(r => ({
+                  name: regionZh(r.region),
+                  count: r.count,
+                }))}
+              />
               <Paths paths={stats.paths} />
             </div>
             <IpTable ips={stats.ips} />
+            <ChinaMap provinceStats={stats.province_stats ?? []} total={stats.total} />
           </div>
         )}
       </main>

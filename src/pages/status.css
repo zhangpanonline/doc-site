@@ -17,6 +17,14 @@
   --tooltip-bg: #20201f;
   --tooltip-ink: #ffffff;
   --tooltip-sub: #c3c2b7;
+  /* 省份地图朱砂色阶（已校验：序数色阶，最浅端 ≥2:1，单调明度） */
+  --map-ramp-0: #d9a98a;
+  --map-ramp-1: #c3815a;
+  --map-ramp-2: #a85a35;
+  --map-ramp-3: #873d1d;
+  --map-ramp-4: #6b2c10;
+  --map-neutral: #ecebe4;
+  --map-label-on-strong: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,6 +43,13 @@
     --tooltip-bg: #f5f5f2;
     --tooltip-ink: #0b0b0b;
     --tooltip-sub: #52514e;
+    --map-ramp-0: #6b4a2d;
+    --map-ramp-1: #8a5a32;
+    --map-ramp-2: #a86b3a;
+    --map-ramp-3: #c67f45;
+    --map-ramp-4: #e8976a;
+    --map-neutral: #2c2c2a;
+    --map-label-on-strong: #1a1a19;
   }
 }
 
@@ -53,6 +68,13 @@
   --tooltip-bg: #f5f5f2;
   --tooltip-ink: #0b0b0b;
   --tooltip-sub: #52514e;
+  --map-ramp-0: #6b4a2d;
+  --map-ramp-1: #8a5a32;
+  --map-ramp-2: #a86b3a;
+  --map-ramp-3: #c67f45;
+  --map-ramp-4: #e8976a;
+  --map-neutral: #2c2c2a;
+  --map-label-on-strong: #1a1a19;
 }
 
 .status-page {
@@ -436,6 +458,62 @@ tr:last-child td {
 
 .more:hover {
   background: var(--gridline);
+}
+
+/* ---------- 省份地图 ---------- */
+
+.china-map {
+  position: relative;
+}
+
+.china-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.map-path {
+  stroke: var(--surface-1);
+  stroke-width: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.map-path:hover,
+.map-path:focus {
+  opacity: 0.82;
+}
+
+.map-label {
+  font-size: 9px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.map-tooltip {
+  position: absolute;
+  transform: translate(-50%, -115%);
+  pointer-events: none;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-ink);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  z-index: 10;
+}
+
+.map-tooltip strong {
+  display: block;
+  font-size: 13px;
+}
+
+.map-tooltip span {
+  display: block;
+  color: var(--tooltip-sub);
+  line-height: 1.6;
 }
 
 /* ---------- 当前访客 ---------- */
