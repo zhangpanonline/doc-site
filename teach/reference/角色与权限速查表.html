@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>角色与权限速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · PostgreSQL 官方文档拓展</p>
+      <h1>角色与权限速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/pg-0013-角色与权限.html">《角色与权限互动教学课程》</a>使用。来源：GRANT 参考 + §5.8（postgres.cn），非渡一课程内容。</p>
+    </header>
+
+    <section>
+      <h2>GRANT 两种变体</h2>
+      <table class="cmp-table">
+        <tr><th>变体</th><th>作用</th><th>要点</th></tr>
+        <tr><td>对象特权</td><td>表/列/视图/函数等对象授权</td><td>特权叠加；WITH GRANT OPTION 可转授（不能给 PUBLIC）</td></tr>
+        <tr><td>成员资格</td><td>GRANT role_b TO role_a</td><td>A 继承 B 的特权</td></tr>
+      </table>
+      <p>角色实际特权 = <strong>直接授予 + 成员角色特权 + PUBLIC 特权</strong>（官方三源并集）。</p>
+    </section>
+
+    <section>
+      <h2>RLS 速查</h2>
+      <pre>ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_iso ON orders
+  USING (tenant_id = current_setting('app.tenant_id')::int);
+
+ALTER TABLE orders FORCE ROW LEVEL SECURITY;  -- 拥有者也受限</pre>
+      <dl class="term-grid">
+        <dt>默认否定</dt>
+        <dd>启用后无策略 = 所有行不可见不可改（fail-safe）。</dd>
+        <dt>拥有者</dt>
+        <dd>通常不受限；FORCE 后同样受限。</dd>
+        <dt>不受限的操作</dt>
+        <dd>TRUNCATE、REFERENCES（表级操作）。</dd>
+        <dt>求值顺序</dt>
+        <dd>策略表达式先于用户查询条件（官方原文）。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 PostgreSQL 官方文档拓展（GRANT + §5.8）· 非渡一《数据库》课程内容</p>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,61 @@
+---
+sidebar_position: 13
+title: 'pg-13 · 角色与权限'
+description: 'PostgreSQL 官方文档拓展 §5.7/GRANT：GRANT 两种变体、PUBLIC 语义、行级安全 RLS 默认否定——官方文档拓展内容，非渡一课程。'
+displayed_sidebar: common
+---
+
+import {CommonBanner} from '@site/src/components/CourseUI';
+
+<CommonBanner title="🗄️ 角色与权限" desc="谁能看什么、谁能改什么——GRANT 的两种变体 + 行级安全 RLS 的多租户隔离。" />
+
+:::note 🔖 来源声明
+
+本页为 **PostgreSQL 官方文档拓展内容，非渡一《数据库》课程**。内容提炼自官方文档 GRANT 命令参考与 §5.8「行安全策略」（[postgres.cn 中文版](http://www.postgres.cn/docs/current/sql-grant.html) / [官方英文版](https://www.postgresql.org/docs/current/sql-grant.html)）。
+
+:::
+
+## GRANT：两种变体（官方）
+
+官方原文：GRANT 命令有**两个基本变体**：
+
+1. **在数据库对象上授予权限**——把表/列/视图/函数/模式等对象上的指定特权交给一个或多个角色；已授予的特权会**叠加**
+2. **授予角色的成员资格**——让角色 A 成为角色 B 的成员（继承 B 的特权）
+
+关键官方语义：
+
+- **PUBLIC**：特权授予给**所有角色**，包括之后创建的角色——官方定义其为"隐式定义的、总是包含所有角色的组"
+- 任何角色的实际特权 = **直接授予 + 所在成员角色的特权 + 授予给 PUBLIC 的特权**（三者并集）
+- **WITH GRANT OPTION**：接收者可转授他人；**授权选项不能授予 PUBLIC**
+- **对象拥有者默认拥有全部特权**，无需自我授权
+
+## 行级安全（RLS）
+
+官方原文要点（§5.8 行安全策略）：
+
+- 表启用 `ENABLE ROW LEVEL SECURITY` 后，所有普通访问必须被**行安全策略**允许
+- **表上不存在策略 → 默认否定策略：所有行不可见、不可修改**（默认拒绝是最安全的起点）
+- **表的拥有者通常不受行安全策略限制**（除非 FORCE）
+- 表级操作（TRUNCATE、REFERENCES）**不受行安全限制**
+- 策略可针对**特定命令**（ALL / SELECT / INSERT / UPDATE / DELETE）与**特定角色**
+- 策略表达式返回布尔值；**在计算任何用户查询条件之前先求值**——不返回 true 的行不被处理（多租户隔离的核心机制）
+
+```sql
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON orders
+  USING (tenant_id = current_setting('app.tenant_id')::int);
+```
+
+:::tip 与渡一课程的关系
+
+渡一《数据库》课程未覆盖权限与 RLS——本节为纯增量内容。SaaS 多租户、数据隔离面试题的官方标准答案都在这。
+
+:::
+
+## 官方原文
+
+- [postgres.cn：GRANT 命令参考](http://www.postgres.cn/docs/current/sql-grant.html)
+- [postgres.cn：5.8 行安全策略](http://www.postgres.cn/docs/current/ddl-rowsecurity.html)
+- [官方英文版：GRANT](https://www.postgresql.org/docs/current/sql-grant.html)
+
+配套学习：<a href="/teach/lessons/pg-0013-角色与权限.html">📖 互动教学课程（含分级测验、最终考核与面试实战）</a> · <a href="/teach/reference/角色与权限速查表.html">📋 角色与权限速查表（可打印）</a>

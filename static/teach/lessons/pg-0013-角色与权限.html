@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PostgreSQL 官方文档拓展 · 角色与权限：GRANT 两种变体、PUBLIC 语义、行级安全 RLS 默认否定（非渡一课程内容）">
+  <title>角色与权限 · 互动教学课程（官方文档拓展 pg-13）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
+      <h1>角色与权限</h1>
+      <p class="lesson-sub">来源：官方文档 GRANT 参考 + §5.8 行安全策略（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 GRANT 的两种变体（对象特权 / 角色成员资格）与特权的三来源并集</li>
+        <li>解释 PUBLIC 的官方语义（所有角色含未来角色）与「授权选项不能授予 PUBLIC」</li>
+        <li>复述 RLS 的核心规则：默认否定、拥有者豁免、策略先于查询条件求值</li>
+        <li>写一个多租户隔离的 RLS 策略（tenant_id + current_setting 模式）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/sql-grant.html">GRANT 参考</a> 与 <a href="http://www.postgres.cn/docs/current/ddl-rowsecurity.html">§5.8</a>。</p>
+
+      <div class="card">
+        <h3>GRANT 两种变体（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li>① <strong>对象特权</strong>：表/列/视图/函数/模式等对象上的特权，已授予的<strong>叠加</strong></li>
+          <li>② <strong>角色成员资格</strong>：A 成为 B 的成员、继承 B 的特权</li>
+          <li>角色实际特权 = <strong>直接授予 + 成员角色特权 + PUBLIC 特权</strong>（三源并集）</li>
+          <li><strong>PUBLIC</strong>：隐式定义的、总是包含<strong>所有角色（含未来创建）</strong>的组</li>
+          <li><strong>WITH GRANT OPTION</strong> 可转授；<strong>不能授予 PUBLIC</strong>（官方）；对象拥有者默认全权</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>行级安全 RLS（官方要点）</h3>
+        <ul class="pitfall-list">
+          <li>启用后所有普通访问必须被策略允许；<strong>无策略 = 默认否定（所有行不可见不可改）</strong></li>
+          <li><strong>表的拥有者通常不受行安全策略限制</strong>（FORCE 后同样受限）；<strong>超级用户与 BYPASSRLS 角色始终绕过 RLS</strong>；TRUNCATE/REFERENCES 不受限</li>
+          <li>策略可限定<strong>命令</strong>（ALL/SELECT/INSERT/UPDATE/DELETE）与<strong>角色</strong></li>
+          <li>策略表达式<strong>先于用户查询条件求值</strong>，不返回 true 的行不被处理——多租户隔离机制</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 官方说 GRANT 命令有哪两个基本变体？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">对象上授予特权 + 授予角色成员资格</button>
+            <button class="quiz-option">GRANT 与 DENY</button>
+            <button class="quiz-option">数据库级与实例级</button>
+            <button class="quiz-option">只读与读写</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：一个是在数据库对象上授予权限，另一个是授予角色的成员资格。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 官方对 PUBLIC 的定义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">当前已存在的所有用户</button>
+            <button class="quiz-option">管理员角色</button>
+            <button class="quiz-option">隐式定义的、总是包含所有角色（含之后创建）的组</button>
+            <button class="quiz-option">超级用户专属</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：PUBLIC 可以被认为是一个被隐式定义的、总是包含<strong>所有角色</strong>的组——包括稍后创建的角色。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 角色最终拥有的特权来自哪里（官方）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只有 PUBLIC 的</button>
+            <button class="quiz-option">只有成员角色的</button>
+            <button class="quiz-option">直接授予 + 成员角色特权 + PUBLIC 特权（并集）</button>
+            <button class="quiz-option">只有直接授予的</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：任何特定角色都将具有直接授予给它的特权、成员角色的特权以及授予给 PUBLIC 的特权。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 表启用 RLS 但没有创建任何策略，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">行为不变</button>
+            <button class="quiz-option">默认否定策略：所有行都不可见、不可修改</button>
+            <button class="quiz-option">所有人可读不可写</button>
+            <button class="quiz-option">报错</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：如果表上不存在策略，将使用一条<strong>默认的否定策略</strong>——所有行都不可见或不能被修改。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. 官方说表的拥有者与 RLS 的关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">通常不受行安全策略限制</button>
+            <button class="quiz-option">与其他角色完全相同</button>
+            <button class="quiz-option">必须自己给自己建策略</button>
+            <button class="quiz-option">拥有者反而受限最多</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：表的拥有者通常<strong>不受行安全性策略的限制</strong>——多租户模式下这既是便利也是审计盲点。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 官方说 WITH GRANT OPTION 不能用于谁？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">超级用户</button>
+            <button class="quiz-option">PUBLIC</button>
+            <button class="quiz-option">对象拥有者</button>
+            <button class="quiz-option">普通角色</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：授权选项不能被授予给 PUBLIC——否则人人都能转授。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. RLS 策略表达式与用户查询条件的求值顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先用户条件后策略</button>
+            <button class="quiz-option">随机顺序</button>
+            <button class="quiz-option">同时求值</button>
+            <button class="quiz-option">策略表达式先于任何用户查询条件求值</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：对于每一行，在计算任何来自用户查询的条件或函数之前，先会计算这个表达式——不返回 true 的行不会被处理。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 官方说哪些表级操作不受 RLS 限制？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TRUNCATE 与 REFERENCES（官方原文）</button>
+            <button class="quiz-option">UPDATE 不受</button>
+            <button class="quiz-option">SELECT 不受</button>
+            <button class="quiz-option">所有 DML 都不受</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：应用在整个表上的操作不受行安全性限制，例如 TRUNCATE 和 REFERENCES——策略管的是行级访问。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. SaaS 多租户隔离（每个租户只能看自己的数据）的标准 RLS 模式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每个租户建一张表</button>
+            <button class="quiz-option">USING (tenant_id = current_setting('app.tenant_id')::int)</button>
+            <button class="quiz-option">应用层拼 WHERE</button>
+            <button class="quiz-option">每租户一个数据库</button>
+          </div>
+          <div class="quiz-explain" hidden>租户 id 放会话设置（SET app.tenant_id），策略表达式按它过滤——应用层想绕过都不行，数据库层强制隔离。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最终考核</h2>
+      <p>四道题覆盖本课全部要点——答完它们，角色与权限就过关了。</p>
+
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">考核一：为什么「RLS 默认否定」是安全设计的好默认？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">默认否定省存储</button>
+            <button class="quiz-option">忘记建策略时数据被保护而不是全暴露（fail-safe）</button>
+            <button class="quiz-option">没有这个默认</button>
+            <button class="quiz-option">默认否定会更快</button>
+          </div>
+          <div class="quiz-explain" hidden>安全设计原则 fail-safe：配置遗漏的后果是「看不到」而不是「全泄露」——官方默认否定的价值就在这。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核二：审计时发现「表拥有者角色」能绕过 RLS 看到全部租户数据。怎么办？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">FORCE ROW LEVEL SECURITY 让拥有者同样受限 + 用非拥有者角色做日常访问</button>
+            <button class="quiz-option">删除拥有者</button>
+            <button class="quiz-option">改用 TRUNCATE</button>
+            <button class="quiz-option">无法解决</button>
+          </div>
+          <div class="quiz-explain" hidden>官方默认「拥有者通常不受限」；FORCE 可连拥有者也纳入策略——多租户审计的关键动作。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">考核三：GRANT SELECT ON t TO PUBLIC 之后新建的角色也能查这张表吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">能——PUBLIC 包含之后创建的角色（官方原文）</button>
+            <button class="quiz-option">不能，只有授权时存在的角色</button>
+            <button class="quiz-option">取决于超级用户</button>
+            <button class="quiz-option">报错</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：PUBLIC 指示特权要被授予给所有角色，包括那些可能稍后会被创建的角色。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">考核四：角色 A 是角色 B 的成员，B 对表有 SELECT。A 能查吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不能，成员资格不继承特权</button>
+            <button class="quiz-option">需要 PUBLIC</button>
+            <button class="quiz-option">只有 B 用 GRANT OPTION 才行</button>
+            <button class="quiz-option">能——成员角色特权并入 A 的特权集合（官方三源并集）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文：角色具有「授予给它作为成员所在的任何角色的特权」——成员资格即继承。</div>
+        </div>
+      </div>
+      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了角色与权限——继续学习 <a href="/common/database-pg/pg-14-备份与恢复">pg-14 · 备份与恢复</a>。</p>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'pg-0013-角色与权限',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `AI 写的建表脚本顺手执行了 <code>GRANT SELECT ON 客户表 TO PUBLIC</code>「图省事」。审查：官方对 PUBLIC 的定义说明这会带来什么？`,
+              source: '来源：postgres.cn 官方文档 GRANT 命令参考（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `官方原文：PUBLIC 是隐式定义的、<strong>总是包含所有角色（含之后创建的角色）</strong>的组——这条 GRANT 等于永久向所有未来角色开放读权限，且收回时要逐一处理已经继承的场景。正确：最小权限原则，授权给<strong>具体角色</strong>；确需放宽时先审计 PUBLIC 上挂了多少权限（PG 15+ 默认已收紧 PUBLIC）。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方说一个角色的实际特权由哪三部分组成？对象拥有者有什么特殊之处？`,
+              source: '来源：postgres.cn 官方文档 GRANT 命令参考（官方翻译·一手）· 检索 2026-09-11 · 层级：一手',
+              breakdown: `三源并集（官方原文）：① <strong>直接授予</strong>的特权；② 授予给它<strong>作为成员所在的任何角色</strong>的特权；③ 授予给 <strong>PUBLIC</strong> 的特权。拥有者特殊：<strong>默认具有对象的全部特权</strong>，无需自我授权（官方原文——拥有者可能为安全选择撤回自己的部分特权）。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的多租户服务：每个查询都手工拼 <code>WHERE tenant_id = ?</code>。审查：遗漏一处会怎样？官方提供的数据库层方案是什么？`,
+              source: '来源：postgres.cn 官方文档 §5.8 行安全策略（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `应用层拼 WHERE 是<strong>逐个查询的负担</strong>：漏一处 = 跨租户数据泄露（真实事故的常见形态）。数据库层方案：<strong>RLS</strong>——<code>CREATE POLICY p USING (tenant_id = current_setting('app.tenant_id')::int)</code>，官方语义保证策略表达式<strong>先于用户查询条件求值</strong>，应用层想忘都忘不掉。审查 AI 代码：多租户查询还在手工拼 tenant 条件 → 建议上 RLS。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：多租户数据隔离有哪几种层级方案？各有什么取舍？`,
+              source: '来源：postgres.cn 官方文档 §5.8 行安全策略（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `三种层级：① <strong>每租户一库/一 schema</strong>——隔离最强、资源独享，但运维与迁移成本高、租户数受限；② <strong>共享表 + RLS</strong>——运维简单、租户数弹性大，官方「策略先于查询条件求值」保证隔离在库层强制，是 SaaS 主流；③ <strong>应用层隔离</strong>——最灵活但最脆弱（漏一处即泄露）。选型按租户规模与隔离强度要求。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 里实测 RLS（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '① 建 orders 表（含 tenant_id）启用 RLS；② 无策略时普通角色 SELECT 为空（默认否定）；③ 建 tenant 策略后 SET app.tenant_id 切换租户，观察可见行变化；④ 拥有者视角与 FORCE 后的差异。',
+                accept: ['默认否定实测（无策略查不到行）', '策略切换租户可见集变化', '能解释拥有者豁免与 FORCE 的差异'],
+              },
+              source: '任务基于官方文档 §5.8 + GRANT 参考 · 来源层级：官方翻译·一手（postgres.cn）场景化',
+              breakdown: `思路：<code>CREATE ROLE tenant1;</code> 授权后用 SET ROLE 切换测试；<code>SET app.tenant_id = '1'</code> 配 <code>current_setting</code> 策略；<code>ALTER TABLE orders FORCE ROW LEVEL SECURITY</code> 观察拥有者也被限制。坑：自定义 GUC 名要带点（app.tenant_id）；忘记 GRANT 表权限时 SET ROLE 后连表都看不到（那是权限不是 RLS 问题）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/sql-grant.html">postgres.cn · GRANT 命令参考</a> · <a href="http://www.postgres.cn/docs/current/ddl-rowsecurity.html">5.8 行安全策略</a></li>
+        <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/user-manag.html">21.1 数据库角色</a> · <a href="http://www.postgres.cn/docs/current/sql-createpolicy.html">CREATE POLICY 参考</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/角色与权限速查表.html">角色与权限速查表</a>——三源并集与 RLS 规则一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/common/database/事务/">05.事务</a>（渡一课程）· 本课为官方文档拓展内容</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>
