@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import MDXComponents from '@theme-original/MDXComponents';
 import Image from '@site/src/components/Image';
 import CodeRunner from '@site/src/components/CodeRunner';
@@ -85,6 +85,28 @@ function parseFollowNext(answer: string): string | null {
   return m ? m[1] : null;
 }
 
+/** 简易字符串哈希（仅用于 localStorage 会话键） */
+function hashCode(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(36);
+}
+
+const SESSION_PREFIX = 'ai-explain:v1:';
+const SESSION_TTL = 10 * 86_400_000; // 与服务端 init 缓存一致：过期自动丢弃
+
+interface StoredSession {
+  text: string;
+  buttons: AskButton[];
+  asked: AskButton[];
+  answers: FollowupAnswer[];
+  note: string | null;
+  cached: boolean;
+  ts: number;
+}
+
 function AiExplain({code, lang}: {code: string; lang: string}) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [text, setText] = useState('');
@@ -95,6 +117,44 @@ function AiExplain({code, lang}: {code: string; lang: string}) {
   const [cached, setCached] = useState(false);
   const [busy, setBusy] = useState<'init' | 'followup' | 'note' | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  const storeKey = `${SESSION_PREFIX}${lang}:${hashCode(code)}`;
+
+  // 刷新后恢复会话（水合后恢复，避免 SSR 不一致；过期条目自动丢弃）
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storeKey);
+      if (!raw) return;
+      const s = JSON.parse(raw) as StoredSession;
+      if (!s || typeof s.ts !== 'number' || Date.now() - s.ts > SESSION_TTL) {
+        localStorage.removeItem(storeKey);
+        return;
+      }
+      setText(s.text ?? '');
+      setButtons(Array.isArray(s.buttons) ? s.buttons : []);
+      setAsked(Array.isArray(s.asked) ? s.asked : []);
+      setAnswers(Array.isArray(s.answers) ? s.answers : []);
+      setNote(s.note ?? null);
+      setCached(!!s.cached);
+      setState('done');
+    } catch {
+      // localStorage 不可用（隐私模式等）：仅本次会话生效
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 会话变化即落盘（几 KB 的文本，无体积顾虑）
+  useEffect(() => {
+    if (state !== 'done') return;
+    try {
+      localStorage.setItem(
+        storeKey,
+        JSON.stringify({text, buttons, asked, answers, note, cached, ts: Date.now()} satisfies StoredSession),
+      );
+    } catch {
+      // localStorage 不可用：静默跳过
+    }
+  }, [state, text, buttons, asked, answers, note, cached, storeKey]);
 
   const MAX_FOLLOWUPS = 5;
   const pageContext = () => {
@@ -130,6 +190,10 @@ function AiExplain({code, lang}: {code: string; lang: string}) {
       setText(parsed.text);
       setButtons(parsed.buttons);
       setCached(!!data.cached);
+      // 重新发起解释：清掉上一轮的追问与笔记
+      setAsked([]);
+      setAnswers([]);
+      setNote(null);
       setState('done');
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));

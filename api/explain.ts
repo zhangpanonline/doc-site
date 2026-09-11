@@ -220,7 +220,7 @@ async function callLlm(
 
 // ---------- 每 IP 每日追问限额（防脚本刷免费额度；表缺失时优雅跳过） ----------
 
-const DAILY_LIMIT = 30;
+const DAILY_LIMIT = 50;
 
 async function withinQuota(req: VercelRequest): Promise<boolean> {
   const ip = String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim() || 'unknown';
