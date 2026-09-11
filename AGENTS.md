@@ -36,6 +36,7 @@
 - **文档路由去掉文件名数字前缀**：`python/语言核心/24.协程.mdx` 的真实路由是 `/python/语言核心/协程/`，回链必须用去前缀后的真实路由。
 - **指向 static 资源的链接必须用原生 `<a>` 标签**：站点 `onBrokenLinks: 'throw'`，markdown 链接会被判为断链导致构建失败。
 - 每个提交前跑 `pnpm build` 验证；类型检查存量错误（如 CourseUI.tsx:550）与本次改动无关时不要顺手改坏。
+- 发布前可用 `python3 scripts/check-sitemap.py` 对账 sitemap 与构建产物（查生产 404；需先 build）。
 
 ## teach/ 教学工作区规则
 
