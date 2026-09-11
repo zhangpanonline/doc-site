@@ -53,9 +53,9 @@ const SYSTEM_PROMPT = `你是本课程网站的助教，职责是用"分层讲�
 
 /** 每次请求的 token 上限与超时（按模式分级：init 输出最长，防截断/防超时） */
 const MODE_PARAMS = {
-  init: {maxTokens: 1500, timeoutMs: 18_000},
+  init: {maxTokens: 1500, timeoutMs: 28_000},
   followup: {maxTokens: 400, timeoutMs: 12_000},
-  generate_note: {maxTokens: 900, timeoutMs: 15_000},
+  generate_note: {maxTokens: 900, timeoutMs: 18_000},
 } as const;
 type Mode = keyof typeof MODE_PARAMS;
 
@@ -80,10 +80,10 @@ async function resolveModelCandidates(key: string): Promise<string[]> {
   if (cachedModels) {
     return cachedModels;
   }
-  const fallback = ['gemini-2.5-flash', 'gemini-flash-latest'];
+  const fallback = ['gemini-3.6-flash', 'gemini-flash-latest'];
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`, {
-      signal: AbortSignal.timeout(8_000),
+      signal: AbortSignal.timeout(12_000),
     });
     if (!r.ok) {
       const bodySnippet = (await r.text().catch(() => '')).slice(0, 200);
@@ -226,8 +226,9 @@ async function callLlm(
         });
         return {text, model: 'glm-4-flash'};
       } catch (err) {
-        lastDetail = err instanceof Error ? err.message : String(err);
-        console.error('[explain] glm attempt failed:', attempt, lastDetail);
+        const m = err instanceof Error ? err.message : String(err);
+        lastDetail = lastDetail ? `${lastDetail} | ${m}` : m;
+        console.error('[explain] glm attempt failed:', attempt, m);
       }
       if (Date.now() > deadline) break;
       await rest(1200);
@@ -250,8 +251,9 @@ async function callLlm(
         });
         return {text, model: 'spark-lite'};
       } catch (err) {
-        lastDetail = err instanceof Error ? err.message : String(err);
-        console.error('[explain] spark attempt failed:', attempt, lastDetail);
+        const m = err instanceof Error ? err.message : String(err);
+        lastDetail = lastDetail ? `${lastDetail} | ${m}` : m;
+        console.error('[explain] spark attempt failed:', attempt, m);
       }
       if (Date.now() > deadline) break;
       await rest(1200);
@@ -273,8 +275,9 @@ async function callLlm(
         });
         return {text, model};
       } catch (err) {
-        lastDetail = err instanceof Error ? err.message : String(err);
-        console.error('[explain] gemini attempt failed:', model, lastDetail);
+        const m = err instanceof Error ? err.message : String(err);
+        lastDetail = lastDetail ? `${lastDetail} | ${m}` : m;
+        console.error('[explain] gemini attempt failed:', model, m);
       }
       if (Date.now() > deadline) break;
       await rest(1200);
@@ -373,14 +376,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const admin = getSupabaseAdmin();
 
-  // init 走缓存（10 天 TTL）；followup/note 千人千面，不缓存
+  // init 走缓存（10 天 TTL）；followup/note 千人千面，不缓存。
+  // 缓存键带提示词版本号：系统提示词升级后旧解释全部失效，重新生成。
+  const PROMPT_VERSION = 'v2';
+  const cacheHash = createHash('md5').update(`${PROMPT_VERSION}\n${lang}\n${code}\n${context}\n${url}`).digest('hex');
   if (mode === 'init') {
-    const hash = createHash('md5').update(`${lang}\n${code}\n${context}\n${url}`).digest('hex');
     try {
       const {data: cached} = await admin
         .from('code_explanations')
         .select('explanation')
-        .eq('code_hash', hash)
+        .eq('code_hash', cacheHash)
         .gte('created_at', new Date(Date.now() - 10 * 86_400_000).toISOString())
         .maybeSingle();
       if (cached?.explanation) {
@@ -405,7 +410,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (mode === 'init') {
       try {
         await admin.from('code_explanations').upsert({
-          code_hash: createHash('md5').update(`${lang}\n${code}\n${context}\n${url}`).digest('hex'),
+          code_hash: cacheHash,
           lang,
           code_preview: code.slice(0, 300),
           explanation: text,
