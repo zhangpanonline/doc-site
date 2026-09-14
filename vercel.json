@@ -4,12 +4,6 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "build",
   "installCommand": "pnpm install --ignore-scripts",
-  "functions": {
-    "api/explain.ts": {
-      "regions": ["hkg1"],
-      "maxDuration": 60
-    }
-  },
   "routes": [
     {
       "src": "/(.*)",
