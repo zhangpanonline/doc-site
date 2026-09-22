@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>测试框架速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>测试框架速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0011-测试框架.html">《测试框架互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>三价值与三件套</h2>
+      <dl class="term-grid">
+        <dt>三价值</dt>
+        <dd>防回归；保契约；提效率。</dd>
+        <dt>依赖</dt>
+        <dd>uv add --group dev httpx / pytest / pytest-asyncio。</dd>
+        <dt>配置</dt>
+        <dd>[tool.pytest.ini_options] asyncio_mode="auto"、testpaths=["test"]。</dd>
+        <dt>命令</dt>
+        <dd>make test → uv run pytest apps/web-service/test/integration/ -v。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>conftest 生命周期</h2>
+      <table class="cmp-table">
+        <tr><th>阶段</th><th>动作</th></tr>
+        <tr><td>sessionstart</td><td>连 postgres 库 → DROP/CREATE duyi_test_db → alembic upgrade head → 起 18000 服务器并轮询 /docs</td></tr>
+        <tr><td>每测试后</td><td>autouse cleanup：reversed(sorted_tables) TRUNCATE ... RESTART IDENTITY CASCADE</td></tr>
+        <tr><td>sessionfinish</td><td>停服务器 → DROP 测试库</td></tr>
+      </table>
+      <p>fixtures：async_client（httpx）/ base_url / event_loop。DB_NAME 必须在 import app 之前 setdefault。</p>
+    </section>
+
+    <section>
+      <h2>测试写法</h2>
+      <dl class="term-grid">
+        <dt>组织</dt>
+        <dd>Test<操作> 类 + 方法级用例；辅助函数 _create* 收敛造数。</dd>
+        <dt>两层断言</dt>
+        <dd>status_code（协议）+ code（业务：422001 校验 / 422002 约束 / 404001 不存在）。</dd>
+        <dt>删除复查</dt>
+        <dd>delete 204 后新开 fresh_client GET 断言 404（持久生效）。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 测试框架：防回归保契约提效率、pytest 三件套、conftest 独立测试库、httpx 集成测试——互动教学课程">
+  <title>测试框架 · 互动教学课程（Python 框架 fw-11）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>测试框架</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/测试框架">11.测试框架</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出测试框架的三个价值：防回归、保契约、提效率</li>
+        <li>配好 pytest 三件套（依赖/ini_options/Makefile）并解释 asyncio_mode=auto</li>
+        <li>读通 conftest.py：独立测试库、迁移、服务器启停、逐测试清理</li>
+        <li>按「类组织 + 辅助函数」的模式写 httpx 集成测试</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《11.测试框架》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三价值 + 三件套</h3>
+        <ul class="pitfall-list">
+          <li><strong>防回归</strong>：改一处坏一片，没测试不敢重构</li>
+          <li><strong>保契约</strong>：契约即承诺，测试锁死预期输入输出</li>
+          <li><strong>提效率</strong>：验证十次，不如脚本跑一秒</li>
+          <li>三件套：uv add（httpx/pytest/pytest-asyncio）+ pyproject 配 <code>asyncio_mode="auto"</code> + Makefile <code>pytest -v</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>conftest.py 生命周期（课件）</h3>
+        <ul class="pitfall-list">
+          <li><strong>session 开始</strong>：连 postgres 库 → 杀掉旧连接 → DROP/CREATE 独立测试库 duyi_test_db → alembic upgrade head → 起真实服务器（18000 端口，等 /docs 就绪）</li>
+          <li><strong>每个测试后</strong>：autouse 的 cleanup_db 按 sorted_tables 倒序 TRUNCATE ... RESTART IDENTITY CASCADE</li>
+          <li><strong>session 结束</strong>：停服务器 → DROP 测试库</li>
+          <li>fixtures：async_client（httpx.AsyncClient）、base_url、event_loop</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《11.测试框架》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. 课件「为什么需要测试框架」的三个理由？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">省钱、省电、省心</button>
+            <button class="quiz-option">稳定、安全、保密</button>
+            <button class="quiz-option">好看、好用、好卖</button>
+            <button class="quiz-option">防回归、保契约、提效率</button>
+          </div>
+          <div class="quiz-explain" hidden>课件三条：防回归——改一处坏一片没测试不敢重构；保契约——测试锁死预期输入输出；提效率——验证十次不如脚本跑一秒。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. pyproject 里 asyncio_mode = "auto" 的作用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">开启多线程</button>
+            <button class="quiz-option">pytest-asyncio 自动把 async 测试函数放进事件循环，不用手工加标记</button>
+            <button class="quiz-option">自动修复测试失败</button>
+            <button class="quiz-option">自动生成测试代码</button>
+          </div>
+          <div class="quiz-explain" hidden>课件配置：[tool.pytest.ini_options] asyncio_mode = "auto"——pytest-asyncio 自动识别 async def 测试并调度事件循环，无需每个测试都标 @pytest.mark.asyncio。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 集成测试用什么库发 HTTP 请求？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">直接用 socket</button>
+            <button class="quiz-option">httpx.AsyncClient，对着真实端口 18000 发请求</button>
+            <button class="quiz-option">requests 库</button>
+            <button class="quiz-option">浏览器自动化</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 conftest：async_client fixture 用 httpx.AsyncClient(base_url=f"http://localhost:{TEST_SERVER_PORT}")——对真实启动的服务进程发请求，是端到端的集成测试。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 为什么测试用独立的 duyi_test_db 而不是开发库？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有特别原因</button>
+            <button class="quiz-option">测试库更快</button>
+            <button class="quiz-option">测试会 TRUNCATE/DROP 数据——不能污染开发库；也保证每个 session 从干净迁移状态开始</button>
+            <button class="quiz-option">开发库连不上</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 conftest：pytest_sessionstart 里 DROP DATABASE IF EXISTS → CREATE → alembic upgrade head，session 结束再 DROP。测试永远从「刚跑完迁移的空库」出发，结果可复现，也不碰开发数据。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. cleanup_db 里 sorted_tables 为什么要倒序遍历 TRUNCATE？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">外键依赖顺序：先清子表再清父表，CASCADE 双保险</button>
+            <button class="quiz-option">随机顺序</button>
+            <button class="quiz-option">正序倒序没区别</button>
+            <button class="quiz-option">为了更快</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 cleanup_db：for table in reversed(Base.metadata.sorted_tables)——sorted_tables 按依赖拓扑排序（父在前），倒过来就是子在前；TRUNCATE ... RESTART IDENTITY CASCADE 把自增序列一并归位，保证测试里 id 可预期。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. _start_server 里的 50 次轮询在等什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">等服务器真正就绪（/docs 返回 200），否则后续请求全部 connection refused</button>
+            <button class="quiz-option">等数据库备份完成</button>
+            <button class="quiz-option">等用户输入</button>
+            <button class="quiz-option">等垃圾回收</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 conftest：subprocess.Popen 起服务后 for _ in range(50) 每 0.1s 探一次 /docs，成功 break，否则 raise 启动超时——进程活着 ≠ 端口可用，uvicorn 启动要几秒。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 测试断言里为什么同时检查 code 和 status_code？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">code 是随机的</button>
+            <button class="quiz-option">status_code 是协议层，code 是业务层（如 422 下 422001/422002 细分）——两层契约都要锁死</button>
+            <button class="quiz-option">为了凑断言数量</button>
+            <button class="quiz-option">写重复了</button>
+          </div>
+          <div class="quiz-explain" hidden>课件测试：assert response.status_code == 422 且 response.json()["code"] == "422001"——同一 HTTP 422 下业务码区分「字段校验失败」与「关联分类不存在」（422002），保契约 = 两层都锁。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 删除测试里为什么「删完再开一个 fresh_client 复查」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">第一个 client 有缓存 bug</button>
+            <button class="quiz-option">为了测连接池</button>
+            <button class="quiz-option">模拟独立客户端确认删除持久生效，而不是只信 204 响应</button>
+            <button class="quiz-option">纯粹浪费资源</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 TestDeleteCategory：delete 204 后用 AsyncClient(base_url=base_url) 新起客户端 GET 同 ID 断言 404——验证的是「删除真的写进数据库并对外生效」，而不只是接口回了正确状态码。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 每个测试文件里的 _create/_create_product 辅助函数是干嘛的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据库备份</button>
+            <button class="quiz-option">封装造数请求（POST 断言 201 返回 data），让测试用例只表达被测逻辑</button>
+            <button class="quiz-option">无意义的重构</button>
+            <button class="quiz-option">日志工具</button>
+          </div>
+          <div class="quiz-explain" hidden>课件模式：async def _create(client, name) 发 POST 断言 201 返回 data——准备数据（Arrange）与断言目标（Act/Assert）分离，测试函数读起来是「先造一个分类，再断言列表里有 2 条」。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0011-测试框架',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的测试：直接连开发数据库跑，测试里 TRUNCATE 了 product 表——把开发库的数据清空了。按本课 conftest 的做法，怎么防？`,
+              source: '来源：pytest 官方文档 How-to guides（fixtures 与 setup/teardown 组织测试）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《11.测试框架》课件 conftest.py',
+              breakdown: `课件答案：<strong>独立测试库 + session 级生命周期管理</strong>。conftest 的 pytest_sessionstart 连 postgres 库 DROP/CREATE 一个专用 duyi_test_db（DB_NAME 环境变量在 import app 之前 setdefault 切过去），再跑 alembic upgrade head；session 结束连库一起 DROP。测试随便 TRUNCATE 也碰不到开发数据。三条防线：① <strong>环境变量先行</strong>（任何 app 导入前设 DB_NAME）；② 专用库不是专用表——连「库」这个层级都隔离；③ 测试数据清理用 reversed(sorted_tables) + CASCADE，自增序列 RESTART IDENTITY 一起归位。审查 AI 的测试代码先看连接串指向哪。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `课件为什么选择「真服务器 + httpx」的集成测试，而不是 FastAPI 的 TestClient？conftest 是怎么把这个流程自动化的？`,
+              source: '来源：FastAPI 官方文档 Testing（"Using TestClient" / "Separating tests" / "Testing: extended example"）https://fastapi.tiangolo.com/tutorial/testing/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《11.测试框架》课件 conftest.py',
+              breakdown: `<strong>选择理由</strong>：TestClient 是进程内模拟（ASGI 直接调 app），而课件要测的是<strong>真实部署形态</strong>——uvicorn 进程、真实端口、真实 HTTP、中间件/异常处理器/信封响应全部生效（ch09/ch10 的成果在测试里是被验证对象）。TestClient 测不到「中间件与异常处理器的真实协作」。 <strong>自动化流程</strong>：sessionstart 建库跑迁移 → subprocess.Popen 起服务器 → 轮询 /docs 直到就绪（50 次 × 0.1s）→ fixture async_client 发请求 → 每测试后 autouse cleanup 清库 → sessionfinish 停服务器删库。失败时看 tmp/test_server.log 定位。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的测试套件审查：① 每个测试都自己建 engine、清表，没有复用 fixture；② 断言只查 status_code 不查业务码；③ 删除了 422 校验场景说「测过了创建成功就够了」。逐条按本课标准评判。`,
+              source: '来源：pytest 官方文档 How-to guides（fixtures 复用、断言写法）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《11.测试框架》课件（fixtures 与断言模式）',
+              breakdown: `逐条：<strong>① fixture 复用</strong>——建 engine/清表是 session 级公共行为，应像课件收进 conftest 的 autouse fixture；散落在每个测试里 = 重复、顺序脆弱（谁先清库谁踩谁）。 <strong>② 两层断言</strong>——status_code 是协议层，code 是业务层；课件断言 422 + code=422001/422002 区分「字段校验失败」与「关联分类不存在」——只查状态码的测试在业务码回归时全绿，失去「保契约」价值。 <strong>③ 负面场景</strong>——「创建成功就够了」直接违反课件的场景清单：missing_name(422)、nonexistent_category(422002)、not_found(404001)、duplicate_sku(422002)、negative_stock(422)——负面场景正是 ch09 异常体系的契约，删掉它们等于把错误处理代码变裸奔。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：为什么用「类组织测试」而不是「函数组织」？TestCreateCategory 里每个方法是一条用例，这和 pytest 的纯函数风格有什么区别？`,
+              source: '来源：pytest 官方文档（test 组织与类分组）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《11.测试框架》课件（Test* 类组织）',
+              breakdown: `课件的选择：<strong>按「接口 + 操作」分组</strong>——TestCreateCategory / TestListCategories / TestGetCategory / TestUpdateCategory / TestDeleteCategory 五个类，每个类下一个操作的全部场景（成功/缺字段/不存在/分页/过滤）。好处：① <strong>可发现性</strong>——新场景往对应类里加方法，跑单个类 = 回归一个操作（pytest test_categories.py::TestListCategories）；② <strong>语义分组</strong>——类名即操作名，读测试清单等于读接口契约；③ 与 API 层结构同构（api/categories.py 的操作 → Test 类）。函数风格适合纯函数测试，接口集成测试用类分组信息密度更高。设计上还有一个细节：辅助函数 _create 收敛造数逻辑——Arrange 与 Assert 分离。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `跑通本章测试套件（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '复制 test/ 目录 → make test 跑全部 3 个集成测试文件（40+ 用例）→ 观察 conftest 建库/迁移/起服务器流程 → 故意改坏一个接口（如把 404 改成 500）确认测试变红 → 修复后全绿。',
+                accept: ['make test 全绿（categories/products/skus 三个文件）', '测试期间 duyi_test_db 被自动创建并在结束删除', '改坏接口后对应用例失败（防回归生效）'],
+              },
+              source: '任务基于《11.测试框架》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：先确认 .env 的 DB_ 配置指向本机 pg16 且 postgres 库可连（conftest 用 psycopg2 连 postgres 库建测试库）；再 make test。坑：uv run pytest 需要 apps/web-service 工作目录（Makefile 已配）；失败时看 apps/web-service/../tmp/test_server.log 的服务端日志；如果本机 18000 端口被占，改 conftest 的 TEST_SERVER_PORT。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（11.测试框架）</li>
+        <li><strong>深读推荐</strong>：<a href="https://docs.pytest.org/en/stable/">pytest 官方文档</a> · <a href="https://fastapi.tiangolo.com/tutorial/testing/">FastAPI 官方：Testing</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/测试框架速查表.html">测试框架速查表</a>——三件套、conftest 生命周期、测试模式一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/中间件">10.中间件</a> · 下一课 <a href="/agents/python-framework/测试方案">12.测试方案</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以 make test 全绿为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

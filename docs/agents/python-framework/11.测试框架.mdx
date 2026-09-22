@@ -1,0 +1,458 @@
+---
+sidebar_position: 11
+title: '11. 测试框架'
+description: "Python 框架课程 · 测试框架：防回归/保契约/提效率、pytest 三件套配置、conftest 独立测试库与服务器启停、商品/分类/SKU 集成测试。"
+displayed_sidebar: agentsFramework
+---
+
+# 测试框架
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 为什么需要测试框架
+
+1. **防回归**——改一处坏一片，没测试不敢重构。
+2. **保契约**——契约即承诺，测试锁死预期输入输出。
+3. **提效率**——验证十次，不如脚本跑一秒。
+
+## 实现测试
+
+安装必要库
+
+```shell
+uv add --package web-service --group dev httpx==0.28.1 pytest==9.1.1 pytest-asyncio==1.4.0
+```
+
+配置`web-service/pyproject.toml`
+
+```toml
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["test"]
+```
+
+配置`Makefile`
+
+```yaml
+test:
+	uv run pytest apps/web-service/test/integration/ -v
+```
+
+配置`.gitignore`
+
+```yaml
+# temp
+/temp
+/tmp
+```
+
+## 测试代码
+
+本章的`duyi-service`只包含`test`目录，复制到`apps/web-service/test`下。
+
+### conftest.py —— 测试夹具
+
+`apps/web-service/test/conftest.py`
+
+```python
+import asyncio
+import os
+import time
+import subprocess
+from pathlib import Path
+from contextlib import contextmanager
+
+# ─── 必须在任何 app 导入之前设置环境变量 ───
+
+os.environ.setdefault("DB_NAME", "duyi_test_db")
+from app.core.config import db_settings
+
+import pytest
+import psycopg2
+
+TEST_SERVER_PORT = "18000"
+
+_server_process: subprocess.Popen | None = None
+_log_file = None
+
+
+@contextmanager
+def _create_cur():
+    conn = psycopg2.connect(  # pyright: ignore[reportCallIssue, reportArgumentType]
+        host=db_settings.host,
+        port=db_settings.port,
+        user=db_settings.user,
+        password=db_settings.password,
+        dbname="postgres",
+    )
+    conn.autocommit = True
+    cur = conn.cursor()
+    try:
+        yield cur
+    finally:
+        cur.close()
+        conn.close()
+
+
+def _start_server():
+    global _server_process, _log_file
+    tmp_dir = Path(__file__).resolve().parent.parent.parent.parent / "tmp"
+    tmp_dir.mkdir(exist_ok=True)
+    _log_file = open(tmp_dir / "test_server.log", "w")
+    _server_process = subprocess.Popen(
+        [
+            "uv",
+            "run",
+            "--package",
+            "web-service",
+            "fastapi",
+            "dev",
+            "apps/web-service/app/main.py",
+            "--port",
+            TEST_SERVER_PORT,
+        ],
+        stdout=_log_file,
+        stderr=subprocess.STDOUT,
+    )
+    import httpx
+
+    for _ in range(50):
+        try:
+            resp = httpx.get(f"http://localhost:{TEST_SERVER_PORT}/docs")
+            if resp.status_code == 200:
+                break
+        except Exception:
+            pass
+        time.sleep(0.1)
+    else:
+        raise RuntimeError("测试服务器启动超时")
+
+
+def _stop_server():
+    global _server_process, _log_file
+    if _server_process is not None:
+        _server_process.terminate()
+        _server_process.wait(timeout=10)
+        _server_process = None
+    if _log_file is not None:
+        _log_file.close()
+        _log_file = None
+
+
+def pytest_sessionstart(session):
+    with _create_cur() as cur:
+        cur.execute(
+            f"SELECT pg_terminate_backend(pg_stat_activity.pid) "
+            f"FROM pg_stat_activity "
+            f"WHERE pg_stat_activity.datname = '{db_settings.name}' "
+            f"AND pid <> pg_backend_pid()"
+        )
+        cur.execute(f"DROP DATABASE IF EXISTS {db_settings.name}")
+        cur.execute(f"CREATE DATABASE {db_settings.name}")
+
+    from alembic.config import Config
+    from alembic import command
+
+    WEB_SERVICE_DIR = Path(__file__).resolve().parent.parent
+    alembic_cfg = Config()
+    alembic_cfg.set_main_option("script_location", str(WEB_SERVICE_DIR / "migrations"))
+    alembic_cfg.set_main_option(
+        "sqlalchemy.url",
+        f"postgresql://{db_settings.user}:{db_settings.password}@{db_settings.host}:{db_settings.port}/{db_settings.name}",
+    )
+    command.upgrade(alembic_cfg, "head")
+
+    _start_server()
+
+
+def pytest_sessionfinish(session, exitstatus):
+    _stop_server()
+
+    with _create_cur() as cur:
+        cur.execute(
+            f"SELECT pg_terminate_backend(pg_stat_activity.pid) "
+            f"FROM pg_stat_activity "
+            f"WHERE pg_stat_activity.datname = '{db_settings.name}' "
+            f"AND pid <> pg_backend_pid()"
+        )
+        cur.execute(f"DROP DATABASE IF EXISTS {db_settings.name}")
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    yield loop
+    loop.close()
+
+
+@pytest.fixture
+def base_url():
+    return f"http://localhost:{TEST_SERVER_PORT}"
+
+
+@pytest.fixture
+async def async_client():
+    from httpx import AsyncClient
+
+    async with AsyncClient(base_url=f"http://localhost:{TEST_SERVER_PORT}") as client:
+        yield client
+
+
+@pytest.fixture(autouse=True)
+async def cleanup_db(async_client):
+    yield
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from sqlalchemy.pool import NullPool
+    from app.model.base import Base
+
+    url = (
+        f"postgresql+asyncpg://{db_settings.user}:{db_settings.password}"
+        f"@{db_settings.host}:{db_settings.port}/{db_settings.name}"
+    )
+    engine = create_async_engine(url, poolclass=NullPool, echo=False)
+
+    async with engine.begin() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.execute(
+                text(f'TRUNCATE TABLE "{table.name}" RESTART IDENTITY CASCADE')
+            )
+    await engine.dispose()
+```
+
+### 集成测试 —— 分类
+
+`apps/web-service/test/integration/test_categories.py`
+
+```python
+import pytest
+from httpx import AsyncClient
+
+
+CATEGORIES_URL = "/api/categories"
+
+
+class TestCreateCategory:
+    async def test_create_with_required_fields(self, async_client: AsyncClient):
+        response = await async_client.post(CATEGORIES_URL, json={"name": "电子"})
+        assert response.status_code == 201
+        body = response.json()
+        assert body["code"] == "0"
+        data = body["data"]
+        assert data["name"] == "电子"
+        assert data["description"] == ""
+
+    async def test_create_with_all_fields(self, async_client: AsyncClient):
+        response = await async_client.post(CATEGORIES_URL, json={
+            "name": "食品",
+            "description": "食品饮料分类",
+        })
+        assert response.status_code == 201
+        data = response.json()["data"]
+        assert data["name"] == "食品"
+        assert data["description"] == "食品饮料分类"
+
+    async def test_create_missing_name(self, async_client: AsyncClient):
+        response = await async_client.post(CATEGORIES_URL, json={})
+        assert response.status_code == 422
+        assert response.json()["data"]["code"] == "422001"
+
+
+class TestListCategories:
+    async def test_list_empty(self, async_client: AsyncClient):
+        response = await async_client.get(CATEGORIES_URL)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["code"] == "0"
+        data = body["data"]
+        assert data["items"] == []
+        assert data["total"] == 0
+
+    async def test_list_with_data(self, async_client: AsyncClient):
+        await _create(async_client, "分类A")
+        await _create(async_client, "分类B")
+
+        response = await async_client.get(CATEGORIES_URL)
+        data = response.json()["data"]
+        assert len(data["items"]) == 2
+        assert data["total"] == 2
+
+    async def test_pagination(self, async_client: AsyncClient):
+        for i in range(5):
+            await _create(async_client, f"分类{i}")
+
+        response = await async_client.get(CATEGORIES_URL, params={"page": 1, "page_size": 2})
+        data = response.json()["data"]
+        assert len(data["items"]) == 2
+        assert data["total"] == 5
+
+        response = await async_client.get(CATEGORIES_URL, params={"page": 3, "page_size": 2})
+        data = response.json()["data"]
+        assert len(data["items"]) == 1
+
+
+class TestGetCategory:
+    async def test_get_found(self, async_client: AsyncClient):
+        created = await _create(async_client, "服装")
+
+        response = await async_client.get(f"{CATEGORIES_URL}/{created['id']}")
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["name"] == "服装"
+        assert data["products"] == []
+
+    async def test_get_not_found(self, async_client: AsyncClient):
+        response = await async_client.get(f"{CATEGORIES_URL}/99999")
+        assert response.status_code == 404
+        assert response.json()["code"] == "404001"
+
+
+class TestUpdateCategory:
+    async def test_update_success(self, async_client: AsyncClient):
+        created = await _create(async_client, "旧名")
+
+        response = await async_client.put(
+            f"{CATEGORIES_URL}/{created['id']}",
+            json={"name": "新名"},
+        )
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["name"] == "新名"
+
+    async def test_update_not_found(self, async_client: AsyncClient):
+        response = await async_client.put(f"{CATEGORIES_URL}/99999", json={"name": "x"})
+        assert response.status_code == 404
+
+
+class TestDeleteCategory:
+    async def test_delete_success(self, async_client: AsyncClient, base_url: str):
+        created = await _create(async_client, "待删除")
+
+        response = await async_client.delete(f"{CATEGORIES_URL}/{created['id']}")
+        assert response.status_code == 204
+
+        async with AsyncClient(base_url=base_url) as fresh_client:
+            response = await fresh_client.get(f"{CATEGORIES_URL}/{created['id']}")
+            assert response.status_code == 404
+
+    async def test_delete_not_found(self, async_client: AsyncClient):
+        response = await async_client.delete(f"{CATEGORIES_URL}/99999")
+        assert response.status_code == 404
+
+
+async def _create(client: AsyncClient, name: str) -> dict:
+    response = await client.post(CATEGORIES_URL, json={"name": name})
+    assert response.status_code == 201
+    return response.json()["data"]
+```
+
+### 集成测试 —— 商品与 SKU
+
+`test_products.py`（211 行）与 `test_skus.py`（202 行）按同样的类组织模式覆盖商品与 SKU 的全部接口场景，节选：
+
+```python
+# test_products.py 节选
+class TestCreateProduct:
+    async def test_create_with_required_fields(self, async_client: AsyncClient):
+        response = await async_client.post(PRODUCTS_URL, json={"name": "商品A"})
+        assert response.status_code == 201
+        data = response.json()["data"]
+        assert data["description"] == ""
+        assert data["brand"] is None
+        assert data["categories"] == []
+        assert data["skus"] == []
+
+    async def test_create_with_nonexistent_category(self, async_client: AsyncClient):
+        response = await async_client.post(PRODUCTS_URL, json={
+            "name": "商品D",
+            "category_ids": [99999],
+        })
+        assert response.status_code == 422
+        assert response.json()["code"] == "422002"
+
+class TestListProducts:
+    # test_list_empty / test_list_with_data / test_pagination（3 页断言）
+    # test_filter_by_keyword（"手机" 命中 2 件）
+    # test_filter_by_brand（"Apple" 命中 2 件）
+    # test_filter_by_category（按分类 2 件）
+    ...
+
+class TestGetProduct / TestUpdateProduct / TestDeleteProduct:
+    # 找到 → 200 与字段断言；不存在 → 404 code=404001
+    # 更新仅传入字段（name）；更新分类关联（category_ids）
+    # 删除成功 204 后 fresh_client 复查 404
+    ...
+```
+
+```python
+# test_skus.py 节选
+class TestCreateSku:
+    async def test_create_success(self, async_client: AsyncClient):
+        product = await _create_product(async_client, name="测试商品")
+        response = await async_client.post(
+            _sku_url(product["id"]),
+            json={
+                "sku_code": "SKU-001",
+                "price": "99.99",
+                "stock": 100,
+                "attrs": {"color": "红色", "size": "L"},
+                "image_url": "https://example.com/img.jpg",
+            },
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["code"] == "0"
+        data = body["data"]
+        assert data["sku_code"] == "SKU-001"
+        assert data["price"] == "99.99"
+        assert data["stock"] == 100
+        assert data["attrs"] == {"color": "红色", "size": "L"}
+        assert data["product_id"] == product["id"]
+
+    async def test_create_duplicate_sku_code(self, async_client: AsyncClient):
+        product = await _create_product(async_client, name="商品")
+        payload = {
+            "sku_code": "SKU-DUP",
+            "price": "10.00",
+            "attrs": {"size": "M"},
+            "image_url": "https://example.com/img.jpg",
+        }
+        await async_client.post(_sku_url(product["id"]), json=payload)
+
+        response = await async_client.post(_sku_url(product["id"]), json=payload)
+        assert response.status_code == 422
+        assert response.json()["code"] == "422002"
+
+class TestUpdateStock:
+    async def test_update_stock_success(self, async_client: AsyncClient):
+        product = await _create_product(async_client, name="商品")
+        sku = await _create_sku(async_client, product["id"], sku_code="E001", stock=10)
+
+        response = await async_client.patch(
+            _sku_stock_url(sku["id"]),
+            params={"stock": 200},
+        )
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["stock"] == 200
+
+    async def test_update_stock_negative(self, async_client: AsyncClient):
+        product = await _create_product(async_client, name="商品")
+        sku = await _create_sku(async_client, product["id"], sku_code="E002")
+
+        response = await async_client.patch(
+            _sku_stock_url(sku["id"]),
+            params={"stock": -1},
+        )
+        assert response.status_code == 422
+    ...
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0011-测试框架.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/测试框架速查表.html">📋 测试框架速查表（可打印）</a>
