@@ -1,0 +1,548 @@
+---
+sidebar_position: 8
+title: '08. 依赖注入'
+description: "Python 框架课程 · 依赖注入：IoC 思想与 DI 手段、Depends 容器与 override、FastAPI 原生 Depends(get_db)、API 层三件套（APIRouter + Annotated + Depends）。"
+displayed_sidebar: agentsFramework
+---
+
+# 依赖注入
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 理解IoC、DI、IoC容器
+
+`IoC`: **Inversion of Control，控制反转**
+
+`DI`：**Dependency Injection，依赖注入**
+
+```python
+def check_permission(user: str):
+    print(f"验证用户{user}权限")
+    return True
+
+
+def ali_oss_upload(user: str, file: str):
+    if not check_permission(user):
+        raise Exception("权限不足")
+    print(f"阿里云，{file} 上传中...")
+
+
+def upload_file(user: str, file: str):
+    print("上传准备")
+    ali_oss_upload(user, file)
+    print("上传成功")
+
+
+# 正常情况
+upload_file("张三", "1.txt")
+
+# 特殊情况：希望切换为腾讯云怎么办？？？
+# 测试环境：希望使用假的oss上传怎么办？？？
+
+```
+
+```python
+from typing import Callable
+
+
+def check_permission(user: str) -> bool:
+    print(f"验证用户{user}权限")
+    return True
+
+
+def ali_oss_upload(user: str, file: str, has_permission: Callable):
+    if not has_permission(user):
+        raise Exception("权限不足")
+    print(f"阿里云，{file} 上传中...")
+
+
+def upload_file(user: str, file: str, oss_upload: Callable, has_permission: Callable):
+    print("上传准备")
+    oss_upload(user, file, has_permission)  # 注意这里传入的是函数本身
+    print("上传成功")
+
+
+# 正常情况
+upload_file("张三", "1.txt", ali_oss_upload, check_permission)
+
+
+# 特殊情况：希望切换为腾讯云怎么办？？？
+def tencent_oss_upload(user: str, file: str, has_permission: Callable):
+    if not has_permission(user):
+        raise Exception("权限不足")
+    print(f"腾讯云，{file} 上传中...")
+
+
+upload_file("张三", "1.txt", tencent_oss_upload, check_permission)
+
+
+# 测试环境：希望使用假的oss上传怎么办？？？
+def fake_upload(user: str, file: str, has_permission: Callable):
+    if not has_permission(user):
+        raise Exception("权限不足")
+    print(f"模拟，{file} 上传中...")
+
+
+def fake_check_permission(user: str) -> bool:
+    print(f"模拟：验证用户{user}权限")
+    return True
+
+
+upload_file("张三", "1.txt", fake_upload, fake_check_permission)
+
+```
+
+```python
+# Depends.py
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
+
+
+class Depends:
+    _overrides: dict[Callable[..., Any], Callable[..., Any]] = {}
+
+    def __init__(self, func: Callable[..., Any]) -> None:
+        self.func = func
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        actual = self._overrides.get(self.func, self.func)
+        return actual(*args, **kwds)
+
+    @classmethod
+    def override(
+        cls,
+        original: Callable[..., Any],
+        replacement: Callable[..., Any],
+    ) -> None:
+        cls._overrides[original] = replacement
+
+    @classmethod
+    def clear_override(cls, func: Callable[..., Any] | None = None) -> None:
+        if func is not None:
+            cls._overrides.pop(func, None)
+        else:
+            cls._overrides.clear()
+```
+
+```python
+# main.py
+from Depends import Depends
+
+
+def check_permission(user: str) -> bool:
+    print(f"验证用户{user}权限")
+    return True
+
+
+def ali_oss_upload(user: str, file: str, has_permission=Depends(check_permission)):
+    if not has_permission(user):
+        raise Exception("权限不足")
+    print(f"阿里云，{file} 上传中...")
+
+
+def upload_file(user: str, file: str, oss_upload=Depends(ali_oss_upload)):
+    print("上传准备")
+    oss_upload(user, file)  # 注意这里传入的是函数本身
+    print("上传成功")
+
+
+# 正常情况
+upload_file("张三", "1.txt")
+
+
+# 特殊情况：希望切换为腾讯云怎么办？？？
+def tencent_oss_upload(user: str, file: str, has_permission=Depends(check_permission)):
+    if not has_permission(user):
+        raise Exception("权限不足")
+    print(f"腾讯云，{file} 上传中...")
+
+
+Depends.override(ali_oss_upload, tencent_oss_upload)
+upload_file("张三", "2.txt")
+
+
+# 测试环境：希望使用假的oss上传怎么办？？？
+def fake_upload(user: str, file: str, has_permission=Depends(check_permission)):
+    if not has_permission(user):
+        raise Exception("权限不足")
+    print(f"模拟，{file} 上传中...")
+
+
+def fake_check_permission(user: str) -> bool:
+    print(f"模拟：验证用户{user}权限")
+    return True
+
+
+Depends.clear_override()
+Depends.override(ali_oss_upload, fake_upload)
+Depends.override(check_permission, fake_check_permission)
+upload_file("张三", "3.txt")
+
+```
+
+**IoC**：一种设计思想，旨在将某种**选择权**移交出去，从而避免与其耦合
+
+**DI**：将IoC思想落地的一种手段
+
+**IoC容器**：优化DI的工具，它负责交付依赖项
+
+## 完善API层
+
+### 复制代码
+
+复制当前目录的`duyi-service`下的内容到`apps/web-service/app`中
+
+### 该写get_db
+
+```python
+async def get_db():
+    async with get_session_factory().begin() as session:
+        yield session
+```
+
+## 完成代码
+
+`app/main.py`
+
+```python
+from fastapi import FastAPI
+
+from app.core.config import common_settings, web_settings
+from app.exception.base import BusinessException
+
+app = FastAPI(
+    title=web_settings.app_name,
+    docs_url=None if common_settings.environment == "production" else "/docs",
+    redoc_url=None if common_settings.environment == "production" else "/redoc",
+    openapi_url=(
+        None if common_settings.environment == "production" else "/openapi.json"
+    ),
+)
+
+# 注册路由
+from app.api.products import router as product_router
+from app.api.categories import router as category_router
+from app.api.skus import router as sku_router
+
+app.include_router(product_router)
+app.include_router(category_router)
+app.include_router(sku_router)
+```
+
+`app/core/config.py`
+
+```python
+from pydantic_settings import BaseSettings
+
+
+class _BaseSettingsWithEnv(BaseSettings):
+    # 配置读取方式
+    model_config = {"env_file": ".env", "extra": "ignore"}  # env文件的位置
+
+
+# 通用配置
+class _CommonSettings(_BaseSettingsWithEnv):
+    environment: str = "development"
+
+
+# web服务配置
+class _WebSettings(_BaseSettingsWithEnv):
+    app_name: str = "Web Service API"  # 实际读取 WEB_APP_NAME
+
+    # 配置读取方式
+    model_config = {"env_prefix": "WEB_"}
+
+
+# 数据库配置
+class _DBSettings(_BaseSettingsWithEnv):
+    host: str = ""
+    port: str = ""
+    name: str = ""
+    user: str = ""
+    password: str = ""
+
+    model_config = {"env_prefix": "DB_"}
+
+
+common_settings = _CommonSettings()
+web_settings = _WebSettings()
+db_settings = _DBSettings()
+```
+
+`app/core/database.py`
+
+```python
+from collections.abc import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    create_async_engine,
+    async_sessionmaker,
+)
+
+from app.core.config import db_settings
+
+_engine: AsyncEngine | None = None
+
+
+def get_engine() -> AsyncEngine:
+    global _engine
+
+    if _engine is None:
+        url = f"postgresql+asyncpg://{db_settings.user}:{db_settings.password}@{db_settings.host}:{db_settings.port}/{db_settings.name}"
+        _engine = create_async_engine(
+            url, pool_size=10, max_overflow=20, pool_pre_ping=True, echo=False
+        )
+
+    return _engine
+
+
+_session_factory: async_sessionmaker[AsyncSession] | None = None
+
+
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    global _session_factory
+
+    if _session_factory is None:
+        _session_factory = async_sessionmaker(
+            get_engine(),
+            class_=AsyncSession,  # 明确指定使用异步 Session
+            expire_on_commit=False,
+            autoflush=True,
+        )
+
+    return _session_factory
+
+
+def get_db():
+    return get_session_factory()()
+```
+
+`app/api/products.py`
+
+```python
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.schema.product import ProductBrief, ProductCreate, ProductResponse, ProductUpdate
+from app.service.product_service import ProductService
+
+router = APIRouter(prefix="/api/products", tags=["商品"])
+
+
+@router.post("", response_model=ProductResponse, status_code=201)
+async def create_product(
+    data: ProductCreate, db: Annotated[AsyncSession, Depends(get_db)]
+):
+    return await ProductService(db).create_product(data)
+
+
+@router.get("")
+async def list_products(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    keyword: str | None = Query(default=None, description="搜索关键词"),
+    category_id: int | None = Query(default=None, description="分类ID筛选"),
+    brand: str | None = Query(default=None, description="品牌筛选"),
+    page: int = Query(default=1, ge=1, description="页码"),
+    page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
+):
+    return await ProductService(db).list_products(
+        keyword=keyword,
+        category_id=category_id,
+        brand=brand,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/{product_id}", response_model=ProductResponse)
+async def get_product(
+    product_id: int, db: Annotated[AsyncSession, Depends(get_db)]
+):
+    result = await ProductService(db).get_product(product_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="商品不存在")
+    return result
+
+
+@router.put("/{product_id}", response_model=ProductResponse)
+async def update_product(
+    product_id: int,
+    data: ProductUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    result = await ProductService(db).update_product(product_id, data)
+    if result is None:
+        raise HTTPException(status_code=404, detail="商品不存在")
+    return result
+
+
+@router.delete("/{product_id}", status_code=204)
+async def delete_product(
+    product_id: int, db: Annotated[AsyncSession, Depends(get_db)]
+):
+    deleted = await ProductService(db).delete_product(product_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="商品不存在")
+```
+
+`app/api/categories.py`
+
+```python
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.schema.category import (
+    CategoryCreate,
+    CategoryDetailResponse,
+    CategoryResponse,
+    CategoryUpdate,
+)
+from app.service.category_service import CategoryService
+
+router = APIRouter(prefix="/api/categories", tags=["分类"])
+
+
+@router.post("", response_model=CategoryResponse, status_code=201)
+async def create_category(
+    data: CategoryCreate, db: Annotated[AsyncSession, Depends(get_db)]
+):
+    return await CategoryService(db).create_category(data)
+
+
+@router.get("")
+async def list_categories(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    page: int = Query(default=1, ge=1, description="页码"),
+    page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
+):
+    return await CategoryService(db).list_categories(page=page, page_size=page_size)
+
+
+@router.get("/{category_id}", response_model=CategoryDetailResponse)
+async def get_category(
+    category_id: int, db: Annotated[AsyncSession, Depends(get_db)]
+):
+    result = await CategoryService(db).get_category(category_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="分类不存在")
+    return result
+
+
+@router.put("/{category_id}", response_model=CategoryResponse)
+async def update_category(
+    category_id: int,
+    data: CategoryUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    result = await CategoryService(db).update_category(category_id, data)
+    if result is None:
+        raise HTTPException(status_code=404, detail="分类不存在")
+    return result
+
+
+@router.delete("/{category_id}", status_code=204)
+async def delete_category(
+    category_id: int, db: Annotated[AsyncSession, Depends(get_db)]
+):
+    deleted = await CategoryService(db).delete_category(category_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="分类不存在")
+```
+
+`app/api/skus.py`
+
+```python
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.schema.sku import SkuCreate, SkuResponse, SkuUpdate
+from app.service.sku_service import SkuService
+
+router = APIRouter(tags=["SKU"])
+
+
+# ---- 挂载在商品下的 SKU 操作 ----
+
+
+@router.post(
+    "/api/products/{product_id}/skus", response_model=SkuResponse, status_code=201
+)
+async def create_sku(
+    product_id: int,
+    data: SkuCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    result = await SkuService(db).create_sku(product_id, data)
+    if result is None:
+        raise HTTPException(status_code=404, detail="商品不存在")
+    return result
+
+
+@router.get("/api/products/{product_id}/skus", response_model=list[SkuResponse])
+async def list_skus(
+    product_id: int, db: Annotated[AsyncSession, Depends(get_db)]
+):
+    return await SkuService(db).list_skus(product_id)
+
+
+# ---- 独立 SKU 操作 ----
+
+
+@router.get("/api/skus/{sku_id}", response_model=SkuResponse)
+async def get_sku(sku_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+    result = await SkuService(db).get_sku(sku_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="SKU不存在")
+    return result
+
+
+@router.put("/api/skus/{sku_id}", response_model=SkuResponse)
+async def update_sku(
+    sku_id: int,
+    data: SkuUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    result = await SkuService(db).update_sku(sku_id, data)
+    if result is None:
+        raise HTTPException(status_code=404, detail="SKU不存在")
+    return result
+
+
+@router.delete("/api/skus/{sku_id}", status_code=204)
+async def delete_sku(sku_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+    deleted = await SkuService(db).delete_sku(sku_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="SKU不存在")
+
+
+@router.patch("/api/skus/{sku_id}/stock", response_model=SkuResponse)
+async def update_stock(
+    sku_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    stock: int = Query(..., ge=0, description="新库存数量"),
+):
+    result = await SkuService(db).update_stock(sku_id, stock)
+    if result is None:
+        raise HTTPException(status_code=404, detail="SKU不存在")
+    return result
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0008-依赖注入.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/依赖注入速查表.html">📋 依赖注入速查表（可打印）</a>

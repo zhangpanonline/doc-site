@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 依赖注入：IoC 与 DI、Depends 容器 override、FastAPI Depends(get_db)、API 层三件套——互动教学课程">
+  <title>依赖注入 · 互动教学课程（Python 框架 fw-08）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>依赖注入</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/依赖注入">08.依赖注入</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 IoC（思想）、DI（手段）、IoC 容器（工具）三者的关系</li>
+        <li>手写 Depends 容器并演示 override/clear_override 切换依赖</li>
+        <li>用 FastAPI 原生 DI 三件套写接口：APIRouter + Annotated + Depends(get_db)</li>
+        <li>说清 API 层只做「接请求 → 调 service → 翻译 HTTP 状态」的原因</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《08.依赖注入》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三个概念（课件原文）</h3>
+        <ul class="pitfall-list">
+          <li><strong>IoC</strong>：一种设计思想，旨在将某种<strong>选择权</strong>移交出去，从而避免与其耦合</li>
+          <li><strong>DI</strong>：将 IoC 思想落地的一种手段（课件演示：把 oss_upload 作为参数传进去）</li>
+          <li><strong>IoC 容器</strong>：优化 DI 的工具，它负责交付依赖项（课件 Depends 类：_overrides 表 + __call__ 查表）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>FastAPI 原生 DI 三件套</h3>
+        <ul class="pitfall-list">
+          <li><strong>APIRouter</strong>：prefix + tags 组织一组路径操作（products/categories/skus 三个 router）</li>
+          <li><strong>Depends(get_db)</strong>：get_db 是 dependable，FastAPI 自动调用并注入返回值</li>
+          <li><strong>Annotated[AsyncSession, Depends(get_db)]</strong>：类型标注 + 依赖声明合一，写入函数签名</li>
+          <li>接口层分工：<code>ProductService(db).create_product(data)</code>；查不到 → <code>raise HTTPException(404)</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《08.依赖注入》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. IoC、DI、IoC 容器三者是什么关系？（课件原文）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">互不相关</button>
+            <button class="quiz-option">三者是同一个东西的三个名字</button>
+            <button class="quiz-option">IoC 是设计思想；DI 是落地手段；IoC 容器是负责交付依赖项的工具</button>
+            <button class="quiz-option">IoC 是工具，DI 是思想</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：IoC——一种设计思想，把选择权移交出去避免耦合；DI——将 IoC 落地的一种手段；IoC 容器——优化 DI 的工具，负责交付依赖项。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 课件第一个问题「希望切换为腾讯云怎么办」的解法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">删掉阿里云代码重写</button>
+            <button class="quiz-option">把 oss_upload 作为参数传入 upload_file，调用方决定用哪个实现</button>
+            <button class="quiz-option">复制一份代码改成腾讯云</button>
+            <button class="quiz-option">加 if-else 判断环境</button>
+          </div>
+          <div class="quiz-explain" hidden>课件第二段代码：upload_file(user, file, oss_upload, has_permission)——依赖作为参数传入，正常/腾讯云/测试假实现三种场景只换传入的函数，upload_file 本身零改动。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 课件 Depends 类的 override 是做什么的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把原始依赖函数替换成替代实现，测试/切换场景用</button>
+            <button class="quiz-option">提高依赖执行速度</button>
+            <button class="quiz-option">删除一个依赖</button>
+            <button class="quiz-option">给依赖加密</button>
+          </div>
+          <div class="quiz-explain" hidden>Depends.override(original, replacement) 写入 _overrides 表；__call__ 时查表，命中就执行替代实现。clear_override 清空。演示：override(ali_oss_upload, fake_upload) 后 upload_file 自动走模拟上传。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. FastAPI 里 get_db 是什么角色？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一个路由</button>
+            <button class="quiz-option">一个配置项</button>
+            <button class="quiz-option">dependable：Depends(get_db) 声明后 FastAPI 自动调用并把返回值注入参数</button>
+            <button class="quiz-option">一个中间件</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 api/ 三文件：db: Annotated[AsyncSession, Depends(get_db)]——FastAPI 调用 get_db() 拿到 AsyncSession 注入。get_db 在课件最终版是 async def 生成器（begin 上下文里 yield session，结束自动提交）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. Annotated[AsyncSession, Depends(get_db)] 拆开看，两部分各自干什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两边都是装饰器</button>
+            <button class="quiz-option">类型标注 AsyncSession + 依赖声明 Depends(get_db)，合在函数签名里</button>
+            <button class="quiz-option">纯注释，无实际作用</button>
+            <button class="quiz-option">左边是默认值，右边是校验器</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：Annotated 把「这个参数是什么类型」和「FastAPI 从哪拿这个参数」声明在一起——IDE 知道 db 是 AsyncSession，FastAPI 知道要先调 get_db。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 课件 main.py 里 docs_url/openapi_url 的写法实现了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">production 环境禁用文档，开发环境开启</button>
+            <button class="quiz-option">永远开启文档</button>
+            <button class="quiz-option">永远关闭文档</button>
+            <button class="quiz-option">随机开关</button>
+          </div>
+          <div class="quiz-explain" hidden>docs_url=None if common_settings.environment == "production" else "/docs"——按环境变量 conditionally 控制 OpenAPI 文档（对应 ch01 面试题「按环境开关」的正确姿势）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. APIRouter 的三个 router 是怎么注册进应用的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">自动发现导入</button>
+            <button class="quiz-option">复制粘贴到 main.py</button>
+            <button class="quiz-option">app.include_router(product_router) 逐个挂载</button>
+            <button class="quiz-option">在 settings 里配置</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 main.py：import 三个 router 后 app.include_router(...) 三次——main.py 只做组装，路由定义分散在各 api/ 文件。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. API 层查到 None 时怎么处理？为什么不在 service 层抛 HTTPException？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">忽略不管</button>
+            <button class="quiz-option">返回空列表代替</button>
+            <button class="quiz-option">API 层 raise HTTPException(404)；service 只返回 None——HTTP 语义归接口层</button>
+            <button class="quiz-option">service 层直接抛 HTTPException</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 api/ 三文件统一模式：if result is None: raise HTTPException(404, detail="...")。service 保持与 HTTP 解耦（ch07 边界关注点），404/201/204 这些 HTTP 语义由接口层翻译。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. skus.py 里挂在商品下的 SKU 路由和独立 SKU 路由怎么区分？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">用两个域名</button>
+            <button class="quiz-option">同一个 router 里显式写完整路径：/api/products/{id}/skus 与 /api/skus/{id}</button>
+            <button class="quiz-option">通过中间件转发</button>
+            <button class="quiz-option">两个不同的应用实例</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 skus.py：router = APIRouter(tags=["SKU"]) 不设 prefix，路径操作里写完整路径——商品下的 SKU 操作（POST/GET /api/products/{product_id}/skus）与独立 SKU 操作（/api/skus/{sku_id}）在同一个 router 里分组注释区分。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0008-依赖注入',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的接口：db: AsyncSession = Depends(get_db) 但 get_db 是普通函数返回一个 session 实例，接口函数里用完不关闭。按本课知识，哪两个隐患？`,
+              source: '来源：FastAPI 官方文档 Dependencies（"What is Dependency Injection" 章节：dependable 被 FastAPI 自动调用并注入结果）https://fastapi.tiangolo.com/tutorial/dependencies/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《08.依赖注入》课件 get_db',
+              breakdown: `课件 get_db 的最终形态是 <strong>async def 生成器</strong>：<code>async with get_session_factory().begin() as session: yield session</code>——依赖生成器被 FastAPI 管理生命周期：请求进来取 session，响应结束后执行 yield 之后的清理（上下文退出 = 自动提交/回滚并归还连接）。AI 的写法绕过了这套机制：① 接口异常时 session 不 commit 也不 close，连接泄漏回连接池；② 每个请求手工管理 session 生命周期，忘了就是事故。Dependency 的另一个作用：get_db 是「选择权的移交」——将来换成从连接池拿/加日志，改 dependable 一处，所有接口无感。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `课件手写了一个 Depends 容器（_overrides 字典 + __call__ 查表）。讲清它的运行机制，以及 FastAPI 里对应的是什么机制？`,
+              source: '来源：FastAPI 官方文档 Testing Dependencies with Overrides（dependency_overrides 替换依赖用于测试）https://fastapi.tiangolo.com/advanced/testing-dependencies/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《08.依赖注入》课件 Depends.py',
+              breakdown: `课件容器机制：<strong>① 注册</strong>——Depends(func) 把 func 存进 self.func；<strong>② 查表</strong>——__call__ 时 _overrides.get(self.func, self.func)，命中替换就执行替代实现，否则执行原函数；<strong>③ override/clear_override</strong> 写入与清空映射。演示里 override(ali_oss_upload, tencent_oss_upload) 后，所有「声明依赖 ali_oss_upload」的调用点自动切换——调用点零改动，这就是 IoC「把选择权移交出去」。 FastAPI 的对应物是 <strong>app.dependency_overrides[get_db] = fake_get_db</strong>：官方文档的标准测试手段，测试里替换真实依赖，机制与课件容器同构。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的接口层：一个 router 里 12 个路径操作全堆在 main.py，且部分接口里还写着创建商品的具体业务逻辑（拼 SQL、算价格）。按 ch07+ch08 的标准审查并给出整改方向。`,
+              source: '来源：FastAPI 官方教程 Bigger Applications - Multiple Files（APIRouter 拆分路径操作、main 只做组装）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《08.依赖注入》课件完成代码',
+              breakdown: `两个问题的整改：<strong>① 路由组织</strong>——按资源拆 router：products.py（prefix="/api/products", tags=["商品"]）、categories.py、skus.py，main.py 只 include_router 组装（课件完成代码就是标准答案）；<strong>② 分层边界</strong>——接口函数只做三件事：接 DTO → 调 service（ProductService(db).xxx()）→ 翻译 HTTP 语义（None → 404 / 成功 → response_model），业务逻辑回 service 层。审查口诀（ch07 课件）：入参和返回的是什么？是否耦合了接口层的东西？——接口里拼 SQL 就是越界，未来多入口复用（WebSocket/任务队列）时业务逻辑不可用。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：既然 FastAPI 已经内置了 Depends，课件为什么还要先手写一个 Depends 容器？两者什么关系？`,
+              source: '来源：FastAPI 官方文档 Dependencies（First Steps：Depends 声明依赖并自动注入）https://fastapi.tiangolo.com/tutorial/dependencies/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《08.依赖注入》课件（概念 → 手写容器 → 原生 DI 的教学顺序）',
+              breakdown: `课件先讲概念再讲工具：手写 Depends 容器是为了让 IoC/DI 的机制<strong>可见</strong>——_overrides 字典和 __call__ 查表就是所有 IoC 容器的内核（工厂表 + 查找替换），30 行代码把「控制反转」从名词变成可运行的东西。理解了它，FastAPI 的 Depends 就只是「框架替你维护这张表，并增加了解析函数签名、缓存、生成器生命周期管理」的工业版。反过来，如果一上来就用框架，遇到「为什么测试里能换掉依赖」这类问题只能背 API 行为。设计上的收获：<strong>选择权移交 = 调用点不写死具体实现，容器负责交付</strong>——换 OSS 厂商、换鉴权实现、测试注入假对象，改的是注册表而不是业务代码。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `跑通本章 API 层（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '覆盖 ch08 的 main.py/core/api 文件 → make dev 启动 → 浏览器 /docs 验证 3 组路由 → curl 建分类/建商品/建SKU/搜索/更新库存 → 用 production 环境变量重启验证文档被禁用。',
+                accept: ['/docs 能看到商品/分类/SKU 三组路由', 'curl 全流程 CRUD 返回 201/200/204', '404 场景返回「商品不存在」等业务文案', 'production 环境 /docs 与 /openapi.json 均 404'],
+              },
+              source: '任务基于《08.依赖注入》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：覆盖代码后 make dev 起服务（8080 端口），/docs 交互式调试最直观。坑：get_db 依赖 session 生命周期——课件当前版本 get_db 是普通函数返回 session，接口成功后数据要等 session 归还连接时提交（版本差异）；production 验证改 .env 的 COMMON_ENVIRONMENT？不对——environment 字段在 _CommonSettings 无 env_prefix，对应环境变量名是 ENVIRONMENT=production。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（08.依赖注入）</li>
+        <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/dependencies/">FastAPI 官方：Dependencies</a> · <a href="https://fastapi.tiangolo.com/advanced/testing-dependencies/">Testing Dependencies with Overrides</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/依赖注入速查表.html">依赖注入速查表</a>——三概念、容器机制、API 三件套一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/业务逻辑">07.业务逻辑</a> · 下一课 <a href="/agents/python-framework/统一异常处理">09.统一异常处理</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以 /docs 里能看到三组路由并跑通 CRUD 为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

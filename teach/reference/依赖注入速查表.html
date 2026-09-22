@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>依赖注入速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>依赖注入速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0008-依赖注入.html">《依赖注入互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>三个概念</h2>
+      <dl class="term-grid">
+        <dt>IoC</dt>
+        <dd>设计思想：把某种选择权移交出去，避免与其耦合。</dd>
+        <dt>DI</dt>
+        <dd>把 IoC 落地的手段（依赖作为参数传入）。</dd>
+        <dt>IoC 容器</dt>
+        <dd>优化 DI 的工具，负责交付依赖项。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>手写容器内核（课件）</h2>
+      <pre>class Depends:
+    _overrides = {}          # 注册表：原函数 → 替代实现
+    def __init__(self, func):
+        self.func = func
+    def __call__(self, *a, **kw):
+        actual = self._overrides.get(self.func, self.func)
+        return actual(*a, **kw)
+    # override(original, replacement) / clear_override()</pre>
+      <p>调用点声明 <code>Depends(默认实现)</code>；切换/测试时 override 注册表，调用点零改动。</p>
+    </section>
+
+    <section>
+      <h2>FastAPI 原生 DI 三件套</h2>
+      <pre>db: Annotated[AsyncSession, Depends(get_db)]
+
+router = APIRouter(prefix="/api/products", tags=["商品"])
+
+app.include_router(product_router)</pre>
+      <dl class="term-grid">
+        <dt>get_db</dt>
+        <dd>dependable；最终形态是 async 生成器：begin 上下文里 yield session。</dd>
+        <dt>API 层分工</dt>
+        <dd>接 DTO → 调 service → 翻译 HTTP（None → HTTPException(404)；201/204）。</dd>
+        <dt>测试替换</dt>
+        <dd>app.dependency_overrides[get_db] = fake_get_db。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>
