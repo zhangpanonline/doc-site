@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 部署-k8s：Kubernetes 定位、ACS 集群、kubectl 与镜像拉取凭证、Helm 部署、ALB Ingress——互动教学课程">
+  <title>部署-k8s · 互动教学课程（Python 框架 fw-23）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>部署-k8s</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/部署-k8s">23.部署-k8s</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 Kubernetes 的定位：自动部署、扩缩和管理容器化应用</li>
+        <li>按课件创建 ACS 集群并连上 kubectl（get nodes 验证）</li>
+        <li>用 docker-registry secret 配置镜像拉取凭证、用 Helm 带参部署 duyi-service</li>
+        <li>说清 ALB → Ingress → Service → Pod 的流量链路与 80 重定向 443</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《23.部署-k8s》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>集群与工具链</h3>
+        <ul class="pitfall-list">
+          <li><strong>ACS</strong>：阿里云容器计算服务——托管 k8s 集群（duyi-cluster，同 VPC，两个带 pod 的交换机）</li>
+          <li><strong>kubectl</strong>：命令行入口，config 公网访问；<code>kubectl get nodes</code> 验证连通</li>
+          <li><strong>Helm</strong>：包管理器——upgrade --install 带参部署（--set secret.* 注入密钥）</li>
+          <li><strong>镜像版本纪律</strong>：等集群期间删掉 ACR 的 latest 镜像，改用带版本号 tag</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>拉取凭证与流量链路</h3>
+        <ul class="pitfall-list">
+          <li><strong>docker-registry secret</strong>：kubectl create secret docker-registry——集群 pull 私有镜像的身份信息</li>
+          <li><strong>ALB</strong>：公网负载均衡（同 VPC、两个不带 pod 的交换机）→ 域名 CNAME 指向 ALB DNS</li>
+          <li><strong>Ingress</strong>：路由规则——服务 duyi-service、端口 8080；80 重定向 443（HTTPS）</li>
+          <li>链路：域名 → ALB(443) → Ingress → Service → Pod(8080)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《23.部署-k8s》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. Kubernetes 是什么？（课件原文）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一种数据库</button>
+            <button class="quiz-option">用于自动部署、扩缩和管理容器化应用程序的开源系统</button>
+            <button class="quiz-option">阿里云专有的部署工具</button>
+            <button class="quiz-option">一种编程语言</button>
+          </div>
+          <div class="quiz-explain" hidden>课件开头：K8s 全称 Kubernetes——用于自动部署、扩缩和管理容器化应用程序的开源系统（ch21 容器的规模化编排层）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. kubectl 是什么？怎么验证连上了集群？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">k8s 命令行工具；kubectl get nodes 能看到节点即连通</button>
+            <button class="quiz-option">数据库客户端</button>
+            <button class="quiz-option">镜像仓库</button>
+            <button class="quiz-option">阿里云控制台</button>
+          </div>
+          <div class="quiz-explain" hidden>课件步骤 2/5：安装 kubectl → 获取长期 config（公网访问）→ 本地 kubectl get nodes 看节点——看到即集群可达。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. Helm 在部署里扮演什么角色？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">CI 工具</button>
+            <button class="quiz-option">监控系统</button>
+            <button class="quiz-option">代码编辑器</button>
+            <button class="quiz-option">k8s 的包管理器：helm upgrade --install 带参部署应用</button>
+          </div>
+          <div class="quiz-explain" hidden>课件步骤 8/9：brew install helm；helm upgrade --install duyi-service ./k8s --set secret.dbPassword=... ——chart 定义资源，--set 注入配置。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 创建集群时为什么选「带有 pod 名称的」两个交换机？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">随便选的</button>
+            <button class="quiz-option">带 pod 的交换机更快</button>
+            <button class="quiz-option">Pod 网络的专用交换机——两个保证跨可用区冗余</button>
+            <button class="quiz-option">为了省钱</button>
+          </div>
+          <div class="quiz-explain" hidden>课件集群配置：选两个交换机（带有 pod 名称的）——ch22 建的 4 个交换机在此分工：2 个给 pod 网络、2 个留给 ALB；跨可用区成对保证高可用。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. docker-registry secret 解决什么问题？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">HTTPS 证书</button>
+            <button class="quiz-option">集群登录</button>
+            <button class="quiz-option">集群从私有 ACR pull 镜像的身份凭证</button>
+            <button class="quiz-option">数据库密码</button>
+          </div>
+          <div class="quiz-explain" hidden>课件步骤 6：kubectl create secret docker-registry acr-registry-secret --docker-server/--docker-username/--docker-password——ACR 是私有的，集群拉镜像要有身份。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. helm 命令里 --set secret.dbPassword="$DB_PASSWORD" 的用意？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">设置数据库名</button>
+            <button class="quiz-option">写死密码</button>
+            <button class="quiz-option">密钥从环境变量注入 chart（不进代码库），部署时由操作者提供</button>
+            <button class="quiz-option">无意义参数</button>
+          </div>
+          <div class="quiz-explain" hidden>课件步骤 9：先 export DB_PASSWORD/JWT_SECRET_KEY（会话级），helm --set 引用注入——敏感值不进 git（ch02/ch21 的密钥纪律延续）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 等待集群创建时「删掉 ACR 的 latest 镜像」是为了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有意义</button>
+            <button class="quiz-option">latest 镜像太大</button>
+            <button class="quiz-option">省存储费</button>
+            <button class="quiz-option">latest 是可变指针——集群无法确定跑的是哪个版本，回滚无依据；改用版本号 tag</button>
+          </div>
+          <div class="quiz-explain" hidden>课件等待期提示：删除 latest、改用带版本号标记——进入 k8s 后版本可追溯是底线（ch22 面试题同款），ch24 流水线会自动化打版本 tag。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 流量从域名到 Pod 的完整链路是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">域名直接到 Pod</button>
+            <button class="quiz-option">域名 → 数据库 → 应用</button>
+            <button class="quiz-option">IP 直连容器</button>
+            <button class="quiz-option">域名（CNAME）→ ALB → Ingress 路由 → Service duyi-service → Pod:8080</button>
+          </div>
+          <div class="quiz-explain" hidden>课件步骤 11：CNAME 指向 ALB DNS → ALB Ingress Controller → 创建 Ingress（服务 duyi-service、端口 8080）→ 转发到 Service/Pod。Pod 地址会漂移，入口永远锚在 ALB。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. ALB 的 80 端口规则「重定向到 443」解决什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">80 端口坏了</button>
+            <button class="quiz-option">HTTP 自动跳 HTTPS——用户输裸域名也走加密通道（ch22 证书在 443 上生效）</button>
+            <button class="quiz-option">为了双端口负载</button>
+            <button class="quiz-option">没有原因</button>
+          </div>
+          <div class="quiz-explain" hidden>课件步骤 11.4：80 端口已自动创建，编辑转发规则重定向到 443——证书绑定 443，所有 HTTP 流量强制升级 HTTPS。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0023-部署-k8s',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的部署清单：镜像 tag 用 latest 直接部署到集群；数据库密码明文写进 k8s 的 yaml 文件提交到 git。按本课纪律，两个问题各是什么？`,
+              source: '来源：Kubernetes 官方文档 Overview（容器编排与 Secret 管理）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《23.部署-k8s》课件',
+              breakdown: `<strong>① latest 漂移</strong>——课件在等集群创建的间隙专门安排「删掉 ACR 的 latest 镜像，改用带版本号 tag」：latest 是可变指针，集群里「跑的是哪个提交」无法回答，出了问题既不知道差在哪、也回滚不了（kubectl rollout undo 需要确定的镜像版本）。 <strong>② 密码进 yaml 进 git</strong>——课件姿势：kubectl create secret docker-registry + helm --set secret.dbPassword="$DB_PASSWORD"（会话环境变量注入）；yaml 进 git = 密码进版本历史 = 每个能读仓库的人都能拿到生产库密码。k8s 原生有 Secret 资源，配合 helm 的值注入，敏感信息走部署时参数，不走源码。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `k8s 里 Pod 重启后 IP 会变，那外部流量是怎么稳定到达应用的？讲清 ALB → Ingress → Service 每一跳的作用。`,
+              source: '来源：Kubernetes 官方文档 Overview（Service 与 Ingress 抽象）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《23.部署-k8s》课件（步骤 11）',
+              breakdown: `三个抽象各解决一层问题：<strong>① Service</strong>——Pod 是短命资源（扩缩/重启 IP 漂移），Service 提供稳定的集群内入口 + 负载均衡（按标签选后端 Pod）；课件 Ingress 指向服务 duyi-service（名字稳定，IP 无所谓）。 <strong>② Ingress</strong>——七层路由规则：把「域名/路径」映射到 Service（端口 8080）；ALB Ingress Controller 监听 Ingress 资源并同步到云负载均衡。 <strong>③ ALB</strong>——公网入口：域名 CNAME 到 ALB DNS，443 证书终结 TLS，80 重定向 443。流量链：浏览器 → 域名(CNAME) → ALB(443) → Ingress 规则 → Service → Pod:8080。Pod 随便重启，前三跳全都不动——<strong>入口锚在名字上，不在 IP 上</strong>。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的集群配置：① 集群选「新建 VPC」而不是用已有；② 4 个交换机全选进集群；③ helm 部署后不跑 kubectl get pods 直接宣布上线。逐条审查。`,
+              source: '来源：Kubernetes 官方文档 Overview · 渡一源课程《23.部署-k8s》课件（集群创建参数与部署步骤）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档 + 源课程）',
+              breakdown: `逐条：<strong>① 新建 VPC</strong>——课件明确「使用已有，选两个带 pod 的交换机」：ch22 的 RDS/OSS 都挂在那张 VPC 里，新建 VPC 等于把数据库和应用放进两个不互通的网络，内网地址直接失联（除非再打通 peering，徒增复杂度）。 <strong>② 4 个交换机全选</strong>——课件特意只选 2 个（带 pod 的），留 2 个（不带 pod 的）给 ALB——网络资源按角色分工，避免单点争抢。 <strong>③ 不验证 pod</strong>——helm upgrade --install 成功 ≠ 应用跑起来（镜像拉取失败、探针不过都会「部署成功但不可用」）；课件步骤 10 是 kubectl get pods 看状态，之后还有 ALB 链路验证——发布流程必须有健康确认环节。审查口诀：<strong>网络规划看归属、发布动作看验证</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：什么时候上 k8s？你们的服务才一个 API，值得吗？ALB Ingress Controller 是干嘛的？`,
+              source: '来源：Kubernetes 官方文档 Overview（容器编排的适用性）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《23.部署-k8s》课件（ACS/ALB 流程）',
+              breakdown: `诚实的分层回答：<strong>① 值不值</strong>——单服务低流量时 k8s 的复杂度（cluster/helm/ingress 一堆概念）确实高于收益，ch21 的 docker run 就够；上 k8s 的信号是：服务数量多（互相调用要服务发现）、要自动扩缩（流量波峰）、要滚动发布零停机（deployment 原生支持）、要自愈（Pod 挂了自动拉起）。课件的定位是「掌握流程」——ACI/ACS 这类托管集群把 k8s 的门槛降了不少（控制面托管、按 Pod 计费）。 <strong>② ALB Ingress Controller</strong>——桥：你只写 Ingress 资源（声明式：什么域名→什么服务），controller 监听到变更后自动在云端创建/更新 ALB 的监听与转发规则——把「云负载均衡配置」从控制台手工点，变成 git 里的 yaml（基础设施即代码）。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `把 duyi-service 部署到 ACS 集群（需要阿里云账号与 ch22 的资产，建议用 Claude Code 辅助），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 60 分钟',
+                goal: '按课件：创建 ACS 集群（已有 VPC/两个带 pod 交换机）→ kubectl 连通（get nodes）→ 建 docker-registry secret → brew install helm → helm upgrade --install 带密钥参数 → kubectl get pods 确认 Running → 创建 ALB（两个不带 pod 的交换机）→ 装 ALB Ingress Controller → 创建 Ingress → 域名 CNAME → 浏览器 https 访问 /api/products 成功。',
+                accept: ['kubectl get nodes 有节点', 'kubectl get pods 显示 Running', '域名 HTTPS 可访问接口（80 自动跳 443）'],
+              },
+              source: '任务基于《23.部署-k8s》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：严格按课件 11 步；等待集群的 5~10 分钟先删 ACR latest 镜像并重新 push 带版本号 tag（课件原话）。坑：config 选「公网访问」类型（本地 kubectl 才能连）；secret 的 --docker-server 用 ACR 内网地址（集群内拉取）；helm chart 在仓库的 k8s/ 目录（ch24 会讲它）；ALB 交换机必须选「没被集群占用的」那两个，否则创建失败。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（23.部署-k8s）</li>
+        <li><strong>深读推荐</strong>：<a href="https://kubernetes.io/docs/concepts/overview/">Kubernetes 官方：Overview</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/部署-k8s速查表.html">部署-k8s速查表</a>——工具链、secret、流量链路一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/部署-云资产">22.部署-云资产</a> · 下一课 <a href="/agents/python-framework/部署-CICD">24.部署-CICD</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以 HTTPS 域名访问到集群内接口为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+---
+sidebar_position: 23
+title: '23. 部署-k8s'
+description: "Python 框架课程 · 部署-k8s：Kubernetes 定位、ACS 集群创建、kubectl 与镜像拉取凭证、Helm 部署、ALB 入口配置。"
+displayed_sidebar: agentsFramework
+---
+
+# k8s
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+K8s的全称是 **Kubernetes**。它是一个**用于自动部署、扩缩和管理容器化应用程序的开源系统**
+
+![image-20260703205044579](https://resource.duyiedu.com/yuanjin/202607032050643.png)
+
+## 创建ACS集群
+
+1. 搜「ACS」，进入 容器计算服务 ACS 控制台
+2. 开通服务：根据提示一步一步操作，全部默认
+3. 创建集群：
+   - 集群名称：duyi-cluster
+   - 地域：vpc所在地域
+   - 专有网络：使用已有，选两个交换机（带有pod名称的）
+   - SNAT暂不勾选
+   - 安全组：普通安全组
+   - API Server：勾选EIP暴露API Server
+   - ingress：暂不创建
+   - 其他默认
+
+等待集群建立完成（5～10分钟左右）
+
+等待期间，你可以删除ACR的latest镜像，重新使用带有版本号标记的镜像
+
+## 部署服务
+
+1. 进入刚才创建的集群详情页，找到连接信息
+
+2. 根据提示安装`kubectl`
+
+3. 获取长期config，选公网访问
+
+4. 按照提示，将复制的config保存到指定位置
+
+5. 本地运行`kubectl get nodes`，看是否能看到节点
+
+6. 配置`docker`的拉取地址和身份信息
+
+   ```shell
+   export ACR_PASSWORD='<acr的密码>'
+   
+   # 创建拉取凭证
+   kubectl create secret docker-registry acr-registry-secret \
+     --docker-server=<acr的内网地址> \
+     --docker-username=<阿里云用户名> \
+     --docker-password="$ACR_PASSWORD"
+   ```
+
+7. 安装 `VSCode` 插件 `Kubernetes` 和 `Kubernetes Templates`
+
+8. 安装 `Helm`
+
+   - Mac: `brew install helm`
+   - windows: 使用windows的包管理工具，或者问AI
+
+9. 应用配置
+
+   ```shell
+   export DB_PASSWORD='<数据库密码>'
+   export JWT_SECRET_KEY='<jwt密钥>'
+   
+   helm upgrade --install duyi-service ./k8s \
+     --set secret.dbPassword="$DB_PASSWORD" \
+     --set secret.jwtSecretKey="$JWT_SECRET_KEY" \
+   ```
+
+10. 查看应用状态
+
+    ```shell
+    kubectl get pods
+    ```
+
+11. 配置ALB
+    1. 阿里云搜索SLB，创建ALB
+       1. 地域和VPC相同
+       2. 选择公网
+       3. 选择VPC
+       4. 选择两个VPC的交换机所在的可用区
+       5. 交换机选之前ACS集群没选过的（不带pod）
+       6. 标准版
+       7. 实例名称你看着取
+    2. 为域名添加CNAME记录，指向ALB的DNS
+    3. 安装ALB Ingress Controller
+       1. 进入容器计算服务
+       2. 组件管理：搜索ALB Ingress Controller
+       3. 安装，选择已有的Ingress
+       4. 等待安装完成
+       5. 网络 / 路由
+       6. 创建Ingress
+       7. 名称自行填写
+       8. 服务选择duyi-service
+       9. 端口8080
+    4. 监听：回到ALB
+       1. 80端口：已自动创建好了，编辑规则转发规则，重定向到443
+       2. 443端口
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0023-部署-k8s.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/部署-k8s速查表.html">📋 部署-k8s速查表（可打印）</a>

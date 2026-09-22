@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>部署-k8s速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>部署-k8s速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0023-部署-k8s.html">《部署-k8s互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>工具链</h2>
+      <dl class="term-grid">
+        <dt>ACS</dt>
+        <dd>托管 k8s 集群（duyi-cluster，已有 VPC + 2 个带 pod 的交换机）。</dd>
+        <dt>kubectl</dt>
+        <dd>命令行入口；get nodes 验证连通。</dd>
+        <dt>Helm</dt>
+        <dd>包管理器；upgrade --install + --set 注入配置。</dd>
+        <dt>版本纪律</dt>
+        <dd>镜像不用 latest，用版本号 tag。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>关键命令</h2>
+      <pre># 镜像拉取凭证
+kubectl create secret docker-registry acr-registry-secret \
+  --docker-server=&lt;acr内网地址&gt; --docker-username=&lt;用户名&gt; \
+  --docker-password="$ACR_PASSWORD"
+
+# 带密钥部署
+helm upgrade --install duyi-service ./k8s \
+  --set secret.dbPassword="$DB_PASSWORD" \
+  --set secret.jwtSecretKey="$JWT_SECRET_KEY"
+
+# 验证
+kubectl get pods</pre>
+    </section>
+
+    <section>
+      <h2>流量链路</h2>
+      <ol class="pitfall-list">
+        <li>域名 CNAME → ALB DNS（公网入口）</li>
+        <li>ALB：443 证书终结 TLS；80 重定向 443</li>
+        <li>ALB Ingress Controller → Ingress 规则（服务 duyi-service、端口 8080）</li>
+        <li>Service（稳定入口+负载均衡）→ Pod（IP 漂移无感）</li>
+      </ol>
+      <p>交换机分工：2 个带 pod 的给集群，2 个不带 pod 的给 ALB。</p>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>
