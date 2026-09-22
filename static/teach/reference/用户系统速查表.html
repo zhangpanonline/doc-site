@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>用户系统速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>用户系统速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0017-用户系统.html">《用户系统互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>密码学四类</h2>
+      <table class="cmp-table">
+        <tr><th>类别</th><th>有密钥</th><th>可逆</th><th>代表</th></tr>
+        <tr><td>对称加密</td><td>同一密钥</td><td>可逆</td><td>AES</td></tr>
+        <tr><td>非对称加密</td><td>公钥+私钥</td><td>可逆</td><td>RSA、ECC</td></tr>
+        <tr><td>哈希算法</td><td>无密钥</td><td>不可逆</td><td>SHA256、MD5</td></tr>
+        <tr><td>消息认证码</td><td>同一密钥</td><td>不可逆</td><td>HMAC-SHA256</td></tr>
+      </table>
+      <p>密码保存：bcrypt 加盐 + 多轮（hashpw/gensalt/checkpw）；JWT 签名 = 带密钥的哈希，不需加盐，payload 不加密别放敏感数据。</p>
+    </section>
+
+    <section>
+      <h2>凭证与认证链</h2>
+      <dl class="term-grid">
+        <dt>签发</dt>
+        <dd>create_token({"sub": user.id}, secret, expires_delta)；payload 含 jti/iat/exp。</dd>
+        <dt>过期时间</dt>
+        <dd>设置表 jwt_expire_minutes（默认 120）；密钥 WEB_JWT_SECRET_KEY。</dd>
+        <dt>认证依赖</dt>
+        <dd>HTTPBearer 取 token → decode（锁 HS256）→ sub 查库 → 注入 User。</dd>
+        <dt>业务异常</dt>
+        <dd>AuthException；登录失败统一话术防枚举；注册双保险（查重 + IntegrityError）。</dd>
+        <dt>改密</dt>
+        <dd>先 verify 旧密码，再 hash 新密码。</dd>
+        <dt>ContextVar</dt>
+        <dd>无参取上下文数据，并发任务互相隔离。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

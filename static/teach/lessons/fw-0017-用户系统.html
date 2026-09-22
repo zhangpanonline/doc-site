@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 用户系统：密码哈希与加盐 bcrypt、JWT 凭证与过期配置、ContextVar、HTTPBearer 认证依赖——互动教学课程">
+  <title>用户系统 · 互动教学课程（Python 框架 fw-17）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>用户系统</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/用户系统">17.用户系统</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清哈希与消息认证码的密码学定位，答出「JWT 需要加盐吗」</li>
+        <li>用 bcrypt 完成加盐哈希与校验，讲清彩虹表攻击与盐的作用</li>
+        <li>跑通注册/登录/me/改密全流程，讲出 JWT 过期时间与密钥的配置位置</li>
+        <li>用 HTTPBearer + get_current_user 依赖限制接口登录访问，并说清 ContextVar 的并发隔离</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《17.用户系统》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>密码保存（课件）</h3>
+        <ul class="pitfall-list">
+          <li><strong>哈希算法</strong>：无密钥、不可逆（SHA256）——固定输入固定输出；<strong>彩虹表</strong>：预计算常见明文哈希，可倒推</li>
+          <li><strong>加盐</strong>：随机盐 + 多轮计算（bcrypt 两者都有，每用户盐不同）——同样密码两次哈希不同</li>
+          <li><strong>消息认证码</strong>：带密钥的哈希（HMAC-SHA256），JWT 签名即此——控制「生成哈希的权力」</li>
+          <li><strong>JWT 加盐吗？</strong>不加——签名已用 secret_key，且 JWT 不加密（payload 只编码），别把敏感信息放里面</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>凭证与认证链（课件代码）</h3>
+        <ul class="pitfall-list">
+          <li><strong>过期时间</strong>：设置表 jwt_expire_minutes（ch15 系统设置实战！默认 120 分钟）；<strong>密钥</strong>：web_settings.jwt_secret_key（WEB_JWT_SECRET_KEY）</li>
+          <li><strong>get_current_user</strong>：HTTPBearer 取 token → decode（无效→AuthException）→ sub 转 user_id → 查库返回 User</li>
+          <li><strong>登录失败统一话术</strong>：「用户名或密码错误」——不区分哪个错，防用户名枚举</li>
+          <li><strong>ContextVar</strong>：不传参拿上下文数据，并发任务互不干扰（contextvars 官方机制）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《17.用户系统》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 密码保存用哪类算法？为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Base64 编码</button>
+            <button class="quiz-option">明文直接存</button>
+            <button class="quiz-option">哈希算法（不可逆）——服务器只关心「密码对不对」，不关心密码是什么</button>
+            <button class="quiz-option">对称加密（可解密回来）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件场景：密码保存——注册时哈希保存，登录时同算法哈希比对。不可逆意味着库泄露后攻击者拿不到明文密码（配合加盐防彩虹表）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 彩虹表攻击是什么？怎么防？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一种 SQL 注入</button>
+            <button class="quiz-option">无法防御</button>
+            <button class="quiz-option">彩虹色的数据库表</button>
+            <button class="quiz-option">预计算常见明文→哈希的反查表；加盐+多轮计算防它</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：彩虹表——预先将常见字符进行 Hash 运算得到结果，可倒推明文。加盐方法 1 随机盐（彩虹表失效），方法 2 多轮计算（暴力破解变慢），现实两者结合（bcrypt）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. JWT 需要加盐吗？（课件思考题）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">JWT 里放密码才需要</button>
+            <button class="quiz-option">必须加，和密码一样</button>
+            <button class="quiz-option">不需要——HS256 签名本身带密钥（消息认证码）；且 JWT 只编码不加密，别放敏感数据</button>
+            <button class="quiz-option">加盐后 token 更长</button>
+          </div>
+          <div class="quiz-explain" hidden>JWT 签名 = HMAC-SHA256(secret, content)，secret 就是「盐」的作用（带密钥的哈希）；payload 仅 Base64 编码，任何人可解——所以 JWT 里绝不能放密码/身份证等敏感明文。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 课件代码里 JWT 过期时间在哪设置、密钥在哪配置？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">过期时间读设置表 jwt_expire_minutes（默认 120 分钟）；密钥在 web_settings.jwt_secret_key</button>
+            <button class="quiz-option">都在前端</button>
+            <button class="quiz-option">都写死在代码里</button>
+            <button class="quiz-option">都在数据库里</button>
+          </div>
+          <div class="quiz-explain" hidden>user_service.login：select(Setting.value).where(key=="jwt_expire_minutes")，读不到用 120——ch15 系统设置的实战用法；secret 走 WEB_JWT_SECRET_KEY 环境变量（pydantic-settings）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. login 里查不到用户和密码错为什么用同一句话？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了少写一行</button>
+            <button class="quiz-option">方便用户理解</button>
+            <button class="quiz-option">防用户名枚举——分开提示等于告诉攻击者「这个用户名存在」</button>
+            <button class="quiz-option">代码写错了</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 login：if user is None or not verify_password(...): raise AuthException("登录失败：用户名或密码错误")——一个条件一个话术，攻击者无法用响应区分「用户不存在」与「密码错误」。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. get_current_user 依赖里 decode 失败会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">捕获 jwt.InvalidTokenError 转 AuthException——统一走 ch09 全局异常处理器</button>
+            <button class="quiz-option">服务器崩溃</button>
+            <button class="quiz-option">返回 None</button>
+            <button class="quiz-option">自动重试</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 core/auth.py：except jwt.InvalidTokenError as e: raise AuthException(...) from e——业务异常体系扩展（ch07/09），响应由全局处理器出统一 {"code","message"}。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. register 里为什么「先查重 + IntegrityError 双保险」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先查给友好报错；并发下两个同用户名同时注册会穿透查重，靠唯一约束兜底转 DatabaseException</button>
+            <button class="quiz-option">代码冗余</button>
+            <button class="quiz-option">唯一约束就够了</button>
+            <button class="quiz-option">查重就够了</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 register：select 查重提前抛「用户名已存在」；try flush except IntegrityError 再转 DatabaseException——并发注册同时通过查重时，数据库唯一索引是最后防线（ch07 的翻译模式）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. ContextVar 演示里 Bob 先完成打印，输出顺序为什么是 Bob 再 Alice？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">字典序</button>
+            <button class="quiz-option">随机顺序</button>
+            <button class="quiz-option">先声明先执行</button>
+            <button class="quiz-option">delay 不同（0.1 vs 0.2），但各自上下文互不污染——Bob 的 name_var 不会读到 Alice 的值</button>
+          </div>
+          <div class="quiz-explain" hidden>课件输出：你好，Bob（先）/ 你好，Alice（后）——gather 并发下 Bob sleep 0.1 先醒；关键是 say_hello() 无参却拿到各自正确的 name，ContextVar 按任务上下文隔离，不会串。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. /api/auth/me 接口是怎么「知晓当前登录用户」的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">session cookie</button>
+            <button class="quiz-option">前端传 user_id</button>
+            <button class="quiz-option">全局变量</button>
+            <button class="quiz-option">current_user: Annotated[User, Depends(get_current_user)]——依赖里解 token 查库，FastAPI 注入 User 对象</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 api/auth.py：profile 的参数声明依赖 get_current_user（HTTPBearer 取 token → decode → 查库），FastAPI 自动解析注入——需要登录的接口加这一行即可，OpenAPI 文档上也会标出需要 Bearer 认证。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0017-用户系统',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的用户表：password 列直接存明文，登录时 if data.password == user.password。审查：按本课知识，两个致命问题是什么？`,
+              source: '来源：PyJWT 官方文档（JWT 与凭证机制）https://pyjwt.readthedocs.io/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《17.用户系统》课件（哈希与加盐章节）',
+              breakdown: `<strong>① 明文存储 = 拖库即灾难</strong>——数据库泄露的瞬间所有用户密码直接裸奔（课件原文：「密码怎么保存才能防止泄露后造成灾难性后果」）；且用户习惯多站复用密码，你的库拖了，别家的账号也跟着沦陷。 <strong>② 相等比较 = 加盐哈希都没做</strong>——正确姿势是课件双函数：hash_password（bcrypt.hashpw + gensalt，每用户随机盐 + 多轮计算）注册时存 hash；verify_password（bcrypt.checkpw）登录时校验——同样密码两次 hash 不同（盐），彩虹表失效。顺带两个细节：password 字段应该叫 password_hash（字段名即契约，杜绝误传明文）；登录失败统一话术防用户名枚举。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `JWT 是无状态的，为什么课件的 get_current_user 还要在解完 token 后查一次数据库？token 过期时间是怎么控制的？`,
+              source: '来源：PyJWT 官方文档（"PyJWT is a Python library which allows you to encode and decode JSON Web Tokens (JWT). JWT is an open, industry-standard (RFC 7519) for representing claims securely between two parties"）https://pyjwt.readthedocs.io/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《17.用户系统》课件（core/auth.py）',
+              breakdown: `<strong>① 为什么还查库</strong>：JWT 的签名只能证明「token 是我签的、没被改过」，不能证明「用户当前仍有效」——查一次 User 表可以做到：用户被禁用/删除后，旧 token 立即失效（而不是等过期）。这是「无状态凭证 + 状态化校验」的混合模式：签发端无状态（不存 token），校验端锚定一次数据库。 <strong>② 过期控制</strong>：签发时 exp 写进 payload（iat + expires_delta），jwt.decode 校验时超期直接抛 ExpiredSignatureError（InvalidTokenError 家族）——课件在 get_current_user 里捕获并转 AuthException。过期时长从设置表 jwt_expire_minutes 读（ch15 的 Setting 系统落地），运营可改；密钥在 WEB_JWT_SECRET_KEY。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的认证代码：① token 里把整个用户对象（含 password_hash）塞进 payload；② decode 不传 algorithms 参数；③ 改密接口不校验旧密码。逐条按本课标准审查。`,
+              source: '来源：PyJWT 官方文档（decode 的 algorithms 参数与 RFC 7519 claims）https://pyjwt.readthedocs.io/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《17.用户系统》课件（jwt_util/change_password）',
+              breakdown: `逐条：<strong>① payload 塞用户对象</strong>——JWT 的 payload 只是 Base64 编码（不是加密），任何人解出来可读；塞 password_hash 等于把密码哈希发给每个持有 token 的人（前端、日志、代理缓存），还放大 token 体积。课件只放 sub（user id），查库拿用户。 <strong>② decode 不传 algorithms</strong>——历史上 PyJWT 的算法混淆攻击（HS256/RS256 混用、none 算法）就发生在这里：不锁 algorithms 等于让攻击者决定用哪种算法验签。课件 decode_token 显式 algorithms=["HS256"]。 <strong>③ 改密不验旧密码</strong>——盗来的 token 就能直接改密（把账号彻底拿走）；课件 change_password 先 verify_password(old) 再 hash 新密码——「拥有 token」和「知道密码」是两件事，改密这种高风险操作要双重验证。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：用户凭证的过期时间，放环境变量还是数据库设置表？你们的 JWT 过期时间为什么这么设计？`,
+              source: '来源：渡一源课程《17.用户系统》课件（login 读 Setting 表 jwt_expire_minutes）· PyJWT 官方文档 https://pyjwt.readthedocs.io/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `课件的答案是<strong>数据库设置表</strong>（ch15 的 Setting 系统）：<strong>运维级参数</strong>（数据库连接、密钥本身）走环境变量——改要重启、部署面管；<strong>业务可调参数</strong>（token 过期时长）走设置表——运营在后台改、下一签发即生效、不用发版。两者的边界是「谁会改它」：部署工程师改的放 env，产品/运营改的放设置表。 设计余量：课件 login 里读不到设置或值为空时回退 120 分钟（默认值兜底）；密钥 WEB_JWT_SECRET_KEY 是另一个维度——它是「签发权」，必须在环境变量且不落库（库被拖 = 签名权被盗，所有 token 可伪造）。一句话：<strong>密钥走 env（权限面），时长走设置表（业务面）</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `跑通用户系统全流程（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '迁移 add_user → 注册 → 登录拿 token → 带 token 调 /api/auth/me → 改密码（旧密码错应 4xx、对则 204）→ 用旧密码登录应失败 → psql 确认 password_hash 是 bcrypt 格式（$2b$ 开头）而非明文。',
+                accept: ['register/login/me/password 四接口按预期返回', '库里 password_hash 为 bcrypt 格式且同一密码两次哈希不同', '不带 token 调 me 被拒（认证保护生效）', '改密后旧密码登录失败'],
+              },
+              source: '任务基于《17.用户系统》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：先迁移（make db-upgrade），再按注册→登录→me→改密顺序 curl；me 接口带 Authorization: Bearer <token>。坑：设置表里没有 jwt_expire_minutes 时用默认 120 分钟——可在 settings PUT 接口加这个键体验「运营改过期时间」；token 过期的验证可临时把设置改成 1 分钟再登录（课件的 exp 用分钟）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（17.用户系统）</li>
+        <li><strong>深读推荐</strong>：<a href="https://pyjwt.readthedocs.io/en/stable/">PyJWT 官方文档</a> · <a href="https://fastapi.tiangolo.com/tutorial/security/">FastAPI 官方：Security（HTTPBearer）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/用户系统速查表.html">用户系统速查表</a>——密码学四类、凭证链、认证依赖一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/系统设置">15.系统设置</a> · 下一课 <a href="/agents/python-framework/日志">18.日志</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以注册登录改密四接口跑通为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

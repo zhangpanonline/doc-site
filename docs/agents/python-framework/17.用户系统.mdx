@@ -1,0 +1,527 @@
+---
+sidebar_position: 17
+title: '17. 用户系统'
+description: "Python 框架课程 · 用户系统：密码哈希与加盐 bcrypt、JWT 消息认证码、ContextVar 上下文、HTTPBearer 认证依赖、注册登录改密全流程。"
+displayed_sidebar: agentsFramework
+---
+
+# 用户系统
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 涉及的问题
+
+- 工程问题：测试脚本越来越多，如何仅运行受影响的测试？
+
+- 业务问题
+
+  - 模型层：想不到啥问题
+  - 业务层：
+    - 密码怎么保存才能防止泄露后造成灾难性后果？
+    - 用户登录成功后颁发什么样的凭证才是可信的？
+      - 用户凭证的过期时间在哪里设置？
+      - 用户凭证的密钥在哪里配置？
+    - 是否需要定义新的异常？
+  - API层：
+    - 如何知晓当前登录的用户？
+    - 如何限制接口必须登录后才能访问？
+      - 修改访问权限后对应的测试脚本需要修改
+    - 如何在API文档上直观的反映出需要认证的接口？
+
+## 核心概念
+
+### 密码学算法
+
+| 类别           | 有密钥吗      | 可逆吗 | 代表        |
+| :------------- | :------------ | :----- | :---------- |
+| ~~对称加密~~   | 有，同一密钥  | 可逆   | AES         |
+| ~~非对称加密~~ | 有，公钥+私钥 | 可逆   | RSA、ECC    |
+| 哈希算法       | 无密钥        | 不可逆 | SHA256、MD5 |
+| 消息认证码     | 有，同一密钥  | 不可逆 | HMAC-SHA256 |
+
+#### 哈希算法
+
+**特点**：
+
+输入任意数据，得到固定长度（通常是256位）的数据，过程不可逆，固定输入得到固定结果，不同输入得到不同结果
+
+**场景**：
+
+协商缓存：客户端请求服务器，询问当前缓存的结果是否过期
+
+文件校验：下载文件时，官网会提供这个文件的Hash结果，下载到本地后，你可以重新计算Hash看结果和官网的是否一致
+
+密码保存：服务器不关心用户的密码究竟是什么，只关心用户是否提供了正确的密码，用户注册时填写的密码用Hash保存，后续登录时填写的密码使用相同的算法进行Hash运算后比对两次密码是否一致
+
+示例：
+
+```python
+import hashlib
+
+
+def hash(password: str) -> str:
+    """
+    模拟"不加盐"的哈希运算（极度不安全，仅用于教学对比）
+    特点：同样的密码永远得到同样的哈希值
+    """
+    # 直接对密码进行SHA256哈希（没有加任何随机盐）
+    hash_bytes = hashlib.sha256(password.encode("utf-8")).digest()
+    # 转成十六进制显示（64位字符串）
+    return hash_bytes.hex()
+
+
+# 测试：同样的密码，哈希值完全一样
+pwd = "123456"
+hash1 = hash(pwd)
+hash2 = hash(pwd)
+
+print(f"第一次哈希: {hash1}")
+print(f"第二次哈希: {hash2}")
+print(f"两次是否相同: {hash1 == hash2}")  # True
+
+```
+
+**🌈彩虹表**
+
+预算Hash表，预先将常见字符进行Hash运算，得到结果，从可以倒推明文
+
+**🧂加盐**：
+
+方法1: 在计算Hash时，在明文前加入一段随机数据作为盐值，从而增加彩虹表逆向难度
+
+方法2: 多轮计算，增加破解难度
+
+现实中，两个方法往往结合使用
+
+示例：
+
+```python
+import bcrypt
+
+
+def hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
+
+
+# 测试：同样的密码，哈希值完全不一样
+pwd = "123456"
+hash1 = hash(pwd)
+hash2 = hash(pwd)
+
+print(f"第一次哈希: {hash1}")
+print(f"第二次哈希: {hash2}")
+print(f"两次是否相同: {hash1 == hash2}")  # False
+
+print(verify("123456", hash1))
+print(verify("123456", hash2))
+
+```
+
+#### 消息认证码
+
+你可以简单认为：**消息认证码就是带密钥的哈希**
+
+带密钥的目的，是**为了控制生成哈希的权力**
+
+最常见的例子就是防止明文被篡改
+
+示例：
+
+```python
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import jwt
+
+
+def create_token(
+    data: dict,
+    secret_key: str,
+    *,
+    algorithm: str = "HS256",
+    expires_delta: timedelta | None = None,
+) -> str:
+    payload = data.copy()
+    now = datetime.now(timezone.utc)
+    payload.update(
+        {
+            "jti": str(uuid.uuid4()),
+            "iat": now,
+            "exp": now + (expires_delta or timedelta(hours=2)),
+        }
+    )
+    return jwt.encode(payload, secret_key, algorithm=algorithm)
+
+
+def decode_token(
+    token: str,
+    secret_key: str,
+    *,
+    algorithms: list[str] | None = None,
+) -> dict:
+    return jwt.decode(
+        token,
+        secret_key,
+        algorithms=algorithms or ["HS256"],
+    )
+
+
+secret = "asdfasdfasdfasjfhkhjhasjsdfasdsdfsafdasd"
+
+token = create_token({"id": 1}, secret)
+print(token)
+
+decode = decode_token(token, secret_key=secret)
+print(decode)
+
+```
+
+思考：你觉得`JWT`需要加盐吗？
+
+### ContextVar 上下文变量
+
+在不传递参数的情况下，让函数访问到"当前上下文"的数据，且每个并发任务互不干扰。
+
+```python
+import asyncio
+from contextvars import ContextVar
+
+# 声明一个上下文变量
+name_var: ContextVar[str] = ContextVar("name", default="")
+
+
+def say_hello() -> str:
+    return f"你好，{name_var.get()}"
+
+
+async def task(name: str, delay: float) -> None:
+    name_var.set(name)           # 在当前上下文中设置值
+    await asyncio.sleep(delay)   # 模拟耗时操作
+    print(say_hello())           # say_hello 没有传参，但能拿到正确的值
+
+
+async def main() -> None:
+    await asyncio.gather(
+        task("Alice", 0.2),
+        task("Bob", 0.1),
+    )
+
+
+asyncio.run(main())
+```
+
+输出：
+
+```
+你好，Bob
+你好，Alice
+```
+
+核心要点：
+
+- **不传参也能拿到值**：`say_hello()` 无需参数，直接通过 `ContextVar` 读取上层设置的数据
+- **并发隔离**：Bob 和 Alice 虽然在同一线程交替执行，但各自的上下文互不干扰
+
+## 完成代码
+
+### 模型层
+
+`app/model/user.py`
+
+```python
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.model.base import Base, IDMixin, TimestampMixin
+
+
+class User(Base, IDMixin, TimestampMixin):
+    username: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+```
+
+### 认证工具（duyi-utils）
+
+`packages/duyi-utils/src/duyi_utils/auth/password.py`
+
+```python
+import bcrypt
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
+```
+
+`packages/duyi-utils/src/duyi_utils/auth/jwt_util.py`
+
+```python
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import jwt
+
+
+def create_token(
+    data: dict,
+    secret_key: str,
+    *,
+    expires_delta: timedelta | None = None,
+) -> str:
+    payload = data.copy()
+    if "sub" in payload and not isinstance(payload["sub"], str):
+        payload["sub"] = str(payload["sub"])
+    now = datetime.now(timezone.utc)
+    payload.update(
+        {
+            "jti": str(uuid.uuid4()),
+            "iat": now,
+            "exp": now + (expires_delta or timedelta(hours=2)),
+        }
+    )
+    return jwt.encode(payload, secret_key, algorithm="HS256")
+
+
+def decode_token(
+    token: str,
+    secret_key: str,
+) -> dict:
+    return jwt.decode(
+        token,
+        secret_key,
+        algorithms=["HS256"],
+    )
+```
+
+### 业务层
+
+`app/exception/auth.py`
+
+```python
+from app.exception.base import BusinessException
+
+
+class AuthException(BusinessException):
+    pass
+```
+
+`app/schema/user.py`
+
+```python
+from pydantic import BaseModel, Field
+
+
+class UserRegister(BaseModel):
+    username: str = Field(min_length=1, max_length=100)
+    password: str = Field(min_length=6, max_length=100)
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class ChangePassword(BaseModel):
+    old_password: str
+    new_password: str = Field(min_length=6, max_length=100)
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+```
+
+`app/service/user_service.py`
+
+```python
+from datetime import timedelta
+
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+
+from app.core.config import web_settings
+from app.exception.auth import AuthException
+from app.exception.database import DatabaseException
+from app.model.setting import Setting
+from app.model.user import User
+from app.schema.user import UserLogin, UserRegister, TokenResponse, UserResponse
+from app.service.base import BaseService
+from duyi_utils.auth.jwt_util import create_token
+from duyi_utils.auth.password import hash_password, verify_password
+
+
+class UserService(BaseService):
+    async def register(self, data: UserRegister) -> UserResponse:
+        existing = await self.db.scalar(
+            select(User).where(User.username == data.username)
+        )
+        if existing is not None:
+            raise DatabaseException(message="注册失败：用户名已存在")
+
+        user = User(
+            username=data.username,
+            password_hash=hash_password(data.password),
+        )
+        try:
+            self.db.add(user)
+            await self.db.flush()
+        except IntegrityError as e:
+            raise DatabaseException(
+                message="注册失败：用户名已存在",
+                detail=str(e),
+                original_exception=e,
+            ) from e
+
+        return UserResponse(id=user.id, username=user.username)
+
+    async def login(self, data: UserLogin) -> TokenResponse:
+        user = await self.db.scalar(select(User).where(User.username == data.username))
+        if user is None or not verify_password(data.password, user.password_hash):
+            raise AuthException(message="登录失败：用户名或密码错误")
+
+        expire_setting = await self.db.scalar(
+            select(Setting.value).where(Setting.key == "jwt_expire_minutes")
+        )
+        expire_minutes = int(expire_setting) if expire_setting else 120
+
+        token = create_token(
+            {"sub": user.id},
+            web_settings.jwt_secret_key,
+            expires_delta=timedelta(minutes=expire_minutes),
+        )
+        return TokenResponse(access_token=token)
+
+    async def profile(self, user: User) -> UserResponse:
+        return UserResponse(id=user.id, username=user.username)
+
+    async def change_password(
+        self, user: User, old_password: str, new_password: str
+    ) -> None:
+        if not verify_password(old_password, user.password_hash):
+            raise AuthException(message="修改密码失败：原密码错误")
+
+        user.password_hash = hash_password(new_password)
+        await self.db.flush()
+```
+
+### API 层与认证依赖
+
+`app/core/auth.py`
+
+```python
+from typing import Annotated
+
+import jwt
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import web_settings
+from app.core.database import get_db
+from app.exception.auth import AuthException
+from app.model.user import User
+from duyi_utils.auth.jwt_util import decode_token
+
+security_scheme = HTTPBearer()
+
+
+async def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
+    try:
+        payload = decode_token(
+            credentials.credentials,
+            web_settings.jwt_secret_key,
+        )
+    except jwt.InvalidTokenError as e:
+        raise AuthException(message="token 无效：token无效或已过期") from e
+
+    sub: str | None = payload.get("sub")
+    if sub is None:
+        raise AuthException(message="token 无效：token无效或已过期")
+    user_id = int(sub)
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise AuthException(message="token 无效：token无效或已过期")
+
+    return user
+```
+
+`app/api/auth.py`
+
+```python
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.auth import get_current_user
+from app.core.database import get_db
+from app.model.user import User
+from app.schema.user import ChangePassword, UserLogin, UserRegister, TokenResponse, UserResponse
+from app.service.user_service import UserService
+
+router = APIRouter(prefix="/api/auth", tags=["认证"])
+
+
+@router.post("/register", response_model=UserResponse, status_code=201)
+async def register(
+    data: UserRegister,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    return await UserService(db).register(data)
+
+
+@router.post("/login", response_model=TokenResponse)
+async def login(
+    data: UserLogin,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    return await UserService(db).login(data)
+
+
+@router.get("/me", response_model=UserResponse)
+async def profile(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    return await UserService(db).profile(current_user)
+
+
+@router.put("/password", status_code=204)
+async def change_password(
+    data: ChangePassword,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    await UserService(db).change_password(
+        current_user, data.old_password, data.new_password
+    )
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0017-用户系统.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/用户系统速查表.html">📋 用户系统速查表（可打印）</a>
