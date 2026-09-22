@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 日志：loguru 配置与七级、生产 JSON 开发文本双模式、三类日志对象、service_logger 装饰器——互动教学课程">
+  <title>日志 · 互动教学课程（Python 框架 fw-18）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>日志</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/日志">18.日志</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清生产 JSON / 开发文本双模式配置与环境变量的分工</li>
+        <li>讲出三类日志（请求/数据库/业务）各自的字段与输出位置</li>
+        <li>读通 LogRecord：自动计时 duration_ms、request_id 注入、级别方法族</li>
+        <li>说清 service_logger 装饰器的成败分支（业务异常 warning、未知异常 error+exc）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《18.日志》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>配置与输出（课件）</h3>
+        <ul class="pitfall-list">
+          <li><strong>七级</strong>：TRACE/DEBUG/INFO/SUCCESS/WARNING/ERROR/CRITICAL（loguru 扩展了 SUCCESS）</li>
+          <li><strong>生产</strong>：stdout + JSON（serialize=True）——对接云日志系统</li>
+          <li><strong>开发</strong>：stdout 彩色文本 + ERROR 落 errors.log（rotation 10MB / retention 7 天）</li>
+          <li><strong>级别走环境变量</strong>（log_settings.level）；配置在启动时完成（uvicorn 不再打印到控制台）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>三类日志（类结构约定字段）</h3>
+        <ul class="pitfall-list">
+          <li><strong>共同</strong>：message + duration_ms；<strong>request_id</strong> 由 ContextVar 注入全链路</li>
+          <li><strong>请求日志</strong>（中间件）：method/path/status_code/client_ip；成功 success()，500 error() 其余 warning()</li>
+          <li><strong>数据库日志</strong>（SQLAlchemy 事件）：before_cursor_execute 计时、after 记 sql/params；慢查询（超阈值）warning</li>
+          <li><strong>业务日志</strong>（service_logger 装饰器）：action/entity/entity_id；成功 success、BusinessException warning、未知异常 error+exc</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《18.日志》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 课件生产环境的日志配置是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只写文件</button>
+            <button class="quiz-option">彩色文本到控制台</button>
+            <button class="quiz-option">stdout + JSON 序列化 + 级别走环境变量——对接云日志系统</button>
+            <button class="quiz-option">不记录日志</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「配置什么」生产环境：输出方式固定 stdout（方便对接云服务日志系统）、输出级别环境变量配置、输出格式统一 JSON（方便解析）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. loguru 比标准 logging 多出来的级别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">VERBOSE</button>
+            <button class="quiz-option">WARN</button>
+            <button class="quiz-option">SUCCESS——操作成功级别（还有 TRACE）</button>
+            <button class="quiz-option">FATAL</button>
+          </div>
+          <div class="quiz-explain" hidden>课件七级：TRACE/DEBUG/INFO/SUCCESS/WARNING/ERROR/CRITICAL——SUCCESS 用于「操作成功」语义，请求成功 log.success() 就是用它。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. logger.bind(request_id="abc-123") 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">修改日志级别</button>
+            <button class="quiz-option">绑定额外的自定义上下文（extra 字段），后续日志自动带上</button>
+            <button class="quiz-option">删除日志配置</button>
+            <button class="quiz-option">加密日志</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：logger.bind 绑定额外的自定义信息——格式串里的 {extra[request_id]} 就取自这里；本课用 ContextVar 全链路注入 request_id 后 setdefault 进 extra。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 三类日志的差异字段分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">都一样</button>
+            <button class="quiz-option">随机字段</button>
+            <button class="quiz-option">请求：method/path/status_code/client_ip；数据库：sql/params；业务：action/entity/entity_id</button>
+            <button class="quiz-option">只有 message 不同</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「输出什么」：共同数据 message+duration_ms；请求日志 method/path/status_code/client_ip；数据库日志 sql/params；业务日志 action/entity/entity_id——用类结构约定字段（dataclass 继承 LogRecord）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. LogRecord 的 duration_ms 是怎么算的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">手动传参</button>
+            <button class="quiz-option">从数据库查</button>
+            <button class="quiz-option">构造时 perf_counter 计时，emit 时自动结算——不传就自动算</button>
+            <button class="quiz-option">随机数</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 log_record.py：__post_init__ 记 _start_time=perf_counter()；_emit 里 extra 没有 duration_ms 就 round((now-start)*1000, 2)——对象创建到输出之间的耗时自动结算。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 数据库日志在 SQL 执行「前」计时，为什么不在执行后？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">执行后计时更准</button>
+            <button class="quiz-option">before_cursor_execute 时 SQL 还没跑，正好起表；after 事件结算耗时并写日志</button>
+            <button class="quiz-option">随便选一个</button>
+            <button class="quiz-option">计时和事件无关</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：注册 SQLAlchemy 事件监听器，执行 SQL 前计时，执行后创建日志对象——before/after_cursor_execute 一对事件包围查询，duration_ms 就是这个包围区间的真实耗时；超过阈值（log_settings.slow_query_threshold）输出 warning。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 请求失败时，500 和 4xx 的日志级别为什么不同？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">都一样</button>
+            <button class="quiz-option">500 是服务器自身问题要 error（含异常栈）；4xx 是客户端问题属预期内 warning</button>
+            <button class="quiz-option">随机级别</button>
+            <button class="quiz-option">4xx 不记录</button>
+          </div>
+          <div class="quiz-explain" hidden>课件请求日志：500 错误输出 error，其他错误输出 warning——级别即「谁该背锅」：5xx 需要开发介入（error 且带异常），4xx 是业务预期（warning，避免告警疲劳）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. service_logger 装饰器里 BusinessException 和未知异常的处理为什么不同？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">写错了</button>
+            <button class="quiz-option">都该 error</button>
+            <button class="quiz-option">都不该记</button>
+            <button class="quiz-option">业务异常是预期内失败→warning 不刷屏；未知异常是缺陷→error 带完整异常栈（opt(exception=exc)）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 business_log.py：isinstance(e, BusinessException) → log.warning()（ch07 业务体系，预期内）；否则 log.error(exc=e) → loguru 的 opt(exception=exc) 会把完整异常栈打进日志——两者都会 re-raise，日志是旁路不吞异常。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. request_id 为什么要放 ContextVar 而不是全局变量？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了省内存</button>
+            <button class="quiz-option">并发请求隔离（ch17 ContextVar 知识）：每个请求链条拿自己的 id，互不污染</button>
+            <button class="quiz-option">没有原因</button>
+            <button class="quiz-option">全局变量也行</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：请求到达后「记录请求 id 到上下文，使得该请求链条中的所有日志都可以拿到该 id」——中间件 set 进 ContextVar，后续所有日志（含数据库/业务日志）_emit 时自动取回注入；并发下各请求互不串（ch17 的并发隔离演示）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0018-日志',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的日志：logger.info(f"用户 {username} 密码 {password} 登录失败")——把明文密码打进了日志。按本课标准，哪里错了？`,
+              source: '来源：loguru 官方文档 Overview（"Ready to use out of the box without boilerplate ... Pretty logging with colors"）https://loguru.readthedocs.io/en/stable/overview.html · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《18.日志》课件',
+              breakdown: `两个问题：<strong>① 敏感信息进日志</strong>——密码（以及 token、身份证号、AccessKey）绝不能进日志：日志会被采集到云服务、被值班同学截图、被排查时贴进工单，泄露面远大于数据库；ch17 的原则延续——password_hash 连响应都不出，何况日志。 <strong>② f-string 拼消息</strong>——消息里的变量不进结构化字段，云日志系统无法按「用户」维度检索；课件姿势是用类结构约定字段（dataclass + extra 绑定，如 BusinessLog 的 action/entity/entity_id），消息留给人读、字段留给机器查。改法：log "登录失败" + extra 里放 user_id（不是密码），检索和脱敏两全。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `生产日志为什么统一 JSON 到 stdout，而不是彩色文本到文件？request_id 是怎么贯穿一条请求的所有日志的？`,
+              source: '来源：loguru 官方文档 Overview（serialize 参数与结构化输出）https://loguru.readthedocs.io/en/stable/overview.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《18.日志》课件（双模式配置 + ContextVar 注入）',
+              breakdown: `<strong>① JSON + stdout</strong>：容器/K8s 时代的日志约定——进程只往 stdout 写，采集器（Fluentd/Loki 等）统一收集；JSON 让采集器直接解析出字段做检索告警（按 level=ERROR、按 path、按 duration_ms 聚合），彩色文本是给人眼看的，机器解析是浪费。课件生产分支 serialize=True 就干这个；开发分支保留彩色文本 + errors.log 落盘（rotation 10MB/retention 7 天）。 <strong>② request_id 链路</strong>：请求中间件到达时生成 id 放进 ContextVar（ch17 并发隔离机制）——之后该请求链路上所有日志（请求日志、数据库事件日志、业务装饰器日志）在 _emit 时 request_id_var.get() 自动注入 extra；线上排错按 request_id 一捞，同一条请求的三类日志全出来。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的日志中间件：每个请求 try/except 包住，except 里 logger.error(str(e)) 然后 return JSONResponse(500)；且日志里没有耗时字段。按本课标准审查。`,
+              source: '来源：loguru 官方文档 Overview（exceptions catching / rotation 等特性）https://loguru.readthedocs.io/en/stable/overview.html · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《18.日志》课件（请求日志流程）',
+              breakdown: `三个问题：<strong>① 中间件吞异常</strong>——本课架构里异常处理归 ch09 全局处理器（统一 code/message），AI 的中间件截胡了异常链：全局处理器收不到异常、异常处理逻辑被拆成两处（违反 ch09 最佳实践第 1 条「收拢到统一位置」）；课件的请求日志只是<strong>旁路观察者</strong>——请求失败时进 handler 写 message，由 handler 决定级别，日志不接管响应。 <strong>② str(e) 丢栈</strong>——异常栈是定位 bug 的命脉，loguru 姿势是 opt(exception=exc)（本课 BusinessLog 的 error(exc=e) 就这么干），日志里带完整 traceback。 <strong>③ 无 duration_ms</strong>——耗时是慢接口排查的第一指标，课件 LogRecord 自动计时，且数据库层还按阈值单独 warning 慢查询——AI 的日志缺了可观测性最值钱的维度。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：业务日志要不要全量记录？你们是怎么控制业务日志的量的？`,
+              source: '来源：渡一源课程《18.日志》课件（「业务日志通常不会全量的记录，既可以统一处理，也可以灵活处理」）· loguru 官方文档 https://loguru.readthedocs.io/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `课件的立场：<strong>不全量</strong>。三层控制：<strong>① 分层取舍</strong>——请求日志和数据库日志天然全量（框架级自动埋点，覆盖所有流量）；业务日志挑「值得记录的变更」记（创建/更新/删除这类写操作），读操作通常不记（不然日志量 = 请求量 × 2，且无排查价值）。 <strong>② 统一处理</strong>——service_logger 装饰器收口关键服务方法：action（做什么）、entity（对哪个实体）、entity_id（id_extractor 从结果/参数里抽，失败时也尽量抽）、成败分支自动定级（成功 success、业务异常 warning、未知异常 error）——写服务方法时声明式加一行，行为全局一致。 <strong>③ 灵活处理</strong>——装饰器覆盖不到的散点，直接 new 日志对象手工打。设计上还留了一手：BusinessException 是 warning 不是 error——把告警预算留给真正的 5xx。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `落地本课日志系统（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '覆盖 core/logger/ → main 里 setup_logging() → 跑一个请求 → 看控制台三类日志（请求/数据库/业务）→ 改 ENVIRONMENT=production 重启，确认输出变 JSON → 给 ProductService.create_product 加 @service_logger 验证成败分支。',
+                accept: ['开发模式控制台有 request_id + duration_ms 的彩色日志', '一次请求能看到请求/数据库/业务三层日志且 request_id 一致', 'production 模式输出为 JSON 行', '业务异常走 warning、未知异常走 error 带栈'],
+              },
+              source: '任务基于《18.日志》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：复制 logger 目录后 setup_logging() 要在 app 创建前调用；请求日志需中间件配合（register_middleware 已就位）；数据库日志在 core/database.py 的事件注册里（本课代码已带）。坑：production 验证改 .env 的 ENVIRONMENT=production（_CommonSettings 无前缀）；errors.log 在 workspace 的 tmp/ 目录（rotation 10MB 触发后自动轮转，验证 retention 7 天得改小）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（18.日志）</li>
+        <li><strong>深读推荐</strong>：<a href="https://loguru.readthedocs.io/en/stable/overview.html">loguru 官方文档</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/日志速查表.html">日志速查表</a>——双模式配置、三类日志字段、装饰器分支一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/用户系统">17.用户系统</a> · 下一课 <a href="/agents/python-framework/流式响应">20.流式响应</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以三类日志带同一 request_id 输出为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

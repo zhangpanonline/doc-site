@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>日志速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>日志速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0018-日志.html">《日志互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>双模式配置</h2>
+      <table class="cmp-table">
+        <tr><th></th><th>生产</th><th>开发</th></tr>
+        <tr><td>输出</td><td>stdout</td><td>stdout + errors.log（ERROR 级）</td></tr>
+        <tr><td>格式</td><td>JSON（serialize=True）</td><td>彩色纯文本</td></tr>
+        <tr><td>级别</td><td colspan="2">环境变量（log_settings.level）</td></tr>
+        <tr><td>文件策略</td><td>—</td><td>rotation 10MB / retention 7 天</td></tr>
+      </table>
+      <p>七级：TRACE / DEBUG / INFO / SUCCESS / WARNING / ERROR / CRITICAL。</p>
+    </section>
+
+    <section>
+      <h2>三类日志</h2>
+      <table class="cmp-table">
+        <tr><th>类型</th><th>位置</th><th>字段</th></tr>
+        <tr><td>请求</td><td>中间件</td><td>method / path / status_code / client_ip</td></tr>
+        <tr><td>数据库</td><td>SQLAlchemy 事件</td><td>sql / params（慢查询 warning）</td></tr>
+        <tr><td>业务</td><td>service_logger 装饰器</td><td>action / entity / entity_id</td></tr>
+      </table>
+      <p>共同：message + duration_ms（自动计时）；request_id 由 ContextVar 注入全链路。</p>
+      <p>定级：请求 500→error、其余 warning；业务 BusinessException→warning、未知→error(exc) 带栈。</p>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

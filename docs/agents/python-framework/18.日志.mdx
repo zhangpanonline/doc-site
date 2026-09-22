@@ -1,0 +1,345 @@
+---
+sidebar_position: 18
+title: '18. 日志'
+description: "Python 框架课程 · 日志：loguru 配置与级别、生产 JSON 与开发文本双模式、请求/数据库/业务三类日志、service_logger 装饰器。"
+displayed_sidebar: agentsFramework
+---
+
+# 日志的核心问题
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 使用什么日志库？
+
+在python中，通常使用`loguru`记录日志
+
+```python
+from loguru import logger
+import sys
+
+# 1. 移除默认的输出配置
+logger.remove()
+
+# 2. 配置控制台输出（彩色、格式化）
+logger.add(
+    sys.stdout,
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{extra[request_id]}</level> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    level="DEBUG",
+    colorize=True,
+)
+
+# 3. 输出日志
+logger.bind(request_id="abc-123", user="admin").info("开始处理请求")
+
+```
+
+- `logger.add`
+  - 参数`1`：配置日志输出方式，通常为`sys.stdout`或文件路径
+  - 参数`format`: 配置日志输出格式
+  - 参数`level`: 配置日志级别
+    - TRACE：跟踪级别
+    - DEBUG：调试级别
+    - INFO：信息级别
+    - SUCCESS：操作成功级别
+    - WARNING：警告级别
+    - ERROR：错误级别
+    - CRITICAL：严重错误级别
+- `logger.bind`：绑定额外的自定义信息
+- `logger.info`：输出`INFO`级别的消息
+
+## 日志配置
+
+### 日志配置什么时候做？
+
+在系统启动的时候完成配置，同时由于使用了日志系统，因此uvicorn的错误信息不再打印到控制台
+
+### 配置什么？
+
+**生产环境：**
+
+- 输出方式：固定为`stdout`，方便后期和云服务日志系统对接
+- 输出级别：通过环境变量配置
+- 输出格式：统一为`JSON`，方便云服务日志系统解析
+
+**开发环境：**
+
+- 输出方式：
+
+  - 固定为`stdout`，打印到控制台
+
+    对于错误日志，还要额外输出到文件
+
+- 输出级别：通过环境变量配置
+
+- 输出格式：统一为纯文本，方便人类阅读
+
+## 日志输出
+
+### 输出什么？
+
+**共同数据：**
+
+- message：错误消息
+- duration_ms：某个操作执行的时间（毫秒）
+
+**差异数据：**
+
+- 请求日志：method、path、status_code、client_ip
+- 数据库日志：sql、params
+- 业务日志：action、entity、entity_id
+
+可以使用**类结构**约定字段
+
+### 在哪里输出？
+
+#### 请求日志
+
+使用请求中间件
+
+1. 请求到达后：
+   1. 记录请求id到上下文，使得该请求链条中的所有日志都可以拿到该id
+   2. 创建请求日志对象
+   3. 将日志对象放置到`request.state.request_log`中，方便其他地方获取日志对象
+2. 请求成功：`log.success()`
+3. 请求失败
+   1. 进入`handler`的处理逻辑
+   2. 该写`message`
+   3. `500`错误输出`error`，其他错误输出`warning`
+
+#### 数据库日志
+
+注册`SQLAchemy`事件监听器，执行SQL前计时，执行后创建日志对象
+
+对于一些慢查询（超过环境变量的阈值），输出`warning`级别的日志
+
+#### 业务日志
+
+通常不会全量的记录业务日志。
+
+业务日志既可以统一处理，也可以灵活处理。
+
+**统一处理：使用装饰器，见**`business_log.py:service_logger`
+
+## 完成代码
+
+### 日志核心
+
+`app/core/logger/log_record.py`
+
+```python
+import contextvars
+import sys
+import time
+from dataclasses import asdict, dataclass
+from enum import StrEnum
+from pathlib import Path
+
+from loguru import logger
+
+from app.core.config import common_settings, log_settings
+
+
+class LogLevel(StrEnum):
+    TRACE = "TRACE"
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    SUCCESS = "SUCCESS"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
+
+
+request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "_request_id", default=""
+)
+
+
+def setup_logging() -> None:
+    logger.remove()
+    if common_settings.environment == "production":
+        logger.add(
+            sys.stdout,
+            level=log_settings.level,
+            serialize=True,
+        )
+    else:
+        logger.add(
+            sys.stdout,
+            level=log_settings.level,
+            format=(
+                "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+                "<level>{level: <8}</level> | "
+                "<cyan>{extra[request_id]}</cyan> | "
+                "<yellow>{extra[duration_ms]}ms</yellow> | "
+                "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+                "<level>{message}</level>"
+            ),
+            colorize=True,
+        )
+        error_log_dir = Path(__file__).resolve().parents[5] / "tmp"
+        error_log_dir.mkdir(parents=True, exist_ok=True)
+        logger.add(
+            str(error_log_dir / "errors.log"),
+            level="ERROR",
+            rotation="10 MB",
+            retention="7 days",
+            format=(
+                "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
+                "{level: <8} | "
+                "{extra[request_id]} | "
+                "{extra[duration_ms]}ms | "
+                "{name}:{function}:{line} | "
+                "{message}\n{exception}"
+            ),
+        )
+
+
+@dataclass
+class LogRecord:
+    message: str
+    duration_ms: float = 0.0
+
+    def __post_init__(self) -> None:
+        self._start_time: float = time.perf_counter()
+
+    def _emit(self, level: LogLevel, exc: Exception | None = None) -> None:
+        data = asdict(self)
+        message = data.pop("message")
+
+        extra = {k: v for k, v in data.items() if v}
+        if not extra.get("duration_ms"):
+            extra["duration_ms"] = round(
+                (time.perf_counter() - self._start_time) * 1000, 2
+            )
+
+        rid = request_id_var.get()
+        extra.setdefault("request_id", rid or "-")
+
+        log = logger.bind(**extra) if extra else logger
+        if exc:
+            log = log.opt(exception=exc)
+        getattr(log, level.lower())(message)
+
+    def trace(self) -> None:
+        self._emit(LogLevel.TRACE)
+
+    def debug(self) -> None:
+        self._emit(LogLevel.DEBUG)
+
+    def info(self) -> None:
+        self._emit(LogLevel.INFO)
+
+    def success(self) -> None:
+        self._emit(LogLevel.SUCCESS)
+
+    def warning(self) -> None:
+        self._emit(LogLevel.WARNING)
+
+    def error(self, exc: Exception | None = None) -> None:
+        self._emit(LogLevel.ERROR, exc=exc)
+
+    def critical(self) -> None:
+        self._emit(LogLevel.CRITICAL)
+```
+
+### 三类日志对象
+
+`app/core/logger/request_log.py`
+
+```python
+from dataclasses import dataclass
+
+from app.core.logger.log_record import LogRecord
+
+
+@dataclass
+class RequestLog(LogRecord):
+    method: str = ""
+    path: str = ""
+    status_code: int = 0
+    client_ip: str = ""
+```
+
+`app/core/logger/db_log.py`
+
+```python
+from dataclasses import dataclass
+
+from app.core.logger.log_record import LogRecord
+
+
+@dataclass
+class DBLog(LogRecord):
+    sql: str = ""
+    params: str = ""
+```
+
+`app/core/logger/business_log.py`
+
+```python
+from collections.abc import Callable
+from dataclasses import dataclass
+from functools import wraps
+from typing import Any
+
+from app.exception.base import BusinessException
+from app.core.logger.log_record import LogRecord
+
+
+@dataclass
+class BusinessLog(LogRecord):
+    action: str = ""
+    entity: str = ""
+    entity_id: str | int = ""
+
+
+EntityIdExtractor = Callable[[tuple, dict[str, Any], Any], str | int]
+
+
+def service_logger(
+    action: str,
+    entity: str = "",
+    id_extractor: EntityIdExtractor | None = None,
+):
+    def decorator(func: Callable[..., Any]):
+        @wraps(func)
+        async def wrapper(*args: Any, **kwargs: Any):
+            log = BusinessLog(
+                message="",
+                action=action,
+                entity=entity,
+            )
+            try:
+                result = await func(*args, **kwargs)
+                if id_extractor:
+                    try:
+                        log.entity_id = id_extractor(args, kwargs, result)
+                    except Exception:
+                        pass
+                log.message = f"{action}成功"
+                log.success()
+                return result
+            except Exception as e:
+                if id_extractor:
+                    try:
+                        log.entity_id = id_extractor(args, kwargs, None)
+                    except Exception:
+                        pass
+                log.message = f"{action}失败"
+                if isinstance(e, BusinessException):
+                    log.warning()
+                else:
+                    log.error(exc=e)
+                raise
+
+        return wrapper
+
+    return decorator
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0018-日志.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/日志速查表.html">📋 日志速查表（可打印）</a>
