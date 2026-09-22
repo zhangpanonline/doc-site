@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 流式响应：SSE 单向推送、WebSocket 全双工、中间件/异常/依赖注入的流式差异、AI 场景选型——互动教学课程">
+  <title>流式响应 · 互动教学课程（Python 框架 fw-20）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>流式响应</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/流式响应">20.流式响应</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>画出 SSE 与 WebSocket 的时序并说清两者的协议差异</li>
+        <li>背出课件「FastAPI 结合」表：中间件/异常/依赖注入在流式下的行为差异</li>
+        <li>讲出 token 携带方式的限制与绕法（EventSource query / WebSocket query）</li>
+        <li>按 AI 场景选型：简单问答用 SSE，Agent 工作流/多人协作用 WebSocket</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《20.流式响应》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>SSE（Server-Sent Events）</h3>
+        <ul class="pitfall-list">
+          <li><strong>单向</strong>：服务端 → 客户端；基于标准 HTTP；<code>text/event-stream</code>，每条消息以 <code>\n\n</code> 结尾</li>
+          <li><strong>原生自动重连</strong>；适合新闻推送、股票行情、日志流、简单问答模式</li>
+          <li><strong>中间件</strong>：请求/响应经过全部 HTTP 中间件，<strong>后续流式内容不经过</strong></li>
+          <li><strong>异常</strong>：响应过程中的异常走异常处理器，流式内容中的不走</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>WebSocket</h3>
+        <ul class="pitfall-list">
+          <li><strong>全双工</strong>：HTTP 101 升级为独立协议（ws:// 或 wss://）；文本+二进制帧</li>
+          <li><strong>重连需手动实现</strong>；适合在线聊天、多人协作、实时游戏、Agent 工作流</li>
+          <li><strong>中间件/异常都不经过</strong>（协议升级后脱离 HTTP 链路）；依赖注入在连接断开后才迭代结束</li>
+          <li>token：浏览器不支持自定义头，只能 query 携带</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《20.流式响应》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. SSE 和 WebSocket 最本质的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">WebSocket 只能发文本</button>
+            <button class="quiz-option">通信方向：SSE 单向（服务端→客户端），WebSocket 全双工</button>
+            <button class="quiz-option">没有区别</button>
+            <button class="quiz-option">SSE 更快</button>
+          </div>
+          <div class="quiz-explain" hidden>课件对比表第一条：SSE 服务端→客户端单向；WebSocket 全双工双向。这是选型的根。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. SSE 消息的结尾分隔符是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">空行+JSON 结束标记</button>
+            <button class="quiz-option">双换行符 \n\n——每条消息以它结尾</button>
+            <button class="quiz-option">单换行 \n</button>
+            <button class="quiz-option">分号 ;</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 SSE 特征：数据格式 text/event-stream，每条消息以双换行符（\n\n）结尾——事件流协议的分帧约定。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. WebSocket 建立连接的第一步是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">HTTP 握手（Upgrade: websocket）→ 101 协议切换 → 独立协议通信</button>
+            <button class="quiz-option">UDP 广播</button>
+            <button class="quiz-option">DNS 解析后直连</button>
+            <button class="quiz-option">直接 TCP 连接</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 WebSocket 时序图：GET /ws 带 Connection: Upgrade / Upgrade: websocket → 服务端回 101 Switching Protocols → 之后全双工帧通信，Close 帧优雅关闭。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. SSE 流式内容推送过程中，异常处理器还管用吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">全程都不管用</button>
+            <button class="quiz-option">只有 500 管用</button>
+            <button class="quiz-option">响应建立过程中的异常走处理器；流式内容推送中的不走（响应头已发出）</button>
+            <button class="quiz-option">全程都管用</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 FastAPI 结合表：响应过程中的异常会经过异常处理函数，后续流式内容不经过——HTTP 头已发出去，无法再改状态码，只能带内发 error 事件。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. WebSocket 的请求会经过 ch10 的 HTTP 中间件吗？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">请求/响应都不会经过——协议升级后脱离 HTTP 中间件链路</button>
+            <button class="quiz-option">会经过全部</button>
+            <button class="quiz-option">只经过 CORS 中间件</button>
+            <button class="quiz-option">只经过请求阶段</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 FastAPI 结合表：WebSocket 的请求/响应都不会经过 HTTP 中间件——所以信封响应、耗时统计这类 ch10 中间件对 WS 无效，需在 WS 路径里另做。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 原生 EventSource 的 token 只能放 query，为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有原因</button>
+            <button class="quiz-option">性能考虑</button>
+            <button class="quiz-option">安全规定必须如此</button>
+            <button class="quiz-option">EventSource 不支持自定义请求头——只能拼 URL；自定义客户端/第三方库可任意携带</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 token 携带行：原生 EventSource 只能将 token 放 query；自定义或第三方库可以任意方式携带 token——浏览器 API 的限制，不是协议限制。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. SSE 断了之后怎么办？WebSocket 呢？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">断了就无法恢复</button>
+            <button class="quiz-option">都自动重连</button>
+            <button class="quiz-option">都需手动重连</button>
+            <button class="quiz-option">SSE 原生自动重连；WebSocket 需手动实现重连逻辑</button>
+          </div>
+          <div class="quiz-explain" hidden>课件对比表「自动重连」行：SSE 原生支持，WebSocket 需手动实现——SSE 的 EventSource 断线自动重试（可带 Last-Event-ID 续传），WS 要自己写心跳与重连。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 「AI 多人在线协作」和「AI 简单问答」分别选什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">都选 SSE</button>
+            <button class="quiz-option">协作/Agent 工作流选 WebSocket（双向）；简单问答选 SSE（单向推送答案流）</button>
+            <button class="quiz-option">都用轮询</button>
+            <button class="quiz-option">都选 WebSocket</button>
+          </div>
+          <div class="quiz-explain" hidden>课件对比表「适用AI场景」：SSE 适合简单的问答模式（用户发问一次，模型逐 token 推答案）；WebSocket 适合 Agent 工作流、多人在线 AI 协作（双向频繁交互）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. WebSocket 的依赖注入（如 get_db）什么时候结束迭代？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">连接断开后才迭代结束——依赖生命周期=连接生命周期</button>
+            <button class="quiz-option">没有依赖注入</button>
+            <button class="quiz-option">请求握手后立刻结束</button>
+            <button class="quiz-option">每次消息后结束</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 FastAPI 结合表：WebSocket 依赖注入「连接断开后才会迭代结束」——长连接期间 get_db 的 session 一直持有，需要注意连接时长与资源占用（对比 SSE：全部流式内容完成后迭代结束）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0020-流式响应',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的流式接口：用 SSE 推答案，但模型生成到一半抛异常时，AI 在异常里 raise HTTPException(500)——结果前端收到的流直接断开，连错误消息都没有。按本课知识，为什么？正确姿势是什么？`,
+              source: '来源：MDN Server-sent events（"EventSource: Defines all the features that handle connecting to a server, receiving events/data, errors, closing a connection"）https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《20.流式响应》课件（异常处理行）',
+              breakdown: `课件 FastAPI 结合表写明了：<strong>响应过程中的异常会经过异常处理函数，后续流式内容中的不经过</strong>。响应头已经发出去了，HTTP 状态码改不了——中间抛 HTTPException 只会让连接崩掉。正确姿势是课件的时序图里就画着的：<strong>带内错误事件</strong>——<code>event: error\ndata: 错误消息\n\n</code>，前端 EventSource 对 error 事件做专门监听（MDN：EventSource 接口本身就定义了 errors 处理）；或者约定 data 里的 JSON 结构带错误码（{"type":"error","message":...}）。流式协议里「错误」是一种消息，不是一个 HTTP 状态码。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `WebSocket 在 HTTP 握手升级之后，为什么 ch09 的全局异常处理器和 ch10 的中间件都管不到它了？这带来什么后果？`,
+              source: '来源：FastAPI 官方文档 WebSockets（双向通信与连接生命周期）https://fastapi.tiangolo.com/advanced/websockets/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《20.流式响应》课件（WebSocket FastAPI 结合表）',
+              breakdown: `<strong>为什么管不到</strong>：WebSocket 只有「握手」阶段是 HTTP——101 切换之后，连接升级为独立的 WebSocket 协议，Starlette 的 HTTP 中间件栈和异常处理层都在 HTTP 语义里工作，管不到协议升级后的帧。课件表格的结论：请求/响应都不经过 HTTP 中间件，异常不经过异常处理函数。 <strong>后果与对策</strong>：① 统一信封、耗时统计、CORS 头这些 ch10 的福利在 WS 上全部失效——WebSocket 端点里要自己处理（或抽 WS 专用中间件）；② WS 内的异常必须自己 try/except 转成 WS 关闭帧或错误消息（close code 是 WS 的错误语义）；③ 依赖注入的 get_db 直到连接断开才迭代结束——长连接期间一直占着一个 session，注意连接池消耗（ch03 的 pool_size 知识）。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的 SSE 实现：① 把 token 放进请求头然后前端用 fetch 消费（没验证是否支持）；② 没有心跳消息，网关 60 秒空闲超时直接断流；③ 生成完后不关闭连接。逐条审查。`,
+              source: '来源：MDN Server-sent events（EventSource 的能力边界与事件模型）https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《20.流式响应》课件（token 携带行）',
+              breakdown: `逐条：<strong>① token 放请求头</strong>——课件明说「原生 EventSource 只能将 token 放到 query」：它不支持自定义头（浏览器 API 限制）。fetch 虽然能发头，但 fetch 不提供 EventSource 的自动重连/事件模型，要自己实现流式解析——除非你确定用自定义客户端（第三方库）才可任意携带。 <strong>② 没有心跳</strong>——长连接经过网关/NAT，空闲超时会静默断开；标准做法是定时发心跳注释行（SSE 的 <code>: keep-alive\n\n</code> 注释消息，前端不可见）。 <strong>③ 不关连接</strong>——服务端完成推送后应主动关闭（或约定 end 事件），否则连接挂着占资源，且依赖注入的清理（get_db 等）要等连接断开才发生。审查口诀：<strong>流式接口的生命周期管理（心跳/结束/清理）比普通接口多一层责任</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：AI 对话产品里，什么时候用 SSE、什么时候用 WebSocket？举一个必须 WebSocket 的场景。`,
+              source: '来源：渡一源课程《20.流式响应》课件（SSE vs WebSocket 对比表：适用 AI 场景行）· MDN Server-sent events https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `按课件对比表答：<strong>SSE</strong>——简单的问答模式：用户发一次问题，模型逐 token 推答案流。单向正好、HTTP 基础设施全复用（ch09/ch10 的异常与中间件大部分生效）、原生自动重连、部署零特殊要求（普通 HTTP 网关即可）。 <strong>WebSocket</strong>——必须双向交互的场景：课件给了两个——<strong>Agent 工作流</strong>（用户要能在模型执行中途插话、打断、改指令——停止生成就是最常见的反向消息）和<strong>多人在线 AI 协作</strong>（每个人的发言要广播给所有成员）。判断口诀：<strong>用户只需要「听」→ SSE；用户需要「边说边听」→ WebSocket</strong>。打断生成是硬需求，SSE 做不了。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `实现一个 SSE 问答流接口（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '写一个 /api/chat/stream 接口：返回 text/event-stream → 模拟模型逐段生成（每 0.5s 推一段）→ 生成中触发一次带内 error 事件验证前端可恢复 → 用 curl -N 观察分帧 → 中途 Ctrl+C 断开验证服务端感知断开。',
+                accept: ['curl -N 能看到逐段 data: 消息流', 'error 事件能被客户端单独处理', '断开后服务端停止推送（生成器退出）'],
+              },
+              source: '任务基于《20.流式响应》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：用 FastAPI StreamingResponse(media_type="text/event-stream") 配异步生成器（sse-starlette 也可）；消息格式 data: {json}\n\n。坑：统一响应中间件（ch10）只包 /api/ 且会重拼 body——流式接口要么路径绕过信封（如 /api/chat/stream 单独处理），要么确认中间件的流式行为；curl 看帧用 curl -N 关闭缓冲；断开感知用 asyncio.CancelledError/生成器 finally 清理。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（20.流式响应）</li>
+        <li><strong>深读推荐</strong>：<a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events">MDN：Server-sent events</a> · <a href="https://fastapi.tiangolo.com/advanced/websockets/">FastAPI 官方：WebSockets</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/流式响应速查表.html">流式响应速查表</a>——两协议时序、FastAPI 结合表、选型对比一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/日志">18.日志</a> · 下一课 <a href="/agents/python-framework/部署-认识Docker">21.部署-认识Docker</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以 SSE 流跑通 + 带内错误事件处理为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>流式响应速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>流式响应速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0020-流式响应.html">《流式响应互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>SSE vs WebSocket</h2>
+      <table class="cmp-table">
+        <tr><th>特性</th><th>SSE</th><th>WebSocket</th></tr>
+        <tr><td>通信方向</td><td>服务端→客户端（单向）</td><td>全双工</td></tr>
+        <tr><td>协议基础</td><td>HTTP</td><td>独立协议（HTTP 握手升级）</td></tr>
+        <tr><td>自动重连</td><td>原生支持</td><td>手动实现</td></tr>
+        <tr><td>数据格式</td><td>文本（text/event-stream，\n\n 分帧）</td><td>文本或二进制</td></tr>
+        <tr><td>AI 场景</td><td>简单问答模式</td><td>Agent 工作流、多人协作</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>FastAPI 结合差异</h2>
+      <table class="cmp-table">
+        <tr><th>项</th><th>SSE</th><th>WebSocket</th></tr>
+        <tr><td>中间件</td><td>请求/响应经过；流式内容不经过</td><td>都不经过</td></tr>
+        <tr><td>异常处理</td><td>响应过程中的经过；流式内容不经过</td><td>不经过</td></tr>
+        <tr><td>依赖注入</td><td>全部流式内容完成后迭代结束</td><td>连接断开后迭代结束</td></tr>
+        <tr><td>token</td><td>EventSource 只能 query；自定义库任意</td><td>浏览器不支持自定义头，query 携带</td></tr>
+      </table>
+      <p>流式中的错误 = 带内事件（event: error），不是 HTTP 状态码。</p>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>
