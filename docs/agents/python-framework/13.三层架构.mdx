@@ -1,0 +1,73 @@
+---
+sidebar_position: 13
+title: '13. 三层架构'
+description: "Python 框架课程 · 三层架构：当前架构回顾、经典三层、模型分化（model/BO/DTO）、依赖倒置。"
+displayed_sidebar: agentsFramework
+---
+
+# 三层架构
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 当前的架构
+
+![image-20260618104106899](https://resource.duyiedu.com/yuanjin/202606181041986.png)
+
+## 经典三层
+
+![image-20260624110412929](https://resource.duyiedu.com/yuanjin/202606241104966.png)
+
+## 模型分化
+
+![image-20260624110548259](https://resource.duyiedu.com/yuanjin/202606241105300.png)
+
+示例：
+
+```python
+# model
+
+
+class User:
+    id: int
+    username: str
+    password_hash: str  # 存储加密后的密码
+    email: str
+    phone: str
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool  # 软删除标记
+
+
+# BO
+class UserIdentity:
+    username: str
+    password_hash: str
+
+class UserInfo:
+    email: str
+    phone: str
+
+class User:
+    id: int
+    identity: UserIdentity
+    info: UserInfo
+    created_at: datetime
+    updated_at: datetime
+
+# DTO
+class User
+    id: int
+    username: str
+    email: str
+```
+
+## 依赖倒置
+
+![image-20260624112836750](https://resource.duyiedu.com/yuanjin/202606241128795.png)
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0013-三层架构.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/三层架构速查表.html">📋 三层架构速查表（可打印）</a>

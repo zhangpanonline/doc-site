@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 三层架构：经典三层职责、模型分化（model/BO/DTO）、依赖倒置、层次间的依赖方向——互动教学课程">
+  <title>三层架构 · 互动教学课程（Python 框架 fw-13）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>三层架构</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/三层架构">13.三层架构</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>画出经典三层并说出每层职责与依赖方向（接口 → 业务 → 数据）</li>
+        <li>说清模型分化：model / BO / DTO 三种模型的定位与转换位置</li>
+        <li>讲出依赖倒置在分层里的含义：上层定义接口，下层实现</li>
+        <li>对照本课已完成代码（api/service/schema/model）说出哪层对应哪段</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《13.三层架构》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>经典三层</h3>
+        <ul class="pitfall-list">
+          <li><strong>接口层</strong>：接收请求、参数校验、返回响应（本课的 app/api/ + schema DTO 校验）</li>
+          <li><strong>业务层</strong>：业务规则与用例编排，不关心 HTTP 细节（本课的 app/service/）</li>
+          <li><strong>数据层</strong>：持久化与查询（本课的 app/model/ + core/database）</li>
+          <li>依赖方向：上层依赖下层；下层不得反向 import 上层</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>模型分化（课件示例）</h3>
+        <ul class="pitfall-list">
+          <li><strong>model</strong>：持久化模型（password_hash、is_deleted 软删标记——只属于数据库的字段）</li>
+          <li><strong>BO</strong>：业务对象，按领域语义拆分（UserIdentity/UserInfo 分组，password_hash 藏在 identity 里）</li>
+          <li><strong>DTO</strong>：传输对象，只带客户端需要的字段（id/username/email——绝不出现 password_hash）</li>
+          <li>转换发生在层与层之间：model ↔ BO ↔ DTO，各层只见自己需要的形状</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《13.三层架构》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 经典三层是哪三层？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">接口层、业务层、数据层</button>
+            <button class="quiz-option">内核层、用户层、硬件层</button>
+            <button class="quiz-option">前端层、中间层、后端层</button>
+            <button class="quiz-option">测试层、生产层、开发层</button>
+          </div>
+          <div class="quiz-explain" hidden>课件经典三层图：接口层（接请求回响应）→ 业务层（业务规则）→ 数据层（持久化）。对应本课代码 app/api/、app/service/、app/model/。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 课件模型分化示例里，password_hash 只出现在哪个模型？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">model 和 BO 的 UserIdentity 里；DTO 里绝不允许出现</button>
+            <button class="quiz-option">三个模型都没有</button>
+            <button class="quiz-option">三个模型都有</button>
+            <button class="quiz-option">只在 DTO 里</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：model.User 有 password_hash（持久化需要）；BO.UserIdentity 分组持有它（业务语义）；DTO.User 只有 id/username/email——密码哈希永远不出服务端边界。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 分层的依赖方向是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">下层依赖上层</button>
+            <button class="quiz-option">上层依赖下层（接口→业务→数据），下层不得反向依赖上层</button>
+            <button class="quiz-option">任意互相依赖</button>
+            <button class="quiz-option">各层完全独立</button>
+          </div>
+          <div class="quiz-explain" hidden>经典三层箭头：请求从接口层进入，逐层向下；下层不知道上层的存在（service 不 import FastAPI 就是 ch07/ch08 边界原则的来源）。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. is_deleted 软删除标记应该放在哪个模型？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">三个都放</button>
+            <button class="quiz-option">不放任何模型</button>
+            <button class="quiz-option">DTO（给前端判断）</button>
+            <button class="quiz-option">model（持久化细节）；BO/DTO 按业务与传输需要裁剪</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 model.User 注释：is_deleted 是软删除标记——数据库持久化策略，业务层关心「用户是否有效」（可转化为 BO 语义），DTO 通常连字段都不暴露（被删用户对外就是不存在）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 本课代码里 schema/ 的 DTO 对应模型分化的哪一类？转换在哪发生？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">DTO；service 层用 model_validate(from_attributes) 把 ORM 对象转成 DTO 再返回</button>
+            <button class="quiz-option">model；直接映射数据库</button>
+            <button class="quiz-option">不属于三种模型</button>
+            <button class="quiz-option">BO；只存在业务层</button>
+          </div>
+          <div class="quiz-explain" hidden>ch07 的 ProductResponse/CategoryBrief 就是 DTO；ProductService 里 ProductResponse.model_validate(product) 完成 model→DTO 转换——转换位置在层边界上（service 对外出口）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 为什么 model.User 的字段到了 BO 里要拆成 UserIdentity 和 UserInfo 两个组？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有任何理由</button>
+            <button class="quiz-option">为了隐藏所有字段</button>
+            <button class="quiz-option">按领域语义聚合：认证相关（identity）与资料相关（info）在不同业务场景里成组使用</button>
+            <button class="quiz-option">为了占更多行数</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 BO 示例：登录只关心 UserIdentity（username+password_hash），改资料只关心 UserInfo（email+phone）——BO 按用例聚合字段，业务代码不用扛着一整个扁平模型到处跑。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 依赖倒置在分层架构里的含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">所有层都用同一个函数</button>
+            <button class="quiz-option">下层调用上层</button>
+            <button class="quiz-option">上层定义它需要的抽象接口，下层实现——依赖指向抽象而不是具体实现</button>
+            <button class="quiz-option">把代码倒过来写</button>
+          </div>
+          <div class="quiz-explain" hidden>课件依赖倒置图：业务层不该依赖「具体的数据库实现」，而是依赖「存取接口」——数据层提供实现。本课的落地：ch08 的 Depends/get_db 注入就是「上层声明需要什么，实现由容器交付」。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 有人把 ORM 对象直接 return 给接口层，违反了三层里哪条原则？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有违反任何原则</button>
+            <button class="quiz-option">模型分化边界——数据层形状（model）越过了业务层直接成为接口层形状（应为 DTO）</button>
+            <button class="quiz-option">违反了命名规范</button>
+            <button class="quiz-option">只影响性能</button>
+          </div>
+          <div class="quiz-explain" hidden>模型分化的意义就是「各层只见自己需要的形状」：ORM 对象带着 password_hash/is_deleted 直达接口层，既泄露出 DTO 不该有的字段，也让接口层绑死数据层结构——ch07 的 DTO 边界原则就是本课的实践。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 三层架构最大的代价是什么？课件为什么不一开始就三层？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有任何代价</button>
+            <button class="quiz-option">只有大厂能用</button>
+            <button class="quiz-option">会变慢一千倍</button>
+            <button class="quiz-option">转换与抽象成本（model/BO/DTO 互相转）——小项目是负担；本课一路重构到第 13 章才分层，因为业务量到了才值得</button>
+          </div>
+          <div class="quiz-explain" hidden>课件章节顺序就是答案：01-04 章一个 main.py 能跑通全流程，07 章引入 service、08 章引入 api、13 章才系统讲分层——三层带来 model↔BO↔DTO 的转换代码与抽象成本，是业务复杂度上来了才该付的价钱。过早分层是过度设计。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0013-三层架构',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的用户接口直接返回 ORM 对象，响应里出现了 password_hash 和 is_deleted 字段。按本课模型分化的原则，哪个环节漏了？`,
+              source: '来源：pydantic 官方文档 Models（from_attributes 从 ORM 对象构建 DTO、响应模型裁剪字段）https://docs.pydantic.dev/latest/concepts/models/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《13.三层架构》课件模型分化',
+              breakdown: `漏了 <strong>model → DTO 的转换与裁剪</strong>。课件三模型各司其职：model 管持久化（password_hash、is_deleted 是数据库语义）；DTO 只带客户端需要的字段（id/username/email）。AI 直接把 ORM 对象序列化 = 数据层形状穿透三层直达响应——两个后果：<strong>① 泄露</strong>（password_hash 泄露出服务端边界，is_deleted 暴露内部删除策略）；<strong>② 耦合</strong>（前端契约与表结构焊死，加列就破接口）。正解（本课 ch07 已实现）：ProductResponse.model_validate(product) 在 service 出口转 DTO，pydantic 按 DTO 字段裁剪。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `BO 为什么要把扁平的 model.User 拆成 UserIdentity 和 UserInfo 两个嵌套对象？这层转换值不值得？`,
+              source: '来源：渡一源课程《13.三层架构》课件（BO 示例：UserIdentity/UserInfo 分组）· FastAPI 官方教程 Bigger Applications - Multiple Files（按职责分层）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `BO 的拆分逻辑是<strong>按用例聚合</strong>：登录用例只关心 username+password_hash（UserIdentity）；改资料用例只关心 email+phone（UserInfo）。拆开后：① 业务函数签名变成 login(identity) 而不是 login(user)——传什么一目了然，也不会误把整个 user 带进只有一项职责的函数；② 敏感字段被收进 identity 语义里，业务代码里「密码哈希」的访问点集中；③ model 里加个统计字段不会波及所有业务函数（BO 不变）。代价是转换代码——所以课件把它放在「模型分化」图里讲清楚转换发生在层边界。值不值看复杂度：用户模型这种多用例聚合的实体值得；只有一两个字段的表直接 DTO 就够。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的服务：api 层直接 import model 做查询、service 层直接 return dict、model 层 import 了 FastAPI 的 Request 拿请求上下文。审查这段代码的层次问题。`,
+              source: '来源：FastAPI 官方教程 Bigger Applications - Multiple Files（分层与依赖方向）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《13.三层架构》课件',
+              breakdown: `三个违规：<strong>① 跳层</strong>——api 直接查 model，跨过 service：业务规则失去唯一入口（改权限校验要翻遍所有接口文件）；<strong>② 无形状</strong>——service 返回 dict 等于没有 DTO 契约，前端拿到的字段随时间漂移；<strong>③ 反向依赖</strong>——model 层 import FastAPI 的 Request 是教科书级的方向倒置：数据层依赖了接口层，换掉 HTTP 框架（或加消息队列入口）时持久化代码全要重写。课件的依赖方向只有一条：接口 → 业务 → 数据。审查口诀：<strong>看 import 方向就知道架构崩没崩</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：依赖倒置原则（DIP）在你们的项目里是怎么落地的？举一个具体例子。`,
+              source: '来源：渡一源课程《13.三层架构》课件（依赖倒置图）· FastAPI 官方文档 Dependencies（Depends 声明依赖、容器交付实现）https://fastapi.tiangolo.com/tutorial/dependencies/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `用本课两个实例回答：<strong>① get_db 依赖注入</strong>——api 层声明 db: Annotated[AsyncSession, Depends(get_db)]，接口层只依赖「给我一个会话」这个抽象；实现（async_sessionmaker 配置、连接池参数）藏在 core/database，测试时 dependency_overrides 换假实现（ch08/ch11 都这么干）——上层定义需要什么，下层交付实现。 <strong>② BusinessException 体系</strong>——service 抛业务异常（抽象），HTTP 翻译由 ch09 全局处理器（实现）完成；service 不 import HTTPException，将来从 REST 换 WebSocket，业务代码零改动。一句话总结：<strong>依赖指向抽象（接口/协议），具体实现（数据库/框架/HTTP 语义）通过配置或容器注入</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `给本课工程画一张三层架构对照图（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '把本课 app/ 的目录画成三层对照表：api/（接口层）→ service/+schema/（业务层）→ model/+core/database（数据层）；再挑 User 模型做一次模型分化练习：写出 model/BO/DTO 三个版本并标注每层的转换点。',
+                accept: ['目录→层次对照正确（含 middleware/exception 属于横切）', 'User 三模型字段划分符合课件示例', '能说清每次转换发生在哪一层'],
+              },
+              source: '任务基于《13.三层架构》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：对照课件经典三层图，把 ch07-ch12 的代码目录归类；注意 middleware/exception handler 是横切关注点（ch10 的概念），不属于某一层。User 三模型练习直接改写课件的 model/BO/DTO 代码：model 加 is_deleted；BO 拆 identity/info；DTO 只留 id/username/email。坑：BO 的转换不是全量复制字段，是按用例聚合——先想用例（登录/改资料/展示）再设计分组。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（13.三层架构）</li>
+        <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/bigger-applications/">FastAPI 官方：Bigger Applications（分层实践）</a> · <a href="https://docs.pydantic.dev/latest/concepts/models/">Pydantic 官方：Models</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/三层架构速查表.html">三层架构速查表</a>——三层职责、三模型分化、依赖方向一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/测试方案">12.测试方案</a> · 下一课 <a href="/agents/python-framework/文件上传">14.文件上传</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以画出三层对照图并完成 User 三模型分化练习为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

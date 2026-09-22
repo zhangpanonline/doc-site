@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>三层架构速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>三层架构速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0013-三层架构.html">《三层架构互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>经典三层（对照本课代码）</h2>
+      <table class="cmp-table">
+        <tr><th>层</th><th>职责</th><th>本课对应</th></tr>
+        <tr><td>接口层</td><td>接请求、校验、回响应</td><td>app/api/ + schema DTO</td></tr>
+        <tr><td>业务层</td><td>业务规则、用例编排</td><td>app/service/</td></tr>
+        <tr><td>数据层</td><td>持久化与查询</td><td>app/model/ + core/database</td></tr>
+      </table>
+      <p>依赖方向：接口 → 业务 → 数据；下层不得反向 import 上层。middleware/exception 是横切关注点，不属于某层。</p>
+    </section>
+
+    <section>
+      <h2>模型分化</h2>
+      <table class="cmp-table">
+        <tr><th>模型</th><th>定位</th><th>User 示例字段</th></tr>
+        <tr><td>model</td><td>持久化模型</td><td>含 password_hash、is_deleted</td></tr>
+        <tr><td>BO</td><td>业务对象，按用例聚合</td><td>UserIdentity(username, password_hash) / UserInfo(email, phone)</td></tr>
+        <tr><td>DTO</td><td>传输对象，只带客户端需要的</td><td>id / username / email</td></tr>
+      </table>
+      <p>转换发生在层边界（service 出口 model_validate → DTO）。password_hash 绝不出服务端边界。</p>
+    </section>
+
+    <section>
+      <h2>依赖倒置</h2>
+      <dl class="term-grid">
+        <dt>原则</dt>
+        <dd>依赖指向抽象，不指向具体实现。</dd>
+        <dt>本课落地</dt>
+        <dd>Depends(get_db) 注入会话；BusinessException → 全局处理器翻译 HTTP。</dd>
+        <dt>收益</dt>
+        <dd>换数据库/换框架/换入口（REST→WebSocket），业务层零改动。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

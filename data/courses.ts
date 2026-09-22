@@ -80,7 +80,7 @@ const databaseSections = (unit: string): CourseSection[] =>
   DB_NAMES.map(name => ({id: `${unit}/database/${name}`}));
 
 // Python 框架课程（gitee.com/dev-edu/python-framework）：逐章生成时在此追加章节名
-const FRAMEWORK_NAMES = ['Web服务框架', '优化包结构', '初识SQLAlchemy', 'ORM', '数据操作', '数据迁移', '业务逻辑', '依赖注入', '统一异常处理', '中间件', '测试框架', '测试方案'];
+const FRAMEWORK_NAMES = ['Web服务框架', '优化包结构', '初识SQLAlchemy', 'ORM', '数据操作', '数据迁移', '业务逻辑', '依赖注入', '统一异常处理', '中间件', '测试框架', '测试方案', '三层架构'];
 const frameworkSections: CourseSection[] = FRAMEWORK_NAMES.map(
   name => ({id: `agents/python-framework/${name}`}),
 );
