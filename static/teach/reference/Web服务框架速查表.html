@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Web服务框架速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>Web服务框架速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0001-Web服务框架.html">《Web服务框架互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>三大框架选型</h2>
+      <table class="cmp-table">
+        <tr><th>框架</th><th>哲学</th><th>场景</th></tr>
+        <tr><td>Django</td><td>开箱即用</td><td>大型复杂应用、自带后台管理、统一方案</td></tr>
+        <tr><td>Flask</td><td>微内核可扩展</td><td>小型应用、快速原型、高度定制</td></tr>
+        <tr><td>FastAPI</td><td>高性能现代化</td><td>API 服务、微服务、AI 模型封装成 API</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>ASGI 协作</h2>
+      <pre>app(scope, receive, send) -> CoroutineType
+
+scope   : 连接上下文字典（type/path/method/headers…）
+receive : 异步函数，接收消息（请求体/客户端消息）
+send    : 异步函数，发送消息（响应头体/服务端消息）</pre>
+      <p>服务器：socket 通信、报文解析、事件循环、进程线程（Uvicorn 首选）。应用程序：业务逻辑。</p>
+    </section>
+
+    <section>
+      <h2>端点与校验速记</h2>
+      <dl class="term-grid">
+        <dt>/docs</dt>
+        <dd>Swagger UI——交互式测试（Try it out），开发调试用。</dd>
+        <dt>/redoc</dt>
+        <dd>ReDoc——纯阅读、惰性加载，对外发布用。</dd>
+        <dt>/openapi.json</dt>
+        <dd>FastAPI 自动生成并暴露，遵循 OpenAPI 规范。</dd>
+        <dt>Pydantic</dt>
+        <dd>数据校验与转换（'123'→123），失败抛 ValidationError；模型进 openapi.json。</dd>
+        <dt>async def 原则</dt>
+        <dd>await 只在 async def 里合法；同步阻塞库配 def（官方：跑线程池）。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

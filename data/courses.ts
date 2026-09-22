@@ -79,8 +79,15 @@ const pythonSections: CourseSection[] = PYTHON_NAMES.map(name => {
 const databaseSections = (unit: string): CourseSection[] =>
   DB_NAMES.map(name => ({id: `${unit}/database/${name}`}));
 
+// Python 框架课程（gitee.com/dev-edu/python-framework）：逐章生成时在此追加章节名
+const FRAMEWORK_NAMES = ['Web服务框架'];
+const frameworkSections: CourseSection[] = FRAMEWORK_NAMES.map(
+  name => ({id: `agents/python-framework/${name}`}),
+);
+
 export const courses: CourseDef[] = [
   {unit: 'agents', key: 'python', name: 'Python 语言核心', sidebar: 'agentsPython', sections: pythonSections},
+  {unit: 'agents', key: 'framework', name: 'Python 框架', sidebar: 'agentsFramework', sections: frameworkSections},
   {unit: 'agents', key: 'database', name: '数据库', sidebar: 'agentsDatabase', sections: databaseSections('agents')},
   {unit: 'backend', key: 'database', name: '数据库', sidebar: 'backendDatabase', sections: databaseSections('backend')},
   {unit: 'common', key: 'database', name: '数据库', sidebar: 'common', sections: databaseSections('common')},

@@ -1,0 +1,69 @@
+/* ============================================================
+   Forest 主题覆盖层 · teach/assets/forest.css
+   仅用于 Python 框架课程的互动课与速查表（fw-*.html），
+   在 course.css 之后引入，用同源变量把纸墨主题重映射为
+   Typora Forest 色板（亮色）；代码块为 Forest 深绿底。
+   ============================================================ */
+
+:root {
+  --bg: #ffffff;
+  --fg: #363C42;
+  --muted: #81888D;
+  --accent: #00997B;
+  --accent-ink: #00769A;
+  --border: #DADCDE;
+  --card: #ffffff;
+  --code-bg: #f3f3f3;
+  --highlight: rgba(0, 153, 123, 0.05);
+}
+
+body {
+  font-family: 'SourceHanSansSC', 'JetBrains Mono', -apple-system, sans-serif;
+}
+
+h1 { color: rgba(0, 52, 68, 0.9); font-weight: 900; }
+h2, h3, h4 { color: #333444; }
+h5 { color: var(--accent); }
+h6 { color: rgba(0, 153, 123, 0.838); }
+
+a { color: var(--accent-ink); border-bottom: 1px solid rgba(0, 153, 123, 0.4); }
+a:hover { border-bottom-color: var(--accent); }
+
+/* 行内代码：Forest 浅灰底 + 青字 */
+code {
+  background: var(--code-bg);
+  color: #00769A;
+  font-weight: 700;
+}
+
+/* 代码块：Forest 深绿底 */
+pre {
+  background: #003444;
+  border: none;
+  color: #EEFFFF;
+}
+pre code {
+  color: #EEFFFF;
+  background: none;
+  font-weight: 400;
+}
+
+/* 引用：绿底 + 左条 */
+blockquote {
+  position: relative;
+  background: var(--highlight);
+  border-left: 0.3rem solid var(--accent);
+  border-radius: 6px;
+  padding: 1rem;
+  color: var(--muted);
+}
+
+/* 表格：全边框 + 斑马纹 */
+.cmp-table th, .cmp-table td { border: 1px solid var(--border); }
+.cmp-table thead, .cmp-table tr:nth-child(2n) { background: rgba(0, 153, 123, 0.03); }
+.cmp-table thead { font-weight: 900; }
+
+/* 测验卡片上的强调条沿用绿色系 */
+.quiz-option.correct { border-color: #2e7d32; background: #edf6ee; }
+.quiz-explain.correct-fb { border-left-color: #2e7d32; }
+::selection { background: rgba(0, 153, 123, 0.2); }

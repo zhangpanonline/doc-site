@@ -844,3 +844,6 @@ html.immersive .theme-doc-sidebar-container {
     grid-template-columns: 1fr;
   }
 }
+
+/* Forest 主题（仅 Python 框架课程文档页作用域），见 src/css/forest.css */
+@import url('./forest.css');

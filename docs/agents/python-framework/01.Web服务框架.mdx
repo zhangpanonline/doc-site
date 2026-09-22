@@ -1,0 +1,359 @@
+---
+sidebar_position: 1
+title: '01. Web服务框架'
+description: "Python 框架课程 · Web服务框架：三大框架对比、第一个 FastAPI 应用、ASGI 协作机制、Swagger UI 与 Redoc、Pydantic 数据建模。"
+displayed_sidebar: agentsFramework
+---
+
+# Web服务框架
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## Python Web服务框架对比
+
+|     对比维度     | 🏢 Django                                                     | 🧰 Flask                                                      | 🚀 FastAPI                                                    |
+| :--------------: | :----------------------------------------------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+|   **官网链接**   | [Django](https://www.djangoproject.com/)                     | [Flask](https://flask.palletsprojects.com/en/stable/)        | [FastAPI](https://fastapi.tiangolo.com/)                     |
+|   **诞生年份**   | 2005年                                                       | 2010年                                                       | 2018年                                                       |
+|   **核心哲学**   | **开箱即用 (Batteries-included)** 内置ORM、后台管理、用户认证等几乎所有常用功能 | **微内核，可扩展 (Microframework)** 只提供最基础的核心功能，其他如数据库、表单等按需选择 | **高性能，现代化 (High-performance)** 利用类型注解和异步特性，专为API设计而生 |
+| **性能 (速度)**  | **较慢** (约 5k req/s 对于Hello World)                       | **中等** (约 9k req/s 对于Hello World)                       | **极快** (约 30k req/s 对于Hello World)                      |
+|   **学习曲线**   | **较陡**。功能多，概念多，需要学习的体量较大                 | **平缓**。设计简洁，核心API直观，非常适合初学者入门          | **中等**。性能优势明显，但需要理解类型注解和异步编程         |
+| **最适合的场景** | • 大型、复杂的Web应用（如电商平台、CMS） <br />• 需要自带后台管理系统的项目 • 希望有统一解决方案的团队项目 | • 小型应用和快速原型开发 <br />• 简单的RESTful API <br />• 对组件有高度定制化需求的项目 | • 高性能的API服务 <br />• 微服务架构 <br />• 需要将AI/机器学习模型封装成API服务 |
+|   **知名用户**   | Instagram, Pinterest, Disqus                                 | Airbnb, Netflix, Reddit (部分功能)                           | Uber, Netflix, Microsoft (部分内部项目)                      |
+
+## 第一个FastAPI应用
+
+### 安装
+
+```python
+uv add --package web-service "fastapi[standard]==0.136.3"
+```
+
+`库名[额外安装名/可选安装名]==版本号`
+
+```toml
+# pyproject.toml
+[project.optional-dependencies]
+standard = [
+    "fastapi-cli[standard] >=0.0.8",
+    "fastar >= 0.9.0",
+    # For the test client
+    "httpx >=0.23.0,<1.0.0",
+    # For templates
+    "jinja2 >=3.1.5",
+    # For forms and file uploads
+    "python-multipart >=0.0.18",
+    # To validate email fields
+    "email-validator >=2.0.0",
+    # Uvicorn with uvloop
+    "uvicorn[standard] >=0.12.0",
+    # # Settings management
+    "pydantic-settings >=2.0.0",
+    # # Extra Pydantic data types
+    "pydantic-extra-types >=2.0.0",
+]
+```
+
+### 代码
+
+```python
+# apps/web-service/main.py
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+
+class Item(BaseModel):
+    name: str
+    price: float
+    is_offer: bool | None = None
+
+
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
+
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: str | None = None):
+    return {"item_id": item_id, "q": q}
+
+
+@app.put("/items/{item_id}")
+def update_item(item_id: int, item: Item):
+    return {"item_name": item.name, "item_id": item_id}
+
+```
+
+### 启动
+
+```shell
+# Makefile
+
+.PHONY: dev
+
+dev:
+	uv run --package web-service fastapi dev apps/web-service/main.py --port 8080
+
+```
+
+```shell
+make dev
+```
+
+### 访问
+
+打开浏览器访问下面的地址:
+
+- http://localhost:8080/
+- http://localhost:8080/items/5?q=key_words
+- http://localhost:8080/docs
+- http://localhost:8080/redoc
+
+## 核心概念
+
+### `WSGI` vs `ASGI`
+
+`WSGI / ASGI`是一套`Python`的社区规范，主要为**Web服务器**和**Web应用程序**提供统一的交互标准
+
+![image-20260605143504189](https://resource.duyiedu.com/yuanjin/202606051435295.png)
+
+其中，`WSGI`是一个早期标准，用于**多线程**处理请求任务，`ASGI`是一个现代标准，用于**异步**处理请求任务。
+
+理解`ASGI`关键是要理解：
+
+1. `ASGI`服务器在做什么？
+2. `ASGI`应用程序在做什么？
+3. 服务器和应用程序如何对接？
+
+#### ASGI服务器
+
+主要负责：
+
+- `socket`通信
+  - 端口监听
+  - 接受新的客户端连接
+  - 从 socket 读取原始字节流
+  - 将响应字节流写回 socket
+- 报文解析
+  - 解析 HTTP/1.1、HTTP/2、WebSocket 协议
+  - 将原始字节（如 `b'GET /users/123 HTTP/1.1\r\n...'`）转换成结构化数据（如 method、path、headers）
+  - 处理分块传输、Keep-Alive、管道化等协议细节
+- 实现和启动事件循环
+- 管理进程和线程
+- ...
+
+常见`ASGI`服务器
+
+| 服务器         | 核心特点                                 | 协议支持                           | 适用场景                       |
+| :------------- | :--------------------------------------- | :--------------------------------- | :----------------------------- |
+| **Uvicorn**    | 基于 uvloop + httptools，性能极高        | HTTP/1、WebSocket（HTTP/2 实验性） | FastAPI/Starlette 首选，最流行 |
+| **Hypercorn**  | 基于 sans-io 架构，协议支持最全          | HTTP/1、HTTP/2、HTTP/3、WebSocket  | 需要 HTTP/2/3 的场景           |
+| **Daphne**     | Django Channels 官方服务器，Twisted 实现 | HTTP/1、HTTP/2、WebSocket          | Django 异步项目                |
+| **Granian**    | Rust 实现，性能极致                      | HTTP/1、HTTP/2、WebSocket          | 追求极致性能的生产环境         |
+| **Gunicorn**   | 传统 WSGI 服务器，通过 worker 支持 ASGI  | HTTP/1                             | 需要多进程 + ASGI 的混合部署   |
+| **NGINX Unit** | 通用应用服务器，原生支持 ASGI            | HTTP/1、HTTP/2                     | 统一管理多语言应用的场景       |
+
+#### ASGI应用程序
+
+主要负责：业务逻辑
+
+常见`ASGI`应用框架：`Django`、`FastAPI`、`starlette`、`...`
+
+#### 如何对接
+
+`ASGI`标准规定，`ASGI`应用程序必须通过`ASGI`服务器启动，启动时，`ASGI`应用程序必须对外暴露一个可调用对象：`app`
+
+```python
+# app规格
+app(scope, receive, send) -> CoroutineType:
+    """
+    ASGI 应用程序的调用签名
+
+    参数:
+        scope (dict): 包含连接上下文信息的字典
+                      - type: 连接类型，如 "http", "websocket", "lifespan"
+                      - path: 请求路径 (http)
+                      - method: 请求方法 (http)
+                      - headers: 请求头列表
+                      - ... 其他协议相关字段
+
+        receive (callable): 异步无参数函数，用于接收消息
+                            await receive() -> dict
+                            用于获取请求体 (http) 或客户端消息 (websocket)
+
+        send (callable): 异步单参数函数，用于发送消息
+                         await send(message)
+                        用于发送响应头/体 (http) 或服务端消息 (websocket)
+    """
+    # 应用程序逻辑
+    pass
+```
+
+#### 完整流程
+
+1. ASGI服务器监听端口
+2. 请求到达ASGI服务器
+   1. 处理字节流
+   2. 构建scope字典
+   3. 定义send函数
+   4. 定义receive函数
+   5. 调用`app`
+3. 请求进入ASGI应用程序（期间调用`receive`和`send`）
+   1. ASGI框架调用预定义的程序（路由）
+   2. 处理业务逻辑
+4. 控制权交给ASGI服务器
+   1. 组装完整响应报文
+   2. 发送响应给客户端
+
+### `Swagger UI` vs `Redoc`
+
+OpenAPI规范指的是用一个标准的JSON格式来描述API接口
+
+试试这个地址：http://localhost:8080/openapi.json
+
+> `openapi.json` 遵循的标准是 **OpenAPI 规范 (OpenAPI Specification, OAS)**。
+>
+> 这个规范最初由 **Swagger** 工具集的创建者 **Tony Tam** 于 2010 年发起，当时被称为 **Swagger 规范**。为了让其成为行业通用标准，Swagger 规范的核心被捐赠给了 **Linux 基金会**，并于 2015 年成立了 **OpenAPI 倡议 (OpenAPI Initiative, OAI)** 来专门负责它的演进和管理。从 3.0 版本开始，这个规范正式更名为 **OpenAPI 规范**。
+
+当首次启动时，`FastAPI`会自动生成`openapi.json`，并将其暴露到`/openapi.json`路由中
+
+| 特性 (Feature)   | Swagger UI (`/docs`)                                         | ReDoc (`/redoc`)                                             |
+| :--------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+| **核心功能**     | **交互式测试**                                               | **文档阅读**                                                 |
+| **"Try it out"** | ✅ **支持**。可以直接在网页上填入参数并点击发送，实时测试 API 并查看返回结果。 | ❌ **不支持**。纯只读模式，专注于清晰展示信息。               |
+| **界面风格**     | 功能全面，支持认证、请求头等复杂操作配置。                   | 视觉上更简洁美观，注重可读性，通过三栏式布局让 API 结构一目了然。 |
+| **性能**         | 加载大型 API 文档时，初始渲染可能稍慢。                      | 采用**惰性加载**策略，滚动到哪就渲染到哪，在处理包含上百个接口的大型项目时，首屏加载速度更快，内存占用更低。 |
+| **适用场景**     | **开发调试**阶段。方便后端开发者和测试人员快速验证接口逻辑。 | **对外发布**阶段。适合作为面向团队外部或公众的 API 参考文档，展示正式、稳定的接口规范。 |
+
+你可以使用路由中的字典参数添加更多文档配置：
+
+```python
+@app.get("/", summary="Hello World", description="这是一个测试接口")
+def read_root():
+    return {"Hello": "World"}
+```
+
+> 更多的配置见：https://fastapi.tiangolo.com/zh/tutorial/path-operation-configuration/
+
+你也可以禁用这些能力
+
+```python
+app = FastAPI(
+    docs_url=None,      # 禁用 Swagger UI (/docs)
+    redoc_url=None,     # 禁用 ReDoc (/redoc)
+    openapi_url=None    # 禁用 openapi.json 端点
+)
+```
+
+你也可以根据不同的环境决定是否禁用
+
+```python
+# 根据环境变量决定
+import os
+is_production = os.getenv("ENVIRONMENT") == "production"
+
+app = FastAPI(
+    docs_url=None if is_production else "/docs",
+    redoc_url=None if is_production else "/redoc",
+    openapi_url=None if is_production else "/openapi.json"
+)
+```
+
+### Pydantic
+
+官方网站：https://pydantic.dev/
+
+`Pydantic` 是一个全能的**数据建模与处理框架**，它的核心功能是实现数据校验和转换，从而确保数据的高可用
+
+```python
+from datetime import datetime
+from pydantic import BaseModel
+
+
+# 1. 定义数据模型（就像一个表单模板）
+class User(BaseModel):
+    id: int  # 要求必须是整数
+    name: str = "John Doe"  # 字符串，且有默认值
+    signup_ts: datetime | None = None  # 可以是日期时间或空
+    friends: list[int] = []  # 整数列表
+
+
+# 2. 输入外部数据（通常是 API 请求或文件读取）
+# 注意：这里的 'id' 是字符串 '123'，'friends' 中包含了字符串和字节数据
+external_data = {
+    "id": "123",
+    "signup_ts": "2024-06-01 12:22",
+    "friends": [1, "2", b"3"],
+}
+
+# 3. Pydantic 进行验证和转换
+user = User(**external_data)
+
+# 4. 打印结果
+print(user)
+# > User id=123 name='John Doe' signup_ts=datetime.datetime(2024, 6, 1, 12, 22) friends=[1, 2, 3]
+print(user.id)
+# > 123 (这里已经是整数类型，不再是字符串)
+print(user.friends)
+# > [1, 2, 3]
+
+```
+
+`Pydantic`集成到了`FastAPI`中，在请求和响应时会自动进行验证，验证失败会抛出`ValidationError`
+
+`FastAPI`也会读取到`Pydantic`的模型，将其生成到`openapi.json`中
+
+你可以精细的描述模型内部字段
+
+```python
+class Item(BaseModel):
+    # ✅ 带默认值的可选字段
+    item_id: int | None = Field(
+        default=None,  # 默认值
+        title="商品ID",  # 标题
+        description="商品的唯一标识符，在创建商品时可忽略，系统会自动生成。",  # 描述
+        ge=1,  # 大于等于1
+        examples=[1, 2, 3],  # 示例值列表
+    )
+
+    # ✅ 必填字段的写法
+    name: str = Field(
+        ...,  # 三个点表示必填
+        title="商品名称",
+        description="商品的显示名称，长度必须在2到10个字符之间。",
+        min_length=2,
+        max_length=10,
+        examples=["无线鼠标"],
+    )
+
+    # ✅ 带默认值的价格字段
+    price: float = Field(
+        default=0.0,  # 默认值
+        title="商品价格",
+        description="商品的销售价格，必须大于或等于0。",
+        ge=0.0,
+        examples=[19.99, 0.0, 100.5],  # 示例值列表
+    )
+```
+
+## 作业
+
+1. 跟随课堂完成示例程序
+2. 复述：
+   1. 什么是WSGI和ASGI？
+   2. ASGI服务器和ASGI应用是如何协作的？
+   3. Uvicorn是什么？
+   4. Starlette是什么？
+   5. OpenAPI是什么？
+   6. Swagger UI是什么？Redoc是什么？
+   7. Pydantic是什么？
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0001-Web服务框架.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/Web服务框架速查表.html">📋 Web服务框架速查表（可打印）</a>

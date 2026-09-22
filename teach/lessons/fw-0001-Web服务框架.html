@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · Web服务框架：三大框架对比、ASGI 协作、Swagger/Redoc、Pydantic——互动教学课程">
+  <title>Web服务框架 · 互动教学课程（Python 框架 fw-01）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>Web服务框架</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/Web服务框架">01.Web服务框架</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 Django / Flask / FastAPI 三大框架的哲学与选型场景</li>
+        <li>复述 ASGI 服务器与应用程序的职责分工与 app(scope, receive, send) 对接方式</li>
+        <li>区分 Swagger UI 与 Redoc 的定位，说清 openapi.json 的来源</li>
+        <li>用 Pydantic 做数据校验与转换，写出第一个 FastAPI 应用</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《01.Web服务框架》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三大框架一句话</h3>
+        <ul class="pitfall-list">
+          <li><strong>Django</strong>：开箱即用（Batteries-included）——大型复杂应用、要后台管理</li>
+          <li><strong>Flask</strong>：微内核可扩展——小型应用、快速原型</li>
+          <li><strong>FastAPI</strong>：高性能现代化——API 服务、微服务、AI 模型封装成 API（本课程主角）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>ASGI 协作（核心）</h3>
+        <ul class="pitfall-list">
+          <li><strong>服务器</strong>：socket 通信、报文解析、事件循环、进程线程管理（Uvicorn 是 FastAPI 首选）</li>
+          <li><strong>应用程序</strong>：业务逻辑（FastAPI / Starlette / Django）</li>
+          <li><strong>对接</strong>：应用暴露可调用对象 <code>app(scope, receive, send)</code>——scope 是连接上下文字典，receive 收消息，send 发消息</li>
+          <li><strong>WSGI vs ASGI</strong>：WSGI 早期标准、多线程处理；ASGI 现代标准、异步处理</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>文档与校验</h3>
+        <ul class="pitfall-list">
+          <li><strong>openapi.json</strong>：FastAPI 首次启动自动生成并暴露在 /openapi.json，遵循 OpenAPI 规范</li>
+          <li><strong>Swagger UI（/docs）</strong>：交互式测试（Try it out）；<strong>Redoc（/redoc）</strong>：纯阅读、惰性加载</li>
+          <li><strong>Pydantic</strong>：数据校验与转换（'123' → 123、'2' → 2），失败抛 ValidationError；模型会被 FastAPI 生成进 openapi.json</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《01.Web服务框架》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 三大框架中「开箱即用 (Batteries-included)」指的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Django</button>
+            <button class="quiz-option">FastAPI</button>
+            <button class="quiz-option">都不是</button>
+            <button class="quiz-option">Flask</button>
+          </div>
+          <div class="quiz-explain" hidden>Django 内置 ORM、后台管理、用户认证等几乎所有常用功能——开箱即用。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 「微内核，可扩展 (Microframework)」是哪个框架？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Uvicorn</button>
+            <button class="quiz-option">FastAPI</button>
+            <button class="quiz-option">Flask</button>
+            <button class="quiz-option">Django</button>
+          </div>
+          <div class="quiz-explain" hidden>Flask 只提供最基础的核心功能，数据库、表单等按需选择。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. FastAPI 的核心哲学是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">开箱即用</button>
+            <button class="quiz-option">高性能、现代化——利用类型注解和异步特性，专为 API 设计</button>
+            <button class="quiz-option">纯同步多线程</button>
+            <button class="quiz-option">微内核可扩展</button>
+          </div>
+          <div class="quiz-explain" hidden>FastAPI 利用类型注解和异步特性，为 API 设计而生——课件原文。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. WSGI 与 ASGI 的核心区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">WSGI 更快</button>
+            <button class="quiz-option">ASGI 只能用于 Django</button>
+            <button class="quiz-option">没有区别</button>
+            <button class="quiz-option">WSGI 早期标准、多线程处理；ASGI 现代标准、异步处理</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：WSGI 用于多线程处理请求任务，ASGI 用于异步处理请求任务。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 下列哪项不是 ASGI 服务器的职责？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">管理进程和线程</button>
+            <button class="quiz-option">实现和启动事件循环</button>
+            <button class="quiz-option">socket 通信与报文解析</button>
+            <button class="quiz-option">业务逻辑处理</button>
+          </div>
+          <div class="quiz-explain" hidden>业务逻辑是 ASGI 应用程序（FastAPI 等框架）的职责；服务器管通信、解析、事件循环、进程线程。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. Uvicorn 的特点是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只支持 HTTP/3</button>
+            <button class="quiz-option">基于 uvloop + httptools，FastAPI/Starlette 首选</button>
+            <button class="quiz-option">Django 专用</button>
+            <button class="quiz-option">Rust 实现</button>
+          </div>
+          <div class="quiz-explain" hidden>课件表格：Uvicorn 基于 uvloop + httptools、性能极高，是 FastAPI/Starlette 首选。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. ASGI 对接中，scope 参数是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一个 socket 对象</button>
+            <button class="quiz-option">包含连接上下文信息的字典（type/path/method/headers 等）</button>
+            <button class="quiz-option">响应体字符串</button>
+            <button class="quiz-option">事件循环句柄</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：scope 是包含连接上下文信息的字典——连接类型、路径、方法、请求头等。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. Swagger UI（/docs）与 Redoc（/redoc）的核心差异是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Redoc 支持 Try it out</button>
+            <button class="quiz-option">Swagger UI 是只读的</button>
+            <button class="quiz-option">没有差异</button>
+            <button class="quiz-option">Swagger UI 交互式测试（开发调试）；Redoc 文档阅读（对外发布）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件表格：Swagger UI 核心功能是交互式测试；Redoc 纯只读、惰性加载，适合对外发布。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. Pydantic 模型收到 id="123"（声明 int）会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">自动转换并校验：id 变成整数 123</button>
+            <button class="quiz-option">原样存为字符串</button>
+            <button class="quiz-option">跳过该字段</button>
+            <button class="quiz-option">报 TypeError 并崩溃</button>
+          </div>
+          <div class="quiz-explain" hidden>Pydantic 核心功能是数据校验和转换——'123' 会转换为整数 123；转换失败才抛 ValidationError。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0001-Web服务框架',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `AI 写的 FastAPI 接口用了 <code>async def</code>，但内部调用的是同步阻塞的数据库驱动（不带 await）。审查：按 FastAPI 官方 async 文档，这会导致什么？`,
+              source: '来源：FastAPI 官方文档「Concurrency and async / await」（fastapi.tiangolo.com/async，源文 GitHub fastapi/docs/en/docs/async.md）· 检索 2026-09-11 · 层级：一手（场景化改写）',
+              breakdown: `官方原文的逻辑链：<strong>async def 的路径操作函数在事件循环里运行</strong>——内部做同步阻塞调用（如大多数数据库库），整个事件循环被卡住，所有请求排队。官方建议：用 <code>def</code>（FastAPI 会把它丢进线程池运行），或换支持 await 的异步库。AI 生成代码时「无脑加 async」是高发事故：<strong>await 只在 async def 里合法，同步库配 def 才是正解</strong>。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `ASGI 服务器与 ASGI 应用程序是怎么对接的？app 的调用签名是什么？三个参数各自干什么？`,
+              source: '来源：渡一源课程《01.Web服务框架》课件（gitee.com/dev-edu/python-framework）· 检索 2026-09-11 · 层级：一手（源课程）',
+              breakdown: `<code>app(scope, receive, send)</code>：<strong>scope</strong> 是连接上下文字典（type/path/method/headers…）；<strong>receive</strong> 是异步函数，await 它接收消息（请求体/客户端消息）；<strong>send</strong> 是异步函数，await 它发送消息（响应头体/服务端消息）。服务器负责通信与协议解析、构建 scope 后调用 app；应用内部走路由与业务逻辑，期间来回调用 receive/send。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 生成的部署配置把 FastAPI 的 docs_url / openapi_url 全部置 None 禁用，结果联调时前端拿不到接口文档。审查：正确的按环境开关姿势是什么？`,
+              source: '来源：渡一源课程《01.Web服务框架》课件（环境变量判断代码）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `课件给出的标准姿势：<code>is_production = os.getenv("ENVIRONMENT") == "production"</code> 后按环境赋值——<strong>开发保留 /docs 与 /openapi.json，生产才禁用</strong>。AI 一刀切禁用的问题是：文档能力是 FastAPI 的核心卖点（Swagger UI 交互测试 + openapi.json 可生成客户端 SDK），禁用要在「生产安全」与「协作效率」间按环境取舍，而不是默认关掉。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `团队要做一个「AI 大模型服务化」项目：把模型封装成 HTTP API 对外提供。Django / Flask / FastAPI 选哪个？依据是什么？`,
+              source: '来源：渡一源课程《01.Web服务框架》课件（框架对比表）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `选 <strong>FastAPI</strong>：课件对比表原文——FastAPI 最适合「高性能 API 服务、微服务、把 AI/机器学习模型封装成 API」。理由链：① 类型注解 + Pydantic 天然做请求校验（模型输入校验是 AI 服务刚需）；② 异步特性匹配模型推理的并发等待；③ 自动 openapi.json 让下游生成客户端零成本。Django 的重后台管理、Flask 的微内核在这里都不是刚需。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 uv 起一个最小 FastAPI 应用（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: 'uv init 后按课件安装 fastapi[standard] → 写 main.py（含路径参数 + Pydantic 模型接口）→ fastapi dev 启动 → 验证四个地址：/、/items/5?q=xx、/docs、/openapi.json。',
+                accept: ['服务启动且 / 返回 Hello World', '路径参数接口返回正确 JSON', '/docs 与 /openapi.json 可访问', 'Pydantic 模型出现在 openapi.json 的 schemas 里'],
+              },
+              source: '任务基于《01.Web服务框架》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：<code>uv add --package web-service "fastapi[standard]==0.136.3"</code> → main.py 抄课件代码 → <code>uv run --package web-service fastapi dev apps/web-service/main.py --port 8080</code> → curl 四个地址。坑：uv 的 workspace 布局（--package 参数）要按课件结构来；openapi.json 里搜模型名验证 Pydantic 已注册。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（01.Web服务框架）</li>
+        <li><strong>深读推荐</strong>：FastAPI 官方文档 <a href="https://fastapi.tiangolo.com/async/">Concurrency and async / await</a> · <a href="https://docs.pydantic.dev/">Pydantic 官方文档</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Web服务框架速查表.html">Web服务框架速查表</a>——三大框架与 ASGI 一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/Web服务框架">01.Web服务框架</a> · 下一课 <a href="/agents/python-framework/优化包结构">02.优化包结构</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（跟随课堂完成示例程序 + 复述清单）。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>
