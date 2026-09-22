@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文件上传速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>文件上传速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0014-文件上传.html">《文件上传互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>直传流程</h2>
+      <ol class="pitfall-list">
+        <li>客户端向服务端申请上传凭证（声明文件名与大小）</li>
+        <li>服务端生成 policy + signature 并返回凭证六字段</li>
+        <li>浏览器表单直接 POST 到 OSS（文件流不经过应用服务器）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>凭证六字段</h2>
+      <table class="cmp-table">
+        <tr><th>字段</th><th>含义</th></tr>
+        <tr><td>host</td><td>Bucket 域名，表单 POST 目标</td></tr>
+        <tr><td>access_id</td><td>OSSAccessKeyId 表单字段</td></tr>
+        <tr><td>policy</td><td>Base64 的策略文档（expiration + conditions）</td></tr>
+        <tr><td>signature</td><td>HMAC-SHA1(secret, policy) 再 Base64</td></tr>
+        <tr><td>key</td><td>服务端预定的对象路径（dir_strategy + uuid + 后缀）</td></tr>
+        <tr><td>content_type</td><td>MIME 白名单查表得出</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>安全三件套</h2>
+      <dl class="term-grid">
+        <dt>conditions</dt>
+        <dd>eq $key / eq $Content-Type / content-length-range 0..file_size</dd>
+        <dt>目录策略</dt>
+        <dd>date_uuid（uploads/YYYY/MM/DD/）vs flat_uuid（uploads/）；Callable 注入可换。</dd>
+        <dt>IAM 最小权限</dt>
+        <dd>oss:PutObject / oss:GetObject / oss:DeleteObject，Resource 限定 bucket/*。</dd>
+        <dt>异步边界</dt>
+        <dd>oss2 是同步 SDK——delete/exists 用 asyncio.to_thread 防卡事件循环。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

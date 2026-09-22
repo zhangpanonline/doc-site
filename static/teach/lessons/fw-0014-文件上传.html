@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 文件上传：OSS PostObject 直传、policy 条件与 HMAC 签名、目录策略、MIME 白名单、IAM 权限——互动教学课程">
+  <title>文件上传 · 互动教学课程（Python 框架 fw-14）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>文件上传</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/文件上传">14.文件上传</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清「客户端直传 OSS」模式：服务端只发凭证，文件流不经过应用服务器</li>
+        <li>逐字段讲出 PostObject 凭证：host/access_id/policy/signature/key/content_type</li>
+        <li>读懂 policy 的三条 conditions 与 HMAC-SHA1 签名的计算过程</li>
+        <li>说清目录策略与 MIME 白名单的作用，以及 IAM 最小权限（PutObject/GetObject/DeleteObject）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《14.文件上传》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>直传模式与凭证（课件要点）</h3>
+        <ul class="pitfall-list">
+          <li><strong>直传</strong>：浏览器拿凭证后直接把文件 POST 到 OSS——大文件不经过应用服务器（省带宽、省内存）</li>
+          <li><strong>host</strong>：OSS Bucket 域名（表单 POST 目标）；<strong>access_id</strong>：OSSAccessKeyId 表单字段</li>
+          <li><strong>policy</strong>：Base64 编码的策略文档（expiration + conditions 三条）；<strong>signature</strong>：对 policy 做 HMAC-SHA1 再 Base64</li>
+          <li><strong>key</strong>：dir_strategy() + uuid4().hex + 后缀——服务端预定的对象路径；<strong>content_type</strong>：MIME 白名单查表得出</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>安全三件套（课件）</h3>
+        <ul class="pitfall-list">
+          <li><strong>conditions 三条</strong>：eq $key（只能传这个 key）、eq $Content-Type（只能传这个类型）、content-length-range 0..file_size（限制大小）</li>
+          <li><strong>目录策略</strong>：date_uuid（uploads/YYYY/MM/DD/，按天分桶）vs flat_uuid（uploads/ 平铺）</li>
+          <li><strong>IAM 最小权限</strong>：oss:PutObject / oss:GetObject / oss:DeleteObject，Resource 限定到 bucket 与子路径</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《14.文件上传》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 课件「上传模式」图里，文件流走的是哪条路？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">客户端直传 OSS——服务端只签发凭证，文件不经过应用服务器</button>
+            <button class="quiz-option">客户端直接把文件发给数据库</button>
+            <button class="quiz-option">FTP 上传</button>
+            <button class="quiz-option">客户端→服务器→OSS 代理上传</button>
+          </div>
+          <div class="quiz-explain" hidden>课件上传模式图：浏览器向服务端申请凭证，拿到 host/policy/signature 后直接 POST 到 OSS。应用服务器全程不碰文件字节流——大文件不占带宽内存。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. generate_upload_credentials 返回的 policy 是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">上传进度条数据</button>
+            <button class="quiz-option">Base64 编码的策略文档：expiration + conditions 三条限制</button>
+            <button class="quiz-option">访问令牌</button>
+            <button class="quiz-option">加密后的文件内容</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：policy_dict 含 expiration（UTC 过期时间）与 conditions（eq $key / eq $Content-Type / content-length-range），json 序列化后 Base64。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. IAM 策略里只授了哪三个 Action？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">oss:Admin 一个全包</button>
+            <button class="quiz-option">oss:PutObject / oss:GetObject / oss:DeleteObject</button>
+            <button class="quiz-option">oss:DeleteBucket / oss:CreateBucket / oss:ListAll</button>
+            <button class="quiz-option">全部 Action</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 IAM JSON：PutObject（上传）/GetObject（读取）/DeleteObject（删除），Resource 限定 your-bucket-name 与 /*——最小权限原则，不给任何管理类权限。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. conditions 里 ["eq", "$key", key] 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">校验 key 的格式</button>
+            <button class="quiz-option">限制文件名长度</button>
+            <button class="quiz-option">没有作用，纯装饰</button>
+            <button class="quiz-option">锁死对象路径：上传表单的 key 必须与服务端预定的 key 完全一致</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 policy conditions 第一条：eq $key——攻击者即使改了表单里的 key，也会因与 policy 不符被 OSS 拒绝。key 由服务端 dir_strategy+uuid 预定，客户端无权决定路径。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. signature 是怎么算出来的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">RSA 私钥加密</button>
+            <button class="quiz-option">随机字符串</button>
+            <button class="quiz-option">MD5(policy)</button>
+            <button class="quiz-option">用 AccessKeySecret 对 policy 字符串做 HMAC-SHA1，结果 Base64</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：hmac.new(access_key_secret.encode(), policy.encode(), hashlib.sha1).digest() 再 b64encode——OSS 用同一 secret 重算比对，验证 policy 未被篡改。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. mime_types 配置项和 get_mime_type 的关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">get_mime_type 按后缀查 MIME 表；mime_types 是可选白名单，配了就再过滤一层</button>
+            <button class="quiz-option">mime_types 是数据库表</button>
+            <button class="quiz-option">两个完全无关</button>
+            <button class="quiz-option">get_mime_type 随机返回类型</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：content_type = get_mime_type(suffix)（查 IMAGE_MIME/DOC_MIME 表）；if self._config.mime_types and content_type not in ...: raise——默认全表放行，配了白名单只许白名单类型。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. content-length-range 条件里第二个值为什么是 file_size 而不是一个固定上限？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">服务端按「申请时声明的文件大小」锁定本次上传：申请 1MB 就只能传 1MB</button>
+            <button class="quiz-option">file_size 是全局最大上限</button>
+            <button class="quiz-option">为了绕过限制</button>
+            <button class="quiz-option">写错了，应该是常量</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：["content-length-range", 0, file_size]——凭证按每次申请的文件大小定制：客户端申请凭证时声明大小，policy 就只放行这个大小，防「申请小文件凭证传大文件」。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. delete/exists 为什么用 asyncio.to_thread 包一层？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">纯装饰</button>
+            <button class="quiz-option">oss2 SDK 是同步阻塞的——to_thread 扔进线程池，不卡事件循环</button>
+            <button class="quiz-option">为了更快</button>
+            <button class="quiz-option">oss2 只支持线程模式调用</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：await asyncio.to_thread(self._bucket.delete_object, object_key)——oss2 是同步 SDK，网络阻塞会卡死事件循环（ch01 的 async 陷阱同款），to_thread 把它挪到线程池。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. date_uuid_strategy 和 flat_uuid_strategy 怎么选？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">随机选一个</button>
+            <button class="quiz-option">永远用日期分桶</button>
+            <button class="quiz-option">永远用平铺</button>
+            <button class="quiz-option">按量选：海量文件用日期分桶避免单目录过大；文件少用平铺更简单</button>
+          </div>
+          <div class="quiz-explain" hidden>课件两个策略：date_uuid 生成 uploads/2025/06/26/ 层级——按天分桶，目录列表和按天清理都友好；flat 全平铺 uploads/——实现简单。接口统一为 Callable[[], str]，换策略只改配置。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0014-文件上传',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的上传接口：用 oss2 直接在服务端 put_object——结果 100MB 的视频上传把服务带宽打满、内存飙升、其他接口全卡。按本课的直传模式，正确的架构是什么？`,
+              source: '来源：阿里云官方文档 PostObject（"Call the PostObject operation to upload an object to a bucket by using an HTML form ... Objects uploaded by PostObject cannot exceed 5 GB"）https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《14.文件上传》课件（上传模式图）',
+              breakdown: `课件上传模式图的标准答案：<strong>客户端直传</strong>——服务端只做一件事：签发凭证（generate_upload_credentials），浏览器拿到 host/policy/signature 后直接把文件 POST 到 OSS。收益：① 文件字节流完全不经过应用服务器（带宽、内存、连接全部省下）；② 上传进度由浏览器直连 OSS 呈现，体验好；③ 服务端无状态、可水平扩。官方文档背书：PostObject 就是「通过 HTML 表单直传」的标准接口（单文件上限 5GB，超了走分片上传）。AI 的服务端代理上传在小文件场景能用，大文件就是事故——选型先画数据流图（课件第一张图），看文件流经过谁。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `PostObject 直传时，客户端完全可以绕过服务端自己拼表单——服务端签发的 policy + signature 是怎么管住上传行为的？`,
+              source: '来源：阿里云官方文档 PostObject（"OSS authenticates the signature in the request"；content-length-range 指定允许的字节范围）https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《14.文件上传》课件（policy conditions + HMAC 签名）',
+              breakdown: `<strong>policy = 服务端单方面开出的约束清单</strong>，三条 conditions 锁死行为：① eq $key——对象路径只能等于服务端预定的 key（dir_strategy + uuid，客户端无权改路径）；② eq $Content-Type——只能传服务端批准的类型；③ content-length-range 0..file_size——大小按「申请时声明的文件大小」封顶（申请 1MB 就只能传 1MB）。 <strong>signature = 防篡改封印</strong>：HMAC-SHA1(secret, policy) 再 Base64——客户端改了 policy 里任何一个字节，OSS 用同一 secret 重算就对不上，拒绝请求（官方文档：OSS authenticates the signature）。客户端能绕的只有「不申请凭证直接传」——那没有权限（IAM 只给 PutObject 且需要签名），或者换桶传——没权限。一句话：<strong>凭证把「自由上传」变成「按服务端批准的剧本上传」</strong>。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的凭证生成：① 后缀白名单里放行了 .html/.svg；② policy 没有 content-length-range；③ signature 用 access_key_id 而不是 secret 算。逐条审查。`,
+              source: '来源：阿里云官方文档 PostObject（签名与 content-length-range 用法）https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《14.文件上传》课件（mime.py/aliyun.py）',
+              breakdown: `逐条：<strong>① .html/.svg 放行 = 存储型 XSS</strong>——用户传个带脚本的 SVG/HTML，OSS 域直接访问就被浏览器执行（课件 MIME 表里 .svg 在列是「类型识别」，不代表上传白名单要放行它——生产环境对可在浏览器执行的类型要么禁要么强制下载 Content-Disposition）；<strong>② 没有 content-length-range</strong>——用户申请 1KB 凭证传 100GB，服务端没设上限就只能事后补救（官方 FAQ：超限报错就是这条条件在起作用）；<strong>③ 用 id 签名</strong>——签名密钥必须是 AccessKeySecret，id 是身份标识可以暴露（表单里就有），用 id 签名等于把「验证器」交给攻击者。审查要点：<strong>白名单看「执行面」、大小看「声明面」、签名看「密钥面」</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：上传凭证的有效期设多长？为什么课件默认 3600 秒？目录用日期分桶还是平铺，你怎么选？`,
+              source: '来源：渡一源课程《14.文件上传》课件（AliyunOSSConfig.expire_seconds=3600 / dir_strategy 两策略）· 阿里云官方文档 PostObject https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `<strong>有效期</strong>：课件默认 3600 秒（1 小时）——本质是「凭证泄露的暴露窗口」与「用户上传耗时」的平衡：太短用户传一半过期（大文件重传）；太长凭证一旦泄露（前端日志、代理缓存），攻击者可在有效期内用同一 key 覆盖上传（policy 锁 key 不锁次数）。实践：正常用户 15 分钟足够，1 小时是宽松默认；高安全场景按文件大小动态设。 <strong>目录策略</strong>：按量选——海量小文件（用户头像、订单截图）用 date_uuid 按天分桶：目录列表可控、按天清理/统计方便、单目录文件数不会爆炸；文件少或需要全局唯一路径的（商品图与商品 ID 绑定），flat 平铺简单直接。课件把策略做成 Callable 注入（dir_strategy 字段），换策略只改配置——<strong>选型是可配置的决策，不是写死的代码</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `跑通本课上传统（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '在阿里云 OSS 建测试桶（或用本地 MinIO 替代）→ 配置 AliyunOSSConfig → 用 generate_upload_credentials 生成凭证 → curl 表单直传一个小文件 → 验证 exists() 与 delete() → 用改过的 key/size 重传确认被 OSS 拒绝。',
+                accept: ['凭证生成后 curl 直传成功（不走服务端）', 'exists 返回 True、delete 后返回 False', '篡改 key 或超大小上传被拒绝'],
+              },
+              source: '任务基于《14.文件上传》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：没有阿里云账号可用 MinIO 本地起一个 S3 兼容服务（oss2 走 S3 兼容 endpoint 可通）。curl 表单：curl -F "key=..." -F "OSSAccessKeyId=..." -F "policy=..." -F "signature=..." -F "file=@x.png" host。坑：policy 的 expiration 必须是 UTC 且格式 "YYYY-MM-DDTHH:MM:SS.000Z"（课件 strftime 已处理）；篡改验证时改表单 key 一个字，OSS 应返回 403 签名/策略不匹配。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（14.文件上传）</li>
+        <li><strong>深读推荐</strong>：<a href="https://www.alibabacloud.com/help/en/oss/developer-reference/postobject">阿里云官方：PostObject（表单直传）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/文件上传速查表.html">文件上传速查表</a>——直传流程、凭证六字段、安全三件套一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/三层架构">13.三层架构</a> · 下一课 <a href="/agents/python-framework/系统设置">15.系统设置</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以直传跑通 + 篡改被拒为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

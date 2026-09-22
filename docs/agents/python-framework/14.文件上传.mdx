@@ -1,0 +1,301 @@
+---
+sidebar_position: 14
+title: '14. 文件上传'
+description: "Python 框架课程 · 文件上传：OSS PostObject 直传凭证（policy/signature）、目录策略、MIME 白名单、IAM 权限策略。"
+displayed_sidebar: agentsFramework
+---
+
+# 文件上传
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+![上传模式](https://resource.duyiedu.com/yuanjin/202606261505481.svg)
+
+```json
+{
+    "Version": "1",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "oss:PutObject",
+                "oss:GetObject",
+                "oss:DeleteObject"
+            ],
+            "Resource": [
+                "acs:oss:*:*:your-bucket-name",
+                "acs:oss:*:*:your-bucket-name/*"
+            ]
+        }
+    ]
+}
+```
+
+## 完成代码
+
+本章 duyi-service 的增量在 `packages/duyi-utils` 包：新增 `duyi_utils/upload`（OSS 上传器）与 `duyi_utils/shared`（文件工具）两个模块，并带完整单元测试与集成测试。
+
+### shared —— 文件工具
+
+`packages/duyi-utils/src/duyi_utils/shared/file_util.py`
+
+```python
+import os
+
+
+def get_suffix(filename: str) -> str | None:
+    """
+    根据文件名字符串获取后缀名，不包含英文点号。
+
+    Args:
+        filename: 文件名字符串，可以是裸文件名（如 "photo.png"）或路径（如 "/path/to/photo.png"）。
+
+    Returns:
+        小写后缀名（如 "png"），不含点号。获取不到则返回 None。
+
+    Examples:
+        >>> get_suffix("photo.png")
+        "png"
+        >>> get_suffix("/path/to/report.PDF")
+        "pdf"
+        >>> get_suffix("noext")
+        None
+    """
+    ext = os.path.splitext(filename)[1]
+    if not ext:
+        return None
+    return ext.lstrip(".").lower()
+```
+
+`packages/duyi-utils/src/duyi_utils/shared/mime.py`
+
+```python
+IMAGE_MIME = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".bmp": "image/bmp",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".tif": "image/tiff",
+    ".tiff": "image/tiff",
+}
+
+DOC_MIME = {
+    ".pdf": "application/pdf",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".ppt": "application/vnd.ms-powerpoint",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".txt": "text/plain",
+    ".csv": "text/csv",
+    ".md": "text/markdown",
+}
+
+_ALL_MIME = {**IMAGE_MIME, **DOC_MIME}
+
+
+def get_mime_type(suffix: str) -> str | None:
+    suffix = suffix.lower()
+    if not suffix.startswith("."):
+        suffix = f".{suffix}"
+    return _ALL_MIME.get(suffix)
+```
+
+### upload —— OSS 上传器
+
+`packages/duyi-utils/src/duyi_utils/upload/dir_strategy.py`
+
+```python
+from datetime import datetime
+
+
+def date_uuid_strategy() -> str:
+    """
+    日期 + UUID 目录策略。
+
+    目录结构包含年月日层级，存放路径格式为：
+    {base}/{YYYY}/{MM}/{DD}/
+
+    Args:
+        filename: 文件名字符串（未使用，保留以统一策略接口）。
+
+    Returns:
+        目录路径字符串，以 / 结尾。
+
+    Examples:
+        >>> date_uuid_strategy("photo.png")
+        "uploads/2025/06/26/"
+    """
+    now = datetime.now()
+    return f"uploads/{now.year:04d}/{now.month:02d}/{now.day:02d}/"
+
+
+def flat_uuid_strategy() -> str:
+    """
+    扁平 UUID 目录策略。
+
+    所有文件放在同一目录下，存放路径格式为：
+    {base}/
+
+    Args:
+        filename: 文件名字符串（未使用，保留以统一策略接口）。
+
+    Returns:
+        目录路径字符串，以 / 结尾。
+
+    Examples:
+        >>> flat_uuid_strategy("photo.png")
+        "uploads/"
+    """
+    return "uploads/"
+```
+
+`packages/duyi-utils/src/duyi_utils/upload/aliyun.py`
+
+```python
+import asyncio
+import base64
+import hashlib
+import hmac
+import json
+import os
+import uuid
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from typing import Callable
+
+import oss2
+
+from duyi_utils.shared.file_util import get_suffix
+from duyi_utils.shared.mime import get_mime_type
+from duyi_utils.upload.dir_strategy import date_uuid_strategy
+
+
+@dataclass
+class AliyunOSSConfig:
+    """阿里云 OSS 上传配置"""
+
+    access_key_id: str
+    access_key_secret: str
+    bucket_name: str
+    endpoint: str
+    dir_strategy: Callable[[], str] = field(default=date_uuid_strategy)
+    expire_seconds: int = 3600
+    mime_types: list[str] | None = None
+
+
+class AliyunOSSUploader:
+    """阿里云 OSS 上传器，提供上传凭证生成、删除、存在性判断功能。"""
+
+    def __init__(self, config: AliyunOSSConfig):
+        self._config = config
+        self._host = f"https://{config.bucket_name}.{config.endpoint}"
+
+        auth = oss2.Auth(config.access_key_id, config.access_key_secret)
+        self._bucket = oss2.Bucket(auth, config.endpoint, config.bucket_name)
+
+    def generate_upload_credentials(self, filename: str, file_size: int) -> dict:
+        """
+        生成阿里云 OSS PostObject 上传凭证。
+
+        Args:
+            filename: 文件路径，如 "/a/b/c/1.txt"，仅取最后的文件名。
+            file_size: 文件大小，单位字节。
+
+        Returns:
+            上传凭证字典：
+                - host: OSS Bucket 域名，表单 POST 的目标地址
+                - access_id: OSSAccessKeyId，表单字段
+                - policy: Base64 编码的策略文档，表单字段
+                - signature: 策略的 HMAC-SHA1 签名，表单字段
+                - key: 最终的文件在 OSS 中的路径
+                - content_type: 文件的 MIME 类型
+
+        Raises:
+            ValueError: 无法获取文件后缀，或文件类型不被支持。
+        """
+        basename = os.path.basename(filename)
+        suffix = get_suffix(basename)
+        if suffix is None:
+            raise ValueError(f"无法获取文件后缀: {basename}")
+
+        content_type = get_mime_type(suffix)
+        if content_type is None:
+            raise ValueError(f"不支持的文件类型: .{suffix}")
+
+        if self._config.mime_types and content_type not in self._config.mime_types:
+            raise ValueError(f"不允许上传的类型: {content_type}")
+
+        dir_ = self._config.dir_strategy()
+        key = f"{dir_}{uuid.uuid4().hex}.{suffix}"
+
+        expire_time = datetime.now(timezone.utc) + timedelta(
+            seconds=self._config.expire_seconds
+        )
+        expiration = expire_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+        policy_dict = {
+            "expiration": expiration,
+            "conditions": [
+                ["eq", "$key", key],
+                ["eq", "$Content-Type", content_type],
+                ["content-length-range", 0, file_size],
+            ],
+        }
+
+        policy_json = json.dumps(policy_dict)
+        policy = base64.b64encode(policy_json.encode()).decode()
+
+        signature = base64.b64encode(
+            hmac.new(
+                self._config.access_key_secret.encode(),
+                policy.encode(),
+                hashlib.sha1,
+            ).digest()
+        ).decode()
+
+        return {
+            "host": self._host,
+            "access_id": self._config.access_key_id,
+            "policy": policy,
+            "signature": signature,
+            "key": key,
+            "content_type": content_type,
+        }
+
+    async def delete(self, object_key: str) -> None:
+        """
+        删除 OSS 中指定 key 的文件。
+
+        Args:
+            object_key: OSS 中文件的 key。
+
+        Raises:
+            oss2.exceptions.OssError: 删除失败时抛出。
+        """
+        await asyncio.to_thread(self._bucket.delete_object, object_key)
+
+    async def exists(self, object_key: str) -> bool:
+        """
+        判断 OSS 中指定 key 的文件是否存在。
+
+        Args:
+            object_key: OSS 中文件的 key。
+
+        Returns:
+            True 表示文件存在，False 表示不存在。
+        """
+        return await asyncio.to_thread(self._bucket.object_exists, object_key)
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0014-文件上传.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/文件上传速查表.html">📋 文件上传速查表（可打印）</a>
