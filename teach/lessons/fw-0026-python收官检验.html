@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · python收官检验：27 道能力自检、22 项通过标准、AI 与全栈岗位需求画像——互动教学课程">
+  <title>python收官检验 · 互动教学课程（Python 框架 fw-26）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>python收官检验</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/python收官检验">26.python收官检验</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>对照 27 道能力检验题完成自我盘点，找出薄弱项回补对应章节</li>
+        <li>说出课件通过标准：22/27 即「超越绝大部分企业要求」</li>
+        <li>讲清 AI 岗位与全栈岗位的需求画像差异</li>
+        <li>把 24 章能力串成一张「能交付」的完整技术栈</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《26.python收官检验》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>27 道检验题的章节地图</h3>
+        <ul class="pitfall-list">
+          <li><strong>工程基础</strong>（uv/monorepo/断点调试）→ ch01/02</li>
+          <li><strong>Web 骨架</strong>（ASGI/pydantic/OpenAPI/Swagger/模板引擎）→ ch01/03</li>
+          <li><strong>数据</strong>（模型建表/迁移/注入/长事务）→ ch04-06</li>
+          <li><strong>架构</strong>（业务层/接口/依赖注入/Lifespan/中间件/日志/异常）→ ch07-18</li>
+          <li><strong>安全与实时</strong>（直传/hash 加盐/JWT/SSE/WebSocket）→ ch14/17/20</li>
+          <li><strong>交付</strong>（CICD/k8s/跨框架迁移/AI 辅助）→ ch21-25</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>就业市场画像（课件）</h3>
+        <ul class="pitfall-list">
+          <li><strong>AI 岗位</strong>：专注 AI 能力 → 暴露 API → 日志 → 流式响应（SSE+WebSocket）→ 落库 → 测试</li>
+          <li><strong>全栈岗位</strong>：CRUD → 安全与性能 → 理解中间件 → 统一异常 → 增量测试 → 关键业务日志</li>
+          <li><strong>共同底座</strong>：本课程的 24 章恰好覆盖两个岗位的交集</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《26.python收官检验》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 课件的通过标准是多少道肯定？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">10 道</button>
+            <button class="quiz-option">没有标准</button>
+            <button class="quiz-option">27 道中的 22 道肯定——即超越绝大部分企业要求</button>
+            <button class="quiz-option">必须全对</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：27 个问题 22 个肯定即可——无障碍学后续 AI 课程、超越绝大部分企业要求、高质量完成工作任务。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 能力检验的默认前提是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">完全不查资料</button>
+            <button class="quiz-option">只能手写代码</button>
+            <button class="quiz-option">借助 AI、课件、课程视频「可控地」完成——不是闭卷默写</button>
+            <button class="quiz-option">限时闭卷</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：你是否能借助 AI、课件、课程视频，可控的完成下面的事项——检验的是工程交付能力（会查、会用、能完成），不是背诵。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. AI 岗位画像里排第一的需求是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">运维服务器</button>
+            <button class="quiz-option">专注于 AI 能力（模型调用、提示词、能力封装）</button>
+            <button class="quiz-option">写 CSS</button>
+            <button class="quiz-option">做报表</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 AI 岗位清单第一条：专注于 AI 能力——岗位的核心是模型与智能能力，Web 技能是「把 AI 能力交付出去」的载体（API/日志/流式/落库/测试）。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 「给你任意一个函数，把它暴露成 API 接口」考的是哪几章的能力？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只考部署</button>
+            <button class="quiz-option">只考语法</button>
+            <button class="quiz-option">只考数据库</button>
+            <button class="quiz-option">ch08 依赖注入 + ch09 异常 + ch10 信封——函数→路由→service→DTO 的完整封装</button>
+          </div>
+          <div class="quiz-explain" hidden>检验题 10 的完整动作：定义 DTO（ch02）→ service 封装（ch07）→ APIRouter+Depends（ch08）→ 异常与信封（ch09/10）→ 测试（ch11/12）——一道题串五章。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 全栈岗位「理解现有中间件的作用与影响」为什么重要？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只是面试题</button>
+            <button class="quiz-option">中间件是横切逻辑的载体（ch10）——改接口行为前先知道哪些逻辑在哪层生效</button>
+            <button class="quiz-option">与岗位无关</button>
+            <button class="quiz-option">中间件没用</button>
+          </div>
+          <div class="quiz-explain" hidden>课件全栈清单：能理解现有的各个中间件的作用，以及它们产生的影响——存量项目里中间件（信封/耗时/CORS/日志）承载大量约定，新需求要顺着它们改而不是绕开。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 检验题 26「有信心通过官方文档上手 Flask/Django」考的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">框架底层的通用概念（路由/中间件/ORM/模板）已掌握——换框架只换 API 拼写</button>
+            <button class="quiz-option">放弃 FastAPI</button>
+            <button class="quiz-option">背诵两个框架的文档</button>
+            <button class="quiz-option">与课程无关</button>
+          </div>
+          <div class="quiz-explain" hidden>24 章学的 ASGI/中间件/依赖注入/ORM/模板引擎是 Web 框架通用概念——Flask/Django 只是同概念的不同 API（题源协议 B 的「官方文档一手」习惯此时变现）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 检验题 17 问「长事务短事务」，本课程跳过的那章是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">16.长事务和短事务——无课件跳过，但 ch05 的执行时机/会话管理是其基础</button>
+            <button class="quiz-option">没有跳过任何章</button>
+            <button class="quiz-option">19.AI导购</button>
+            <button class="quiz-option">01.Web服务框架</button>
+          </div>
+          <div class="quiz-explain" hidden>课程编号跳号正是 16/19（无课件）：16 长事务和短事务——性能维度的会话策略，其基础（ch05 的执行时机、连接池 ch03）已学；19 AI导购。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 两个岗位画像的交集是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">接口暴露、日志、异常统一、测试——AI 与全栈都要的交付底座</button>
+            <button class="quiz-option">只有流式响应</button>
+            <button class="quiz-option">完全无交集</button>
+            <button class="quiz-option">只有 CRUD</button>
+          </div>
+          <div class="quiz-explain" hidden>对照两份清单：AI 岗位要「暴露 API/日志/流式/落库/测试」，全栈要「CRUD/安全/中间件/异常/测试/日志」——测试、日志、异常、API 四个词两边都出现，就是本课程的骨干。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 检验题 27「没见过的 API 借助 AI 快速理解」的正确姿势是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不用 AI</button>
+            <button class="quiz-option">直接复制 AI 代码上线</button>
+            <button class="quiz-option">让 AI 读官方文档/源码出解释与示例，自己再实测验证（题源协议 B 的习惯）</button>
+            <button class="quiz-option">背下所有 API</button>
+          </div>
+          <div class="quiz-explain" hidden>与题源协议 B 同构：AI 解释 + 官方文档锚定 + 实测验证——本课程每道面试题的来源标注（URL+检索日期）就是「借助 AI 可控完成」的示范。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0026-python收官检验',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `面试官问「你做过的一个完整后端功能」时，AI 助手帮你准备的回答只有「用 FastAPI 写了个接口」。按本课 27 道检验题的完整度，这个回答丢掉了哪些维度？`,
+              source: '来源：渡一源课程《26.python收官检验》课件（27 道能力检验 + 就业市场画像）· FastAPI 官方文档 Tutorial https://fastapi.tiangolo.com/tutorial/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `「写了个接口」只覆盖了检验题的 1/27。完整的项目叙事至少六维（对照课件检验题）：<strong>① 数据</strong>——模型建表+迁移（ch04/06）；<strong>② 分层</strong>——DTO→service→API（ch07/08）；<strong>③ 横切</strong>——异常统一、信封中间件、日志（ch09/10/18）；<strong>④ 安全</strong>——参数化防注入、密码 hash 加盐、JWT 认证（ch05/17）；<strong>⑤ 质量</strong>——pytest 三层测试+冒烟（ch11/12）；<strong>⑥ 交付</strong>——容器化+流水线（ch21/24）。面试里挑 2-3 个「你亲手做过且能答追问」的维度展开讲（比如：异常统一怎么设计的、注入怎么防的），比一句「写了接口」的信息密度高一个量级——这就是检验题的意义：<strong>会做 ≠ 能讲，能讲需要完整度</strong>。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `AI 岗位和全栈岗位的需求清单有四个词重叠（API、日志、测试、异常）。为什么两个方向都绕不开这四样？`,
+              source: '来源：渡一源课程《26.python收官检验》课件（Python 的就业市场两清单）· Kubernetes 官方文档 Overview（可观测性与交付共性）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `因为这四样是<strong>「把能力交付成服务」的共性契约</strong>：<strong>① API</strong>——AI 能力再强也要「暴露」（AI 岗清单第二条），业务再简单也要「提供」（全栈 CRUD）——接口是服务的存在形式；<strong>② 日志</strong>——AI 岗要追踪模型调用链（token/耗时/错误），全栈要关键业务留痕（ch18 的三类日志两个方向都在用）；<strong>③ 异常</strong>——AI 服务失败模式多（超时/限流/模型错误），业务失败模式杂（校验/约束/权限）——统一异常是「服务对外可预期」的前提（ch09 五条实践）；<strong>④ 测试</strong>——AI 岗保「模型改版不破接口」，全栈保「重构不破功能」（ch11 三价值原话）。方向不同、底座同构——这也是课程把 24 章编成一条线的原因。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的「能力自检脚本」：把 27 道题做成 27 个 checkbox，勾完就算通过；没通过的不回补章节，直接看答案。审查这个自检方案。`,
+              source: '来源：渡一源课程《26.python收官检验》课件（能力检验题设计）· pytest 官方文档（测试设计原则）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `两个缺陷：<strong>① 勾选无证据</strong>——检验题的前提是「能借助 AI、课件、视频<strong>可控地完成</strong>事项」，不是「觉得会」——正确姿势是每道题做一个最小可运行验证（如第 8 题：亲手写一遍注入 demo 跑出全表泄露，再写参数化修复；第 23 题：把一个异步生成器包成 SSE 用 curl -N 看到流）。 <strong>② 不回补=假通过</strong>——课件给的是「22/27 即达标」的台阶，但否定的 5 道必须回补对应章节（检验题的章节地图：数据→ch04-06、架构→ch07-18……）——能力缺口不会自己愈合。自检的产出不是 checkbox 计数，是<strong>「薄弱项清单 + 回补计划」</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：学完这门课，你给自己定位 AI 岗位还是全栈岗位？你的技能树和岗位画像怎么对齐？`,
+              source: '来源：渡一源课程《26.python收官检验》课件（AI 岗位/全栈岗位需求清单）· FastAPI 官方文档 https://fastapi.tiangolo.com/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `用课件两份清单做对齐：<strong>AI 岗</strong>的核心差异项是「专注 AI 能力 + 流式响应（SSE/WebSocket）」——如果自己的强项是模型调用、Agent 编排、提示工程，那么简历和面试火力集中在：AI 服务化（ch20 流式）、模型结果落库（ch04-06）、可观测（ch18 日志）；Web 部分讲「够用的交付底座」即可。 <strong>全栈岗</strong>的差异项是「CRUD + 存量系统协作」——火力集中在：三层架构（ch13）、异常与中间件约定（ch09/10）、增量测试（ch11/12）、安全常识（ch05/17）。共同底座（API/日志/异常/测试）两边都打满。选型公式：<strong>看自己「最想深挖的部分」落在哪份清单的差异项上，共同项保持热手即可</strong>——两份清单都在课件里，对一遍就有答案。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `完成收官自检（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 60 分钟',
+                goal: '逐题过 27 道检验题，每道给出「肯定/否定 + 一句证据」→ 肯定的题挑 5 道做最小可运行验证（如注入 demo、SSE 流、模型建表迁移）→ 否定的题列出回补章节与计划 → 统计是否达到 22/27。',
+                accept: ['27 题逐题有结论与证据（不是凭感觉勾选）', '至少 5 道题有可运行验证', '否定题有明确的回补章节清单', '对照两份岗位画像写出自己的定位'],
+              },
+              source: '任务基于《26.python收官检验》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：按课件顺序逐题过，每道想「最后一次亲手做是什么时候」（本课程哪一章）；验证题选最有代表性的 5 道：注入（ch05）、建表迁移（ch04/06）、SSE（ch20）、直传凭证（ch14）、hash+JWT（ch17）。坑：第 21 题「模板引擎」本课程没讲——诚实标否定并记入回补计划（课件 22/27 台阶就是给这类缺口留的）；第 26/27 题（跨框架/借助 AI）本身就是方法题，答「有」要有实例支撑。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（26.python收官检验）</li>
+        <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/">FastAPI 官方教程（全书索引）</a> · <a href="https://docs.pytest.org/en/stable/">pytest 官方文档</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/python收官检验速查表.html">python收官检验速查表</a>——27 题章节地图、两岗位画像一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/部署-总结">25.部署-总结</a> · 本课为框架课程收官章</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以 27 题逐题自检并达到 22/27 为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>
