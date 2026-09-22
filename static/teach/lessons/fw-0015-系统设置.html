@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 系统设置：SETTINGS_DTO 声明式配置、initialize 双向同步、lifespan 启动钩子、三层落地流程——互动教学课程">
+  <title>系统设置 · 互动教学课程（Python 框架 fw-15）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>系统设置</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/系统设置">15.系统设置</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出「声明式配置」模式：代码里的 SETTINGS_DTO 是设置项的唯一事实来源</li>
+        <li>读通 initialize 的双向同步：新增、更新、删除（DTO → 数据库收敛）</li>
+        <li>说清 lifespan 启动钩子为什么是 initialize 的最佳位置</li>
+        <li>复述课件「落地流程」的三层九步清单</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《15.系统设置》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>声明式配置 + 启动同步</h3>
+        <ul class="pitfall-list">
+          <li><strong>SETTINGS_DTO</strong>：frozen dataclass 定义设置组与设置项（key/value/display_name/description）——代码即配置清单</li>
+          <li><strong>initialize()</strong>：启动时把数据库收敛到 DTO——DTO 有而库没有 → 建；DTO 没有而库有 → 删；都在 → 同步 display_name/description（value 不动，保留用户配置）</li>
+          <li><strong>lifespan</strong>：asynccontextmanager 启动阶段跑 initialize，yield 前完成</li>
+          <li><strong>update_settings</strong>：只改 value（按 key 批量 in 查询），display_name 等由 DTO 管</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>模型与落地流程</h3>
+        <ul class="pitfall-list">
+          <li><strong>SettingGroup</strong>：key 唯一；<strong>Setting</strong>：group_id 外键 CASCADE + (group_id, key) 联合唯一</li>
+          <li><strong>落地三层</strong>：模型层（复制模型+登记+迁移）→ 业务层（DTO/service/测试×2+跑测）→ API 层（API/main/测试×2+跑测+查文档+手测+冒烟+提交）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《15.系统设置》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 课件落地流程分几层？总共几步？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一层 3 步</button>
+            <button class="quiz-option">五层 20 步</button>
+            <button class="quiz-option">三层：模型层（3 步）+ 业务层（5 步）+ API 层（9 步）</button>
+            <button class="quiz-option">没有流程</button>
+          </div>
+          <div class="quiz-explain" hidden>课件落地流程：模型层（复制模型→登记 model/__init__→迁移）；业务层（复制 DTO→service→两类测试→跑测）；API 层（复制 API→main→两类测试→跑测→查文档→手测→冒烟→提交）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. SETTINGS_DTO 是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">前端配置文件</button>
+            <button class="quiz-option">数据库表的别名</button>
+            <button class="quiz-option">环境变量</button>
+            <button class="quiz-option">代码里声明式定义全部设置项（组+键+默认值+显示名）的唯一事实来源</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 service 顶部：SETTINGS_DTO: list[SettingGroupDef] 用 frozen dataclass 声明 aliyun_oss 组与 5 个设置项——数据库里有什么设置，由这份清单决定。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. Setting 表上 (group_id, key) 的联合唯一约束叫什么、防什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">防全表重复</button>
+            <button class="quiz-option">只防 group_id 重复</button>
+            <button class="quiz-option">没有约束</button>
+            <button class="quiz-option">uq_setting_group_key——同一组内不允许重复键</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 model/setting.py：__table_args__ = (UniqueConstraint("group_id", "key", name="uq_setting_group_key"),)——同组内 key 唯一，跨组同名 key 允许。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. initialize 的「双向同步」具体怎么双向？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只从库读</button>
+            <button class="quiz-option">随机同步</button>
+            <button class="quiz-option">只往库写</button>
+            <button class="quiz-option">DTO 有库没有→建；库有 DTO 没有→删；两边都有→同步显示信息（value 保留用户配置不动）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 initialize 三段：① 遍历 SETTINGS_DTO 建/更新组；② 删除库中多余的组；③ 逐组建/删设置项、同步 display_name/description——value 只在 update_settings 里由用户改，initialize 不覆盖。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. initialize 放在 lifespan 里而不是路由里，为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了更快</button>
+            <button class="quiz-option">路由里跑会报错</button>
+            <button class="quiz-option">没有区别</button>
+            <button class="quiz-option">启动即完成设置初始化——先有数据再有请求，且只跑一次</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 main.py：@asynccontextmanager lifespan 在 yield 前 await SettingService(session).initialize()——应用开始接请求前设置表已就绪，GET /api/settings 永远有数据；且不会每个请求都跑一遍同步。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. update_settings 为什么用 select(Setting).where(key.in_(keys)) 一次查询？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">必须逐条查</button>
+            <button class="quiz-option">批量更新只查一轮；不存在的 key 自然忽略（不建不报错）</button>
+            <button class="quiz-option">没有原因</button>
+            <button class="quiz-option">为了删除</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 update_settings：update_map 建 key→value 后 in_ 一次取回所有目标行，逐个改 value 再 flush——N 个设置项 1 次查询；没匹配到的 key 静默忽略（新键由 DTO/initialize 负责）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. initialize 里先建组再 flush、再建设置项，为什么必须分两步？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">性能优化</button>
+            <button class="quiz-option">纯风格问题</button>
+            <button class="quiz-option">为了事务安全</button>
+            <button class="quiz-option">设置项的 group_id 外键依赖组的 id——必须先 flush 组拿到 id 才能挂设置</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 initialize：建完组 await self.db.flush()（不提交但发出 INSERT、拿回 id），随后 Setting(group_id=db_group.id) 才能挂外键；新组的查询再 select 一次也是为拿 id——ch05 的执行时机知识在此落地。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 数据库里出现了一个 SETTINGS_DTO 里没有的组，会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">自动加入 DTO</button>
+            <button class="quiz-option">保留不动</button>
+            <button class="quiz-option">报错停止启动</button>
+            <button class="quiz-option">initialize 把它连同设置项一起删除（DTO 是唯一事实来源）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 initialize 第二段：for group_key in set(db_groups.keys()) - dto_group_keys：先删该组所有 setting，再删组——库向 DTO 收敛。反向「加进 DTO」做不到（代码是源），这正是声明式配置的含义。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 课件落地流程 API 层最后三步是「检查接口文档→手动测试→冒烟测试→提交」，体现了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">浪费时间</button>
+            <button class="quiz-option">ch10-ch12 的积累：OpenAPI 契约检查 + 人工验收 + 冒烟红线，全过才提交</button>
+            <button class="quiz-option">只对新手有效</button>
+            <button class="quiz-option">纯流程仪式</button>
+          </div>
+          <div class="quiz-explain" hidden>落地流程把前 12 章串起来：查接口文档（ch10 信封 schema 是否同步）、手测一次（ch12 测试无法覆盖一切）、冒烟（ch12 红线）——自动化测试之后仍留人工关卡，最后才提交。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0015-系统设置',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的设置初始化：每次请求 GET /api/settings 都跑一遍 initialize 同步。结果高并发下同一设置组被并发创建，撞上 (group_id, key) 唯一约束报错。按本课做法，问题出在哪一步？`,
+              source: '来源：FastAPI 官方文档 Lifespan Events（启动/关闭钩子：请求开始前完成初始化）https://fastapi.tiangolo.com/advanced/events/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《15.系统设置》课件（lifespan 中的 initialize）',
+              breakdown: `问题出在<strong>初始化时机</strong>：initialize 是「启动时做一次」的收敛操作，不是请求级操作。课件把它放在 <strong>lifespan 启动钩子</strong>里——应用 yield 开始接请求之前，设置表已经与 SETTINGS_DTO 收敛完毕；AI 放在请求路径上，等于每次请求都做「读全表+diff+写库」，并发时两个请求同时发现组不存在、同时 INSERT，撞唯一约束。官方文档的 lifespan 模式就是为这类「启动一次」的工作设计的（建连接池、预热缓存、初始化数据）。顺带：GET 接口里写数据库本身也违反接口语义（读接口有副作用）。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `initialize 的收敛算法为什么要分「建组→flush→删多余组→flush→建/删设置项」三个小段，中间夹两次 flush？`,
+              source: '来源：渡一源课程《15.系统设置》课件（setting_service.initialize 实现）· SQLAlchemy 官方文档 Session Basics（flush 与 commit 语义）https://docs.sqlalchemy.org/en/20/orm/session_basics.html · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `每段一个目的，flush 是段与段之间的<strong>依赖桥</strong>：<strong>① 建/更新组 + flush</strong>——新建组的 id 必须等 INSERT 发出（flush 把 pending 变更发到数据库但不提交）才能拿到，后续设置项的 group_id 外键依赖它；<strong>② 删多余组（连同其设置）+ flush</strong>——先删完旧数据，避免第三步的 diff 把已删组的设置又算进去；<strong>③ 逐组收敛设置项</strong>——此时每组都能可靠拿到 db_group.id（新建的靠 flush 后回查，旧有的内存里就有）。两次 flush 都不提交（ch05：flush 执行记录的操作但不提交）——整个收敛在 lifespan 的 begin() 事务里，要么全成要么全滚。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的设置更新接口：PUT /api/settings 里直接把整个 body 存成 JSON 字符串塞进一张 key-value 表，key 是前端传来的任意字符串。审查这段设计，对照本课标准。`,
+              source: '来源：渡一源课程《15.系统设置》课件（SETTINGS_DTO 声明式配置 + Setting/SettingGroup 模型）· FastAPI 官方文档（响应模型与校验）https://fastapi.tiangolo.com/tutorial/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `三个问题：<strong>① 没有声明式清单</strong>——课件用 SETTINGS_DTO 把设置项钉在代码里（组、键、默认值、显示名、描述），新增设置项是 code review 可见的代码变更；AI 的任意 key 让设置项失去清单，出现拼写变体（oss_endpoint/ossEndPoint）互相不认识。 <strong>② 无分组</strong>——设置项按域分组（aliyun_oss 组）才能整组读写、整组展示；单表堆 key 没有分组语义。 <strong>③ 值无类型</strong>——全部 JSON 字符串意味着类型校验、默认值、说明全靠前端自觉；课件的 value 虽然也是字符串但 key 在 DTO 里有默认值和描述，改错了有据可查。改法：DTO 定义键清单 + PUT 只接受已知键（update_map in_ 查询，未知键忽略）——<strong>设置项的「形状」归代码管，「值」归用户管</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：系统设置为什么要存数据库而不是放环境变量/配置文件？本课的方案是怎么结合两者的？`,
+              source: '来源：渡一源课程《15.系统设置》课件（SETTINGS_DTO + 数据库 Setting 表）· pydantic-settings 官方文档（env_file 环境变量配置）https://docs.pydantic.dev/latest/concepts/pydantic_settings/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `课件的答案是<strong>两者分工</strong>：<strong>环境变量/配置文件（pydantic-settings，ch02）</strong>管「运维级」配置——数据库连接、环境名、端口，这些改起来要重启、值敏感、随环境不同，交给部署面；<strong>数据库设置表（本课）</strong>管「业务级」配置——OSS 的 AccessKey、自定义域名这类「运营人员要在后台改、改完立刻生效、不同环境值不同」的项，存库才能做 API 管理界面、无需重新部署。 设计要点：① 键的清单在代码里（SETTINGS_DTO），值在库里——代码发布新设置项时 initialize 自动补进库；② 显示名/描述随代码走，运营只填值；③ 敏感值（AccessKey Secret）存库时要注意脱敏展示与加密存储——本课只是骨架，生产要补。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `跑通本章设置系统（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '按落地流程三层走一遍：复制模型并迁移（make db-migrate/upgrade）→ 复制 DTO/service 与测试跑通 → 复制 API/main 启动 → GET /api/settings 看到 aliyun_oss 组 → PUT 改 oss_bucket_name 后重启，确认 value 保留而 display_name 随 DTO 同步。',
+                accept: ['迁移后 setting/settinggroup 两表存在', '启动后 GET 返回 aliyun_oss 组与 5 个设置项', 'PUT 修改值后重启不丢（initialize 不覆盖 value）', '删除 DTO 里一个键后重启，库中对应项被清除'],
+              },
+              source: '任务基于《15.系统设置》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：严格按课件三层流程走，每层跑完对应测试（service 集成测试 → API 集成/e2e 测试）。坑：model/__init__.py 别忘了登记 setting 与 setting_group（否则迁移里没这两张表）；PUT 验证用 curl 传 [{"key":"oss_bucket_name","value":"xxx"}]；「删 DTO 键」实验做完记得还原。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（15.系统设置）</li>
+        <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/advanced/events/">FastAPI 官方：Lifespan Events</a> · <a href="https://docs.pydantic.dev/latest/concepts/pydantic_settings/">pydantic-settings 官方文档</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/系统设置速查表.html">系统设置速查表</a>——落地流程、DTO 收敛算法、lifespan 钩子一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/文件上传">14.文件上传</a> · 下一课 <a href="/agents/python-framework/用户系统">17.用户系统</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以设置系统三层落地 + 重启保留用户配置为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>系统设置速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>系统设置速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0015-系统设置.html">《系统设置互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>落地流程（三层）</h2>
+      <ol class="pitfall-list">
+        <li>模型层：复制模型 → 登记 model/__init__ → 迁移（make db-migrate / db-upgrade）</li>
+        <li>业务层：复制 DTO → 复制 service → 复制集成/单元测试 → 跑新增测试</li>
+        <li>API 层：复制 API → 复制 main → 复制 e2e/集成测试 → 跑测 → 查文档 → 手测 → 冒烟 → 提交</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>声明式配置模式</h2>
+      <dl class="term-grid">
+        <dt>SETTINGS_DTO</dt>
+        <dd>frozen dataclass 清单：组的 key/显示名/描述 + 设置项的 key/默认值/显示名/描述——代码即配置清单。</dd>
+        <dt>initialize()</dt>
+        <dd>启动时双向收敛：DTO 有库没有→建；库有 DTO 没有→删；都有→同步显示信息（value 不动）。</dd>
+        <dt>lifespan</dt>
+        <dd>@asynccontextmanager 启动钩子：yield 前完成 initialize，先有数据再有请求。</dd>
+        <dt>update_settings</dt>
+        <dd>只改 value：in_ 批量查询已知键，未知键忽略。</dd>
+      </dl>
+      <p>模型要点：SettingGroup.key 唯一；Setting 有 (group_id, key) 联合唯一 + 组外键 CASCADE。</p>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

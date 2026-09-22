@@ -1,0 +1,439 @@
+---
+sidebar_position: 15
+title: '15. 系统设置'
+description: "Python 框架课程 · 系统设置：Setting/SettingGroup 模型、SETTINGS_DTO 声明式配置、lifespan 启动同步、三层落地流程与测试清单。"
+displayed_sidebar: agentsFramework
+---
+
+# 系统设置
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 落地流程
+
+### 模型层
+
+1. 复制模型代码
+
+2. 更新`apps/web-service/app/model/__init__.py`，新增
+
+```python
+from app.model import setting_group  # noqa
+from app.model import setting  # noqa
+```
+
+3. 迁移
+
+```shell
+make db-migrate message="add_settings"
+make db-upgrade
+```
+
+### 业务层
+
+1. 复制DTO
+2. 复制service
+3. 复制对service的集成测试
+4. 复制对service的单元测试
+5. 运行新增的测试
+
+### API层
+
+1. 复制API
+2. 复制main
+3. 复制对API的e2e测试
+4. 复制对API的集成测试
+5. 运行新增的测试
+6. 检查接口文档
+7. 手动测试一次
+8. 运行冒烟测试
+9. 提交
+
+## 完成代码
+
+### 模型层
+
+`app/model/setting.py`
+
+```python
+from typing import TYPE_CHECKING
+
+from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.model.base import Base, IDMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.model.setting_group import SettingGroup
+
+
+class Setting(Base, IDMixin, TimestampMixin):
+
+    key: Mapped[str] = mapped_column(String(200))
+    value: Mapped[str] = mapped_column(Text, default="")
+    display_name: Mapped[str] = mapped_column(String(200), default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("settinggroup.id", ondelete="CASCADE")
+    )
+
+    group: Mapped["SettingGroup"] = relationship(back_populates="settings")
+
+    __table_args__ = (
+        UniqueConstraint("group_id", "key", name="uq_setting_group_key"),
+    )
+```
+
+`app/model/setting_group.py`
+
+```python
+from typing import TYPE_CHECKING
+
+from sqlalchemy import String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.model.base import Base, IDMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.model.setting import Setting
+
+
+class SettingGroup(Base, IDMixin, TimestampMixin):
+
+    key: Mapped[str] = mapped_column(String(100), unique=True)
+    display_name: Mapped[str] = mapped_column(String(100), default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+
+    settings: Mapped[list["Setting"]] = relationship(back_populates="group")
+```
+
+### 业务层
+
+`app/schema/setting.py`
+
+```python
+from pydantic import BaseModel, Field
+
+
+class SettingUpdateItem(BaseModel):
+    key: str = Field(min_length=1, description="设置键")
+    value: str = Field(description="设置值")
+
+
+class SettingItemResponse(BaseModel):
+    key: str
+    value: str
+    display_name: str
+    description: str
+
+    model_config = {"from_attributes": True}
+
+
+class SettingGroupResponse(BaseModel):
+    key: str
+    display_name: str
+    description: str
+    settings: list[SettingItemResponse] = []
+
+    model_config = {"from_attributes": True}
+```
+
+`app/service/setting_service.py`
+
+```python
+from dataclasses import dataclass
+
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+from app.model.setting import Setting
+from app.model.setting_group import SettingGroup
+from app.schema.setting import (
+    SettingGroupResponse,
+    SettingUpdateItem,
+    SettingItemResponse,
+)
+from app.service.base import BaseService
+
+
+@dataclass(frozen=True)
+class SettingDef:
+    key: str
+    value: str
+    display_name: str
+    description: str
+
+
+@dataclass(frozen=True)
+class SettingGroupDef:
+    key: str
+    display_name: str
+    description: str
+    settings: list[SettingDef]
+
+
+SETTINGS_DTO: list[SettingGroupDef] = [
+    SettingGroupDef(
+        key="aliyun_oss",
+        display_name="阿里云OSS上传设置",
+        description="阿里云OSS对象存储上传配置",
+        settings=[
+            SettingDef(
+                key="oss_endpoint",
+                value="",
+                display_name="OSS Endpoint",
+                description="例如 oss-cn-hangzhou.aliyuncs.com",
+            ),
+            SettingDef(
+                key="oss_access_key_id",
+                value="",
+                display_name="AccessKey ID",
+                description="RAM用户的AccessKey ID",
+            ),
+            SettingDef(
+                key="oss_access_key_secret",
+                value="",
+                display_name="AccessKey Secret",
+                description="RAM用户的AccessKey Secret",
+            ),
+            SettingDef(
+                key="oss_bucket_name",
+                value="",
+                display_name="Bucket名称",
+                description="OSS Bucket名称",
+            ),
+            SettingDef(
+                key="oss_bucket_domain",
+                value="",
+                display_name="自定义域名",
+                description="可选：自定义域名/CDN域名，留空则使用默认域名",
+            ),
+        ],
+    ),
+]
+
+
+class SettingService(BaseService):
+
+    async def initialize(self) -> dict[str, int]:
+        dto_group_keys = {g.key for g in SETTINGS_DTO}
+
+        result = await self.db.execute(
+            select(SettingGroup).options(selectinload(SettingGroup.settings))
+        )
+        db_groups: dict[str, SettingGroup] = {
+            g.key: g for g in result.unique().scalars().all()
+        }
+
+        groups_created = 0
+        groups_deleted = 0
+        settings_created = 0
+        settings_deleted = 0
+
+        for group_def in SETTINGS_DTO:
+            db_group = db_groups.get(group_def.key)
+            if db_group is None:
+                db_group = SettingGroup(
+                    key=group_def.key,
+                    display_name=group_def.display_name,
+                    description=group_def.description,
+                )
+                self.db.add(db_group)
+                groups_created += 1
+            else:
+                db_group.display_name = group_def.display_name
+                db_group.description = group_def.description
+
+        await self.db.flush()
+
+        for group_key in set(db_groups.keys()) - dto_group_keys:
+            db_group = db_groups[group_key]
+            for setting in db_group.settings:
+                await self.db.delete(setting)
+                settings_deleted += 1
+            await self.db.delete(db_group)
+            groups_deleted += 1
+
+        await self.db.flush()
+
+        for group_def in SETTINGS_DTO:
+            db_group = db_groups.get(group_def.key)
+            if db_group is None:
+                db_group = (
+                    (
+                        await self.db.execute(
+                            select(SettingGroup)
+                            .options(selectinload(SettingGroup.settings))
+                            .where(SettingGroup.key == group_def.key)
+                        )
+                    )
+                    .unique()
+                    .scalar_one()
+                )
+
+            dto_setting_keys = {s.key for s in group_def.settings}
+            db_settings: dict[str, Setting] = {
+                s.key: s
+                for s in (db_group.settings if db_group.settings is not None else [])
+            }
+
+            for setting_def in group_def.settings:
+                db_setting = db_settings.get(setting_def.key)
+                if db_setting is None:
+                    db_setting = Setting(
+                        key=setting_def.key,
+                        value=setting_def.value,
+                        display_name=setting_def.display_name,
+                        description=setting_def.description,
+                        group_id=db_group.id,
+                    )
+                    self.db.add(db_setting)
+                    settings_created += 1
+                else:
+                    db_setting.display_name = setting_def.display_name
+                    db_setting.description = setting_def.description
+
+            for setting_key in set(db_settings.keys()) - dto_setting_keys:
+                await self.db.delete(db_settings[setting_key])
+                settings_deleted += 1
+
+        await self.db.flush()
+
+        return {
+            "groups_created": groups_created,
+            "groups_deleted": groups_deleted,
+            "settings_created": settings_created,
+            "settings_deleted": settings_deleted,
+        }
+
+    async def get_all(self) -> list[SettingGroupResponse]:
+        result = await self.db.execute(
+            select(SettingGroup)
+            .options(selectinload(SettingGroup.settings))
+            .order_by(SettingGroup.id)
+        )
+        groups = result.unique().scalars().all()
+        return [SettingGroupResponse.model_validate(g) for g in groups]
+
+    async def update_settings(
+        self, data: list[SettingUpdateItem]
+    ) -> list[SettingItemResponse]:
+        update_map = {item.key: item.value for item in data}
+
+        result = await self.db.execute(
+            select(Setting).where(Setting.key.in_(update_map.keys()))
+        )
+        settings = result.unique().scalars().all()
+
+        for setting in settings:
+            setting.value = update_map[setting.key]
+
+        await self.db.flush()
+        return [SettingItemResponse.model_validate(s) for s in settings]
+```
+
+### API 层
+
+`app/api/settings.py`
+
+```python
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.schema.setting import (
+    SettingGroupResponse,
+    SettingUpdateItem,
+    SettingItemResponse,
+)
+from app.service.setting_service import SettingService
+
+router = APIRouter(prefix="/api/settings", tags=["系统设置"])
+
+
+@router.get("", response_model=list[SettingGroupResponse])
+async def get_settings(db: Annotated[AsyncSession, Depends(get_db)]):
+    return await SettingService(db).get_all()
+
+
+@router.put("", response_model=list[SettingItemResponse])
+async def update_settings(
+    data: list[SettingUpdateItem],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    return await SettingService(db).update_settings(data)
+```
+
+`app/main.py`（新增 lifespan）
+
+```python
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
+
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException
+from app.core.middleware import register_middleware
+from app.core.config import common_settings, web_settings
+from app.core.database import get_session_factory
+from app.exception.handler.docs import generate_error_docs
+from app.exception.handler.handlers import exception_handler
+from app.core.openapi import setup_openapi
+from app.service.setting_service import SettingService
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    async with get_session_factory().begin() as session:
+        await SettingService(session).initialize()
+    yield
+
+
+app = FastAPI(
+    lifespan=lifespan,
+    title=web_settings.app_name,
+    description=generate_error_docs(),
+    docs_url=None if common_settings.environment == "production" else "/docs",
+    redoc_url=None if common_settings.environment == "production" else "/redoc",
+    openapi_url=(
+        None if common_settings.environment == "production" else "/openapi.json"
+    ),
+)
+
+# 注册中间件
+register_middleware(app)
+
+# 设置openapi的格式
+setup_openapi(app)
+
+# 注册全局异常处理器（覆盖 Starlette/FastAPI 内置处理器 + 兜底未知异常）
+app.add_exception_handler(RequestValidationError, exception_handler)
+app.add_exception_handler(HTTPException, exception_handler)
+app.add_exception_handler(Exception, exception_handler)
+
+
+# 注册路由
+from app.api.products import router as product_router
+from app.api.categories import router as category_router
+from app.api.skus import router as sku_router
+from app.api.settings import router as settings_router
+
+app.include_router(product_router)
+app.include_router(category_router)
+app.include_router(sku_router)
+app.include_router(settings_router)
+```
+
+### 测试
+
+本章带 4 个测试文件：`test/unit/test_setting_dto.py`（DTO 校验单测）、`test/integration/test_setting_service.py`（initialize 同步逻辑）、`test/integration/test_api_settings.py`（GET/PUT 接口）、`test/e2e/test_settings.py`（启动即初始化的功能链）。
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0015-系统设置.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/系统设置速查表.html">📋 系统设置速查表（可打印）</a>
