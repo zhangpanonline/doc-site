@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · ORM：表到类映射、Base 与 Mixin、多对多关系表、create_all 建表——互动教学课程">
+  <title>ORM · 互动教学课程（Python 框架 fw-04）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>ORM</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/ORM">04.ORM</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 ORM 的映射关系（表→类、行→对象实例）与 Base/Mixin 的复用价值</li>
+        <li>用 mapped_column 定义字段，说清 relationship 不参与建表的官方语义</li>
+        <li>写对多对多的关系表（Table）与一对多（ForeignKey + relationship）</li>
+        <li>用 create_all 同步表结构，解释 dialect 与连接的关系</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《04.ORM》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>映射三件套（课件要点）</h3>
+        <ul class="pitfall-list">
+          <li><strong>Base(DeclarativeBase)</strong>：所有模型的基类；<code>__tablename__</code> 按类名小写自动生成</li>
+          <li><strong>IDMixin</strong>：<code>id: Mapped[int] = mapped_column(Identity(), primary_key=True)</code> 自增主键</li>
+          <li><strong>TimestampMixin</strong>：created_at / updated_at（onupdate 自动刷新）</li>
+          <li><strong>mapped_column 才建表</strong>；<code>relationship</code> 只声明关系、不影响建表（课件原文）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>关系：一对多与多对多</h3>
+        <ul class="pitfall-list">
+          <li><strong>一对多</strong>：Sku.product_id <code>ForeignKey("product.id", ondelete="CASCADE")</code> + 两侧 relationship</li>
+          <li><strong>多对多</strong>：独立关系表 <code>Table("product_category", Base.metadata, 两个主键外键)</code> + <code>secondary=</code> 挂到 relationship</li>
+          <li>多对多两个模型侧都用 <code>secondary=product_category, back_populates=...</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《04.ORM》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. ORM 的映射关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">表→函数</button>
+            <button class="quiz-option">表→类、一行记录→对象实例（课件原文）</button>
+            <button class="quiz-option">列→数据库</button>
+            <button class="quiz-option">数据库映射为文件</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：ORM 将「表」映射为「类」，将「一行记录」映射为「对象实例」。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. Base 里 __tablename__ 的自动规则是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">手动指定每个模型</button>
+            <button class="quiz-option">类名转小写（Category → category）</button>
+            <button class="quiz-option">类名前缀 tb_</button>
+            <button class="quiz-option">随机生成</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：return cls.__name__.lower()——表名自动取类名小写。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 课件里 relationship 与建表的关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者都建表</button>
+            <button class="quiz-option">都不用建表</button>
+            <button class="quiz-option">只声明关系、不影响建表；建表只认 mapped_column</button>
+            <button class="quiz-option">relationship 决定建表</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：relationship 此时只是声明关系，不影响建表。建表只认 mapped_column。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. IDMixin 里 Identity() 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">自增主键（Identity 生成策略 + primary_key=True）</button>
+            <button class="quiz-option">随机 id</button>
+            <button class="quiz-option">主键外键</button>
+            <button class="quiz-option">加密 id</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：mapped_column(Identity(), primary_key=True)——自增主键，Mixin 复用给所有模型。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. updated_at 的 onupdate=func.now() 意味着？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只在插入时赋值</button>
+            <button class="quiz-option">永不更新</button>
+            <button class="quiz-option">每次查询时更新</button>
+            <button class="quiz-option">每次行更新时自动刷新时间戳</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：onupdate=func.now()——UPDATE 时数据库侧自动更新该时间戳。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 多对多关系表 product_category 的主键是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">(product_id, category_id) 联合主键</button>
+            <button class="quiz-option">没有主键</button>
+            <button class="quiz-option">只有 product_id</button>
+            <button class="quiz-option">自增 id</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：两个 Column 都 primary_key=True——联合主键防重复关联。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. create_all 的调用方式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">await Base.metadata.create_all()</button>
+            <button class="quiz-option">直接调用即可</button>
+            <button class="quiz-option">conn.run_sync(Base.metadata.create_all)（异步引擎下同步到连接）</button>
+            <button class="quiz-option">HTTP 请求触发</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：async with engine.begin() 里 run_sync 包装——异步引擎执行同步建表逻辑。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 为什么 main.py 里要 import Category/Product/Sku 并标 noqa: F401？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了循环导入</button>
+            <button class="quiz-option">没有原因</button>
+            <button class="quiz-option">让模型类注册进 Base.metadata——不 import 建表时表就漏了</button>
+            <button class="quiz-option">为了代码风格</button>
+          </div>
+          <div class="quiz-explain" hidden>SQLAlchemy 声明式：模型类被 import 时才注册进 metadata——建表前必须让解释器见过所有模型。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. ORM 中 dialect 的作用是？它和连接有什么关系？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">网络协议</button>
+            <button class="quiz-option">缓存策略</button>
+            <button class="quiz-option">数据库方言：把通用 SQL/类型翻译成特定数据库的语法，由 engine 持有（连接串里 postgresql+asyncpg 的 postgresql 就是它）</button>
+            <button class="quiz-option">用户权限</button>
+          </div>
+          <div class="quiz-explain" hidden>作业题答案：dialect 是数据库方言层——连接串的方言部分（postgresql）决定 engine 用哪套语法与类型映射，这正是 SQLAlchemy 跨数据库的原因。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0004-ORM',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的建表脚本：定义完模型直接跑 create_all，结果表没建出来（metadata 里根本没有那张表）。按本课知识，最可能的原因？`,
+              source: '来源：渡一源课程《04.ORM》课件（noqa: F401 的 import 注释）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `SQLAlchemy 声明式里，模型类<strong>只有被 import 时才会注册进 Base.metadata</strong>——文件写好了但没人 import 它，create_all 就看不到这张表。课件正解：建表入口里显式 import 全部模型并标 noqa: F401（看起来没用、其实在注册）。审查 AI 的 ORM 代码：建表缺表先查 import 链。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `多对多关系在 SQLAlchemy 里怎么建模？什么时候用 Table、什么时候用模型类？`,
+              source: '来源：渡一源课程《04.ORM》课件（product_category 关系表 + secondary）· 检索 2026-09-11 · 层级：一手（源课程）',
+              breakdown: `课件标准答案：<strong>纯关联表用 Table</strong>（只有两个联合主键外键、没有自己的业务字段）——<code>Table("product_category", Base.metadata, 两个 primary_key 外键)</code>，两侧 relationship 用 <code>secondary=product_category</code> 挂接。若关联本身有业务属性（如关联时间、数量）才升级成模型类。判断标准：<strong>关联上有无独立字段</strong>。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的模型：所有列都塞在一个巨大 mixin 里，id、时间戳、业务字段混在一起。审查：本课的 Mixin 拆分原则是什么？`,
+              source: '来源：渡一源课程《04.ORM》课件（IDMixin/TimestampMixin）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `课件把 Mixin 按<strong>横切关注点</strong>拆：IDMixin（主键策略）、TimestampMixin（审计时间戳）——每个 Mixin 单一职责、全模型通用。业务字段留在各自模型类里。AI 一把梭的巨型 Mixin 会让「哪些表有审计字段」这类问题无法回答，且改动互相牵制。规则：<strong>全模型都有的横切属性进 Mixin，业务属性进模型本体</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：Sku 删掉父 Product 后怎么处理？课件为什么选 ondelete="CASCADE"？`,
+              source: '来源：渡一源课程《04.ORM》课件（Sku.product_id 外键）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `课件在 <code>ForeignKey("product.id", ondelete="CASCADE")</code> 声明数据库级联删——SKU 脱离商品无意义（商品是聚合根），删商品应连带清 SKU。选 CASCADE 的依据是<strong>领域语义：子实体不能独立于父实体存在</strong>；反过来若子实体可独立（如评论归属文章但文章删除后评论保留），则用 SET NULL/不做级联。ORM 级联策略先问领域语义，再选机制。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在数据库里实测 ORM 建模（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '按课件建 Base/两个 Mixin/Category/Product/Sku/关系表 → create_all 建表 → psql 检查四张表结构与外键 → 插入一条商品+SKU+分类关联数据验证。',
+                accept: ['四张表（category/product/sku/product_category）建成', '外键与联合主键符合课件定义', 'relationship 的关联数据能双向取到'],
+              },
+              source: '任务基于《04.ORM》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：连 duyi_db 跑 init_db → <code>\\\\dt</code> 与 <code>\\\\d sku</code> 检查；插入数据用 ORM 会话（下节课内容，先跑通建表与结构即可）。坑：JSONB 列在 PG 专属方言里（from sqlalchemy.dialects.postgresql import JSONB）；TIMESTAMP 的 server_default 在 create_all 时要生效。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（04.ORM）</li>
+        <li><strong>深读推荐</strong>：<a href="https://docs.sqlalchemy.org/en/20/orm/quickstart.html">SQLAlchemy 官方：ORM Quick Start</a> · <a href="https://docs.sqlalchemy.org/en/20/orm/basic_relationships.html">Relationship Patterns</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/ORM速查表.html">ORM 速查表</a>——映射与关系一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/初识SQLAlchemy">03.初识SQLAlchemy</a> · 下一课 <a href="/agents/python-framework/数据操作">05.数据操作</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（多对多处理、dialect 与连接）。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

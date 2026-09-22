@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ORM 速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>ORM 速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0004-ORM.html">《ORM 互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>映射骨架</h2>
+      <pre>class Base(DeclarativeBase):
+    @declared_attr.directive
+    def __tablename__(cls) -> str:
+        return cls.__name__.lower()
+
+class IDMixin:
+    id: Mapped[int] = mapped_column(Identity(), primary_key=True)
+
+class TimestampMixin:
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now())</pre>
+    </section>
+
+    <section>
+      <h2>关系速查</h2>
+      <table class="cmp-table">
+        <tr><th>关系</th><th>机制</th><th>要点</th></tr>
+        <tr><td>一对多</td><td>ForeignKey + relationship</td><td>ondelete="CASCADE" 按领域语义选</td></tr>
+        <tr><td>多对多</td><td>Table 关系表 + secondary=</td><td>纯关联用 Table；有关联字段才升级模型类</td></tr>
+      </table>
+      <p>relationship 只声明关系、不影响建表；建表只认 mapped_column（课件原文）。</p>
+    </section>
+
+    <section>
+      <h2>建表与概念</h2>
+      <dl class="term-grid">
+        <dt>create_all</dt>
+        <dd>异步引擎下 conn.run_sync(Base.metadata.create_all)。</dd>
+        <dt>模型注册</dt>
+        <dd>模型被 import 才进 metadata——建表入口要 import 全部模型（noqa: F401）。</dd>
+        <dt>dialect</dt>
+        <dd>数据库方言层：连接串的 postgresql 部分；跨数据库的根源。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

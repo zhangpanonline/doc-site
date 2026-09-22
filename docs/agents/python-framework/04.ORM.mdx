@@ -1,0 +1,255 @@
+---
+sidebar_position: 4
+title: '04. ORM'
+description: "Python 框架课程 · ORM：表→类映射、Base 与 Mixin、多对多关系表、create_all 建表、dialect 概念。"
+displayed_sidebar: agentsFramework
+---
+
+# ORM
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+> [!NOTE]
+>
+> 小贴士
+>
+> 快速删除所有表
+>
+> ```sql
+> DROP SCHEMA public CASCADE;
+> CREATE SCHEMA public;
+> ```
+
+## [补充]处理运行bug
+
+`apps/web-service/pyproject.toml`
+
+```toml
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app/"]
+```
+
+```shell
+uv sync --all-packages
+```
+
+`apps/web-service/app/core/config.py`
+
+```python
+class _BaseSettingsWithEnv(BaseSettings):
+    # 配置读取方式
+    model_config = {"env_file": ".env", "extra": "ignore"}  # env文件的位置
+```
+
+## ORM映射
+
+**ORM（Object Relational Mapping）** 将数据库中的"表"映射为 Python 中的"类"，将"一行记录"映射为"对象实例"。
+
+先在 `model/` 下新建 `base.py`：
+
+```python
+# model/base.py
+from datetime import datetime
+
+from sqlalchemy import DateTime, Identity, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
+
+
+class Base(DeclarativeBase):
+    @declared_attr.directive
+    def __tablename__(cls) -> str:
+        return cls.__name__.lower()
+
+
+class IDMixin:
+    id: Mapped[int] = mapped_column(Identity(), primary_key=True)
+
+
+class TimestampMixin:
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+```
+
+所有模型类继承这个 `Base`。
+
+### Category 模型
+
+```python
+# model/category.py
+from typing import TYPE_CHECKING
+
+from sqlalchemy import String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.model.association import product_category
+from app.model.base import Base, IDMixin
+
+if TYPE_CHECKING:
+    from app.model.product import Product
+
+
+class Category(Base, IDMixin):
+
+    name: Mapped[str] = mapped_column(String(50))
+    description: Mapped[str] = mapped_column(Text, default="")
+
+    products: Mapped[list["Product"]] = relationship(
+        secondary=product_category, back_populates="categories"
+    )
+
+```
+
+`relationship` 此时只是声明关系，不影响建表。建表只认 `mapped_column`。
+
+### Product 模型
+
+```python
+# model/product.py
+from typing import TYPE_CHECKING
+
+from sqlalchemy import String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.model.association import product_category
+from app.model.base import Base, IDMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.model.category import Category
+    from app.model.sku import Sku
+
+
+class Product(Base, IDMixin, TimestampMixin):
+
+    name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text, default="")
+    brand: Mapped[str | None] = mapped_column(String(100))
+
+    categories: Mapped[list["Category"]] = relationship(
+        secondary=product_category, back_populates="products"
+    )
+    skus: Mapped[list["Sku"]] = relationship(back_populates="product")
+
+```
+
+### SKU 模型
+
+```python
+# model/sku.py
+from decimal import Decimal
+from typing import TYPE_CHECKING
+
+from sqlalchemy import String, Numeric, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.model.base import Base, IDMixin
+
+if TYPE_CHECKING:
+    from app.model.product import Product
+
+
+class Sku(Base, IDMixin):
+
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("product.id", ondelete="CASCADE")
+    )
+    sku_code: Mapped[str] = mapped_column(String(50), unique=True)
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    stock: Mapped[int] = mapped_column(default=0)
+    attrs: Mapped[dict] = mapped_column(JSONB)
+    image_url: Mapped[str] = mapped_column(String)
+
+    product: Mapped["Product"] = relationship(back_populates="skus")
+
+```
+
+### product_category关系表
+
+```python
+# model/association/product_category.py
+from sqlalchemy import Column, ForeignKey, Table
+
+from app.model.base import Base
+
+product_category = Table(
+    "product_category",
+    Base.metadata,
+    Column("product_id", ForeignKey("product.id"), primary_key=True),
+    Column("category_id", ForeignKey("category.id"), primary_key=True),
+)
+
+```
+
+```python
+# model/association/__init__.py
+from app.model.association.product_category import product_category
+
+__all__ = ["product_category"]
+```
+
+## 表结构同步
+
+在 `model/main.py` 中写建表逻辑：
+
+```python
+# model/main.py
+import asyncio
+from sqlalchemy import text
+from app.model.engine import get_engine
+from app.model.base import Base
+from app.model.category import Category   # noqa: F401
+from app.model.product import Product     # noqa: F401
+from app.model.sku import Sku             # noqa: F401
+
+
+async def init_db():
+    engine = get_engine()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    print("✅ 数据库表创建完成")
+
+
+async def test_connection():
+    engine = get_engine()
+    try:
+        async with engine.connect() as conn:
+            result = await conn.execute(text("SELECT 1"))
+            value = result.scalar()
+            print(f"✅ 连接成功！查询结果: {value}")
+    except Exception as e:
+        print(f"❌ 连接失败: {e}")
+
+
+async def main():
+    await init_db()
+    await test_connection()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## 认识核心概念
+
+![image-20260616141327046](https://resource.duyiedu.com/yuanjin/202606161413046.png)
+
+## 作业
+
+回答以下问题：
+
+1. 如何处理多对多关系？什么时候使用模型？什么时候使用表？
+1. ORM中，什么是dialect，它的作用是什么？它和连接有什么关系？
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0004-ORM.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/ORM速查表.html">📋 ORM 速查表（可打印）</a>
