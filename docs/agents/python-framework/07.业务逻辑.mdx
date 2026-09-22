@@ -1,0 +1,798 @@
+---
+sidebar_position: 7
+title: '07. 业务逻辑'
+description: "Python 框架课程 · 业务逻辑：Service 类模式与 BaseService、业务异常体系、DTO 边界、分页 PageResult、商品/分类/SKU 三服务全量实现。"
+displayed_sidebar: agentsFramework
+---
+
+# 业务逻辑
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+![image-20260618104106899](https://resource.duyiedu.com/yuanjin/202606181041986.png)
+
+## 操作
+
+复制本节课目录中的`duyi-service`下的所有文件，覆盖你的工程`apps/web-service`
+
+## 核心关注点
+
+1. 代码组织
+   - 类模式还是函数模式？
+   - 异常怎么处理？
+2. 功能逻辑是否正确
+   - 功能全不全？
+   - 重要的验证做没做？
+3. 边界是否清晰
+   - 入参和返回的是什么？
+   - 是否耦合了接口层的东西？
+
+## 完成代码
+
+本节课新增三个目录：`exception`（业务异常体系）、`schema`（请求/响应 DTO）、`service`（业务逻辑层）。
+
+### exception —— 业务异常体系
+
+`app/exception/base.py`
+
+```python
+"""业务异常基类
+
+所有自定义业务异常均从此类派生，上层可通过 ``except BusinessException`` 统一捕获。
+"""
+
+
+class BusinessException(Exception):
+    """业务异常基类
+
+    Attributes:
+        message: 对外暴露的信息，可展示给用户
+        detail: 对内详细信息，供开发人员日志记录和问题排查
+        original_exception: 原始异常实例，便于追溯根因
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        detail: str = "",
+        original_exception: Exception | None = None,
+    ):
+        self.message = message
+        self.detail = detail
+        self.original_exception = original_exception
+        super().__init__(message)
+```
+
+`app/exception/database.py`
+
+```python
+from app.exception.base import BusinessException
+
+
+class DatabaseException(BusinessException):
+    """数据库操作异常，如唯一约束冲突、外键约束冲突等"""
+    pass
+```
+
+### schema —— 请求/响应 DTO
+
+`app/schema/product.py`
+
+```python
+from datetime import datetime
+from decimal import Decimal
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class CategoryBrief(BaseModel):
+    id: int
+    name: str
+
+    model_config = {"from_attributes": True}
+
+
+class SkuBrief(BaseModel):
+    id: int
+    sku_code: str
+    price: Decimal
+    stock: int
+    attrs: dict[str, Any]
+    image_url: str
+
+    model_config = {"from_attributes": True}
+
+
+class ProductCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=200, description="商品名称")
+    description: str = Field(default="", description="商品描述")
+    brand: str | None = Field(default=None, max_length=100, description="品牌")
+    category_ids: list[int] = Field(default_factory=list, description="关联分类ID列表")
+
+
+class ProductUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200, description="商品名称")
+    description: str | None = Field(default=None, description="商品描述")
+    brand: str | None = Field(default=None, max_length=100, description="品牌")
+    category_ids: list[int] | None = Field(default=None, description="关联分类ID列表")
+
+
+class ProductBrief(BaseModel):
+    """商品简要信息，用于列表视图和嵌套引用"""
+    id: int
+    name: str
+    description: str
+    brand: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ProductResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    brand: str | None
+    created_at: datetime
+    updated_at: datetime
+    categories: list[CategoryBrief] = []
+    skus: list[SkuBrief] = []
+
+    model_config = {"from_attributes": True}
+```
+
+`app/schema/category.py`
+
+```python
+from pydantic import BaseModel, Field
+
+from app.schema.product import ProductBrief
+
+
+class CategoryCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=50, description="分类名称")
+    description: str = Field(default="", description="分类描述")
+
+
+class CategoryUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=50, description="分类名称")
+    description: str | None = Field(default=None, description="分类描述")
+
+
+class CategoryResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+
+    model_config = {"from_attributes": True}
+
+
+class CategoryDetailResponse(BaseModel):
+    """分类详情，包含关联的商品列表"""
+    id: int
+    name: str
+    description: str
+    products: list[ProductBrief] = []
+
+    model_config = {"from_attributes": True}
+```
+
+`app/schema/sku.py`
+
+```python
+from decimal import Decimal
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class SkuCreate(BaseModel):
+    sku_code: str = Field(min_length=1, max_length=50, description="SKU编码")
+    price: Decimal = Field(ge=0, description="价格")
+    stock: int = Field(default=0, ge=0, description="库存")
+    attrs: dict[str, Any] = Field(description="规格属性")
+    image_url: str = Field(min_length=1, description="图片URL")
+
+
+class SkuUpdate(BaseModel):
+    sku_code: str | None = Field(default=None, min_length=1, max_length=50, description="SKU编码")
+    price: Decimal | None = Field(default=None, ge=0, description="价格")
+    stock: int | None = Field(default=None, ge=0, description="库存")
+    attrs: dict[str, Any] | None = Field(default=None, description="规格属性")
+    image_url: str | None = Field(default=None, min_length=1, description="图片URL")
+
+
+class SkuResponse(BaseModel):
+    id: int
+    product_id: int
+    sku_code: str
+    price: Decimal
+    stock: int
+    attrs: dict[str, Any]
+    image_url: str
+
+    model_config = {"from_attributes": True}
+```
+
+### service —— 业务逻辑层
+
+`app/service/base.py`
+
+```python
+from dataclasses import dataclass
+from typing import Generic, TypeVar
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+T = TypeVar("T")
+
+
+@dataclass
+class PageResult(Generic[T]):
+    """分页结果"""
+    items: list[T]
+    total: int
+    page: int
+    page_size: int
+
+
+class BaseService:
+    """业务逻辑基类，所有 Service 继承此类，共享 session"""
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+```
+
+`app/service/product_service.py`
+
+```python
+from sqlalchemy import delete, exc as sa_exc, func, insert, select
+from sqlalchemy.orm import selectinload
+
+from app.model.association import product_category
+from app.model.category import Category
+from app.model.product import Product
+from app.schema.product import (
+    ProductBrief,
+    ProductCreate,
+    ProductResponse,
+    ProductUpdate,
+)
+from app.service.base import BaseService, PageResult
+from app.exception.database import DatabaseException
+
+
+class ProductService(BaseService):
+    async def create_product(self, data: ProductCreate) -> ProductResponse:
+        """创建商品，同时建立与分类的关联"""
+        product = Product(
+            name=data.name,
+            description=data.description,
+            brand=data.brand,
+        )
+        self.db.add(product)
+        await self.db.flush()
+
+        if data.category_ids:
+            try:
+                await self.db.execute(
+                    insert(product_category),
+                    [
+                        {"product_id": product.id, "category_id": cid}
+                        for cid in data.category_ids
+                    ],
+                )
+            except sa_exc.IntegrityError as e:
+                raise DatabaseException(
+                    message="关联的分类不存在",
+                    detail=str(e),
+                    original_exception=e,
+                ) from e
+
+        result = await self.get_product(product.id)
+        assert result is not None
+        return result
+
+    async def get_product(self, product_id: int) -> ProductResponse | None:
+        """根据ID获取商品详情，包含关联的分类列表和SKU列表"""
+        stmt = (
+            select(Product)
+            .options(selectinload(Product.categories), selectinload(Product.skus))
+            .where(Product.id == product_id)
+        )
+        result = await self.db.execute(stmt)
+        product = result.unique().scalar_one_or_none()
+        if product is None:
+            return None
+        return ProductResponse.model_validate(product)
+
+    async def list_products(
+        self,
+        *,
+        keyword: str | None = None,
+        category_id: int | None = None,
+        brand: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> PageResult[ProductBrief]:
+        """分页搜索商品列表，支持按关键词、分类、品牌筛选"""
+        query = select(Product)
+
+        if category_id is not None:
+            query = query.join(Product.categories).where(Category.id == category_id)
+
+        if keyword:
+            query = query.where(
+                Product.name.ilike(f"%{keyword}%")
+                | Product.description.ilike(f"%{keyword}%")
+            )
+
+        if brand:
+            query = query.where(Product.brand.ilike(f"%{brand}%"))
+
+        total = await self.db.scalar(
+            select(func.count()).select_from(query.subquery())
+        )
+
+        offset = (page - 1) * page_size
+        result = await self.db.execute(
+            query.offset(offset).limit(page_size).order_by(Product.id.desc())
+        )
+        items = [
+            ProductBrief.model_validate(p) for p in result.unique().scalars().all()
+        ]
+
+        return PageResult(items=items, total=total or 0, page=page, page_size=page_size)
+
+    async def update_product(
+        self, product_id: int, data: ProductUpdate
+    ) -> ProductResponse | None:
+        """更新商品信息，仅更新传入的字段"""
+        product = await self._get_product_orm(product_id)
+        if product is None:
+            return None
+
+        update_data = data.model_dump(exclude_unset=True)
+        category_ids = update_data.pop("category_ids", None)
+
+        for key, value in update_data.items():
+            setattr(product, key, value)
+
+        if category_ids is not None:
+            await self.db.execute(
+                delete(product_category).where(
+                    product_category.c.product_id == product_id
+                )
+            )
+            if category_ids:
+                try:
+                    await self.db.execute(
+                        insert(product_category),
+                        [
+                            {"product_id": product_id, "category_id": cid}
+                            for cid in category_ids
+                        ],
+                    )
+                except sa_exc.IntegrityError as e:
+                    raise DatabaseException(
+                        message="关联的分类不存在",
+                        detail=str(e),
+                        original_exception=e,
+                    ) from e
+
+        await self.db.flush()
+        # 重新加载，确保返回的 DTO 包含最新的关联数据
+        return await self.get_product(product_id)
+
+    async def delete_product(self, product_id: int) -> bool:
+        """删除商品，关联的SKU会级联删除"""
+        product = await self._get_product_orm(product_id)
+        if product is None:
+            return False
+        await self.db.delete(product)
+        await self.db.flush()
+        return True
+
+    async def _get_product_orm(self, product_id: int) -> Product | None:
+        """内部方法：获取 ORM 对象，用于更新/删除"""
+        stmt = (
+            select(Product)
+            .options(selectinload(Product.categories), selectinload(Product.skus))
+            .where(Product.id == product_id)
+        )
+        result = await self.db.execute(stmt)
+        return result.unique().scalar_one_or_none()
+```
+
+`app/service/category_service.py`
+
+```python
+from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
+
+from app.model.category import Category
+from app.schema.category import (
+    CategoryCreate,
+    CategoryDetailResponse,
+    CategoryResponse,
+    CategoryUpdate,
+)
+from app.service.base import BaseService, PageResult
+
+
+class CategoryService(BaseService):
+    async def create_category(self, data: CategoryCreate) -> CategoryResponse:
+        """创建分类"""
+        category = Category(name=data.name, description=data.description)
+        self.db.add(category)
+        await self.db.flush()
+        await self.db.refresh(category)
+        return CategoryResponse.model_validate(category)
+
+    async def get_category(
+        self, category_id: int
+    ) -> CategoryDetailResponse | None:
+        """根据ID获取分类详情，包含关联的商品列表"""
+        stmt = (
+            select(Category)
+            .options(selectinload(Category.products))
+            .where(Category.id == category_id)
+        )
+        result = await self.db.execute(stmt)
+        category = result.unique().scalar_one_or_none()
+        if category is None:
+            return None
+        return CategoryDetailResponse.model_validate(category)
+
+    async def list_categories(
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> PageResult[CategoryResponse]:
+        """分页查询分类列表"""
+        total = await self.db.scalar(select(func.count(Category.id)))
+
+        offset = (page - 1) * page_size
+        result = await self.db.execute(
+            select(Category)
+            .offset(offset)
+            .limit(page_size)
+            .order_by(Category.id.asc())
+        )
+        items = [
+            CategoryResponse.model_validate(c) for c in result.scalars().all()
+        ]
+
+        return PageResult(items=items, total=total or 0, page=page, page_size=page_size)
+
+    async def update_category(
+        self, category_id: int, data: CategoryUpdate
+    ) -> CategoryResponse | None:
+        """更新分类信息，仅更新传入的字段"""
+        category = await self._get_category_orm(category_id)
+        if category is None:
+            return None
+
+        update_data = data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(category, key, value)
+
+        await self.db.flush()
+        await self.db.refresh(category)
+        return CategoryResponse.model_validate(category)
+
+    async def delete_category(self, category_id: int) -> bool:
+        """删除分类"""
+        category = await self._get_category_orm(category_id)
+        if category is None:
+            return False
+        await self.db.delete(category)
+        await self.db.flush()
+        return True
+
+    async def _get_category_orm(self, category_id: int) -> Category | None:
+        """内部方法：获取 ORM 对象，用于更新/删除"""
+        stmt = select(Category).where(Category.id == category_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+```
+
+`app/service/sku_service.py`
+
+```python
+from sqlalchemy import exc as sa_exc, select
+
+from app.model.product import Product
+from app.model.sku import Sku
+from app.schema.sku import SkuCreate, SkuResponse, SkuUpdate
+from app.service.base import BaseService
+from app.exception.database import DatabaseException
+
+
+class SkuService(BaseService):
+    async def create_sku(self, product_id: int, data: SkuCreate) -> SkuResponse | None:
+        """为指定商品创建SKU"""
+        product = await self.db.get(Product, product_id)
+        if product is None:
+            return None
+
+        sku = Sku(
+            product_id=product_id,
+            sku_code=data.sku_code,
+            price=data.price,
+            stock=data.stock,
+            attrs=data.attrs,
+            image_url=data.image_url,
+        )
+        self.db.add(sku)
+        try:
+            await self.db.flush()
+        except sa_exc.IntegrityError as e:
+            raise DatabaseException(
+                message="SKU编码重复",
+                detail=str(e),
+                original_exception=e,
+            ) from e
+        await self.db.refresh(sku)
+        return SkuResponse.model_validate(sku)
+
+    async def get_sku(self, sku_id: int) -> SkuResponse | None:
+        """根据ID获取SKU详情"""
+        stmt = select(Sku).where(Sku.id == sku_id)
+        result = await self.db.execute(stmt)
+        sku = result.scalar_one_or_none()
+        if sku is None:
+            return None
+        return SkuResponse.model_validate(sku)
+
+    async def list_skus(self, product_id: int) -> list[SkuResponse]:
+        """获取指定商品下的所有SKU"""
+        stmt = select(Sku).where(Sku.product_id == product_id)
+        result = await self.db.execute(stmt)
+        return [SkuResponse.model_validate(s) for s in result.scalars().all()]
+
+    async def update_sku(self, sku_id: int, data: SkuUpdate) -> SkuResponse | None:
+        """更新SKU信息，仅更新传入的字段"""
+        sku = await self._get_sku_orm(sku_id)
+        if sku is None:
+            return None
+
+        update_data = data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(sku, key, value)
+
+        try:
+            await self.db.flush()
+        except sa_exc.IntegrityError as e:
+            raise DatabaseException(
+                message="SKU编码重复",
+                detail=str(e),
+                original_exception=e,
+            ) from e
+        await self.db.refresh(sku)
+        return SkuResponse.model_validate(sku)
+
+    async def delete_sku(self, sku_id: int) -> bool:
+        """删除SKU"""
+        sku = await self._get_sku_orm(sku_id)
+        if sku is None:
+            return False
+        await self.db.delete(sku)
+        await self.db.flush()
+        return True
+
+    async def update_stock(self, sku_id: int, quantity: int) -> SkuResponse | None:
+        """设置SKU库存为指定数量"""
+        sku = await self._get_sku_orm(sku_id)
+        if sku is None:
+            return None
+        sku.stock = quantity
+        await self.db.flush()
+        await self.db.refresh(sku)
+        return SkuResponse.model_validate(sku)
+
+    async def _get_sku_orm(self, sku_id: int) -> Sku | None:
+        """内部方法：获取 ORM 对象，用于更新/删除"""
+        stmt = select(Sku).where(Sku.id == sku_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+```
+
+`app/service/main.py`
+
+```python
+"""业务逻辑层演示脚本，按教学顺序展示 service 层的核心用法。
+
+运行方式：
+    uv run --package web-service python apps/web-service/app/service/main.py
+"""
+
+import asyncio
+from decimal import Decimal
+
+from sqlalchemy import delete, text
+
+from app.core.database import get_session_factory
+from app.model.association import product_category
+from app.model.category import Category
+from app.model.product import Product
+from app.model.sku import Sku
+from app.schema.category import CategoryCreate
+from app.schema.product import ProductCreate, ProductUpdate
+from app.schema.sku import SkuCreate
+from app.service.category_service import CategoryService
+from app.service.product_service import ProductService
+from app.service.sku_service import SkuService
+
+
+async def main():
+    async with get_session_factory()() as session:
+        # ========== 0. 清理旧数据，保证幂等 ==========
+        await session.execute(delete(Sku))
+        await session.execute(delete(product_category))
+        await session.execute(delete(Product))
+        await session.execute(delete(Category))
+        await session.execute(text("ALTER SEQUENCE sku_id_seq RESTART WITH 1"))
+        await session.execute(text("ALTER SEQUENCE product_id_seq RESTART WITH 1"))
+        await session.execute(text("ALTER SEQUENCE category_id_seq RESTART WITH 1"))
+        await session.flush()
+
+        # ========== 1. 创建分类 ==========
+        print("========== 1. 创建分类 ==========")
+        category_svc = CategoryService(session)
+        c1 = await category_svc.create_category(
+            CategoryCreate(name="电子产品", description="手机、电脑等")
+        )
+        c2 = await category_svc.create_category(CategoryCreate(name="图书"))
+        c3 = await category_svc.create_category(CategoryCreate(name="服装"))
+        print(
+            f"创建分类: [{c1.id}] {c1.name}, [{c2.id}] {c2.name}, [{c3.id}] {c3.name}"
+        )
+
+        # ========== 2. 分页查询分类 ==========
+        print("\n========== 2. 分页查询分类 ==========")
+        result = await category_svc.list_categories(page=1, page_size=10)
+        print(f"共 {result.total} 条, 当前页 {result.page}/{result.page_size} 条")
+        for cat in result.items:
+            print(f"  [{cat.id}] {cat.name}")
+
+        # ========== 3. 创建商品并关联分类 ==========
+        print("\n========== 3. 创建商品并关联分类 ==========")
+        product_svc = ProductService(session)
+        p1 = await product_svc.create_product(
+            ProductCreate(
+                name="iPhone 16",
+                description="苹果最新款手机",
+                brand="Apple",
+                category_ids=[c1.id],
+            )
+        )
+        p2 = await product_svc.create_product(
+            ProductCreate(
+                name="MacBook Pro",
+                description="苹果笔记本电脑",
+                brand="Apple",
+                category_ids=[c1.id],
+            )
+        )
+        p3 = await product_svc.create_product(
+            ProductCreate(
+                name="Python入门教程",
+                description="零基础学Python",
+                brand="人民邮电出版社",
+                category_ids=[c2.id],
+            )
+        )
+        print(
+            f"创建商品: [{p1.id}] {p1.name}, [{p2.id}] {p2.name}, [{p3.id}] {p3.name}"
+        )
+
+        # ========== 4. 创建SKU ==========
+        print("\n========== 4. 创建SKU ==========")
+        sku_svc = SkuService(session)
+        s1 = await sku_svc.create_sku(
+            p1.id,
+            SkuCreate(
+                sku_code="IP16-128-BLK",
+                price=Decimal("6999.00"),
+                stock=100,
+                attrs={"颜色": "黑色", "存储": "128G"},
+                image_url="/images/ip16-blk.jpg",
+            ),
+        )
+        assert s1 is not None
+        s2 = await sku_svc.create_sku(
+            p1.id,
+            SkuCreate(
+                sku_code="IP16-256-WHT",
+                price=Decimal("7999.00"),
+                stock=50,
+                attrs={"颜色": "白色", "存储": "256G"},
+                image_url="/images/ip16-wht.jpg",
+            ),
+        )
+        assert s2 is not None
+        s3 = await sku_svc.create_sku(
+            p2.id,
+            SkuCreate(
+                sku_code="MBP14-M3-16G",
+                price=Decimal("12999.00"),
+                stock=30,
+                attrs={"尺寸": "14寸", "芯片": "M3", "内存": "16G"},
+                image_url="/images/mbp14.jpg",
+            ),
+        )
+        assert s3 is not None
+        print(
+            f"创建SKU: [{s1.id}] {s1.sku_code} ¥{s1.price}, "
+            f"[{s2.id}] {s2.sku_code} ¥{s2.price}, [{s3.id}] {s3.sku_code} ¥{s3.price}"
+        )
+
+        # ========== 5. 获取商品详情 ==========
+        print("\n========== 5. 获取商品详情 ==========")
+        detail = await product_svc.get_product(p1.id)
+        assert detail is not None
+        print(f"商品: {detail.name}")
+        print(f"  分类: {[c.name for c in detail.categories]}")
+        print(f"  SKU数: {len(detail.skus)}")
+        for sku in detail.skus:
+            print(f"    {sku.sku_code} | ¥{sku.price} | 库存:{sku.stock} | {sku.attrs}")
+
+        # ========== 6. 按分类搜索商品 ==========
+        print("\n========== 6. 按分类搜索商品 ==========")
+        result = await product_svc.list_products(
+            category_id=c1.id, page=1, page_size=10
+        )
+        print(f"「{c1.name}」分类下的商品共 {result.total} 件:")
+        for p in result.items:
+            print(f"  [{p.id}] {p.name} ({p.brand}) | {p.description[:20]}")
+
+        # ========== 7. 按关键词搜索商品 ==========
+        print("\n========== 7. 按关键词'Python'搜索商品 ==========")
+        result = await product_svc.list_products(keyword="Python", page=1, page_size=10)
+        print(f"匹配 'Python' 的商品共 {result.total} 件:")
+        for p in result.items:
+            print(f"  [{p.id}] {p.name}")
+
+        # ========== 8. 更新SKU库存 ==========
+        print("\n========== 8. 更新SKU库存 ==========")
+        updated_sku = await sku_svc.update_stock(s1.id, 80)
+        assert updated_sku is not None
+        print(f"{s1.sku_code} 库存: {s1.stock} → {updated_sku.stock}")
+
+        # ========== 9. 更新商品信息 ==========
+        print("\n========== 9. 更新商品信息 ==========")
+        updated = await product_svc.update_product(
+            p2.id,
+            ProductUpdate(
+                description="2024款MacBook Pro M3芯片 笔记本电脑",
+            ),
+        )
+        assert updated is not None
+        print(f"更新后: {updated.name} → {updated.description}")
+
+        # ========== 10. 获取分类详情（含商品列表） ==========
+        print("\n========== 10. 获取分类详情 ==========")
+        detail = await category_svc.get_category(c1.id)
+        assert detail is not None
+        print(f"分类「{detail.name}」下有 {len(detail.products)} 个商品:")
+        for p in detail.products:
+            print(f"  [{p.id}] {p.name}")
+
+        await session.commit()
+        print("\n========== 全部演示完毕 ==========")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0007-业务逻辑.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/业务逻辑速查表.html">📋 业务逻辑速查表（可打印）</a>

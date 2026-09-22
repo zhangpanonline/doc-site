@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>业务逻辑速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>业务逻辑速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0007-业务逻辑.html">《业务逻辑互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>核心关注点（审代码三问）</h2>
+      <dl class="term-grid">
+        <dt>代码组织</dt>
+        <dd>类模式还是函数模式？异常怎么处理？</dd>
+        <dt>功能逻辑</dt>
+        <dd>功能全不全？重要的验证做没做？</dd>
+        <dt>边界</dt>
+        <dd>入参和返回的是什么？是否耦合了接口层的东西？</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>service 骨架</h2>
+      <pre>@dataclass
+class PageResult(Generic[T]):
+    items: list[T]; total: int; page: int; page_size: int
+
+class BaseService:
+    def __init__(self, db: AsyncSession):
+        self.db = db          # 所有 Service 共享 session
+
+class ProductService(BaseService):
+    async def create_product(self, data: ProductCreate) -> ProductResponse:
+        ...                    # 入参 DTO / 返回 DTO</pre>
+      <p>分页：<code>count 总数 → offset/limit 取当页 → PageResult</code>；更新：<code>model_dump(exclude_unset=True)</code> 只更新传入字段。</p>
+    </section>
+
+    <section>
+      <h2>异常体系与边界</h2>
+      <dl class="term-grid">
+        <dt>BusinessException</dt>
+        <dd>业务异常基类：message 对外 / detail 对内 / original_exception 追溯。</dd>
+        <dt>DatabaseException</dt>
+        <dd>捕获 IntegrityError 翻译成业务语言（如「关联的分类不存在」「SKU编码重复」）。</dd>
+        <dt>DTO 转换</dt>
+        <dd>from_attributes + model_validate 把 ORM 对象转 DTO。</dd>
+        <dt>边界规则</dt>
+        <dd>对外只暴露 DTO；ORM 对象只在 service 内部（_get_*_orm 私有方法）。</dd>
+        <dt>接口层解耦</dt>
+        <dd>service 不 import FastAPI 的 Request/Response/HTTPException。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

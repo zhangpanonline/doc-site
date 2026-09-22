@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 业务逻辑：Service 类模式与 BaseService、业务异常体系、DTO 边界与分页、商品/分类/SKU 三服务——互动教学课程">
+  <title>业务逻辑 · 互动教学课程（Python 框架 fw-07）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>业务逻辑</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/业务逻辑">07.业务逻辑</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>按课件「核心关注点」三方面审一段业务代码：代码组织、功能逻辑、边界</li>
+        <li>说清 Service 类模式与 BaseService 的复用价值，跑通三个 Service 的 CRUD 流程</li>
+        <li>用 BusinessException/DatabaseException 把底层异常翻译成业务语言</li>
+        <li>守住 DTO 边界：入参 Create/Update、返回 Response/Brief，ORM 对象不越过 service 层</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《07.业务逻辑》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>代码组织：类模式 + 异常体系</h3>
+        <ul class="pitfall-list">
+          <li><strong>BaseService</strong>：所有 Service 继承它，构造器共享 <code>self.db: AsyncSession</code></li>
+          <li><strong>PageResult[T]</strong>：统一分页返回 <code>items/total/page/page_size</code></li>
+          <li><strong>BusinessException</strong>：message（对外）/ detail（对内）/ original_exception（追溯根因）</li>
+          <li><strong>DatabaseException</strong>：捕获 <code>sa_exc.IntegrityError</code> 后翻译成业务语言（「关联的分类不存在」「SKU编码重复」）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>边界：DTO 进出、ORM 不外泄</h3>
+        <ul class="pitfall-list">
+          <li><strong>入参</strong>：Create/Update DTO（Field 约束即验证）；Update 用 <code>model_dump(exclude_unset=True)</code> 只更新传入字段</li>
+          <li><strong>返回</strong>：Response（详情）/ Brief（列表嵌套）/ PageResult（分页），<code>from_attributes</code> + <code>model_validate</code> 把 ORM 对象转 DTO</li>
+          <li><strong>内部方法</strong>：<code>_get_*_orm</code> 私有方法返回 ORM 对象供更新/删除——ORM 只在 service 内部流转</li>
+          <li><strong>不耦合接口层</strong>：service 不 import FastAPI 的 Request/Response/HTTPException</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《07.业务逻辑》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 课件「核心关注点」包括哪三个方面？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">代码组织、功能逻辑是否正确、边界是否清晰</button>
+            <button class="quiz-option">命名、注释、缩进</button>
+            <button class="quiz-option">部署、监控、日志</button>
+            <button class="quiz-option">性能、内存、并发</button>
+          </div>
+          <div class="quiz-explain" hidden>课件三条：① 代码组织（类模式还是函数模式？异常怎么处理？）；② 功能逻辑是否正确（功能全不全？重要的验证做没做？）；③ 边界是否清晰（入参和返回的是什么？是否耦合了接口层的东西？）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 课件 service 层用的是类模式还是函数模式？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">函数模式：一堆 async def 函数</button>
+            <button class="quiz-option">两种混用，无规则</button>
+            <button class="quiz-option">类模式：ProductService(BaseService) 等，共享 session</button>
+            <button class="quiz-option">装饰器模式</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：ProductService/CategoryService/SkuService 都继承 BaseService，构造器接收 AsyncSession 存到 self.db。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 所有自定义业务异常从哪个类派生？它带哪些信息？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">HTTPException：状态码和详情</button>
+            <button class="quiz-option">Exception：什么都不带</button>
+            <button class="quiz-option">ValueError：只有一句话</button>
+            <button class="quiz-option">BusinessException：message（对外）/ detail（对内）/ original_exception（追溯根因）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 exception/base.py：message 可展示给用户；detail 供开发排查；original_exception 保留原始异常。上层可 except BusinessException 统一捕获。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. BaseService 里共享的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">db: AsyncSession——所有 Service 通过 self.db 操作数据库</button>
+            <button class="quiz-option">Redis 连接</button>
+            <button class="quiz-option">全局配置对象</button>
+            <button class="quiz-option">请求上下文</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 base.py：class BaseService 的 __init__(self, db: AsyncSession): self.db = db——业务逻辑基类，所有 Service 继承此类共享 session。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. create_product 的返回类型是什么？为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">JSON 字符串</button>
+            <button class="quiz-option">dict，最灵活</button>
+            <button class="quiz-option">ProductResponse（DTO）——ORM 对象不越过 service 层</button>
+            <button class="quiz-option">Product（ORM 对象），方便接口层直接用</button>
+          </div>
+          <div class="quiz-explain" hidden>课件边界关注点：入参和返回的是什么？service 对外的返回一律是 schema DTO（from_attributes + model_validate 转换），ORM 对象只在 service 内部流转。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 插入关联分类时捕获 IntegrityError 后做什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">直接让接口层处理</button>
+            <button class="quiz-option">打印日志后返回空</button>
+            <button class="quiz-option">忽略错误继续执行</button>
+            <button class="quiz-option">raise DatabaseException，把底层错误翻译成业务语言</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 product_service.py：except sa_exc.IntegrityError as e → raise DatabaseException(message="关联的分类不存在", detail=str(e), original_exception=e) from e——对外给用户可读信息，对内保留根因。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. update_product 里 model_dump(exclude_unset=True) 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只取出客户端实际传入的字段，未传的字段不动</button>
+            <button class="quiz-option">把未传字段也写成 None 清空</button>
+            <button class="quiz-option">排除所有字段</button>
+            <button class="quiz-option">只做类型转换</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释「仅更新传入的字段」：exclude_unset=True 丢弃未显式设置的字段——否则 update 会把 name=None 之类写进数据库。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. list_products 的分页是怎么实现的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">前端负责分页</button>
+            <button class="quiz-option">数据库游标自动分页</button>
+            <button class="quiz-option">全查出来在 Python 里切片</button>
+            <button class="quiz-option">count 查总数 + offset/limit 查当页 + PageResult 包装</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 list_products：select(func.count()).select_from(query.subquery()) 拿 total；offset=(page-1)*page_size 后 limit(page_size).order_by(id.desc()) 取当页；PageResult 统一返回。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 为什么要有 _get_product_orm 这种私有方法，而公开方法只返回 DTO？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">防止方法被 IDE 索引</button>
+            <button class="quiz-option">纯粹为了少写代码</button>
+            <button class="quiz-option">没有意义，可以删掉</button>
+            <button class="quiz-option">对外边界只暴露 DTO；ORM 对象留给内部更新/删除用</button>
+          </div>
+          <div class="quiz-explain" hidden>课件边界关注点：update/delete 需要 ORM 对象（改属性、级联删除），但公开 API 返回 DTO——私有方法把 ORM 获取逻辑收拢在内部，ORM 不越过 service 边界。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0007-业务逻辑',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的 ProductService：方法里直接 from fastapi import Request 读请求头做业务判断，还直接 raise HTTPException(status_code=404)。按本课的边界关注点，问题在哪？`,
+              source: '来源：FastAPI 官方教程 Bigger Applications - Multiple Files（APIRouter 分层、各模块职责分离的官方项目结构）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《07.业务逻辑》课件边界关注点',
+              breakdown: `课件边界关注点第 3 条直接命中：<strong>是否耦合了接口层的东西？</strong> service 层不该 import FastAPI 的 Request/Response/HTTPException——业务逻辑层与接口层（api/）解耦，service 才能被测试、被复用（比如将来从 REST 换成 WebSocket 或消息队列入口，service 不用改）。业务失败的正确姿势：<strong>raise BusinessException 体系</strong>（本课 DatabaseException 就是范例），翻译成 HTTP 响应是接口层/全局异常处理器的事。AI 写的代码把「业务判断」和「HTTP 语义」焊死了。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `为什么课件选类模式（ProductService(BaseService)）而不是函数模式？BaseService 除了存 session 还有什么价值？`,
+              source: '来源：渡一源课程《07.业务逻辑》课件（service/base.py：BaseService 共享 session）· FastAPI 官方教程 Bigger Applications - Multiple Files（APIRouter 组织路径操作、按职责拆模块）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `课件答案：<strong>类模式给 service 一个统一的入口和扩展点</strong>——① 构造器统一接收 session，实例化方式一致（CategoryService(session)）；② 未来的公共能力（日志埋点、权限校验、缓存、请求上下文）加在 BaseService 一处，全站生效，函数模式只能靠装饰器散打；③ 相关操作内聚（ProductService 的 CRUD+搜索+分页挂在一个类下，导入路径清晰）。函数模式在逻辑极少、无共享状态时更轻，但课程的业务量级下类模式边界更清晰。这与 FastAPI 官方「按职责拆模块、APIRouter 组装」是同一思路：<strong>层与层之间的接口要稳定，内部实现要内聚</strong>。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的 service 审查清单：① get_product 直接 return ORM 对象；② update 用 data.dict() 全量写回（未传字段被写成 None）；③ list_products 没有分页，一次返回 10 万条。逐条按本课标准给出改法。`,
+              source: '来源：pydantic 官方文档 Models（"model_validate(): Validates the given object against the Pydantic model"）https://docs.pydantic.dev/latest/concepts/models/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《07.业务逻辑》课件（边界/DTO/分页实现）',
+              breakdown: `逐条改法：① <strong>返回 DTO</strong>——ProductResponse.model_validate(product)（from_attributes 从 ORM 对象取值），ORM 对象不越过 service 边界，接口层拿到的永远是稳定契约；② <strong>exclude_unset=True</strong>——model_dump(exclude_unset=True) 只取客户端实际传入的字段，未传的字段不动，杜绝「改商品名却把描述清空」的经典事故；③ <strong>PageResult 分页</strong>——count 总数 + offset/limit 取当页，返回 items/total/page/page_size 四件套，前端分页渲染有依据。三条全是课件「边界是否清晰」的落地。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：IntegrityError 是 SQLAlchemy 的底层数据库错误，为什么不直接抛给接口层，而要在 service 里翻译成 DatabaseException？`,
+              source: '来源：SQLAlchemy 官方文档 Core Exceptions（IntegrityError 属于 DBAPIError 一族，随 DBAPI 错误抛出）https://docs.sqlalchemy.org/en/20/core/exceptions.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《07.业务逻辑》课件（exception/ 体系）',
+              breakdown: `三条理由：<strong>① 业务语义</strong>——「关联的分类不存在」「SKU编码重复」是业务语言，IntegrityError 只是数据库约束冲突，接口层拿到它不知道该怎么回应客户端；<strong>② 信息分层</strong>——BusinessException 的 message 对外（用户可读）、detail 对内（排查），底层错误细节不该泄露给响应（和 ch09 统一异常处理的「敏感信息不暴露」呼应）；<strong>③ 捕获面稳定</strong>——上层只需 except BusinessException 统一处理，不必知道底层是 SQLAlchemy 还是别的 ORM；换存储实现时接口层的异常处理代码一行不用改。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 数据库里跑通 service 层全流程（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '覆盖 ch07 的 exception/schema/service 三个目录到工程 → 连 duyi_db 跑 service/main.py 十步演示 → 再补一个「重复 SKU 编码」用例验证 DatabaseException 翻译 → psql 检查数据落库。',
+                accept: ['main.py 十步演示全部跑通（建分类/建商品/建SKU/搜索/更新/详情）', '重复 sku_code 触发 IntegrityError 并被翻译为 DatabaseException', 'psql 里 product/category/sku/product_category 数据正确'],
+              },
+              source: '任务基于《07.业务逻辑》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：课件目录里的文件按路径覆盖（exception/、schema/、service/ 三个新目录）；跑之前先确认 ch06 迁移已 upgrade（表要存在）。坑：main.py 开头会 delete 全部数据并 RESTART 序列保证幂等；重复 SKU 用例自己写：拿同一个 sku_code 连续 create_sku 两次，第二次应抛 DatabaseException(message="SKU编码重复")。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（07.业务逻辑）</li>
+        <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/bigger-applications/">FastAPI 官方：Bigger Applications（分层与 APIRouter）</a> · <a href="https://docs.pydantic.dev/latest/concepts/models/">Pydantic 官方：Models（model_validate/from_attributes）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/业务逻辑速查表.html">业务逻辑速查表</a>——三层关注点、DTO 边界、异常体系一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/数据迁移">06.数据迁移</a> · 下一课 <a href="/agents/python-framework/依赖注入">08.依赖注入</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以跑通 service/main.py 十步演示为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>
