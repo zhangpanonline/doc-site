@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 部署-总结：CI/CD 与服务器架构全景、部署面试讲述框架、AI 服务部署流程——互动教学课程">
+  <title>部署-总结 · 互动教学课程（Python 框架 fw-25）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>部署-总结</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/部署-总结">25.部署-总结</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>画出部署全景：镜像 → ACR → ACK → ALB → 域名的完整链路</li>
+        <li>讲出云效流水线的两个触发节点：PR 与 tag</li>
+        <li>按课件「面试要点」框架诚实回答部署类面试题（作业题）</li>
+        <li>串起 ch21-24 的四个递进：手工容器 → 云资产 → 集群 → 自动化</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《25.部署-总结》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>部署全景（ch21-24 串线）</h3>
+        <ul class="pitfall-list">
+          <li><strong>微服务架构</strong>：AI 服务不直接对外——由后端服务调用或经网关转发</li>
+          <li><strong>Dockerfile → ACR</strong>：多阶段构建推镜像仓库（版本 tag，不用 latest）</li>
+          <li><strong>ACK → ALB</strong>：k8s 集群管 Pod，负载均衡路由流量；域名 CNAME 到 ALB</li>
+          <li><strong>云效流水线</strong>：两个节点——<strong>PR</strong>（CI 跑测试）、<strong>tag</strong>（CD 构建部署）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>面试要点（课件的诚实框架）</h3>
+        <ul class="pitfall-list">
+          <li><strong>坦诚层级</strong>：未亲自参与部署但了解流程，细节不深——比硬编更可信</li>
+          <li><strong>能讲清单</strong>：微服务架构、ACK、ALB、Dockerfile、ACR、流水线两节点</li>
+          <li><strong>兜底一句</strong>：经过短时间学习，自己搭建部署流水线没有问题（ch21-24 已实操）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《25.部署-总结》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 课件面试要点里「AI 服务不直接对外」是什么意思？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">AI 服务没有接口</button>
+            <button class="quiz-option">AI 服务不联网</button>
+            <button class="quiz-option">微服务架构下 AI 服务由后端调用或经网关转发，不单独暴露公网</button>
+            <button class="quiz-option">AI 服务只在内网开发</button>
+          </div>
+          <div class="quiz-explain" hidden>课件要点：微服务架构：AI 服务不直接对外——它是能力组件，被业务后端调用（或经网关），公网入口统一走 ALB。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 云效流水线的两个触发节点是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">PR（跑 CI 测试）和 tag（触发 CD 构建部署）</button>
+            <button class="quiz-option">dev 和 prod 分支</button>
+            <button class="quiz-option">push 和 pull</button>
+            <button class="quiz-option">上午和晚上</button>
+          </div>
+          <div class="quiz-explain" hidden>课件要点：云效流水线的两个节点——PR、tag。PR 进主干前跑集成验证（ch24 CI）；打 tag 是「发布信号」触发 CD 构建部署（ch24 TAG 版本纪律）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 部署面试题的「诚实框架」第一步是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">说完全不懂</button>
+            <button class="quiz-option">背一段术语</button>
+            <button class="quiz-option">直接说全懂</button>
+            <button class="quiz-option">坦诚定位：未亲自参与部署、了解流程、细节不深</button>
+          </div>
+          <div class="quiz-explain" hidden>课件面试要点结构：① 坦诚层级（未亲自参与但了解流程）；② 能讲的清单（架构/工具/流程各点）；③ 兜底（短时间学习可自建流水线）——诚实+有料，面试官信得过。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 从代码提交到线上服务，经过哪些环节（按课件串线）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只经过编译</button>
+            <button class="quiz-option">代码直接上线</button>
+            <button class="quiz-option">手工拷贝文件</button>
+            <button class="quiz-option">PR 触发 CI 测试 → 合入 → tag 触发 CD → 构建镜像推 ACR → ACK 部署 Pod → ALB 路由 → 域名访问</button>
+          </div>
+          <div class="quiz-explain" hidden>ch21-24 串线：CI（测试）→ CD（镜像+部署）→ ACR（仓库）→ ACK（集群）→ ALB（入口）→ 域名。课件的 CI/CD 图与服务器架构图就是这个链路。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 为什么 PR 和 tag 分开触发，而不是都用 push？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">PR 更安全</button>
+            <button class="quiz-option">没有区别</button>
+            <button class="quiz-option">tag 触发更快</button>
+            <button class="quiz-option">PR=合入前的质量门禁；tag=明确的发布信号——职责分离，部署时机可控</button>
+          </div>
+          <div class="quiz-explain" hidden>课件两节点语义：PR 触发 CI——每个待合入变更都验证（防回归）；tag 触发 CD——只有打了发布 tag 才构建部署（发布是显式决策，不是每次 push 都上线）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 「和后端/运维配合编写 Dockerfile」说明 AI 工程师的部署职责边界是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只写代码</button>
+            <button class="quiz-option">什么都不用做</button>
+            <button class="quiz-option">全部自己做</button>
+            <button class="quiz-option">写对应用本身的容器化描述；平台/网络/集群归运维与后端协同</button>
+          </div>
+          <div class="quiz-explain" hidden>课件要点：和后端/运维配合编写 Dockerfile——AI 工程师懂应用依赖（ch21 的 uv sync 等），平台规范（基础镜像/端口约定）与运维对齐；ACK/ALB 等基础设施由专业角色维护。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 面试官追问「细节不太了解」时，怎么接才不掉分？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">转移话题</button>
+            <button class="quiz-option">沉默</button>
+            <button class="quiz-option">把了解的细节讲满（两节点/镜像版本/密钥注入），再给兜底：短时间可自建</button>
+            <button class="quiz-option">编造细节</button>
+          </div>
+          <div class="quiz-explain" hidden>课件框架的三层：坦诚层+清单层+兜底层——「细节不太了解」之后紧跟可讲的清单（微服务/ACK/ALB/ACR/流水线节点），说明了解流程框架；兜底一句体现学习能力与实操底气（ch21-24 都做过了）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. ch21 到 ch24 四章的递进关系是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">手工容器化（Dockerfile）→ 云资产备齐（VPC/RDS/ACR）→ 集群编排（k8s/Helm）→ 流水线自动化（CICD）</button>
+            <button class="quiz-option">每章独立无关联</button>
+            <button class="quiz-option">顺序无所谓</button>
+            <button class="quiz-option">四章讲同一件事</button>
+          </div>
+          <div class="quiz-explain" hidden>四章递进：ch21 解决「怎么打包」→ ch22 解决「放哪/连谁」→ ch23 解决「怎么编排与对外」→ ch24 解决「怎么自动化」——每章的交付物都是下一章的前提。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 作业题「讲一讲你们的部署流程」的标准答法结构是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">拒绝回答</button>
+            <button class="quiz-option">架构定位 → 链路（PR→CI→tag→CD→ACR→ACK→ALB）→ 自己负责的部分 → 兜底学习能力</button>
+            <button class="quiz-option">只背工具名字</button>
+            <button class="quiz-option">只讲代码</button>
+          </div>
+          <div class="quiz-explain" hidden>作业题答法：先定位（AI 服务在微服务里的位置）→ 顺链路讲（两节点流水线→镜像→集群→入口）→ 划清自己的职责（Dockerfile 与应用侧）→ 兜底（可自建）——诚实框架 + 完整链路 = 高分答案。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0025-部署-总结',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `面试官问「你们部署流程是什么」时，AI 助手帮你写的回答把 K8s 的每个组件（etcd、kube-scheduler、CNI 插件）背了一遍，但问「你负责哪部分」时卡住了。按课件的面试要点，问题在哪？`,
+              source: '来源：Kubernetes 官方文档 Overview（组件与架构）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《25.部署-总结》课件（面试要点）',
+              breakdown: `问题在<strong>背过了自己的真实层级</strong>。课件的框架第一层是坦诚定位——「未亲自参与服务器部署，了解流程，对细节不太了解」；然后才是有边界的清单：微服务架构、ACK 管 Pod、ALB 路由、配合写 Dockerfile、ACR 仓库、流水线两节点（PR/tag）。背 etcd/scheduler 反而危险：面试官一追问「你们集群的 etcd 几个节点」就穿帮。正确姿势：<strong>按课件清单讲到自己真实参与的深度，然后主动划边界</strong>——「基础设施细节我了解概念、实操归运维团队，应用侧（Dockerfile、依赖、健康检查）是我写的」——最后兜底：短时间学习可自建流水线（ch21-24 实操过）。诚实 + 有料 &gt; 术语堆砌。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `为什么流水线用「PR 和 tag 两个节点」而不是 push 一次触发全流程？PR 节点和 tag 节点各自卡在链路的什么位置？`,
+              source: '来源：GitHub 官方文档 Understanding GitHub Actions（workflow 触发与部署保护）https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《25.部署-总结》课件（云效两节点）',
+              breakdown: `两个节点 = 两个语义不同的闸门：<strong>① PR 节点（合入前）</strong>——代码还在「候选」状态，CI 跑测试回答「这个变更安不安全」（ch24 的 uv sync + test-unit；ch12 的防回归在流水线强制执行）；测试红 = 合不进去。 <strong>② tag 节点（发布时）</strong>——合入主干后，打 tag 是显式的「我要发布」信号，CD 才构建镜像、部署集群（ch24 的 TAG=${CI_COMMIT_REF_NAME} 把 tag 变成镜像版本）。为什么不用 push 一把梭：push 的频率远高于「该发布」的频率——每次 push 都部署等于没代码评审、没发布节奏，且测试与部署的失败域混在一起难定位。一句话：<strong>PR 问「能不能合」，tag 说「现在发」</strong>。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的部署流程复盘文档：① 没有版本回滚段落；② 没提健康检查与监控；③ 密钥管理一句「放环境变量」带过。按 ch21-25 的完整部署观审查这份文档缺了什么。`,
+              source: '来源：Kubernetes 官方文档 Overview（自愈与滚动更新）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《25.部署-总结》课件（部署全景）',
+              breakdown: `缺三块：<strong>① 回滚路径</strong>——ch22/23 反复强调版本 tag 的最终目的就是回滚：出问题要能「kubectl rollout undo / helm rollback 到上一个 tag」；没有版本纪律的部署流程等于没有刹车。 <strong>② 可观测性</strong>——ch18 的日志体系（JSON→stdout→云日志）与健康检查（探针）是部署闭环的「眼睛」：Pod 起来 ≠ 服务健康，没有存活/就绪探针与日志采集，故障只能靠用户报。 <strong>③ 密钥全生命周期</strong>——「放环境变量」漏了一半：来源（流水线密钥区，ch24 六变量）、注入（helm --set/secret，ch23）、轮换（JWT 密钥、DB 密码要能换，ch17 的 secret 配置点）、不落盘（不进 git/镜像）。复盘文档按「发布→运行→回滚→观察→密钥」五段写才完整。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问（作业题）：你在之前的企业中写好的 AI 服务是如何部署的？请讲一讲你们的部署流程。`,
+              source: '来源：渡一源课程《25.部署-总结》课件（面试要点 + 作业）· Kubernetes 官方文档 Overview https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `课件标准答法（四段）：<strong>① 架构定位</strong>——「我们是微服务架构，AI 服务不直接对外，由业务后端调用」；<strong>② 链路顺讲</strong>——「代码合入主干前 PR 触发 CI 跑测试；发布时打 tag 触发 CD：构建 Dockerfile 推 ACR → ACK 部署 Pod → ALB 路由流量 → 域名走 HTTPS」；<strong>③ 划清职责</strong>——「我负责应用侧：Dockerfile、依赖清单、健康检查，和运维对齐基础镜像与端口规范；集群与网络由运维团队维护」；<strong>④ 兜底</strong>——「流水线细节我了解概念、实操不多，但这套流程我自己搭过一遍（ch21-24），短时间上手没有问题」。诚实层级 + 完整链路 + 明确职责 + 学习能力——面试官要的是「能协作、能上手、不吹牛」的信号。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `完成部署复盘（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '把 ch21-25 的部署全流程画成一张图（镜像→ACR→ACK→ALB→域名 + 流水线两节点）→ 按作业题写一份 3 分钟的口头回答稿 → 对着稿子讲两遍并录音自查卡顿点。',
+                accept: ['图里包含全部环节与触发点（PR/tag）', '回答稿含四段结构（定位/链路/职责/兜底）', '讲述时长 2-3 分钟且无术语卡壳'],
+              },
+              source: '任务基于《25.部署-总结》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：图可以手绘或 mermaid（ch20 用过 mermaid 语法）；回答稿严格按课件面试要点四段写，控制在 300 字内；讲的时候想象面试官会追问「你负责哪部分」，提前把职责边界想清楚。坑：别背组件名词（etcd/CNI），只讲课件清单里自己实操过的环节。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（25.部署-总结）</li>
+        <li><strong>深读推荐</strong>：<a href="https://kubernetes.io/docs/concepts/overview/">Kubernetes 官方：Overview</a> · <a href="https://docs.github.com/en/actions/about-github-actions/understanding-github-actions">GitHub Actions 官方文档</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/部署-总结速查表.html">部署-总结速查表</a>——全景链路、面试框架一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/部署-CICD">24.部署-CICD</a> · 下一课 <a href="/agents/python-framework/python收官检验">26.python收官检验</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（讲述你的 AI 服务部署流程）。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

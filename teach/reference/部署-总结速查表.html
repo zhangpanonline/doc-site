@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>部署-总结速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>部署-总结速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0025-部署-总结.html">《部署-总结互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>部署全景</h2>
+      <ol class="pitfall-list">
+        <li>PR → CI（装依赖 + 跑测试）——合入前质量门禁</li>
+        <li>tag → CD（构建 + 部署）——显式发布信号</li>
+        <li>Dockerfile 多阶段构建 → 推 ACR（版本 tag，不用 latest）</li>
+        <li>ACK 部署 Pod（Helm + secret 注入）</li>
+        <li>ALB 路由 → 域名 CNAME → HTTPS（80 重定向 443）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>面试讲述框架（作业题）</h2>
+      <dl class="term-grid">
+        <dt>① 架构定位</dt>
+        <dd>微服务架构，AI 服务不直接对外，由业务后端调用。</dd>
+        <dt>② 链路顺讲</dt>
+        <dd>PR→CI；tag→CD：Dockerfile→ACR→ACK→ALB→域名。</dd>
+        <dt>③ 划清职责</dt>
+        <dd>自己：Dockerfile/依赖/健康检查；运维：集群与网络。</dd>
+        <dt>④ 兜底</dt>
+        <dd>短时间学习，自建流水线没问题。</dd>
+      </dl>
+      <p>诚实层级：未亲自参与但了解流程，细节不深——坦诚 + 有料 &gt; 术语堆砌。</p>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>
