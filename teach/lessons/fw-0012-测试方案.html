@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 测试方案：TLD/TDD、五层测试选型、Stub 与 Mock 七大能力、冒烟测试红线、覆盖率门禁——互动教学课程">
+  <title>测试方案 · 互动教学课程（Python 框架 fw-12）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>测试方案</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/测试方案">12.测试方案</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 TLD 与 TDD 的区别与各自适用场景</li>
+        <li>给一个功能选对测试层级（单元/集成/系统/e2e/冒烟）</li>
+        <li>用 Stub 替换外部依赖、用 Mock 验证调用行为（七大能力表）</li>
+        <li>说出冒烟测试的五条红线判定标准与覆盖率门禁的用法</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《12.测试方案》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>五层测试选型（课件）</h3>
+        <ul class="pitfall-list">
+          <li><strong>单元</strong>（unit/）：屏蔽外部，测单函数/类——复杂重要的代码</li>
+          <li><strong>集成</strong>（integration/）：多模块交互——核心，覆盖率的主力</li>
+          <li><strong>系统</strong>（e2e/system）：真实运行系统启动验证，happy path</li>
+          <li><strong>e2e</strong>：一个用例跑完整个业务功能链——主要功能链必做</li>
+          <li><strong>冒烟</strong>：底线/红线/生命线，未通过 = 灾难性事故（五条判定）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Stub 与 Mock</h3>
+        <ul class="pitfall-list">
+          <li><strong>Stub</strong>：固定返回的替身（SmsServiceStub 永远返回 999999）——只关心「不真发短信」</li>
+          <li><strong>Mock</strong>：可验证的替身——调用次数/参数/顺序、side_effect 多返回值、抛异常、调用记录、reset</li>
+          <li>课件结论：<strong>绝大部分情况下 Mock 可以平替 Stub</strong></li>
+          <li>冒烟标记：<code>@pytest.mark.smoke</code> 一行即可；覆盖率门禁 <code>--cov-fail-under=80</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《12.测试方案》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. TLD 和 TDD 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">TLD 开发先行测试后行；TDD 测试先行开发后行</button>
+            <button class="quiz-option">两者完全一样</button>
+            <button class="quiz-option">TDD 不需要写测试</button>
+            <button class="quiz-option">TLD 是测试语言，TDD 是开发语言</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：TLD = Test-Last Development（开发先行，测试后行）；TDD = Test-Driven Development（测试先行，开发后行）。新功能两者选一（开发日常第 1 条）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 冒烟测试在课件里的定位是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">和单元测试一样</button>
+            <button class="quiz-option">可选的低优先级测试</button>
+            <button class="quiz-option">只测新功能</button>
+            <button class="quiz-option">系统的底线/红线/生命线，未通过可视为灾难性事故</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：冒烟测试是系统的底线/红线/生命线，冒烟测试未通过可视为灾难性事故。且往往不针对新功能，而是已上线、稳定运行一段时间的旧功能。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 测试覆盖率怎么算？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">代码行数 / 测试行数</button>
+            <button class="quiz-option">运行所有测试用例执行到的代码 / 全量代码</button>
+            <button class="quiz-option">通过的测试数 / 总测试数</button>
+            <button class="quiz-option">接口数 / 测试数</button>
+          </div>
+          <div class="quiz-explain" hidden>课件定义：测试覆盖率 = 运行所有测试用例执行到的代码 / 全量的代码。有些团队硬性要求 80% 否则无法 PR（课件 Makefile --cov-fail-under=80）。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 「登录接口」这种挂掉用户就进不来的功能，属于哪条冒烟红线？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">属于单元测试</button>
+            <button class="quiz-option">如果这个功能挂了，用户立刻无法完成核心任务</button>
+            <button class="quiz-option">属于 e2e 测试</button>
+            <button class="quiz-option">无所谓，不用冒烟</button>
+          </div>
+          <div class="quiz-explain" hidden>课件五条红线第一条：登录挂了→用户进不来；下单挂了→收不到钱；支付回调挂了→钱付了但订单没更新。核心任务链路的功能必须冒烟。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. Stub 模式里 monkeypatch.setattr("app.services.sms.SmsService", SmsServiceStub) 干了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">删除短信服务</button>
+            <button class="quiz-option">给短信服务加日志</button>
+            <button class="quiz-option">把真实短信服务类替换成测试桩，调用处无感知地改用固定返回</button>
+            <button class="quiz-option">启动一个假短信服务器</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 Stub 示例：SmsServiceStub.send_verify_code 固定返回 {"code": 999999}——测试里不真发短信，login 业务逻辑照跑，断言拿到的就是桩返回值。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. Mock 比 Stub 多出的核心能力，课件表格第一条是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">验证调用次数：mock.method.assert_called_once() 等</button>
+            <button class="quiz-option">自动生成代码</button>
+            <button class="quiz-option">数据库回滚</button>
+            <button class="quiz-option">加快测试速度</button>
+          </div>
+          <div class="quiz-explain" hidden>课件七大能力表：验证调用次数（assert_called_once）、验证参数（assert_called_with）、调用顺序（assert_called_before）、动态返回（side_effect）、抛异常、调用记录（call_args_list）、重置（reset_mock）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 「获取用户 Token 是所有需要登录接口的前提」属于哪条冒烟红线？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">高频使用</button>
+            <button class="quiz-option">这个功能是其他所有功能的前置依赖</button>
+            <button class="quiz-option">资损风险</button>
+            <button class="quiz-option">历史痛点</button>
+          </div>
+          <div class="quiz-explain" hidden>课件第三条：获取用户 Token 是所有需要登录接口的前提，它挂了后面几十个接口都测不了——前置依赖类功能必须冒烟。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 系统测试与 e2e 测试的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者完全一样</button>
+            <button class="quiz-option">系统测试验证真实环境启动无新问题（happy path）；e2e 在此基础上跑完整业务功能链</button>
+            <button class="quiz-option">e2e 比系统测试更简单</button>
+            <button class="quiz-option">系统测试是单元测试的别名</button>
+          </div>
+          <div class="quiz-explain" hidden>课件选型表：系统测试——测试整个真实运行的系统，验证真实环境启动是否会带来新问题，走 happy path 即可；e2e——在系统测试基础上测试某个业务功能链，一个用例跑完整个功能链。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 课件开发日常的顺序是？（第 3 步为什么排在提交前）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">冒烟测试可选</button>
+            <button class="quiz-option">TLD/TDD 开发 → 测试通过 → 冒烟通过 → 可选覆盖率 → 提 PR——冒烟是底线，红了不能合并</button>
+            <button class="quiz-option">覆盖率必过 100% 才能提交</button>
+            <button class="quiz-option">先提交再测试</button>
+          </div>
+          <div class="quiz-explain" hidden>课件开发日常：① 新功能选 TLD/TDD → ② 新增/修改的测试通过 → ③ 冒烟测试通过 → ④ 可选覆盖率达标 → ⑤ 提 PR → ⑥ 进流水线。冒烟未通过 = 灾难性事故，必须修了才能提交。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0012-测试方案',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的登录测试：没打 @pytest.mark.smoke 标记，且 CI 配置里把「跑测试」这一步设成了「失败仅警告」。结果登录接口改坏了照样合并上线。按本课冒烟红线的逻辑，问题在哪？`,
+              source: '来源：pytest 官方文档 How-to guides（markers 标记测试函数）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《12.测试方案》课件（冒烟测试章节）',
+              breakdown: `两条都踩红线：<strong>① 登录该冒烟但没标记</strong>——课件红线第一条：登录挂了用户立刻无法完成核心任务（第三条也中：Token 是所有接口的前置依赖），必须打 @pytest.mark.smoke；<strong>② 失败仅警告 = 没有红线</strong>——冒烟测试的意义就是「未通过可视为灾难性事故」，流水线里必须硬失败阻断合并（Makefile test-smoke 目标独立可跑）。开发日常第 3 步「确保冒烟测试通过」排在提交之前——AI 把底线功能当普通测试对待，等于拆掉了安全网。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `Stub 和 Mock 到底差在哪？为什么课件说「绝大部分情况下 Mock 可以平替 Stub」？`,
+              source: '来源：Python 官方文档 unittest.mock（patch/assert_called_once_with 等验证能力）https://docs.python.org/3/library/unittest.mock.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《12.测试方案》课件（Stub/Mock 章节与七大能力表）',
+              breakdown: `<strong>Stub = 只会固定返回的替身</strong>：SmsServiceStub 永远返回 {"code": 999999}，测试关心的只是「不真发短信」——替身没有记忆，无法回答「被调用了吗」。 <strong>Mock = 有记忆的替身</strong>：课件七大能力——assert_called_once（次数）、assert_called_with（参数）、assert_called_before（顺序）、side_effect=[...]（每次不同值）、side_effect=异常（模拟失败）、call_args_list（历史记录）、reset_mock（清空重来）。平替逻辑：Mock 设好 return_value 就是 Stub，还额外自带验证——所以没有独立理由选 Stub；Stub 的教科书价值在概念（测试替身的两大职责：隔离 + 验证）。官方文档的 patch 上下文管理器对应课件的 monkeypatch/mocker.patch 两种写法。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的测试方案：① 所有用例都放在 integration/ 一个目录；② 覆盖率目标是 100%，达不到的代码用 # pragma: no cover 注释掉；③ 把「修改收货地址」这类低频功能都打上了 smoke。逐条按本课标准审查。`,
+              source: '来源：pytest 官方文档（markers 与覆盖率插件用法）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《12.测试方案》课件（测试选型/覆盖率/冒烟红线）',
+              breakdown: `逐条：<strong>① 层级混乱</strong>——课件五层各有目录与适用场景：复杂纯函数进 unit/、模块交互进 integration/、真实启动走 system、功能链走 e2e；全塞 integration 意味着纯函数也要起服务器，慢且排错面大。 <strong>② 覆盖率 100% 是伪指标</strong>——课件定义覆盖率 = 执行到的代码/全量代码，它测的是「被执行」不是「被验证」；# pragma: no cover 注释是自欺（把没测的代码从分母里划掉）；课件姿势是团队定硬指标（如 80% 门禁 --cov-fail-under=80），达不成是信号不是罪证。 <strong>③ 冒烟贬值</strong>——红线五条是「满足任意一条必须冒烟」，不代表其它都要冒烟；低频功能全打 smoke 会让冒烟集膨胀，真正的红线信号被噪声淹没（冒烟往往针对已上线稳定的旧功能）。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：你们公司测试怎么分层？什么功能你会设成冒烟测试？说一个你见过或设想的具体例子。`,
+              source: '来源：渡一源课程《12.测试方案》课件（测试选型五层 + 冒烟五条红线）· pytest 官方文档 https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `答题框架（课件）：<strong>分层</strong>——unit/ 复杂纯函数（如价格计算、DTO 转换）；integration/ 多模块交互（本课的 test_api_* 与 test_*_service，覆盖主力）；system/ 真实启动 happy path；e2e/ 业务功能链（本课 test/e2e）；smoke 不限目录，按红线打标。 <strong>冒烟例子</strong>（用课件五条逐条套）：本课电商场景的「创建商品→建SKU→下单扣库存」链路——① 挂了用户买不了东西（核心任务）；② 90% 用户每天用；③ 下单依赖商品/SKU/库存接口（前置依赖）；④ 扣库存多扣少扣是资损；⑤ 历史上库存并发扣减常出问题（痛点回归）——五条全中，教科书级冒烟。反过来「修改收货地址」低频无资损，普通集成测试即可。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `给本课的电商服务补上分层测试方案（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '按课件五层把测试目录重组：unit/（给 DTO 转换或分页计算写 2-3 个单测）→ integration/（复用 ch11 套件并改名 test_api_*/test_*_service）→ e2e/（写一条「建分类→建商品→建SKU→搜索」完整功能链）→ 给 3-5 个核心用例打 @pytest.mark.smoke → Makefile 加 test-smoke 目标与 --cov-fail-under=80 门禁。',
+                accept: ['make test 全绿且覆盖率报告达标', 'make test-smoke 只跑标记用例', 'e2e 链跑通完整业务流'],
+              },
+              source: '任务基于《12.测试方案》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：以 ch11 套件为底子重组；pyproject 里补 markers = ["smoke: ..."]（否则打标会警告）；coverage 报告用 --cov-report=term-missing 看哪行没盖到。坑：e2e 用例之间共享数据要留意 ch11 的 autouse 清库机制（每个测试后 TRUNCATE）——功能链用例要在一个测试函数里跑完整条链，别拆成依赖顺序的多个测试。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（12.测试方案）</li>
+        <li><strong>深读推荐</strong>：<a href="https://docs.python.org/3/library/unittest.mock.html">Python 官方：unittest.mock</a> · <a href="https://docs.pytest.org/en/stable/">pytest 官方文档（markers）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/测试方案速查表.html">测试方案速查表</a>——五层选型、冒烟红线、Mock 七大能力一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/测试框架">11.测试框架</a> · 下一课 <a href="/agents/python-framework/三层架构">13.三层架构</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以五层目录重组 + 冒烟标记 + 覆盖率门禁落地为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

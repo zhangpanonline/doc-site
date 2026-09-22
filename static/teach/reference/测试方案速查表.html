@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>测试方案速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>测试方案速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0012-测试方案.html">《测试方案互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>五层选型</h2>
+      <table class="cmp-table">
+        <tr><th>层级</th><th>目录</th><th>场景</th></tr>
+        <tr><td>单元</td><td>unit/</td><td>复杂重要的函数、类（屏蔽外部）</td></tr>
+        <tr><td>集成</td><td>integration/</td><td>核心；覆盖率主力</td></tr>
+        <tr><td>系统</td><td>e2e/system</td><td>真实启动 happy path（必做）</td></tr>
+        <tr><td>e2e</td><td>e2e</td><td>主要业务功能链（必做）</td></tr>
+        <tr><td>冒烟</td><td>不限</td><td>红线五条满足任一即必做</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>冒烟五条红线</h2>
+      <ol class="pitfall-list">
+        <li>挂了用户立刻无法完成核心任务</li>
+        <li>90% 以上用户每天使用</li>
+        <li>其他功能的前置依赖</li>
+        <li>出错造成严重数据损失或资损</li>
+        <li>历史上经常出问题（痛点回归）</li>
+      </ol>
+      <p>冒烟往往针对已上线、稳定运行的旧功能；未通过 = 灾难性事故。</p>
+    </section>
+
+    <section>
+      <h2>Mock 七大能力</h2>
+      <dl class="term-grid">
+        <dt>次数 / 参数 / 顺序</dt>
+        <dd>assert_called_once / assert_called_with / assert_called_before</dd>
+        <dt>动态返回 / 异常</dt>
+        <dd>side_effect = [1,2,3] / side_effect = ValueError(...)</dd>
+        <dt>记录 / 重置</dt>
+        <dd>call_args_list / reset_mock()</dd>
+      </dl>
+      <p>覆盖率 = 执行到的代码 / 全量代码；门禁例：--cov=app --cov-fail-under=80。TLD 开发先行，TDD 测试先行。</p>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

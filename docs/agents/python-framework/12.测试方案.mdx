@@ -1,0 +1,235 @@
+---
+sidebar_position: 12
+title: '12. 测试方案'
+description: "Python 框架课程 · 测试方案：TLD 与 TDD、五层测试选型、Stub 与 Mock 对比、冒烟测试红线、覆盖率与开发日常。"
+displayed_sidebar: agentsFramework
+---
+
+# 测试方案
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+> 测试无法覆盖所有情况
+
+## 更新代码
+
+安装覆盖率插件
+
+```shell
+uv add --package web-service --group dev pytest-cov==7.0.0
+```
+
+配置`apps/web-service/pyproject.toml`
+
+```toml
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["test"]
+markers = [
+    "smoke: 标记为冒烟测试，验证核心流程是否正常",
+]
+```
+
+配置`.gitignore`
+
+```yaml
+# test
+.coverage
+htmlcov/
+```
+
+覆盖课件中提供的代码
+
+## 开发和测试的顺序
+
+1. **TLD**：Test-Last Development，开发先行，测试后行
+2. **TDD**：Test-Driven Development，测试先行，开发后行
+
+## 测试选型
+
+- **单元测试**：屏蔽外部，测试单函数、类
+
+  目录建议：`unit/`
+
+  适用场景：复杂或重要的函数、类
+
+- **集成测试**：多模块、类、函数的交互
+
+  目录建议：`integration/`
+
+  适用场景：核心，达到测试覆盖率的核心手段
+
+- **系统测试**：测试整个真实运行的系统
+
+  目录建议：`e2e / system`
+
+  适用场景：必做，通常是测试真实环境的启动是否会带来新问题，走一些happy path即可
+
+- **e2e测试**：在系统测试的基础上，测试某个业务功能链（一个用例跑完整个功能链）
+
+  目录建议：`e2e`
+
+  适用场景：必做，主要业务功能链
+
+- **冒烟测试**：系统的底线/红线/生命线，冒烟测试未通过可视为灾难性事故
+
+  目录建议：`不限`
+
+  适用场景：下面的情况满足任意一条，必须设置为冒烟测试
+  - **如果这个功能挂了，用户立刻无法完成核心任务**
+
+    登录挂了→用户进不来；下单挂了→收不到钱；支付回调挂了→钱付了但订单没更新
+
+  - **这个功能被90%以上的用户每天使用**
+
+    比如“查看商品详情”是电商的高频功能，而“修改收货地址”相对低频
+
+  - **这个功能是其他所有功能的前置依赖**
+
+    比如“获取用户Token”是所有需要登录接口的前提，如果它挂了，后面几十个接口都测不了
+
+  - **这个功能一旦出错，会造成严重的数据损失或资损**
+
+    比如“扣减库存”不能多扣，“退款”不能多退，这类功能哪怕使用频率不高也要加冒烟
+
+  - **这个功能历史上经常出问题（痛点回归）**
+
+    某个接口特别容易改坏（比如复杂的计算逻辑），即使它不算最核心，也可以加冒烟作为“保险”
+
+  > [!IMPORTANT]
+  >
+  > 冒烟测试往往不针对新功能，而是已上线、稳定运行一段时间的旧功能
+
+## 测试手段
+
+### Stub 模式
+
+```python
+# 假设这是你的业务代码（app/services/sms.py）
+class SmsService:
+    def send_verify_code(self, phone: str) -> dict:
+        # 真实调用第三方短信接口
+        return {"code": 123456, "success": True}
+
+# app/routers/login.py
+class login:
+
+    @staticmethod
+    def send_verify_code():
+      	user = get_current_user()
+        if not user:
+           raise PermissionDenied()
+        sms_serv = SmsService()
+        sms_serv.send_verify_code(user.phone)
+        # 后续其他逻辑
+```
+
+```python
+# 定义一个 Stub（测试桩），替换真实短信服务
+class SmsServiceStub:
+    def send_verify_code(self, phone: str) -> dict:
+        # 始终返回固定结果，不真正发短信
+        return {"code": 999999, "success": True}
+
+
+def test_login_with_stub(monkeypatch):
+    # 用 Stub 替换真实的 SmsService
+    monkeypatch.setattr("app.services.sms.SmsService", SmsServiceStub)
+
+    # 现在调用登录接口，内部会用 Stub，不会真发短信
+    from app.routers import login
+    result = login.send_verify_code()
+
+    assert result["code"] == 999999
+    assert result["success"] is True
+```
+
+### Mock 模式
+
+```python
+def test_login_with_mock(mocker):
+    # 直接 patch 掉 SmsService 类
+    mock_sms_class = mocker.patch("app.services.sms.SmsService")
+    # 配置实例方法的返回值
+    mock_sms_class.return_value.send_verify_code.return_value = {"code": 888888, "success": True}
+
+    # 调用
+    result = login.send_verify_code()
+
+    assert result["code"] == 888888
+    assert result["success"] is True
+
+    # 验证：获取实例，再验证它的方法被调用了一次
+    mock_sms_class.return_value.send_verify_code.assert_called_once()
+```
+
+Mock 比 Stub 多的功能
+
+| 功能               | 说明                   | 代码示例                                          |
+| :----------------- | :--------------------- | :------------------------------------------------ |
+| **验证调用次数**   | 确保方法被调用了N次    | `mock.method.assert_called_once()`                |
+| **验证调用参数**   | 检查传入了什么值       | `mock.method.assert_called_with(1, "a")`          |
+| **验证调用顺序**   | 多个方法按预期顺序调用 | `mock.method1.assert_called_before(mock.method2)` |
+| **动态返回不同值** | 每次调用返回不同结果   | `mock.method.side_effect = [1, 2, 3]`             |
+| **抛出异常**       | 模拟异常场景           | `mock.method.side_effect = ValueError("错")`      |
+| **记录所有调用**   | 查看历史调用记录       | `mock.method.call_args_list`                      |
+| **重置调用记录**   | 清空历史，重新统计     | `mock.reset_mock()`                               |
+
+**绝大部分情况下，Mock 可以平替 Stub**
+
+### 冒烟测试
+
+```python
+@pytest.mark.smoke  # ← 加这行即可
+def test_login_success(client):
+    response = client.post("/login", json={"email": "test@test.com", "password": "123456"})
+    assert response.status_code == 200
+
+def test_login_wrong_password(client):  # ← 没标记，不算冒烟
+    response = client.post("/login", json={"email": "test@test.com", "password": "wrong"})
+    assert response.status_code == 401
+```
+
+### 测试覆盖率
+
+测试覆盖率 = 运行所有测试用例执行到的代码 / 全量的代码
+
+有些团队有硬性指标，比如测试覆盖率必须达到80%，否则无法PR
+
+```shell
+# 查看测试覆盖率
+coverage report
+
+# 生成HTML
+coverage html
+```
+
+## 开发日常
+
+1. 新功能选择 TLD 或 TDD
+2. 确保新增或修改的测试脚本通过
+3. 确保冒烟测试通过
+4. 【可选】确保覆盖率达标
+5. 提交PR
+6. 后续进入流水线...[略]
+
+## 完成代码
+
+本章 duyi-service 的增量：Makefile 增加五个测试目标（覆盖率门禁 80%），测试目录重组为 `unit/` + `integration/`（测试文件改名 test_api_*.py / test_*_service.py）+ `e2e/`，核心用例打上 `@pytest.mark.smoke` 标记。
+
+```makefile
+.PHONY: dev debug test test-unit test-integration test-e2e test-smoke db-migrate db-upgrade db-downgrade
+
+test:
+	uv run pytest apps/web-service/test/unit/ apps/web-service/test/integration/ -q --cov=app --cov-report=term-missing --cov-fail-under=80
+
+test-unit:
+	uv run pytest apps/web-service/test/unit/ -q
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0012-测试方案.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/测试方案速查表.html">📋 测试方案速查表（可打印）</a>
