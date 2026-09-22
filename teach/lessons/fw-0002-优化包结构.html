@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 优化包结构：app/core/api/schema 分层、pydantic-settings、DTO 与路由拆分、debugpy 调试——互动教学课程">
+  <title>优化包结构 · 互动教学课程（Python 框架 fw-02）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>优化包结构</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/优化包结构">02.优化包结构</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 app 包的四层职责（main 入口 / core 基础设施 / api 路由层 / schema 模型层）</li>
+        <li>用 pydantic-settings 的 env_file 与 env_prefix 管理环境变量配置</li>
+        <li>把路由拆分到 APIRouter 并用 include_router 挂载，把 DTO 独立到 schema/</li>
+        <li>用 debugpy + VSCode attach 模式断点调试 FastAPI</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《02.优化包结构》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>四层结构</h3>
+        <ul class="pitfall-list">
+          <li><code>main.py</code>：FastAPI 应用入口（创建 app、挂载路由）</li>
+          <li><code>core/</code>：核心基础设施（配置 config.py）</li>
+          <li><code>api/</code>：路由层（welcome.py / items.py，各自一个 APIRouter）</li>
+          <li><code>schema/</code>：Pydantic 请求/响应模型（DTO，如 item.py）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>配置与路由要点</h3>
+        <ul class="pitfall-list">
+          <li><strong>pydantic-settings</strong>：<code>model_config = {"env_file": ".env", "env_prefix": "WEB_"}</code>——app_name 字段实际读取 <code>WEB_APP_NAME</code></li>
+          <li><strong>路由拆分</strong>：<code>APIRouter(prefix="/items")</code> + <code>app.include_router(...)</code>——前缀在路由器上声明</li>
+          <li><strong>debugpy</strong>：<code>--listen 0.0.0.0:5678 --wait-for-client</code> 起调试服务器，VSCode 用 attach 模式连 5678</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《02.优化包结构》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 分层结构中 core/ 的职责是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">测试脚本</button>
+            <button class="quiz-option">路由定义</button>
+            <button class="quiz-option">核心基础设施（配置等）</button>
+            <button class="quiz-option">Pydantic 模型</button>
+          </div>
+          <div class="quiz-explain" hidden>课件结构注释：core/ 是核心基础设施，本课的 config.py 就放这里。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. schema/ 层放什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Pydantic 请求/响应模型（DTO）</button>
+            <button class="quiz-option">配置</button>
+            <button class="quiz-option">路由层</button>
+            <button class="quiz-option">Makefile</button>
+          </div>
+          <div class="quiz-explain" hidden>课件结构注释：schema/ 是 Pydantic 请求/响应模型层。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. WebSettings 里 app_name 字段实际读取的环境变量是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">WEB_APP_NAME（env_prefix WEB_ 生效）</button>
+            <button class="quiz-option">WEB_APPNAME</button>
+            <button class="quiz-option">web_app_name</button>
+            <button class="quiz-option">APP_NAME</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释：model_config 的 env_prefix 为 WEB_——app_name 字段对应环境变量 WEB_APP_NAME。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. env_file 配置项的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">指定数据库文件</button>
+            <button class="quiz-option">指定缓存文件</button>
+            <button class="quiz-option">指定日志文件</button>
+            <button class="quiz-option">指定 .env 文件的位置（课件：环境变量读取来源）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释：env_file 是 env 文件的位置——配置从这里读取。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. APIRouter(prefix="/items") 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">限制访问频率</button>
+            <button class="quiz-option">设置请求头</button>
+            <button class="quiz-option">定义响应格式</button>
+            <button class="quiz-option">给路由器里的所有路由加 /items 前缀</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：router = APIRouter(prefix="/items")——该路由器内所有路径自动带 /items 前缀。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. debugpy 的 --wait-for-client 含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">等待调试客户端连接后再继续执行</button>
+            <button class="quiz-option">等待数据库连接</button>
+            <button class="quiz-option">等待文件保存</button>
+            <button class="quiz-option">等待客户端请求</button>
+          </div>
+          <div class="quiz-explain" hidden>课件命令：--listen 0.0.0.0:5678 --wait-for-client——起监听后等 VSCode attach 上来再继续。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. CommonSettings 的 environment 字段（默认 development）与 WebSettings 分开的理由是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了更慢</button>
+            <button class="quiz-option">没有理由，就是写两遍</button>
+            <button class="quiz-option">Pydantic 要求必须分开</button>
+            <button class="quiz-option">通用配置与应用配置分离：不同应用可共用 CommonSettings</button>
+          </div>
+          <div class="quiz-explain" hidden>课件把 environment 放 CommonSettings（通用）、app_name 放 WebSettings（应用专属）——分层配置的基础。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. main.py 里 include_router 的调用时机与位置？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">必须在路由装饰器之前</button>
+            <button class="quiz-option">只能放文件最顶部</button>
+            <button class="quiz-option">每个请求时调用</button>
+            <button class="quiz-option">创建 app 后、启动前挂载（课件里在 app 定义之后）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：先创建 app，再 import 两个 router 并 include_router 挂载——顺序是定义后挂载。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 把 Item 模型挪到 schema/item.py 的意义？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">减少内存</button>
+            <button class="quiz-option">只是换个地方写</button>
+            <button class="quiz-option">DTO 与路由解耦：模型可被多个路由/模块复用，职责清晰</button>
+            <button class="quiz-option">运行更快</button>
+          </div>
+          <div class="quiz-explain" hidden>分层意义：schema 层独立后，路由、服务、测试都能 import 同一份模型——避免定义散落与重复。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0002-优化包结构',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的代码把 <code>.env</code> 提交进了 git 仓库，里面还放了数据库密码。审查：按本课的环境变量管理方式，哪里错了？`,
+              source: '来源：渡一源课程《02.优化包结构》课件（.env/.env.example 模式）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `课件同时创建 <code>.env</code> 与 <code>.env.example</code> 的用意正是这个：<strong>.env 放真实值、进 .gitignore；.env.example 放字段模板、进仓库</strong>。AI 把真密钥提交后即视为泄露（轮换密钥 + 清理历史）。pydantic-settings 的 env_file 指向 .env——本地各持一份、仓库只留模板，这是配置管理的标准姿势。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `pydantic-settings 里 env_prefix 与 env_file 是怎么协作的？app_name 字段如何映射到 WEB_APP_NAME？`,
+              source: '来源：渡一源课程《02.优化包结构》课件（core/config.py）· 检索 2026-09-11 · 层级：一手（源课程）',
+              breakdown: `<code>model_config = {"env_file": ".env", "env_prefix": "WEB_"}</code>：读取时从 .env 文件加载键值对，字段 app_name 按前缀拼接成 <strong>WEB_APP_NAME</strong> 去匹配（大小写不敏感）。字段默认值（"Web Service API"）在环境变量缺失时兜底。这套机制让「环境差异」变成「配置差异」——开发/生产只换 .env，代码零改动。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的 FastAPI 项目：所有路由全堆在 main.py 一个文件里，已经 800 行。审查：本课的分层方案如何落地？`,
+              source: '来源：渡一源课程《02.优化包结构》课件（api/schema 分层）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `按课件四层落地：① 路由按领域拆到 <code>api/*.py</code>，每个文件一个 <code>APIRouter</code>（prefix 声明在路由器上）；② 模型进 <code>schema/*.py</code>（DTO 与路由解耦）；③ main.py 只保留 app 创建与 <code>include_router</code> 挂载清单——入口一眼看清全部路由；④ 配置进 core/。AI 生成代码的「单文件巨无霸」是重构第一课。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：为什么配置要分 CommonSettings 和 WebSettings 两个类？合并成一个不行吗？`,
+              source: '来源：渡一源课程《02.优化包结构》课件（core/config.py）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `课件把 <strong>environment</strong>（通用：所有应用都要知道开发/生产）与 <strong>app_name</strong>（应用专属）分开——理由是：通用配置会被多个应用/模块复用（后面章节的数据库配置也归 Common 系），应用专属配置各管各的。合并成一个类短期省事，但应用一多就出现「每个应用都重复定义 environment」的债。原则：<strong>跨应用共享的进 Common，应用独有的进专属 Settings</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `把第 1 章的应用重构为四层结构（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '按课件结构建 app/core、api、schema 三层 → core/config.py 配 pydantic-settings（env_file/.env.example 双文件）→ welcome/items 路由拆分 → include_router 挂载 → 启动验证 /docs 与 /items/{id}。',
+                accept: ['四层结构落地、路由前缀正确', '.env 与 .env.example 并存且功能正常', 'main.py 只做 app 创建与路由挂载'],
+              },
+              source: '任务基于《02.优化包结构》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：<code>uv add --package web-service pydantic-settings==2.14.1</code> → 建目录与 config.py → 路由文件各建 APIRouter → main.py import + include_router。坑：env_prefix 拼错会导致读不到配置（静默用默认值）；PYTHONDONTWRITEBYTECODE 要在 Makefile 里 export。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（02.优化包结构）</li>
+        <li><strong>深读推荐</strong>：<a href="https://docs.pydantic.dev/latest/concepts/pydantic_settings/">pydantic-settings 官方文档</a> · <a href="https://fastapi.tiangolo.com/tutorial/bigger-applications/">FastAPI 官方：Bigger Applications</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/优化包结构速查表.html">优化包结构速查表</a>——分层与配置一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/Web服务框架">01.Web服务框架</a> · 下一课 <a href="/agents/python-framework/初识SQLAlchemy">03.初识SQLAlchemy</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（跟随课堂完成示例程序 + 复述清单）。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

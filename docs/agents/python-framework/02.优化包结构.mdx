@@ -1,0 +1,261 @@
+---
+sidebar_position: 2
+title: '02. 优化包结构'
+description: "Python 框架课程 · 优化包结构：app/core/api/schema 分层、pydantic-settings 环境变量、DTO 与路由拆分、debugpy 断点调试。"
+displayed_sidebar: agentsFramework
+---
+
+# 优化包结构
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 重组包结构
+
+```
+apps/web-service/
+├── pyproject.toml
+├── app/												 # web应用
+│   ├── __init__.py
+│   ├── main.py                  # FastAPI 应用入口
+│   ├── core/                    # 核心基础设施
+│   │   └── __init__.py
+│   ├── api/                     # 路由层
+│   │   └── __init__.py
+│   └── schema/                 # Pydantic 请求/响应模型
+│        └── __init__.py
+├── test/											 # 测试脚本
+     └──  __init__.py
+```
+
+更新`Makefile`
+
+```makefile
+# Makefile
+
+.PHONY: dev
+
+dev:
+	export PYTHONDONTWRITEBYTECODE=1; \
+	uv run --package web-service fastapi dev apps/web-service/app/main.py --port 8080
+```
+
+## 使用环境变量
+
+创建`.env`、`.env.example`文件
+
+```yaml
+# web服务配置
+WEB_APP_NAME=渡一web服务
+```
+
+安装`pydantic-settings`
+
+```shell
+uv add --package web-service pydantic-settings==2.14.1
+```
+
+创建`core/config.py`
+
+```python
+from pydantic_settings import BaseSettings
+
+
+class CommonSettings(BaseSettings):
+    environment: str = "development"
+
+
+class WebSettings(BaseSettings):
+    app_name: str = "Web Service API"  # 实际读取 WEB_APP_NAME
+
+    # 配置读取方式
+    model_config = {
+        "env_file": ".env",  # env文件的位置
+        "env_prefix": "WEB_",  # 当前类中的字段使用的前缀
+    }
+
+
+common_settings = CommonSettings()
+web_settings = WebSettings()
+
+```
+
+修改`main.py`
+
+```python
+# ...
+
+from app.core.config import common_settings, web_settings
+
+app = FastAPI(
+    title=web_settings.app_name,
+    docs_url=None if common_settings.environment == "production" else "/docs",
+    redoc_url=None if common_settings.environment == "production" else "/redoc",
+    openapi_url=(
+        None if common_settings.environment == "production" else "/openapi.json"
+    ),
+)
+
+
+# ...
+```
+
+访问：http://127.0.0.1:8080/docs 试一试
+
+## 创建DTO
+
+```python
+# schema/item.py
+from pydantic import BaseModel, Field
+
+
+class Item(BaseModel):
+    item_id: int | None = Field(
+        default=None,
+        title="商品ID",
+        description="商品的唯一标识符，在创建商品时可忽略，系统会自动生成。",
+        ge=1,
+        examples=[1, 2, 3],
+    )
+
+    name: str = Field(
+        ...,
+        title="商品名称",
+        description="商品的显示名称，长度必须在2到10个字符之间。",
+        min_length=2,
+        max_length=10,
+        examples=["无线鼠标"],
+    )
+
+    price: float = Field(
+        default=0.0,
+        title="商品价格",
+        description="商品的销售价格，必须大于或等于0。",
+        ge=0.0,
+        examples=[19.99, 0.0, 100.5],
+    )
+
+```
+
+修改`main.py`
+
+## 使用路由
+
+`api/welcome.py`
+
+```python
+from fastapi import APIRouter
+
+router = APIRouter()
+
+
+@router.get("/", summary="Hello World", description="这是一个测试接口")
+async def read_root():
+    return {"Hello": "World"}
+
+```
+
+`api/items.py`
+
+```python
+from fastapi import APIRouter
+
+from app.schema.item import Item
+
+router = APIRouter(prefix="/items")
+
+
+@router.get("/{item_id}")
+def read_item(item_id: int, q: str | None = None):
+    return {"item_id": item_id, "q": q}
+
+
+@router.put("/{item_id}")
+def update_item(item_id: int, item: Item):
+    return {"item_name": item.name, "item_id": item_id}
+
+```
+
+`main.py`
+
+```python
+from fastapi import FastAPI
+from app.core.config import common_settings, web_settings
+
+app = FastAPI(
+    title=web_settings.app_name,
+    docs_url=None if common_settings.environment == "production" else "/docs",
+    redoc_url=None if common_settings.environment == "production" else "/redoc",
+    openapi_url=(
+        None if common_settings.environment == "production" else "/openapi.json"
+    ),
+)
+
+
+from app.api.welcome import router as welcome_router
+from app.api.items import router as items_router
+
+app.include_router(welcome_router)
+app.include_router(items_router)
+
+```
+
+## FastAPI插件
+
+安装`VSCode`的`FastAPI Extension`插件
+
+## 断点调试
+
+1. 使用`debugpy`启动`main.py`
+
+```shell
+# 安装 debugpy
+uv add --dev debugpy
+```
+
+```makefile
+# Makefile
+
+.PHONY: dev debug
+
+dev:
+	export PYTHONDONTWRITEBYTECODE=1; \
+	uv run --package web-service fastapi dev apps/web-service/app/main.py --port 8080
+
+debug:
+	export PYTHONDONTWRITEBYTECODE=1; \
+	uv run --package web-service python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m fastapi dev apps/web-service/app/main.py --port 8000
+```
+
+```shell
+# 启动调试服务器
+make debug
+```
+
+2. 启动调试客户端
+
+```json
+{
+  // 使用 IntelliSense 了解相关属性。
+  // 悬停以查看现有属性的描述。
+  // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to make run",
+      "type": "debugpy",
+      "request": "attach", // 使用附加模式
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      }
+    }
+  ]
+}
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0002-优化包结构.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/优化包结构速查表.html">📋 优化包结构速查表（可打印）</a>
