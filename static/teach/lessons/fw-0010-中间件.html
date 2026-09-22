@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 中间件：横切关注点与 AOP、统一响应信封、OpenAPI 信封改造、性能调试与 CORS——互动教学课程">
+  <title>中间件 · 互动教学课程（Python 框架 fw-10）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>中间件</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/中间件">10.中间件</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清横切关注点 / AOP / DI 与 FastAPI 中间件的关系</li>
+        <li>读通统一响应格式中间件：body_iterator 重拼、信封 code/data/message</li>
+        <li>说清 register_middleware 里「类走 add_middleware、函数走 app.middleware」的分派</li>
+        <li>讲出 CORS 白名单与 expose_headers 的配置要点（跨域本质）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《10.中间件》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>概念与中间件骨架</h3>
+        <ul class="pitfall-list">
+          <li><strong>横切关注点</strong>：跨越多个功能、可被横切的共同逻辑（响应格式/耗时/跨域/日志）</li>
+          <li><strong>AOP</strong>：把共同逻辑分离出去，不侵入功能本身；FastAPI 中间件是 AOP 的一种实现手段</li>
+          <li><strong>骨架</strong>：<code>async def mw(request, call_next): 前置 → response = await call_next(request) → 后置 → return</code></li>
+          <li>响应信封统一：成功 <code>{"code":"0","data":...,"message":"success"}</code>；失败 code 取错误码、data 为 None</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>三个中间件（课件）</h3>
+        <ul class="pitfall-list">
+          <li><strong>unified_response</strong>：仅处理 /api/ 路径；<code>response.body_iterator</code> 重拼 body；弹掉 content-length 防失真</li>
+          <li><strong>process_time</strong>：perf_counter 计时，写入 <code>X-Process-Time</code> 响应头</li>
+          <li><strong>cors</strong>：CORSMiddleware 类中间件——allow_origins 白名单、expose_headers 放行 X-Process-Time</li>
+          <li><strong>register_middleware</strong>：inspect.isclass 分派——类是 add_middleware，函数是 app.middleware("http")</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《10.中间件》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 横切关注点（Cross-Cutting Concerns）指的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数据库的横向扩展</button>
+            <button class="quiz-option">横向排列的代码风格</button>
+            <button class="quiz-option">跨越多个功能、可被横切的共同逻辑（响应格式、耗时、跨域等）</button>
+            <button class="quiz-option">函数调用链的深度</button>
+          </div>
+          <div class="quiz-explain" hidden>课件核心概念：横切关注点描述「跨越多个功能、可被横切的共同逻辑」——每个接口都要做的非业务逻辑就是它。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. AOP 与 FastAPI 中间件的关系是？（课件原文）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">AOP 主张把共同逻辑分离出去不侵入功能；FastAPI 中间件是 AOP 的一种实现手段</button>
+            <button class="quiz-option">两者完全无关</button>
+            <button class="quiz-option">AOP 是中间件的替代品</button>
+            <button class="quiz-option">中间件是 AOP 的唯一实现</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：AOP——将跨域多个功能、可被横切的共同逻辑分离出去，不侵入功能本身；FastAPI 的中间件是 AOP 的一种实现手段（DI 也是其一）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 中间件函数骨架里 call_next(request) 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">调用下一个函数并丢弃结果</button>
+            <button class="quiz-option">重发一个请求</button>
+            <button class="quiz-option">关闭服务器</button>
+            <button class="quiz-option">把请求传递给下一个中间件/路由处理，返回响应——前面是前置逻辑，后面是后置逻辑</button>
+          </div>
+          <div class="quiz-explain" hidden>课件骨架：response = await call_next(request)——洋葱模型的核心，调用前的代码是前置（如计时开始），调用后的代码是后置（如写响应头）。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. unified_response 为什么只处理 /api/ 开头的路径？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">信封格式只约束业务 API；/docs、/openapi.json 等协议路径保持原样</button>
+            <button class="quiz-option">写错了</button>
+            <button class="quiz-option">性能考虑</button>
+            <button class="quiz-option">/api/ 以外的路径不存在</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：if not request.url.path.startswith("/api/"): return response——文档页/静态资源等非业务路径不包信封，否则 Swagger UI 等会渲染失败。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 为什么要重拼 body_iterator 并弹掉 content-length？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了加密响应</button>
+            <button class="quiz-option">body_iterator 有 bug</button>
+            <button class="quiz-option">为了绕过缓存</button>
+            <button class="quiz-option">新信封改变了 body 内容与长度——旧 content-length 会导致响应体截断或协议错误</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：body = b"" + async for chunk in response.body_iterator；headers.pop("content-length", None)——body 被包进信封后长度变了，必须重算（FastAPI 会为 JSONResponse 重新计算），否则客户端按旧长度读会截断。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. register_middleware 里 inspect.isclass 分派是怎么回事？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">随机分派</button>
+            <button class="quiz-option">类中间件（CORSMiddleware）走 add_middleware；函数中间件走 app.middleware("http") 装饰</button>
+            <button class="quiz-option">只支持类中间件</button>
+            <button class="quiz-option">判断是不是 Python 内置类</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 __init__.py：for callable_obj, kwargs in MIDDLEWARES——inspect.isclass 为真走 app.add_middleware(callable_obj, **kwargs)（Starlette 类中间件）；否则 app.middleware("http")(callable_obj)（函数中间件）。一个注册表统一两种形态。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 失败响应（>=400）的信封里，code 和 message 从哪里来？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">从数据库查询</button>
+            <button class="quiz-option">随机生成</button>
+            <button class="quiz-option">从 ch09 全局异常处理器已包好的 {"code","message"} 里解析（err.get），读不到才回退状态码字符串</button>
+            <button class="quiz-option">写死 500</button>
+          </div>
+          <div class="quiz-explain" hidden>课件代码：err = json.loads(body) if body else {}；code=err.get("code", str(status_code))、message=err.get("message", "")——与 ch09 的响应 {"code","message"} 无缝衔接，信封只补 data=None。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. setup_openapi 为什么要改造 OpenAPI 文档里的响应 schema？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了文档好看</button>
+            <button class="quiz-option">不需要改，可以直接删</button>
+            <button class="quiz-option">实际响应已包信封，文档 schema 必须同步包上 code/data/message，否则前后端契约对不上</button>
+            <button class="quiz-option">OpenAPI 有 bug</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 openapi.py：monkeypatch app.openapi——遍历 /api/ 路径的 200/201 响应，把原 schema 包进 ApiResponse_{Name} 信封（$ref 复用不重复生成）。中间件只改运行时，不改文档的话前端按文档生成的客户端拿不到 data 字段。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. CORS 配置里 expose_headers 为什么要把 X-Process-Time 列进去？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">跨域响应头默认对前端不可见——不 expose，前端 JS 读不到 process_time 中间件写的头</button>
+            <button class="quiz-option">为了加密</button>
+            <button class="quiz-option">X-Process-Time 会自动可见</button>
+            <button class="quiz-option">跟跨域无关，纯装饰</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 cors.py：expose_headers = 配置按逗号拆分——浏览器的 CORS 规则：跨域响应只有 CORS-safelisted 头（Content-Type 等少数）对 JS 可见，自定义头必须出现在 Access-Control-Expose-Headers 里。前端要显示接口耗时就必须把 X-Process-Time 放行。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0010-中间件',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的统一响应中间件：不管什么路径都包信封——结果 Swagger 文档页打不开、favicon 404、前端下载接口返回 JSON 的 code/data/message。按本课做法，哪里漏了？`,
+              source: '来源：FastAPI 官方文档 Middleware（"there's a simpler way ... you use app.add_middleware() ... makes sure that the internal middlewares handle server errors and custom exception handlers work properly"）https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《10.中间件》课件 unified_response',
+              breakdown: `漏了课件的<strong>路径守卫</strong>：<code>if not request.url.path.startswith("/api/"): return response</code>。信封只属于业务 API 契约——/docs、/openapi.json、静态资源、文件下载（非 JSON 响应）都不该被包。更隐蔽的第二坑：<strong>自定义函数中间件与内置异常处理器的顺序</strong>——官方文档明确建议用 add_middleware 保证「内置中间件处理服务端错误、自定义异常处理器正常工作」；AI 用 app.middleware("http") 手动注册时若不注意注册顺序，ch09 的全局异常处理器可能收不到异常（中间件先把它吞成 500 信封）。审查点：① 有没有路径守卫；② 中间件与异常处理器的兼容性。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `unified_response 里为什么要手动重拼 body_iterator？直接改 response.body 不行吗？`,
+              source: '来源：FastAPI 官方文档 Middleware（BaseHTTPMiddleware 风格的 call_next 流程与响应处理）https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《10.中间件》课件（body_iterator 重拼 + 弹 content-length）',
+              breakdown: `FastAPI 中间件里 <code>await call_next(request)</code> 返回的 Response 多数是 <strong>StreamingResponse 实现</strong>——body 不在内存里，而是按需从 body_iterator 逐块产出。所以「读原 body → 包信封 → 重建 JSONResponse」的标准姿势就是课件那三行：<code>async for chunk in response.body_iterator: body += chunk</code>。配套两个细节：① <strong>弹掉 content-length</strong>——包了信封 body 变长，旧头会让客户端按错误长度截断（JSONResponse 会自己重算）；② 复制 headers 再弹，<strong>不要修改原响应对象</strong>（可能被后续中间件复用）。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的中间件注册：三个中间件直接堆在 main.py 里，顺序是 cors → response → process_time，其中 cors 用 app.add_middleware 其余用 app.middleware("http") 手动加。审查这段代码的问题。`,
+              source: '来源：FastAPI 官方文档 Middleware（add_middleware 保证内部中间件与异常处理器正常工作；"the order of the middlewares matters"）https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《10.中间件》课件 register_middleware',
+              breakdown: `三个问题：<strong>① 注册方式不统一</strong>——课件把两种形态收进 MIDDLEWARES 注册表，register_middleware 按 isclass 分派（类走 add_middleware、函数走 app.middleware），main.py 只调一行；AI 的写法让注册顺序散落在三个调用点，读代码要数顺序。 <strong>② 顺序语义</strong>——最后 add_middleware 的中间件在最外层：AI 的 cors 在 response 之前注册，意味着 cors 是外层、response 是内层，响应从内到外先包信封再做 CORS 头——通常是对的，但要意识到这是「最后注册=最外层」的约定，排错时别想反。 <strong>③ 官方建议</strong>——自定义中间件也走 add_middleware（包成类），保证与内置错误处理中间件、异常处理器的协作顺序；AI 混用手动装饰注册是踩官方警告的写法。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：团队想把所有接口的响应统一成 {"code","data","message"}，你会怎么落地？中间件改了响应，API 文档怎么办？`,
+              source: '来源：渡一源课程《10.中间件》课件（unified_response + setup_openapi 信封 schema 改造）· FastAPI 官方文档 Middleware https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `落地三步（课件方案）：<strong>① 运行时</strong>——unified_response 中间件统一包信封：成功 code="0"、失败从 ch09 异常处理器的 {"code","message"} 里取（err.get 回退），只补 data 字段；<strong>② 契约文档</strong>——setup_openapi monkeypatch app.openapi，遍历 /api/ 的 200/201 响应把原 schema 包成 ApiResponse_{Name}（$ref 去重、数组包 List 变体）——运行时与文档必须同步，否则前端按文档生成的客户端解不出 data；<strong>③ 配置化</strong>——路径守卫 /api/ 前缀保证文档页与静态资源不受影响。设计要点：<strong>信封是接口契约的一部分，中间件只是它的运行时执行者，OpenAPI 是它的文档投影——单一事实、两处同步</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `跑通本章三个中间件（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '覆盖 ch10 的 core/middleware/ 与 openapi.py → 启动服务 → curl 验证：① 正常接口返回 {"code":"0","data":...,"message":"success"} ② 404 业务场景返回信封版 code=404001 ③ 响应头有 X-Process-Time ④ /docs 正常打开且响应 schema 已包 ApiResponse_ 信封 ⑤ 配置 WEB_CORS_ORIGINS 后预检请求通过。',
+                accept: ['成功/失败响应均为 code/data/message 信封', 'X-Process-Time 头存在且浏览器侧可见（expose_headers）', '/docs 可打开且文档 schema 含信封', 'CORS 预检 OPTIONS 返回正确的 Allow-Origin'],
+              },
+              source: '任务基于《10.中间件》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：覆盖代码后在 main.py 里加 register_middleware(app) 与 setup_openapi(app) 两行；curl 加 -i 看头。坑：X-Process-Time 的「浏览器可见」要用 CORS 场景验证（非跨域请求没有 expose 问题）；/docs 打不开时先查路径守卫是否生效；信封后的 /openapi.json 应能看到 ApiResponse_ProductResponse 这类 wrapper schema。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（10.中间件）</li>
+        <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/advanced/middleware/">FastAPI 官方：Middleware（含 CORS）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/中间件速查表.html">中间件速查表</a>——骨架、三中间件、注册分派一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/统一异常处理">09.统一异常处理</a> · 下一课 <a href="/agents/python-framework/测试框架">11.测试框架</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以三个中间件全部生效并通过 CORS 预检为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+---
+sidebar_position: 10
+title: '10. 中间件'
+description: "Python 框架课程 · 中间件：横切关注点与 AOP、统一响应格式中间件、OpenAPI 信封改造、性能调试与 CORS 跨域中间件。"
+displayed_sidebar: agentsFramework
+---
+
+# 中间件
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 核心概念
+
+- **横切关注点（Cross-Cutting Concerns）**：描述了跨越多个功能、可被横切的共同逻辑的现象
+- **AOP（Aspect Oriented Programming）**：应该将那些跨域多个功能、可被横切的共同逻辑分离出去，不侵入功能本身
+- **DI**：AOP的一种实现手段
+
+## 理解中间件
+
+FastAPI的中间件是AOP的一种实现手段
+
+```python
+async def my_middleware(request: Request, call_next):
+  	# 操作...
+    response = await call_next(request) # 传递给下一个中间件
+    # 操作...
+    return xxx
+  
+app.middleware("http")(my_middleware)
+```
+
+![image-20260622134925991](https://resource.duyiedu.com/yuanjin/202606221349147.png)
+
+## 统一响应格式中间件
+
+`apps/web-service/app/core/middleware/response.py`
+
+```python
+import json
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+
+async def unified_response(request: Request, call_next):
+    response = await call_next(request)
+
+    if not request.url.path.startswith("/api/"):
+        return response
+
+    body = b""
+    async for chunk in response.body_iterator:
+        body += chunk
+
+    headers = dict(response.headers)
+    headers.pop("content-length", None)
+
+    if response.status_code >= 400:
+        err = json.loads(body) if body else {}
+        return JSONResponse(
+            content={
+                "code": err.get("code", str(response.status_code)),
+                "data": None,
+                "message": err.get("message", ""),
+            },
+            status_code=response.status_code,
+            headers=headers,
+        )
+
+    data = json.loads(body) if body else None
+
+    return JSONResponse(
+        content={"code": "0", "data": data, "message": "success"},
+        status_code=response.status_code,
+        headers=headers,
+    )
+
+
+MIDDLEWARE = (unified_response, {})
+
+```
+
+`apps/web-service/app/core/middleware/__init__.py`
+
+```python
+import inspect
+
+from fastapi import FastAPI
+
+from app.core.middleware import response
+
+MIDDLEWARES = [
+    response.MIDDLEWARE
+]
+
+
+def register_middleware(app: FastAPI) -> None:
+    for callable_obj, kwargs in MIDDLEWARES:
+        if inspect.isclass(callable_obj):
+            app.add_middleware(callable_obj, **kwargs)
+        else:
+            app.middleware("http")(callable_obj)
+
+```
+
+`apps/web-service/app/main.py`
+
+```python
+from app.core.middleware import register_middleware
+
+register_middleware(app)
+```
+
+`apps/web-service/app/core/openapi.py`
+
+```python
+from fastapi import FastAPI
+
+
+def _build_envelope_properties(data_schema: dict) -> dict:
+    return {
+        "code": {
+            "type": "string",
+            "description": "状态码，0 表示成功",
+            "example": "0",
+        },
+        "data": data_schema,
+        "message": {
+            "type": "string",
+            "description": "提示信息",
+            "example": "success",
+        },
+    }
+
+
+def _make_envelope(data_schema: dict) -> dict:
+    return {
+        "type": "object",
+        "properties": _build_envelope_properties(data_schema),
+        "required": ["code", "data", "message"],
+    }
+
+
+def _wrap_ref_schema(openapi_schema: dict, schema: dict) -> dict:
+    ref_path: str = schema["$ref"]
+    ref_name = ref_path.split("/")[-1]
+
+    title = ref_name.replace("_", " ")
+    wrapper_name = f"ApiResponse_{ref_name}"
+
+    schemas = openapi_schema.setdefault("components", {}).setdefault("schemas", {})
+    if wrapper_name not in schemas:
+        schemas[wrapper_name] = {
+            "title": f"ApiResponse[{title}]",
+            "type": "object",
+            "properties": _build_envelope_properties(schema),
+            "required": ["code", "data", "message"],
+        }
+
+    return {"$ref": f"#/components/schemas/{wrapper_name}"}
+
+
+def _wrap_array_schema(openapi_schema: dict, schema: dict) -> dict:
+    items = schema.get("items")
+    if isinstance(items, dict) and "$ref" in items:
+        item_name = items["$ref"].split("/")[-1]
+        title = f"List[{item_name.replace('_', ' ')}]"
+        wrapper_name = f"ApiResponse_List_{item_name}"
+
+        schemas = openapi_schema.setdefault("components", {}).setdefault("schemas", {})
+        if wrapper_name not in schemas:
+            schemas[wrapper_name] = {
+                "title": f"ApiResponse[{title}]",
+                "type": "object",
+                "properties": _build_envelope_properties(schema),
+                "required": ["code", "data", "message"],
+            }
+
+        return {"$ref": f"#/components/schemas/{wrapper_name}"}
+
+    return _make_envelope(schema)
+
+
+def setup_openapi(app: FastAPI) -> None:
+    _original = app.openapi
+
+    def _custom():
+        if app.openapi_schema:
+            return app.openapi_schema
+
+        schema = _original()
+
+        for path, path_item in schema.get("paths", {}).items():
+            if not path.startswith("/api/"):
+                continue
+
+            for method in ("get", "post", "put", "delete", "patch"):
+                operation = path_item.get(method)
+                if operation is None:
+                    continue
+
+                responses = operation.get("responses", {})
+                for status_code_str, response in list(responses.items()):
+                    status_code = int(status_code_str)
+                    if status_code not in (200, 201):
+                        del responses[status_code_str]
+                        continue
+
+                    content = response.get("content", {})
+                    json_content = content.get("application/json")
+                    if json_content is None:
+                        continue
+
+                    original_schema = json_content.get("schema")
+                    if original_schema is None:
+                        continue
+
+                    if "$ref" in original_schema:
+                        wrapped = _wrap_ref_schema(schema, original_schema)
+                    elif original_schema.get("type") == "array":
+                        wrapped = _wrap_array_schema(schema, original_schema)
+                    else:
+                        wrapped = _make_envelope(original_schema)
+
+                    json_content["schema"] = wrapped
+
+        app.openapi_schema = schema
+        return schema
+
+    app.openapi = _custom
+
+```
+
+`apps/web-service/app/main.py`
+
+```python
+from app.core.openapi import setup_openapi
+
+setup_openapi(app)
+```
+
+## 用于性能调试的中间件
+
+`apps/web-service/app/core/middleware/process_time.py`
+
+```python
+import time
+
+from fastapi import Request
+
+
+async def process_time(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    response.headers["X-Process-Time"] = str(round(time.perf_counter() - start, 4))
+    return response
+
+
+MIDDLEWARE = (process_time, {})
+
+```
+
+## 用于解决跨域的中间件
+
+`.env.example / .env`
+
+```python
+# 其他配置
+WEB_CORS_ORIGINS=* # 跨域白名单，多个来源用逗号分隔，* 表示允许所有
+WEB_CORS_EXPOSE_HEADERS=X-Process-Time # 允许前端读取的响应头，多个用逗号分隔
+
+# 其他配置
+```
+
+`apps/web-service/app/core/config.py`
+
+```python
+class _WebSettings(_BaseSettingsWithEnv):
+    app_name: str = "Web Service API"  # 实际读取 WEB_APP_NAME
+    cors_origins: str = ""  # 实际读取 WEB_CORS_ORIGINS，多个来源用逗号分隔
+    cors_expose_headers: str = ""  # 实际读取 WEB_CORS_EXPOSE_HEADERS
+
+    # 配置读取方式
+    model_config = {"env_prefix": "WEB_"}
+```
+
+`apps/web-service/app/core/middleware/cors.py`
+
+```python
+from starlette.middleware.cors import CORSMiddleware
+
+from app.core.config import web_settings
+
+origins = [o.strip() for o in web_settings.cors_origins.split(",") if o.strip()]
+expose_headers = [
+    h.strip() for h in web_settings.cors_expose_headers.split(",") if h.strip()
+]
+
+MIDDLEWARE = (
+    CORSMiddleware,
+    {
+        "allow_origins": origins,
+        "allow_credentials": True,
+        "allow_methods": ["*"],
+        "allow_headers": ["*"],
+        "expose_headers": expose_headers,
+    },
+)
+
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0010-中间件.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/中间件速查表.html">📋 中间件速查表（可打印）</a>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>中间件速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>中间件速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0010-中间件.html">《中间件互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>概念与骨架</h2>
+      <dl class="term-grid">
+        <dt>横切关注点</dt>
+        <dd>跨越多个功能、可被横切的共同逻辑。</dd>
+        <dt>AOP</dt>
+        <dd>把共同逻辑分离出去，不侵入功能本身；FastAPI 中间件是其实现手段。</dd>
+        <dt>骨架</dt>
+        <dd>前置 → response = await call_next(request) → 后置 → return。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>三个中间件</h2>
+      <table class="cmp-table">
+        <tr><th>中间件</th><th>形态</th><th>要点</th></tr>
+        <tr><td>unified_response</td><td>函数</td><td>只包 /api/；重拼 body_iterator；弹 content-length；成功 code="0"，失败取异常处理器的 code/message</td></tr>
+        <tr><td>process_time</td><td>函数</td><td>perf_counter 计时写 X-Process-Time 响应头</td></tr>
+        <tr><td>cors</td><td>类</td><td>CORSMiddleware：allow_origins 白名单、expose_headers 放行自定义头</td></tr>
+      </table>
+      <pre>def register_middleware(app):
+    for callable_obj, kwargs in MIDDLEWARES:
+        if inspect.isclass(callable_obj):
+            app.add_middleware(callable_obj, **kwargs)  # 类中间件
+        else:
+            app.middleware("http")(callable_obj)        # 函数中间件</pre>
+    </section>
+
+    <section>
+      <h2>信封与文档同步</h2>
+      <dl class="term-grid">
+        <dt>成功信封</dt>
+        <dd>{"code": "0", "data": ..., "message": "success"}</dd>
+        <dt>失败信封</dt>
+        <dd>{"code": 业务码, "data": None, "message": 错误消息}</dd>
+        <dt>文档同步</dt>
+        <dd>setup_openapi 把 200/201 响应 schema 包成 ApiResponse_{Name}（$ref 复用、数组包 List 变体）。</dd>
+        <dt>顺序约定</dt>
+        <dd>最后注册的中间件在最外层。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>
