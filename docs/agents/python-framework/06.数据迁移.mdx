@@ -1,0 +1,210 @@
+---
+sidebar_position: 6
+title: '06. 数据迁移'
+description: "Python 框架课程 · 数据迁移：Alembic 初始化与 env.py 配置、autogenerate 生成迁移、upgrade/downgrade 回滚、迁移禁区与日常开发流程。"
+displayed_sidebar: agentsFramework
+---
+
+# 数据迁移
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 目前的问题
+
+1. 如何才能保证过往数据不被删除？
+2. 生产环境、测试环境、开发环境的数据库表结构如何同步？
+3. 如何才能回滚到之前的表结构？
+
+## 准备工作
+
+删除数据库
+
+```sql
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+```
+
+删除`model/main.py`
+
+## 使用alembic
+
+### 安装
+
+```shell
+uv add --package web-service alembic==1.18.4 psycopg2-binary==2.9.12
+```
+
+### 初始化
+
+```shell
+cd apps/web-service && uv run alembic init migrations
+```
+
+### 配置
+
+`app/model/__init__.py`
+
+```python
+from app.model import product  # noqa
+from app.model import category  # noqa
+from app.model import sku  # noqa
+```
+
+`apps/web-service/migrations/env.py`
+
+```python
+from logging.config import fileConfig
+
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+
+from alembic import context
+
+# 从项目配置中读取数据库连接信息
+from app.core.config import db_settings
+# 导入模型（通过 __init__.py 触发所有模型注册到 Base.metadata）
+from app.model.base import Base
+
+# Alembic 配置对象，用于读取 alembic.ini
+config = context.config
+
+# 配置 Python 日志（读取 alembic.ini 中的 [loggers] 配置）
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# 用项目配置覆盖 alembic.ini 中的 sqlalchemy.url
+# 使用同步驱动 postgresql://（不需要 +asyncpg）
+config.set_main_option("sqlalchemy.url",
+    f"postgresql://{db_settings.user}:{db_settings.password}@{db_settings.host}:{db_settings.port}/{db_settings.name}")
+
+# 告诉 Alembic 你的模型元数据，用于自动生成迁移
+target_metadata = Base.metadata
+
+# 其他配置项可通过 config.get_main_option() 获取
+
+
+def run_migrations_offline() -> None:
+    """离线模式执行迁移（只生成 SQL 脚本，不连接数据库）"""
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    """在线模式执行迁移（直接连接数据库执行）"""
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+
+```
+
+```makefile
+# Makefile
+
+.PHONY: dev debug db-migrate db-upgrade db-downgrade
+
+dev:
+	export PYTHONDONTWRITEBYTECODE=1; \
+	uv run --package web-service fastapi dev apps/web-service/app/main.py --port 8080
+
+debug:
+	export PYTHONDONTWRITEBYTECODE=1; \
+	uv run --package web-service python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m fastapi dev apps/web-service/app/main.py --port 8000
+
+db-migrate:
+	uv run --package web-service alembic -c apps/web-service/alembic.ini revision --autogenerate -m "$(message)"
+
+db-upgrade:
+	uv run --package web-service alembic -c apps/web-service/alembic.ini upgrade head
+
+db-downgrade:
+	uv run --package web-service alembic -c apps/web-service/alembic.ini downgrade $(version)
+```
+
+### 执行命令
+
+```shell
+# 生成迁移脚本
+make db-migrate message="init"
+
+# 执行迁移
+make db-upgrade
+
+# 执行回滚
+make db-downgrade version=-1         # 回退一步
+make db-downgrade version=abc123     # 回退到指定版本
+```
+
+## 最佳实践
+
+### 禁区
+
+1. 手动修改数据库
+2. 修改已执行过的迁移
+
+记住：`迁移脚本执行完 == 本地数据库的最新状态 == 生产数据库的最新状态`
+
+### 日常开发
+
+1. 改动模型
+2. 生成迁移脚本
+3. 审查迁移脚本（可使用AI）
+   - 是否会导致数据丢失
+   - 回滚和迁移是否互逆
+4. 执行迁移
+
+### 常见问题
+
+**如果发现某（几）次迁移有问题，同时这几次迁移已经执行过了，此时该怎么办？**
+
+迁移有问题，同时迁移又执行过了，那说明目前的表结构就有问题。此时应该生成新的迁移脚本。让新的迁移适配现在的模型结构。审核过后，再重新执行迁移。
+
+不建议修改和删除之前的迁移。
+
+应该把迁移脚本看作是一个常量，一旦执行后，它就永远不可变更。
+
+**如果某次迁移的执行失败了怎么办？**
+
+根据错误信息查看是哪个脚本执行失败，修复它重新运行即可。
+
+**什么时候我应该使用回滚？**
+
+尽量不要使用回滚，因为回滚会造成数据库的表结构跟目前的模型结构不一致。可能解决了一个Bug，带来了更多的Bug。
+
+如果确实需要回滚。一定要记得回滚过后，和当前的模型状态不一致的问题。你可以重新执行迁移，达到一致状态。或者是重新生成新的迁移，然后再执行。
+
+始终记住，表结构和模型状态不一致，最多允许它是一个暂时状态，绝对不能允许它是一个长期状态。
+
+## 作业
+
+回答以下问题：
+
+数据迁移解决了什么问题？
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0006-数据迁移.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/数据迁移速查表.html">📋 数据迁移速查表（可打印）</a>

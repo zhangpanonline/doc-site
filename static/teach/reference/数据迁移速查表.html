@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数据迁移速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>数据迁移速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0006-数据迁移.html">《数据迁移互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>三命令</h2>
+      <table class="cmp-table">
+        <tr><th>命令</th><th>底层</th><th>作用</th></tr>
+        <tr><td>make db-migrate message="init"</td><td>alembic revision --autogenerate</td><td>对比模型与数据库，生成候选迁移脚本</td></tr>
+        <tr><td>make db-upgrade</td><td>alembic upgrade head</td><td>执行迁移到最新版本</td></tr>
+        <tr><td>make db-downgrade version=-1</td><td>alembic downgrade -1</td><td>回退一步 / 回退到指定版本</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>env.py 配置要点</h2>
+      <pre>from app.core.config import db_settings
+from app.model.base import Base
+
+config.set_main_option("sqlalchemy.url",
+    f"postgresql://{db_settings.user}:{db_settings.password}@"
+    f"{db_settings.host}:{db_settings.port}/{db_settings.name}")
+
+target_metadata = Base.metadata   # autogenerate 对比基准</pre>
+      <ul class="pitfall-list">
+        <li>迁移用同步驱动 <code>postgresql://</code>（不需要 +asyncpg）</li>
+        <li>模型必须经 <code>app/model/__init__.py</code> 显式 import，否则生成空迁移</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>红线与流程</h2>
+      <dl class="term-grid">
+        <dt>禁区 1</dt>
+        <dd>手动修改数据库。</dd>
+        <dt>禁区 2</dt>
+        <dd>修改已执行过的迁移（脚本是常量，执行后永远不可变更）。</dd>
+        <dt>等式</dt>
+        <dd>迁移脚本执行完 == 本地最新状态 == 生产最新状态。</dd>
+        <dt>日常四步</dt>
+        <dd>改动模型 → 生成迁移 → 审查（数据丢失？迁移与回滚互逆？）→ 执行。</dd>
+        <dt>已执行的有问题</dt>
+        <dd>生成新迁移适配模型，审核后执行；不改不删历史迁移。</dd>
+        <dt>执行失败</dt>
+        <dd>看错误信息定位脚本，修复后重新运行。</dd>
+        <dt>回滚</dt>
+        <dd>尽量不用（结构≠模型带来更多 Bug）；不一致最多允许暂时，绝不能长期。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

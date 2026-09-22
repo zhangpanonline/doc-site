@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 数据迁移：Alembic 三大命令、env.py 配置、autogenerate 原理、迁移禁区与回滚哲学——互动教学课程">
+  <title>数据迁移 · 互动教学课程（Python 框架 fw-06）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>数据迁移</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/数据迁移">06.数据迁移</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出数据迁移解决的三个问题（数据保留 / 多环境同步 / 可回滚）</li>
+        <li>跑通 Alembic 三大命令：db-migrate（生成）/ db-upgrade（执行）/ db-downgrade（回滚）</li>
+        <li>说清 env.py 里 target_metadata 与 sqlalchemy.url 覆盖的作用</li>
+        <li>背下两条禁区，并按「改模型 → 生成 → 审查 → 执行」四步走日常开发</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《06.数据迁移》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>Alembic 三命令（Makefile 封装）</h3>
+        <ul class="pitfall-list">
+          <li><strong>db-migrate</strong>：<code>alembic revision --autogenerate -m "init"</code>——对比模型与数据库生成候选迁移脚本</li>
+          <li><strong>db-upgrade</strong>：<code>alembic upgrade head</code>——执行到最新版本</li>
+          <li><strong>db-downgrade</strong>：<code>downgrade -1</code> 回退一步 / <code>downgrade abc123</code> 回退到指定版本</li>
+          <li>env.py 关键：<code>target_metadata = Base.metadata</code>（autogenerate 的对比基准）+ 项目配置覆盖 alembic.ini 的 <code>sqlalchemy.url</code>（同步驱动 postgresql://）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>红线与流程（课件要点）</h3>
+        <ul class="pitfall-list">
+          <li><strong>两条禁区</strong>：手动修改数据库；修改已执行过的迁移</li>
+          <li><strong>等式</strong>：迁移脚本执行完 == 本地数据库最新状态 == 生产数据库最新状态</li>
+          <li><strong>日常四步</strong>：改动模型 → 生成迁移脚本 → 审查（是否丢数据、回滚与迁移是否互逆）→ 执行</li>
+          <li><strong>回滚哲学</strong>：尽量不用（表结构≠模型状态会带来更多 Bug）；不一致最多允许是暂时状态，绝不能是长期状态</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《06.数据迁移》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. 数据迁移解决了什么问题？（作业题）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">加快数据库查询速度</button>
+            <button class="quiz-option">自动生成业务代码</button>
+            <button class="quiz-option">备份数据库文件</button>
+            <button class="quiz-option">过往数据不被删除、多环境表结构同步、能回滚到之前结构</button>
+          </div>
+          <div class="quiz-explain" hidden>课件开头三个问题：① 保证过往数据不被删除；② 生产/测试/开发环境表结构同步；③ 能回滚到之前的表结构。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 生成迁移脚本、执行迁移、执行回滚分别对应哪个 Makefile 目标？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">db-upgrade / db-migrate / db-downgrade</button>
+            <button class="quiz-option">db-downgrade / db-upgrade / db-migrate</button>
+            <button class="quiz-option">db-migrate / db-upgrade / db-downgrade</button>
+            <button class="quiz-option">都是 db-upgrade</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 Makefile：db-migrate 生成（revision --autogenerate）、db-upgrade 执行（upgrade head）、db-downgrade 回滚（downgrade 版本号）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. autogenerate 生成迁移脚本的底层命令是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">alembic revision --autogenerate -m "init"</button>
+            <button class="quiz-option">alembic backup -m "init"</button>
+            <button class="quiz-option">alembic create table</button>
+            <button class="quiz-option">alembic export schema</button>
+          </div>
+          <div class="quiz-explain" hidden>课件执行命令：make db-migrate message="init" 内部就是 alembic revision --autogenerate -m "init"。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. env.py 里 target_metadata = Base.metadata 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">定义表的主键</button>
+            <button class="quiz-option">设置数据库连接密码</button>
+            <button class="quiz-option">开启日志输出</button>
+            <button class="quiz-option">告诉 Alembic 模型元数据，作为 autogenerate 对比的目标结构</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释：「告诉 Alembic 你的模型元数据，用于自动生成迁移」——autogenerate 拿它和数据库当前结构做对比，差异变成候选迁移。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 课件里为什么把 alembic.ini 的 sqlalchemy.url 改成从项目配置读取？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只是个人习惯，无实际意义</button>
+            <button class="quiz-option">连接信息统一走 config，避免硬编码；并用同步驱动 postgresql://（迁移不需要 asyncpg）</button>
+            <button class="quiz-option">为了跑得更快</button>
+            <button class="quiz-option">因为 alembic.ini 不支持 URL</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 env.py：config.set_main_option("sqlalchemy.url", ...) 用 db_settings 覆盖 ini——环境切换只改 .env；注释说明迁移用同步驱动 postgresql://（不需要 +asyncpg）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 课件「日常开发」四步中，审查迁移脚本要检查哪两点？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">脚本大小是否超过 1KB；命名是否驼峰</button>
+            <button class="quiz-option">是否会导致数据丢失；回滚和迁移是否互逆</button>
+            <button class="quiz-option">不用审查，直接执行</button>
+            <button class="quiz-option">代码风格是否统一；缩进是否 4 空格</button>
+          </div>
+          <div class="quiz-explain" hidden>课件日常开发第 3 步：审查迁移脚本（可使用 AI）——① 是否会导致数据丢失；② 回滚和迁移是否互逆。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 某次迁移有问题但已经执行过了，怎么办？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">手动改数据库表结构</button>
+            <button class="quiz-option">生成新迁移适配现在的模型结构，审核后执行；不修改不删除历史迁移</button>
+            <button class="quiz-option">直接改掉那次有问题的迁移脚本</button>
+            <button class="quiz-option">删掉那次迁移文件</button>
+          </div>
+          <div class="quiz-explain" hidden>课件常见问题：迁移执行过说明表结构已有问题——生成新迁移让表结构适配模型，审核后执行。迁移脚本是常量，一旦执行永远不可变更。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 什么时候应该使用回滚？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">尽量不用——回滚后表结构与模型状态不一致，可能解决一个 Bug 带来更多 Bug</button>
+            <button class="quiz-option">每次发布都要回滚一次</button>
+            <button class="quiz-option">每天定时回滚</button>
+            <button class="quiz-option">数据库慢的时候回滚</button>
+          </div>
+          <div class="quiz-explain" hidden>课件常见问题：尽量不回滚（结构≠模型不一致）；确需回滚后要么重跑迁移回到一致、要么生成新迁移再执行。不一致最多允许是暂时状态，绝不能是长期状态。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 某次迁移执行失败了，怎么处理？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">立刻回滚数据库到出厂设置</button>
+            <button class="quiz-option">跳过失败继续跑后面的</button>
+            <button class="quiz-option">根据错误信息定位失败脚本，修复后重新运行</button>
+            <button class="quiz-option">重装数据库</button>
+          </div>
+          <div class="quiz-explain" hidden>课件常见问题：「根据错误信息查看是哪个脚本执行失败，修复它重新运行即可。」</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0006-数据迁移',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 改了模型（给 product 表加了一个列），然后直接把代码部署上线，没有生成迁移。本地开发环境看着一切正常，生产数据库一查报错：column "xxx" does not exist。按本课知识，问题出在哪一步？`,
+              source: '来源：Alembic 官方教程（"Alembic provides for the creation, management, and invocation of change management scripts for a relational database, using SQLAlchemy as the underlying engine"）https://alembic.sqlalchemy.org/en/latest/tutorial.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《06.数据迁移》课件禁区',
+              breakdown: `模型改了 ≠ 数据库变了。表结构的唯一推进方式是<strong>迁移脚本</strong>：改模型 → 生成迁移 → 审查 → 执行（课件日常开发四步）。AI 跳过的是第 2/4 步。课件两条禁区第一条就是「手动修改数据库」——直接把代码部署上去等于让 ORM 期望的结构和数据库实际结构脱节。记住课件等式：<strong>迁移脚本执行完 == 本地数据库最新状态 == 生产数据库最新状态</strong>。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `autogenerate 是怎么「自动」生成迁移的？它有什么探测不了、必须人工处理的场景？`,
+              source: '来源：Alembic 官方文档 Auto Generating Migrations（"Alembic can view the status of the database ... and compare against the table metadata in the application (your ORM which defines the proposed schema), generating the "obvious" migrations based on a comparison. This is achieved using the --autogenerate option"；该页有专节 "What does Autogenerate Detect (and what does it not detect?)"）https://alembic.sqlalchemy.org/en/latest/autogenerate.html · 检索 2026-09-22 · 层级：一手（官方文档）',
+              breakdown: `原理：<strong>对比数据库当前状态与 Base.metadata</strong>（env.py 的 target_metadata 就是对比基准），差异变成「候选迁移」写进新脚本。 官方文档明确列出探测边界：能探测<strong>明显的</strong>变更（新增表/列、删除、类型变更、外键与索引等）；<strong>表重命名、列重命名探测不了</strong>——它只会生成「删旧表 + 建新表」，对生产就是数据全丢。所以课件日常开发第 3 步是硬性的：<strong>审查迁移脚本（可用 AI）</strong>——查数据丢失与互逆，官方文档也要求 "We review and modify these by hand as needed"。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 生成了一段迁移：把 sku.stock 列的类型从 int 改成 varchar，并删掉了另一个旧列。审查这段迁移，按课件标准应该检查什么？`,
+              source: '来源：Alembic 官方文档 Auto Generating Migrations（"We review and modify these by hand as needed"）https://alembic.sqlalchemy.org/en/latest/autogenerate.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《06.数据迁移》课件日常开发第 3 步',
+              breakdown: `课件两条审查标准：<strong>① 是否会导致数据丢失；② 回滚和迁移是否互逆</strong>。 逐个看：删列会丢数据——生产已有数据时要么先归档再删、要么评估该列是否真的可弃；int→varchar 在 PG 里是 <code>USING</code> 类型转换，本身不丢值，但 varchar 存数字意味着后续算术查询要显式转换，属于<strong>语义变更</strong>，要确认产品意图。回滚互逆：downgrade() 要把删掉的列加回来、类型改回去——AI 常漏写 downgrade，课件审查清单就是抓这个的。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：你们已经执行过的迁移，后来发现写错了，怎么处理？为什么不能直接改？`,
+              source: '来源：渡一源课程《06.数据迁移》课件常见问题（迁移脚本是常量、执行后永远不可变更）· Alembic 官方教程 Downgrading 章节 https://alembic.sqlalchemy.org/en/latest/tutorial.html#downgrading · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `课件标准答案：<strong>生成新迁移适配现在的模型结构，审核后执行；不修改、不删除历史迁移</strong>。 为什么不能直接改：迁移已经执行过，本地/测试/生产的 alembic_version 都记着它的 revision id——改掉它等于改写历史，各环境「相同脚本、不同结果」，最终谁和模型一致都说不清。把迁移脚本当<strong>常量</strong>：一旦执行，永远不可变更。课件还警告回滚哲学：downgrade 官方支持，但课件建议<strong>尽量不回滚</strong>——回滚后表结构与模型不一致（可能解决一个 Bug、带来更多 Bug），不一致最多允许暂时存在，绝不能是长期状态。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 数据库里实操一次完整迁移闭环（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '清空 schema → alembic init migrations → 配置 env.py（target_metadata + url 覆盖）→ make db-migrate message="init" 生成首个迁移 → 审查脚本 → make db-upgrade → psql \\dt 检查四张表 + alembic_version → make db-downgrade version=-1 回滚并确认表消失 → 再 upgrade 回一致状态。',
+                accept: ['alembic_version 表出现且版本号 = 当前 head', 'upgrade 后四张表结构与模型一致', 'downgrade -1 后表被正确回退', '能解释为什么回滚只应是暂时状态'],
+              },
+              source: '任务基于《06.数据迁移》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：按课件「准备工作」先 <code>DROP SCHEMA public CASCADE; CREATE SCHEMA public;</code> 删掉旧表（ch05 建的表不删会导致 autogenerate 对比出删除操作）。坑：env.py 里 import app.model 必须走 <code>app/model/__init__.py</code> 的显式 import（课件已写）——否则模型没注册进 Base.metadata，autogenerate 生成空迁移；downgrade 用相对偏移 <code>-1</code> 或版本号前缀均可（官方支持 partial revision identifiers）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（06.数据迁移）</li>
+        <li><strong>深读推荐</strong>：<a href="https://alembic.sqlalchemy.org/en/latest/tutorial.html">Alembic 官方教程</a> · <a href="https://alembic.sqlalchemy.org/en/latest/autogenerate.html">Auto Generating Migrations（探测边界专节）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/数据迁移速查表.html">数据迁移速查表</a>——三命令、env.py 配置、红线流程一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/数据操作">05.数据操作</a> · 下一课 <a href="/agents/python-framework/业务逻辑">07.业务逻辑</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（数据迁移解决了什么问题）。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>
