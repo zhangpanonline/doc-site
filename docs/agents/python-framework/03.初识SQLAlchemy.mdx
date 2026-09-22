@@ -1,0 +1,223 @@
+---
+sidebar_position: 3
+title: '03. 初识SQLAlchemy'
+description: "Python 框架课程 · 初识SQLAlchemy：Docker 建库、异步引擎与连接池、engine/asyncpg 分工、配置与引擎模块化。"
+displayed_sidebar: agentsFramework
+---
+
+# 初识 SQLAlchemy
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+官网地址：https://docs.sqlalchemy.org/en/20/index.html
+
+## 创建数据库
+
+启动数据库容器
+
+```shell
+docker run -d \
+  --name duyi_pg_db \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=123123 \
+  -p 5432:5432 \
+  -v "你的目录绝对路径:/var/lib/postgresql/data" \
+  postgres:16
+```
+
+创建数据库`duyi_db`
+
+```shell
+# 进入容器创建数据库
+docker exec -it duyi_pg_db psql -U admin -c "CREATE DATABASE duyi_db;"
+```
+
+验证数据库是否创建成功：
+
+```shell
+docker exec -it duyi_pg_db psql -U admin -l
+```
+
+## 安装 SQLAlchemy
+
+```shell
+uv add --package web-service 'sqlalchemy[asyncio]==2.0.50' asyncpg==0.31.0
+```
+
+## 测试连接
+
+```python
+# model/main.py
+import asyncio
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+
+# 异步连接字符串格式：postgresql+asyncpg://用户名:密码@主机:端口/数据库名
+DATABASE_URL = "postgresql+asyncpg://admin:123123@localhost:5432/duyi_db"
+
+
+async def test_connection():
+    # 创建异步引擎
+    config = {
+        "pool_size": 10,  # 连接池维持的连接数
+        "max_overflow": 20,  # 池满后额外可创建的连接数
+        "pool_pre_ping": True,  # 每次连接前检查是否存活
+        "echo": False,  # 是否打印 SQL 日志
+    }
+    engine = create_async_engine(DATABASE_URL, **config)
+
+    try:
+        # 测试连接：执行一个简单的查询
+        async with engine.connect() as conn:
+            result = await conn.execute(text("SELECT 1"))
+            # 获取结果(第一行第一列)
+            value = result.scalar()
+            print(f"✅ 异步连接 PostgreSQL 成功！查询结果: {value}")
+    except Exception as e:
+        print(f"❌ 连接失败: {e}")
+    finally:
+        # 关闭引擎，释放资源
+        await engine.dispose()
+
+
+# 运行异步函数
+if __name__ == "__main__":
+    asyncio.run(test_connection())
+
+```
+
+## 认识概念
+
+![image-20260615181032104](https://resource.duyiedu.com/yuanjin/202606151810206.png)
+
+- SQLAlchemy
+  - engine
+    - 管理连接池
+    - 处理不同数据库的差异
+- asyncpg：仅负责和PostgreSQL数据库通信
+
+## 优化代码结构
+
+`.env` + `.env.example`
+
+```yaml
+# web服务配置
+WEB_APP_NAME=渡一web服务 # 站点名称，影响API文档标题
+
+# 数据库配置
+DB_HOST=localhost # 数据库主机
+DB_PORT=5432 # 数据库端口
+DB_NAME=duyi_db # 数据库名称
+DB_USER=admin # 连接账号
+DB_PASSWORD=123123 # 连接密码
+```
+
+`core/config.py`
+
+```python
+from pydantic_settings import BaseSettings
+
+
+class _BaseSettingsWithEnv(BaseSettings):
+    # 配置读取方式
+    model_config = {"env_file": ".env"}  # env文件的位置
+
+
+# 通用配置
+class _CommonSettings(_BaseSettingsWithEnv):
+    environment: str = "development"
+
+
+# web服务配置
+class _WebSettings(_BaseSettingsWithEnv):
+    app_name: str = "Web Service API"  # 实际读取 WEB_APP_NAME
+
+    # 配置读取方式
+    model_config = {"env_prefix": "WEB_"}
+
+
+# 数据库配置
+class _DBSettings(_BaseSettingsWithEnv):
+    host: str = ""
+    port: str = ""
+    name: str = ""
+    user: str = ""
+    password: str = ""
+
+    model_config = {"env_prefix": "DB_"}
+
+
+common_settings = _CommonSettings()
+web_settings = _WebSettings()
+db_settings = _DBSettings()
+
+```
+
+`model/engine.py`
+
+```python
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+from app.core.config import db_settings
+
+_engine: AsyncEngine | None = None
+
+
+def get_engine() -> AsyncEngine:
+    global _engine
+
+    if _engine is None:
+        url = f"postgresql+asyncpg://{db_settings.user}:{db_settings.password}@{db_settings.host}:{db_settings.port}/{db_settings.name}"
+        _engine = create_async_engine(
+            url,
+            pool_size=10,
+            max_overflow=20,
+            pool_pre_ping=True,
+            echo=False
+        )
+
+    return _engine
+
+```
+
+`model/main.py`
+
+```python
+import asyncio
+from sqlalchemy import text
+from app.model.engine import get_engine
+
+
+async def test_connection():
+    engine = get_engine()
+    try:
+        async with engine.connect() as conn:
+            result = await conn.execute(text("SELECT 1"))
+            value = result.scalar()
+            print(f"✅ 异步连接 PostgreSQL 成功！查询结果: {value}")
+    except Exception as e:
+        print(f"❌ 连接失败: {e}")
+    finally:
+        await engine.dispose()
+
+
+# 运行异步函数
+if __name__ == "__main__":
+    asyncio.run(test_connection())
+
+```
+
+## 作业
+
+回答以下问题：
+
+1. 连接池有什么用？
+2. 连接池的连接是不是越多越好？
+3. 数据库驱动是什么？
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0003-初识SQLAlchemy.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/初识SQLAlchemy速查表.html">📋 初识SQLAlchemy速查表（可打印）</a>

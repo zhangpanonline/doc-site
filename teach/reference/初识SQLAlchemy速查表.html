@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>初识SQLAlchemy速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>初识SQLAlchemy速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0003-初识SQLAlchemy.html">《初识SQLAlchemy互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>分工与连接串</h2>
+      <pre>postgresql+asyncpg://admin:123123@localhost:5432/duyi_db
+|________| |______| |____| |______| |____| |_______| |____|
+  方言      驱动     用户    密码    主机    端口      库名
+
+SQLAlchemy engine：连接池 + 处理数据库差异
+asyncpg：仅负责与 PostgreSQL 通信（驱动）</pre>
+    </section>
+
+    <section>
+      <h2>连接池四参数</h2>
+      <table class="cmp-table">
+        <tr><th>参数</th><th>含义</th><th>课件值</th></tr>
+        <tr><td>pool_size</td><td>池维持的连接数</td><td>10</td></tr>
+        <tr><td>max_overflow</td><td>池满后额外可创建数</td><td>20</td></tr>
+        <tr><td>pool_pre_ping</td><td>连接前存活检查</td><td>True</td></tr>
+        <tr><td>echo</td><td>打印 SQL 日志</td><td>False</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>速记</h2>
+      <dl class="term-grid">
+        <dt>引擎单例</dt>
+        <dd>模块级 _engine 判空缓存——全应用一个连接池。</dd>
+        <dt>DB 配置</dt>
+        <dd>_DBSettings env_prefix=DB_：host → DB_HOST。</dd>
+        <dt>池大小原则</dt>
+        <dd>匹配实际峰值并发（PG 每连接一进程）；过大反拖垮。</dd>
+        <dt>scalar()</dt>
+        <dd>取结果第一行第一列。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

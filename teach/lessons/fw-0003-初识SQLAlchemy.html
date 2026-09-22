@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 初识SQLAlchemy：异步引擎与连接池、engine/asyncpg 分工、DB 配置模块化——互动教学课程">
+  <title>初识SQLAlchemy · 互动教学课程（Python 框架 fw-03）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>初识SQLAlchemy</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/初识SQLAlchemy">03.初识SQLAlchemy</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>用 create_async_engine + asyncpg 异步连接 PostgreSQL，执行 SELECT 1 验证</li>
+        <li>说出 engine 与 asyncpg 的分工（连接池/方言差异 vs 数据库通信）</li>
+        <li>解释四个连接池参数：pool_size / max_overflow / pool_pre_ping / echo</li>
+        <li>把 DB 配置收进 pydantic-settings（DB_ 前缀），引擎封装为单例 get_engine()</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《03.初识SQLAlchemy》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>分工（课件概念图）</h3>
+        <ul class="pitfall-list">
+          <li><strong>SQLAlchemy engine</strong>：管理连接池、处理不同数据库的差异</li>
+          <li><strong>asyncpg</strong>：仅负责和 PostgreSQL 数据库通信（数据库驱动）</li>
+          <li>连接字符串：<code>postgresql+asyncpg://用户名:密码@主机:端口/数据库名</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>连接池四参数</h3>
+        <ul class="pitfall-list">
+          <li><code>pool_size</code>：连接池维持的连接数（课件 10）</li>
+          <li><code>max_overflow</code>：池满后额外可创建的连接数（课件 20）</li>
+          <li><code>pool_pre_ping</code>：每次连接前检查是否存活（防死连接）</li>
+          <li><code>echo</code>：是否打印 SQL 日志（开发调试用）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《03.初识SQLAlchemy》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 课件里 asyncpg 的职责是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">仅负责和 PostgreSQL 数据库通信</button>
+            <button class="quiz-option">处理不同数据库的差异</button>
+            <button class="quiz-option">管理连接池</button>
+            <button class="quiz-option">生成 SQL</button>
+          </div>
+          <div class="quiz-explain" hidden>课件概念图：asyncpg 仅负责和 PostgreSQL 数据库通信——它就是数据库驱动。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. SQLAlchemy engine 的职责是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">加密传输</button>
+            <button class="quiz-option">渲染模板</button>
+            <button class="quiz-option">管理连接池 + 处理不同数据库的差异</button>
+            <button class="quiz-option">解析 HTTP 请求</button>
+          </div>
+          <div class="quiz-explain" hidden>课件概念图：engine 管理连接池、处理不同数据库的差异。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 异步连接字符串的正确格式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">postgresql+asyncpg://用户:密码@主机:端口/数据库名</button>
+            <button class="quiz-option">asyncpg+postgresql://用户@主机:端口</button>
+            <button class="quiz-option">postgres://asyncpg:用户@主机/库</button>
+            <button class="quiz-option">sqlalchemy+postgres://主机/库</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释：postgresql+asyncpg://用户名:密码@主机:端口/数据库名——dialect+driver 结构。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. pool_pre_ping 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每次连接前检查是否存活（防拿到死连接）</button>
+            <button class="quiz-option">打印 SQL 日志</button>
+            <button class="quiz-option">压缩数据</button>
+            <button class="quiz-option">限制连接数</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释：pool_pre_ping 每次连接前检查是否存活——数据库重启后旧连接失效的兜底。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. max_overflow 的含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">最大查询条数</button>
+            <button class="quiz-option">最大表数</button>
+            <button class="quiz-option">池满后额外可创建的连接数</button>
+            <button class="quiz-option">最大超时时间</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释：max_overflow 是池满后额外可创建的连接数——峰值并发 = pool_size + max_overflow。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. _DBSettings 的 env_prefix 是 DB_，则 host 字段读取哪个环境变量？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">DBHOST</button>
+            <button class="quiz-option">DB_HOST</button>
+            <button class="quiz-option">db_host</button>
+            <button class="quiz-option">HOST</button>
+          </div>
+          <div class="quiz-explain" hidden>env_prefix 前缀拼接：DB_ + host = DB_HOST——课件 .env 里正是这么写的。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. get_engine() 里 global _engine 判空缓存的目的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">引擎单例：全应用只建一次连接池，避免重复创建</button>
+            <button class="quiz-option">为了线程安全</button>
+            <button class="quiz-option">为了更慢</button>
+            <button class="quiz-option">没有目的</button>
+          </div>
+          <div class="quiz-explain" hidden>连接池是昂贵资源——engine 全应用共享一个（课件用模块级 _engine 缓存实现单例）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 连接池的连接是不是越多越好？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">无所谓</button>
+            <button class="quiz-option">是，越多越快</button>
+            <button class="quiz-option">不是——每连接占数据库端进程/内存，过多反而拖垮（结合 pg-01 的每连接进程模型）</button>
+            <button class="quiz-option">只和内存有关</button>
+          </div>
+          <div class="quiz-explain" hidden>作业题答案：PG 每连接一个进程——连接数要与实际并发匹配，过多连接耗尽数据库资源。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. result.scalar() 的作用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">执行 SQL</button>
+            <button class="quiz-option">获取结果第一行第一列（课件注释）</button>
+            <button class="quiz-option">返回所有行</button>
+            <button class="quiz-option">关闭连接</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释：获取结果（第一行第一列）——SELECT 1 场景拿到 1。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0003-初识SQLAlchemy',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 写的数据库访问：每个请求都 <code>create_async_engine</code> 新建一个引擎。审查：按本课 get_engine 单例模式，这有什么问题？`,
+              source: '来源：渡一源课程《03.初识SQLAlchemy》课件（model/engine.py 单例模式）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `engine 内含<strong>连接池</strong>——每请求新建 = 每请求重建整个池（建连接是昂贵操作，PG 每连接一个进程，参见 pg-01），高并发下数据库被连接风暴打垮。课件正解：模块级 <code>_engine</code> 判空缓存，<strong>全应用一个引擎单例</strong>。审查 AI 数据库代码：见 create_engine 出现在函数/请求路径里就报警。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `SQLAlchemy 的 engine 与 asyncpg 各管什么？连接字符串的 dialect+driver 结构怎么读？`,
+              source: '来源：渡一源课程《03.初识SQLAlchemy》课件（概念图与连接字符串）· 检索 2026-09-11 · 层级：一手（源课程）',
+              breakdown: `<strong>engine</strong>：管理连接池、处理不同数据库的差异（方言层——换数据库只换连接串）；<strong>asyncpg</strong>：仅负责和 PostgreSQL 通信（驱动层）。连接串 <code>postgresql+asyncpg://用户:密码@主机:端口/库名</code>——<strong>postgresql 是方言、asyncpg 是驱动</strong>，两层职责各自独立，这就是 SQLAlchemy 可跨数据库的根本。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的连接池配置：pool_size=100、max_overflow=200，说「越大越快」。审查：结合 PG 每连接一个进程的架构，这个配置有什么风险？`,
+              source: '来源：渡一源课程《03.初识SQLAlchemy》课件（连接池参数）+《pg-01 架构基础》· 检索 2026-09-11 · 层级：一手（源课程，跨课综合）',
+              breakdown: `PG 为<strong>每个连接 fork 一个进程</strong>（pg-01 官方原文）——100+200 意味着峰值 300 个数据库进程，内存与调度开销巨大，且多数连接是闲置的。连接池的正确大小 = <strong>实际峰值并发</strong>（课件示例 10+20 才是常态量级）；配合 pool_pre_ping 防死连接。审查规则：池参数脱离并发评估就是拍脑袋。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：为什么数据库配置要用 DB_ 前缀单独一个 Settings 类，而不是塞进 WebSettings？`,
+              source: '来源：渡一源课程《03.初识SQLAlchemy》课件（core/config.py 三 Settings）· 检索 2026-09-11 · 层级：一手（源课程，场景化改写）',
+              breakdown: `职责分离的延续：<strong>web 配置归 Web（WEB_）、数据库配置归 DB（DB_）、通用归 Common</strong>——各 Settings 类只管自己的前缀与字段。好处：① 配置项按领域分组，改库配置不动 web 配置；② 未来其他模块（缓存、消息队列）照此扩展，各带前缀互不干扰；③ .env 文件也按前缀分区，一目了然。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `打通数据库连接（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: 'docker 起 postgres:16 → 创建 duyi_db → uv 安装 sqlalchemy[asyncio]+asyncpg → 按课件写 engine.py（DB_ 前缀配置 + 单例）→ 跑 test_connection 得到 SELECT 1 结果 → 观察 pool_size 生效。',
+                accept: ['SELECT 1 连接测试通过', 'get_engine 单例（两次调用同一对象）', 'DB_ 前缀配置读取正确'],
+              },
+              source: '任务基于《03.初识SQLAlchemy》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：课件 docker 命令起库（或复用现有 pg16 容器建 duyi_db）→ .env 写 DB_* 五个变量 → 复制课件 engine.py 与 main.py → <code>uv run --package web-service python -m app.model.main</code>。坑：asyncpg 连接串密码含特殊字符要 URL 编码；echo=True 开发期开、生产关。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（03.初识SQLAlchemy）</li>
+        <li><strong>深读推荐</strong>：<a href="https://docs.sqlalchemy.org/en/20/core/engines.html">SQLAlchemy 官方：Engine Configuration</a> · <a href="https://docs.sqlalchemy.org/en/20/core/pooling.html">Connection Pooling</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/初识SQLAlchemy速查表.html">初识SQLAlchemy速查表</a>——分工与参数一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/优化包结构">02.优化包结构</a> · 下一课 <a href="/agents/python-framework/ORM">04.ORM</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（三个问题：连接池的作用/是否越多越好/数据库驱动是什么）。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>
