@@ -1,19 +1,30 @@
 # robots.txt —— 君子协定层（只约束遵守协议的爬虫，强制拦截见 vercel.json 防火墙规则与 middleware.ts）
 #
-# 策略：保留搜索引擎正常收录（Googlebot / Bingbot / Baiduspider / 360Spider / Sogou / YisouSpider 等不在此列），
-#       拒绝 AI 训练爬虫与营销/SEO 抓取器。
+# 策略（2026-09-11 方案 B）：保留搜索引擎收录；放行「AI 搜索/引用」爬虫
+#   （ChatGPT 搜索、SearchGPT、Perplexity、Gemini 引用本站带来流量）；
+#   继续拒绝「AI 训练」爬虫与营销/SEO 抓取器。
 
 User-agent: *
 Allow: /
 
-# ---------- AI 大模型训练 / AI 助手爬虫 ----------
-User-agent: GPTBot
-Disallow: /
-
+# ---------- AI 搜索 / 引用爬虫（放行：AI 搜索引用本站，2026-09-11 方案 B） ----------
 User-agent: OAI-SearchBot
-Disallow: /
+Allow: /
 
 User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# ---------- AI 大模型训练爬虫（继续拦截） ----------
+User-agent: GPTBot
 Disallow: /
 
 User-agent: ClaudeBot
@@ -28,16 +39,7 @@ Disallow: /
 User-agent: CCBot
 Disallow: /
 
-User-agent: Google-Extended
-Disallow: /
-
 User-agent: GoogleOther
-Disallow: /
-
-User-agent: PerplexityBot
-Disallow: /
-
-User-agent: Perplexity-User
 Disallow: /
 
 User-agent: Bytespider
@@ -73,6 +75,23 @@ User-agent: PetalBot
 Disallow: /
 
 User-agent: YouBot
+Disallow: /
+
+# ---------- 未提交站长平台的中文搜索蜘蛛 ----------
+# 360/搜狗/神马需 ICP 备案，2026-09-11 确认不收录，显式拒绝其蜘蛛。
+User-agent: Sogou web spider
+Disallow: /
+
+User-agent: Sogou inst spider
+Disallow: /
+
+User-agent: 360Spider
+Disallow: /
+
+User-agent: YisouSpider
+Disallow: /
+
+User-agent: Shenma
 Disallow: /
 
 # ---------- 通用脚本框架 / 营销抓取器 ----------

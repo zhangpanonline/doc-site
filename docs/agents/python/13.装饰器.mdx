@@ -11,7 +11,7 @@ displayed_sidebar: agentsPython
 
 装饰器本质上是一个接受函数作为参数并返回新函数的高阶函数：
 
-```python title="装饰器本质示例" {1,11,14}
+```python title="装饰器本质示例"
 def my_decorator(func):
     def wrapper():
         print("函数执行前")
@@ -48,7 +48,7 @@ say_hello()
 
 可以同时使用多个装饰器，执行顺序为从下到上：
 
-```python title="多个装饰器叠加" {1-2}
+```python title="多个装饰器叠加"
 @decorator_a
 @decorator_b
 def func():

@@ -13,7 +13,7 @@ displayed_sidebar: agentsPython
 
 可以捕获多个异常，并获取异常对象：
 
-```python title="捕获多个异常" {3,5}
+```python title="捕获多个异常"
 try:
     number = int("abc")
 except ValueError as e:
@@ -26,7 +26,7 @@ finally:
     print("始终会执行")
 ```
 
-```python title="获取异常对象信息" {4,5}
+```python title="获取异常对象信息"
 try:
     number = int("abc")
 except ValueError as e:
@@ -54,7 +54,7 @@ BaseException
       └── ...
 ```
 
-```python title="捕获基类异常" {5}
+```python title="捕获基类异常"
 # 捕获 Exception 可以捕获几乎所有常规异常
 try:
     # 可能引发各种异常的操作
@@ -71,7 +71,7 @@ except Exception as e:
 
 使用 `raise` 主动抛出异常：
 
-```python title="主动抛出异常" {3,5}
+```python title="主动抛出异常"
 def withdraw(balance, amount):
     if amount > balance:
         raise ValueError("余额不足")
@@ -87,7 +87,7 @@ except ValueError as e:
 
 可以重新抛出当前异常：
 
-```python title="重新抛出异常" {6}
+```python title="重新抛出异常"
 try:
     risky_operation()
 except Exception:
@@ -100,7 +100,7 @@ except Exception:
 
 通过继承 `Exception` 或其子类创建自定义异常：
 
-```python title="自定义异常" {1,5}
+```python title="自定义异常"
 class ValidationError(Exception):
     """参数验证失败"""
     pass
@@ -127,7 +127,7 @@ def get_user(user_id):
 
 ## 异常链
 
-```python title="异常链的两种方式" {6,14}
+```python title="异常链的两种方式"
 def exception_chains1():
     # 方式1：直接抛出（无关联）
     try:

@@ -13,7 +13,7 @@ displayed_sidebar: agentsPython
 
 使用内置函数 `callable()`：
 
-```python title="判断可调用性" {1,2,4}
+```python title="判断可调用性"
 print(callable(len))        # True，内置函数
 print(callable(int))        # True，类
 print(callable([1, 2]))     # False，列表不可调用
@@ -22,7 +22,7 @@ print(callable(lambda: 1))  # True，lambda 表达式
 
 函数是最常见的可调用对象：
 
-```python title="函数是可调用对象" {4-5}
+```python title="函数是可调用对象"
 def greet(name):
     return f"Hello, {name}!"
 
@@ -32,7 +32,7 @@ print(greet("Alice"))   # Hello, Alice!
 
 类也是可调用对象：
 
-```python title="类是可调用对象" {5-6}
+```python title="类是可调用对象"
 class Dog:
     def __init__(self, name):
         self.name = name
@@ -48,7 +48,7 @@ print(my_dog.name)      # Buddy
 
 在类中定义 `__call__` 方法，**实例**就变成了可调用对象：
 
-```python title="__call__ 让实例可调用" {5,8,11}
+```python title="__call__ 让实例可调用"
 class Adder:
     def __init__(self, n):
         self.n = n
@@ -76,7 +76,7 @@ print(add_5(100))        # 105
 
 ### 1. 实现可配置的函数对象
 
-```python title="可配置的函数对象" {5,8,11}
+```python title="可配置的函数对象"
 class Multiplier:
     def __init__(self, factor):
         self.factor = factor
@@ -93,7 +93,7 @@ triple(5)   # 15
 
 ### 2. 实现状态保持的回调函数
 
-```python title="状态保持的回调" {7,11-12}
+```python title="状态保持的回调"
 class Logger:
     def __init__(self, prefix):
         self.prefix = prefix

@@ -11,7 +11,7 @@ displayed_sidebar: agentsPython
 
 使用 `class` 关键字定义类时，Python 底层会调用元类来创建类：
 
-```python title="class 关键字的等效形式" {6,11,14}
+```python title="class 关键字的等效形式"
 class Dog:
     pass
 
@@ -36,7 +36,7 @@ Dog = type.__call__(type, "Dog", (), {})
 
 通过继承 `type`，可以自定义元类，控制类的创建过程。
 
-```python title="自定义元类" {2,8,13}
+```python title="自定义元类"
 class MyMeta(type):
     def __new__(mcs, name, bases, namespace):
         print(f"正在创建类: {name}")
@@ -84,7 +84,7 @@ class Dog(metaclass=MyMeta):
 
 子类会继承父类的元类：
 
-```python title="元类的继承" {7,10}
+```python title="元类的继承"
 class MyMeta(type):
     pass
 
@@ -99,7 +99,7 @@ print(type(Child))  # <class '__main__.MyMeta'>
 
 如果父类元类不兼容，需要使用更通用的元类：
 
-```python title="元类冲突与解决" {13,16,19}
+```python title="元类冲突与解决"
 class MetaA(type):
     pass
 
@@ -127,7 +127,7 @@ class C(A, B, metaclass=CommonMeta):  # 正常
 
 下面这段代码，用**两条时间线**拆开理解：一条是「创建 `Dog` 类」，一条是「创建 `dog` 实例」。
 
-```python title="元类调用协议示例" {2-3,5-6,9,14}
+```python title="元类调用协议示例"
 class DogMeta(type):
     def __new__(mcs, name, bases, namespace):
         return super().__new__(mcs, name, bases, namespace)

@@ -9,7 +9,7 @@ displayed_sidebar: agentsPython
 
 抽象类是**不能被实例化**的类，用于定义子类**必须实现**的接口。Python 通过 `abc` 模块提供抽象类的支持。
 
-```python title="抽象类基础示例" {3,4}
+```python title="抽象类基础示例"
 from abc import ABC, abstractmethod
 
 class Animal(ABC):  # 继承 ABC，表示这是一个抽象类
@@ -38,7 +38,7 @@ dog.speak()  # Woof!
 
 使用 `abc` 模块中的 `ABC` 类和 `@abstractmethod` 装饰器：
 
-```python title="定义抽象类" {3,4,9}
+```python title="定义抽象类"
 from abc import ABC, abstractmethod
 
 class Shape(ABC):
@@ -70,7 +70,7 @@ class Shape(ABC):
 
 除了抽象方法，还可以定义抽象属性：
 
-```python title="抽象属性" {4,5}
+```python title="抽象属性"
 from abc import ABC, abstractmethod
 
 class Employee(ABC):
@@ -120,7 +120,7 @@ class Rectangle(Shape):
 
 抽象类常用于定义**插件接口**或**框架扩展点**：
 
-```python title="实际应用：插件接口" {6,10,14}
+```python title="实际应用：插件接口"
 from abc import ABC, abstractmethod
 
 class DataSource(ABC):
