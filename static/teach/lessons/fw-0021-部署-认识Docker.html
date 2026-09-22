@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 部署-认识Docker：运行时环境问题、多阶段 Dockerfile、镜像与容器、docker run 生产参数、简易部署流程——互动教学课程">
+  <title>部署-认识Docker · 互动教学课程（Python 框架 fw-21）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>部署-认识Docker</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/部署-认识Docker">21.部署-认识Docker</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 Docker 解决的三个问题（环境隔离/准备快捷/更新快速）</li>
+        <li>逐行读通多阶段 Dockerfile：builder 阶段与最终镜像的关系</li>
+        <li>解释 docker run 六个生产参数（-d/--name/-p/-e/--restart/资源限制）</li>
+        <li>复述容器简易部署四步流程</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《21.部署-认识Docker》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>镜像三件套与多阶段构建</h3>
+        <ul class="pitfall-list">
+          <li><strong>Dockerfile</strong>：配置文件，通过它产生镜像（FROM/WORKDIR/RUN/COPY/ENV/EXPOSE/CMD）</li>
+          <li><strong>镜像</strong>：包含运行所需的一切（python、uv、.venv）；<strong>容器</strong>：镜像启动的实例，运行 CMD</li>
+          <li><strong>多阶段</strong>：builder 阶段装依赖（slim 镜像 + uv sync），最终镜像只 COPY .venv——构建产物小 90%</li>
+          <li><strong>slim 镜像</strong>：比完整 python 镜像小 90%，提升构建速度与产物大小</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>docker run 六个生产参数</h3>
+        <ul class="pitfall-list">
+          <li><strong>-d</strong> 后台运行；<strong>--name</strong> 命名；<strong>-p 9090:8080</strong> 宿主机:容器端口映射</li>
+          <li><strong>-e</strong> 环境变量（环境配置全部注入：COMMON/WEB/DB/LOG 前缀）</li>
+          <li><strong>--restart unless-stopped</strong>：意外退出/宿主机重启自动拉起（手动停止除外）</li>
+          <li><strong>--memory=512m --cpus=1</strong>：资源上限，防单容器耗尽宿主机</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《21.部署-认识Docker》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. Docker 要解决的核心问题是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">写代码更快</button>
+            <button class="quiz-option">数据库更快</button>
+            <button class="quiz-option">网络延迟更低</button>
+            <button class="quiz-option">环境隔离、准备快捷高效、更新快速</button>
+          </div>
+          <div class="quiz-explain" hidden>课件三个问题：多应用环境互不干扰？准备环境文件的过程快捷高效？应用更新后快速更新？——「环境、文件、启动命令」的标准化。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. Dockerfile 和镜像、容器的关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">三者是同一个东西</button>
+            <button class="quiz-option">Dockerfile 是配置文件——通过它构建出镜像，镜像启动成容器（运行 CMD）</button>
+            <button class="quiz-option">镜像运行出 Dockerfile</button>
+            <button class="quiz-option">容器构建出 Dockerfile</button>
+          </div>
+          <div class="quiz-explain" hidden>课件定义：Dockerfile 一个配置文件，通过该文件产生一个镜像；容器通过镜像启动，启动时运行镜像中的 CMD。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 为什么选 python:3.14-slim 而不是完整 python 镜像？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有区别</button>
+            <button class="quiz-option">完整镜像有 bug</button>
+            <button class="quiz-option">slim 功能更多</button>
+            <button class="quiz-option">轻量级镜像比完整镜像小 90%——构建快、产物小、攻击面小</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 Dockerfile 注释：依赖轻量级 python 镜像，比完整镜像小 90%，提升构建速度和构建产物的大小。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. RUN 和 CMD 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">RUN 在镜像构建过程中执行；CMD 是容器启动时执行的命令</button>
+            <button class="quiz-option">RUN 是启动时，CMD 是构建时</button>
+            <button class="quiz-option">完全一样</button>
+            <button class="quiz-option">RUN 只跑一次</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释：RUN 命令在镜像构建过程中执行（装 uv、uv sync）；CMD 将来启动镜像时需要执行的命令（uvicorn 启动）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 多阶段构建里最终镜像为什么要 COPY --from=builder /app/.venv？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">必须复制全部文件</button>
+            <button class="quiz-option">只把构建产物带走——不带走 pip/uv/source 等构建期杂物，镜像保持最小</button>
+            <button class="quiz-option">没有特别原因</button>
+            <button class="quiz-option">为了两次安装依赖</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 Dockerfile：builder 阶段装好依赖（uv sync --no-dev --no-editable），最终镜像 COPY --from=builder /app/.venv + ENV PATH——构建工具链留在 builder 里，运行时镜像只含 .venv。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. -p 9090:8080 的含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">容器 9090 映射到宿主机 8080</button>
+            <button class="quiz-option">开放两个端口给外部</button>
+            <button class="quiz-option">随机映射</button>
+            <button class="quiz-option">宿主机 9090 映射到容器内 8080——外部访问 9090</button>
+          </div>
+          <div class="quiz-explain" hidden>课件参数表：-p (publish) 端口映射，宿主机 9090 → 容器内部 8080（应用在容器里监听 8080，对外暴露 9090）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. --restart unless-stopped 和「手动 docker stop」的关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">永远重启</button>
+            <button class="quiz-option">从不重启</button>
+            <button class="quiz-option">意外退出/宿主机重启自动拉起；手动停止则不重启（除非守护进程重启后）</button>
+            <button class="quiz-option">只在手动停止后重启</button>
+          </div>
+          <div class="quiz-explain" hidden>课件参数表：unless-stopped——容器意外退出或宿主机重启时自动重新启动（除非你手动停止了它）。生产默认策略。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 数据库连接、JWT 密钥这些配置在容器里怎么注入？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">docker run -e 逐个注入（COMMON_/WEB_/DB_/LOG_ 前缀），对应 ch02 的 pydantic-settings</button>
+            <button class="quiz-option">打进镜像</button>
+            <button class="quiz-option">不配置</button>
+            <button class="quiz-option">写死在 Dockerfile 里</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 duyi-service 启动示例：-e DB_HOST/-e DB_NAME/-e WEB_JWT_SECRET_KEY 等一串 -e——容器内应用仍走 .env/env 变量（ch02 配置体系），值在运行时注入，镜像不含环境差异。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 课件「容器简易部署流程」四步是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">开发 → 本地构建镜像 → 镜像传输给服务器 → 服务器运行容器</button>
+            <button class="quiz-option">开发 → 打包 exe → 复制 → 双击运行</button>
+            <button class="quiz-option">开发 → 直接上传源码 → 服务器装环境 → 启动</button>
+            <button class="quiz-option">开发 → 提交代码 → 自动部署 → 完成</button>
+          </div>
+          <div class="quiz-explain" hidden>课件四步：1 开发 → 2 本地 Dockerfile 构建镜像 → 3 将镜像传输给服务器 → 4 服务器运行容器。第 3 步在 ch24 会被镜像仓库（ACR）取代。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0021-部署-认识Docker',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的 Dockerfile：RUN 里打印了启动命令，CMD 里写 pip install——结果构建成功、容器一启动就退出了。按本课知识，错在哪？`,
+              source: '来源：Docker 官方文档 Dockerfile reference（RUN 在构建期执行、CMD 定义容器启动命令）https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《21.部署-认识Docker》课件',
+              breakdown: `<strong>RUN 和 CMD 焊反了</strong>：RUN 在镜像构建过程中执行（装依赖、构建产物——课件的 pip install uv 和 uv sync 就是 RUN）；CMD 是容器启动时执行的命令（课件的 uvicorn 启动）。AI 的写法把 pip install 放进 CMD——容器一启动先装依赖，装完进程退出（CMD 的进程结束 = 容器退出），服务根本没起来。审查 Dockerfile 口诀：<strong>「一次性」的工作归 RUN（构建期），「常驻」的进程归 CMD（运行期）</strong>；CMD 必须是前台进程，后台化（& 或 nohup）会让容器秒退。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `多阶段构建（multi-stage）是怎么让镜像变小的？builder 阶段的 uv/pip 去哪了？`,
+              source: '来源：Docker 官方文档 Dockerfile reference（multi-stage build：COPY --from 跨阶段引用）https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《21.部署-认识Docker》课件（builder 阶段 + COPY --from）',
+              breakdown: `机制拆两步：<strong>① builder 阶段</strong>——完整构建环境（uv、pip、源码、缓存）都在这里，跑 uv sync --frozen --no-dev --no-editable 产出 .venv；<strong>② 最终阶段</strong>——重新 FROM python:3.14-slim（一个干净的小镜像），只 <code>COPY --from=builder /app/.venv /app/.venv</code> 并 ENV PATH 把 .venv 挂进 PATH。builder 里的一切（uv 本体、pip、缓存、源码）都留在 builder 镜像里，最终镜像只有运行时需要的 .venv——这就是「小 90%」的来源。官方 reference 还点了一条坑：只被 COPY --from 引用的阶段，其 metadata（如 LABEL）不会带进最终镜像——阶段之间只有显式复制的文件有传递关系。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的 docker run：没有 --restart、没有 --memory/--cpus、-p 8080:8080 把宿主机 8080 直接占掉、数据库密码直接写进 Dockerfile 的 ENV。逐条审查。`,
+              source: '来源：Docker 官方文档 Dockerfile reference（ENV 指令与镜像内容）https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《21.部署-认识Docker》课件（docker run 参数表）',
+              breakdown: `逐条：<strong>① 无 --restart unless-stopped</strong>——服务半夜 OOM 或宿主机重启后没人拉起，业务直接躺到天亮（课件把它列为生产默认）；<strong>② 无资源限制</strong>——一个失控容器（内存泄漏、死循环）可以吃掉整台宿主机，同机其他服务全陪葬；课件 --memory=512m --cpus=1 是标配；<strong>③ 端口直接占 8080</strong>——课件用 -p 80:8080 把对外端口（80）与容器内端口（8080）解耦，宿主机端口资源可以规划，容器内部端口不冲突；<strong>④ 密码写进 Dockerfile ENV</strong>——镜像会被 push 到仓库、被多台机器 pull，密码跟着镜像到处走；课件姿势：docker run -e 运行时注入（密码只在启动命令/密钥系统里）。审查口诀：<strong>镜像负责「不变的东西」，环境负责「变的东西」，密钥只走运行时注入</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：一台服务器跑你们的产品，多个 Python 服务版本不同（一个 3.10 一个 3.14），怎么做到互不干扰？更新一个服务怎么做到秒级？`,
+              source: '来源：渡一源课程《21.部署-认识Docker》课件（运行时的问题/Docker 三问）· Docker 官方文档 Dockerfile reference https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `课件的三个问题正好对应答案：<strong>① 互不干扰</strong>——每个服务一个镜像，Python 版本、依赖版本全部冻结在镜像里（uv sync --frozen），容器之间进程/文件/网络命名空间隔离——宿主机只跑 Docker 守护进程，服务之间「看不见」彼此的 Python；<strong>② 准备快捷</strong>——环境准备从「六步手工操作」（课件参考答案：装 Python、装 uv、配镜像源、装依赖、删文件、启动）变成一次 docker build；<strong>③ 更新快速</strong>——改代码 → 重新构建镜像 → docker run 新容器替换旧容器（秒级），而不是在服务器上手工改环境。设计上再补两条：镜像不可变（更新=换新镜像，永不进容器改）；镜像分层缓存（依赖没变时构建只重建最后一层）。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `把 duyi-service 打成镜像并跑起来（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 40 分钟',
+                goal: '复制 Dockerfile 与 .dockerignore → docker build -t duyi-service:latest . → 准备 duyi_prod_db → 按课件 docker run（-e 全部环境变量）启动 → curl 本机 80 端口验证 /api/products → docker ps 确认容器状态 → 验证 --restart（docker stop 后手动 docker start，对比 kill -9）→ docker logs 看日志。',
+                accept: ['镜像构建成功且最终镜像不含构建工具（docker image inspect 看大小）', '容器跑在 80 端口对外服务正常', 'kill 容器进程后自动重启（unless-stopped 生效）', '日志从容器 stdout 可见'],
+              },
+              source: '任务基于《21.部署-认识Docker》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：按课件一步步走；生产数据库 duyi_prod_db 先建好并跑迁移（容器内连 DB_HOST 的 192.168.1.6 改成本机可达地址，如 host.docker.internal）。坑：Dockerfile 里 COPY . . 前必须配 .dockerignore（排除 .venv/测试/缓存，否则镜像暴肥且构建慢）；--restart 验证用 docker exec kill 1 或 kill -9 主进程模拟意外退出，观察自动拉起；docker logs 确认 ch18 的日志体系在容器里照常输出（JSON 模式看 COMMON_ENVIRONMENT=production 生效）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（21.部署-认识Docker）</li>
+        <li><strong>深读推荐</strong>：<a href="https://docs.docker.com/reference/dockerfile/">Docker 官方：Dockerfile reference（多阶段构建）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/部署-认识Docker速查表.html">部署-认识Docker速查表</a>——三件套、多阶段骨架、run 参数一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/流式响应">20.流式响应</a> · 下一课 <a href="/agents/python-framework/部署-云资产">22.部署-云资产</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以 duyi-service 容器化并在 80 端口跑通为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

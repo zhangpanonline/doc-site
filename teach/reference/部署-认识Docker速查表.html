@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>部署-认识Docker速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>部署-认识Docker速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0021-部署-认识Docker.html">《部署-认识Docker互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>三件套</h2>
+      <dl class="term-grid">
+        <dt>Dockerfile</dt>
+        <dd>配置文件 → 构建镜像；RUN 构建期执行、CMD 容器启动时执行。</dd>
+        <dt>镜像</dt>
+        <dd>包含运行所需的一切（python/uv/.venv）；slim 比完整镜像小 90%。</dd>
+        <dt>容器</dt>
+        <dd>镜像启动的实例，运行 CMD；不可变，更新=换新镜像。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>多阶段骨架</h2>
+      <pre>FROM python:3.14-slim AS builder
+WORKDIR /app
+RUN pip install uv
+ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+COPY . .
+RUN uv sync --frozen --no-dev --no-editable
+
+FROM python:3.14-slim          # 干净环境
+WORKDIR /app
+COPY --from=builder /app/.venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+EXPOSE 8080
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]</pre>
+    </section>
+
+    <section>
+      <h2>docker run 六个参数</h2>
+      <table class="cmp-table">
+        <tr><th>参数</th><th>作用</th></tr>
+        <tr><td>-d</td><td>后台运行</td></tr>
+        <tr><td>--name</td><td>容器命名</td></tr>
+        <tr><td>-p 9090:8080</td><td>宿主机:容器端口映射</td></tr>
+        <tr><td>-e KEY=VAL</td><td>环境变量（配置/密钥运行时注入）</td></tr>
+        <tr><td>--restart unless-stopped</td><td>意外退出/宿主机重启自动拉起</td></tr>
+        <tr><td>--memory / --cpus</td><td>资源上限，防拖垮宿主机</td></tr>
+      </table>
+      <p>简易部署四步：开发 → 本地构建镜像 → 传输给服务器 → 服务器运行容器。</p>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>

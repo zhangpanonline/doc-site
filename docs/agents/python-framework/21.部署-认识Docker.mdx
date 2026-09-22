@@ -1,0 +1,179 @@
+---
+sidebar_position: 21
+title: '21. 部署-认识Docker'
+description: "Python 框架课程 · 部署-认识Docker：运行时的环境准备问题、多阶段 Dockerfile、镜像与容器、docker run 生产参数、简易部署流程。"
+displayed_sidebar: agentsFramework
+---
+
+# 部署-认识Docker
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+## 运行时的问题
+
+你有一个从git拉取下来的FastAPI应用的全部源码。
+
+如果你要在一个崭新的操作系统上启动它，需要做哪些事情？
+
+<details>
+  <summary>📖 查看参考答案</summary>
+  <ol>
+    <li>安装Python</li>
+    <li>从镜像源安装uv</li>
+    <li>设置uv镜像源</li>
+    <li>安装运行时依赖：uv sync --frozen --no-dev --no-editable</li>
+    <li>删除除.venv外的全部文件</li>
+    <li>启动服务：uvicorn api.main:app --host 0.0.0.0 --port 8080</li>
+  </ol>
+</details>
+
+这些操作涉及到：
+
+- 准备环境
+- 准备必须的文件
+- 启动命令
+
+越是复杂的应用，需要安装的前置软件就越多，需要准备文件的过程就越复杂。
+
+如果一台服务器中需要跑多个应用：
+
+- 如何才能保证不同的应用环境互不干扰？
+- 如何才能保证每一次在服务器端准备环境和文件的过程快捷而高效？
+- 如何才能保证当应用更新过后，当环境和必须的文件发生变化过后，快速的更新？
+
+这就是Docker要解决的问题。
+
+## Docker
+
+![image-20260702135701716](https://resource.duyiedu.com/yuanjin/202608012025285.png)
+
+### Dockerfile
+
+一个配置文件，通过该文件产生一个镜像
+
+```dockerfile
+# 依赖轻量级python镜像，比完整镜像小90%，提升构建速度和构建产物的大小
+FROM python:3.14-slim AS builder
+
+# WORKDIR：设置工作目录，如果目录不存在则自动创建
+WORKDIR /app
+
+# RUN：安装 uv，RUN命令在镜像构建过程中执行
+RUN pip install uv -i https://mirrors.aliyun.com/pypi/simple/
+# 设置环境变量UV_INDEX_URL，后续uv使用该镜像源
+ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+# 以下两行是为了提升构建性能的，现在不用管它
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
+# 将当前目录下的所有文件复制到镜像的 /app 目录中
+COPY . .
+
+# --mount=type=cache,target=/root/.cache/uv 为了提升构建性能，可选，现在不管
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-editable
+
+
+# ============================================================================
+# 开启全新环境
+FROM python:3.14-slim
+
+WORKDIR /app
+
+# 将 builder 阶段的 /app/.venv 目录复制到当前镜像的 /app/.venv 目录中
+COPY --from=builder /app/.venv /app/.venv
+
+# 将虚拟环境目录加入到PATH变量
+ENV PATH="/app/.venv/bin:$PATH"
+
+# 描述信息，可使用 docker image inspect <镜像名>:<tag> 查看
+EXPOSE 8080
+
+# CMD：将来启动镜像时需要执行的命令
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
+
+```
+
+```shell
+# 构建镜像
+docker build -t <镜像名>:<tag> .
+
+# 构建指定平台可用的镜像
+docker --platform linux/amd64 build -t <镜像名>:<tag> .
+```
+
+### 镜像
+
+包含运行所需要的一切，比如`python`、`uv`、`.venv`
+
+### 容器
+
+通过镜像启动，启动时会运行镜像中的`CMD`
+
+```shell
+docker run -d \
+  --name my-app \
+  -p 9090:8080 \
+  -e environment=production \
+  --restart unless-stopped \
+  --memory=512m \
+  --cpus=1 \
+  <镜像名>:<tag>
+```
+
+- **`-d` (detach)**: **后台运行容器**。这是生产环境中最常用的参数，让容器在后台默默运行，并把容器ID返回给你。
+- **`--name`**: **给容器起个名字**。如果不指定，Docker 会随机生成一个名字。
+- **`-p 9090:8080` (publish)**: **端口映射**。将宿主机的 `9090` 端口，映射到容器内部的 `8080` 端口。
+- `-e environment=production` 设置环境变量。
+- **`--restart unless-stopped`**: **重启策略**。告诉 Docker 当容器意外退出或宿主机重启时，自动重新启动容器（除非你手动停止了它）。
+- **`--memory=512m` / `--cpus=1`**: **资源限制**。限制容器最多只能使用 512MB 内存和 1 个 CPU 核心，防止单个容器耗尽宿主机所有资源。
+
+## 为duyi-service构建镜像
+
+1. 复制`Dockerfile`和`dockerignore`
+
+2. 构建镜像
+
+   ```shell
+   docker build -t duyi-service:latest .
+   ```
+
+3. 准备好生产数据库：`duyi_prod_db`
+
+4. 启动镜像
+
+   ```shell
+   docker run -d \
+     --name duyi-service \
+     -p 80:8080 \
+     -e COMMON_ENVIRONMENT=production \
+     -e WEB_APP_NAME=渡一API接口 \
+     -e WEB_CORS_ORIGINS=www.duyi.com \
+   	-e WEB_CORS_EXPOSE_HEADERS=X-Process-Time \
+   	-e WEB_JWT_SECRET_KEY=8f231a2b3c4d5e6f444b9c0d1e2f3a4b \
+   	-e DB_HOST=192.168.1.6 \
+     -e DB_PORT=5432 \
+     -e DB_NAME=duyi_prod_db \
+     -e DB_USER=admin \
+     -e DB_PASSWORD=123123 \
+     -e LOG_LEVEL=INFO \
+     -e LOG_SLOW_QUERY_THRESHOLD=200 \
+     --restart unless-stopped \
+     --memory=512m \
+     --cpus=1 \
+     duyi-service:latest
+   ```
+
+## 容器简易部署流程
+
+1. 开发
+2. 本地通过Dockerfile构建镜像
+3. 将镜像传输给服务器
+4. 服务器运行容器
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0021-部署-认识Docker.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/部署-认识Docker速查表.html">📋 部署-认识Docker速查表（可打印）</a>
