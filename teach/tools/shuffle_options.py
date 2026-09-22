@@ -7,7 +7,7 @@
 """
 import glob, os, random, re, sys
 
-BASE = '/Users/zp/Code/doc-site/.claude/worktrees/interview-v2/teach/lessons'
+BASE = '/Users/zp/Code/doc-site/teach/lessons'
 
 BUTTON_RE = re.compile(r'<button class="quiz-option">(.*?)</button>', re.S)
 QCORRECT_RE = re.compile(r'(<div class="quiz-q" data-correct=")(\d+)(">)')

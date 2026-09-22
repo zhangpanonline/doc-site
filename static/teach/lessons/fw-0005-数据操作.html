@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 数据操作：Raw SQL 注入实战、参数化绑定、Core 表达式、异步会话与 ORM CRUD、执行时机——互动教学课程">
+  <title>数据操作 · 互动教学课程（Python 框架 fw-05）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>数据操作</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/数据操作">05.数据操作</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 SQLAlchemy 的三种数据操作方式（Raw SQL / Core 表达式 / ORM）与各自适用场景</li>
+        <li>亲手演示 SQL 注入，并说清参数化绑定为什么能防住</li>
+        <li>用 session_factory 完成手动提交与 <code>begin()</code> 自动提交，说清 session 的三大能力</li>
+        <li>按「执行时机」说清 flush / commit / autoflush / expire_on_commit 的区别</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《05.数据操作》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三层数据操作（课件要点）</h3>
+        <ul class="pitfall-list">
+          <li><strong>Raw SQL</strong>：<code>text()</code> + f-string 拼接——灵活但开发成本高、易出错、有注入风险、不适配方言</li>
+          <li><strong>Core 表达式</strong>：<code>insert/select/update/delete</code> + Python 表达式条件（<code>==</code> 而非 <code>=</code>）——类型化、无注入、适配方言</li>
+          <li><strong>ORM</strong>：操作 Python 对象，<code>session.add()</code> / 改属性 / <code>session.delete()</code>，SQLAlchemy 负责同步</li>
+          <li>选型（课件总结）：简单 CRUD 用 ORM；复杂查询（聚合、批量更新）混用 Core；前两者都难处理才用 Raw SQL（必须参数化）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>会话与执行时机</h3>
+        <ul class="pitfall-list">
+          <li><strong>session_factory 单例</strong>：统一 <code>class_=AsyncSession, expire_on_commit=False</code>；<code>begin()</code> 块结束自动提交</li>
+          <li><strong>flush</strong>：执行记录的操作，不提交；<strong>commit</strong>：先自动 flush，再提交</li>
+          <li><strong>autoflush</strong>（默认 True）：<code>session.execute()</code> 前先把 pending 操作 flush 到数据库</li>
+          <li><strong>expire_on_commit=True</strong>：提交后对象字段全部过期，再读字段会重新查询——损耗性能，通常关闭</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《05.数据操作》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. SQLAlchemy 提供了几种操作数据的方式？（作业题）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">四种：再加 JDBC</button>
+            <button class="quiz-option">两种：Raw SQL 和 ORM</button>
+            <button class="quiz-option">三种：Raw SQL、Core 表达式、ORM</button>
+            <button class="quiz-option">一种：ORM</button>
+          </div>
+          <div class="quiz-explain" hidden>课件总结：简单 CRUD 用 ORM，复杂查询（聚合、批量更新）混用 Core 表达式，前两者都难处理才考虑 Raw SQL（注意注入）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 课件里 search_products 用 f-string 直接拼 LIKE 条件，会有什么风险？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">SQL 注入——篡改输入改变 SQL 意图，轻则偷数据重则删库</button>
+            <button class="quiz-option">只是查询慢一点</button>
+            <button class="quiz-option">跨数据库不兼容</button>
+            <button class="quiz-option">没有任何风险</button>
+          </div>
+          <div class="quiz-explain" hidden>课件实测：输入 %' OR 1=1 -- 后全表暴露；delete_product_by_id("1 OR 1=1") 直接清空整张表。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 课件修复注入的方案是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只允许字母数字输入</button>
+            <button class="quiz-option">把单引号替换成双引号</button>
+            <button class="quiz-option">参数化绑定：:keyword 占位符 + 字典传值，SQL 结构与数据分离</button>
+            <button class="quiz-option">给数据库加锁</button>
+          </div>
+          <div class="quiz-explain" hidden>课件写法：text("SELECT * FROM product WHERE name LIKE :keyword") + {"keyword": f"%{keyword}%"}。数据库先解析 SQL 结构，参数值作为纯数据填入，输入永远不会被当作 SQL 指令执行。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. Core 表达式里 where 条件怎么写？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">SQL 字符串："WHERE name LIKE '%iPhone%'"</button>
+            <button class="quiz-option">字典匹配</button>
+            <button class="quiz-option">正则表达式</button>
+            <button class="quiz-option">Python 表达式：select(Product).where(Product.name.like("%iPhone%"))</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释：where() 用 Python 表达式构建条件——Python 的 == 而非 SQL 的 =。底层自动参数化绑定，从根上杜绝注入。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. async with session_factory.begin() as session 里的 begin() 有什么作用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">自动 rollback 所有操作</button>
+            <button class="quiz-option">只开启事务，结束必须手动 commit</button>
+            <button class="quiz-option">与普通 with session_factory() 完全一样</button>
+            <button class="quiz-option">块结束自动提交事务</button>
+          </div>
+          <div class="quiz-explain" hidden>课件对比：insert_with_manual_commit 用 with session_factory() 手动 await session.commit()；insert_with_auto_commit 用 begin() 块结束自动提交。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 课件总结里 session 的能力包括哪些？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型结合、统一管理事务、记录操作统一执行</button>
+            <button class="quiz-option">替代数据库连接池</button>
+            <button class="quiz-option">只有执行 SQL</button>
+            <button class="quiz-option">自动生成数据库表</button>
+          </div>
+          <div class="quiz-explain" hidden>课件总结三条：① 模型结合；② 统一管理事务；③ 记录操作、统一执行。session 是 ORM 的入口，不是建表或连接池的替代品。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. flush 和 commit 有什么区别？（作业题）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">commit 不会触发 flush</button>
+            <button class="quiz-option">flush 执行记录的操作但不提交；commit 先自动 flush 再提交事务</button>
+            <button class="quiz-option">flush 会提交事务</button>
+            <button class="quiz-option">两者完全一样</button>
+          </div>
+          <div class="quiz-explain" hidden>课件执行时机第 1/2 条：session.flush() 执行记录的操作但不提交；session.commit() 先自动 flush，再提交。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. autoflush=True（默认值）时，session.execute() 会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">什么都不发生，直接执行传入 SQL</button>
+            <button class="quiz-option">自动 rollback 事务</button>
+            <button class="quiz-option">自动提交事务</button>
+            <button class="quiz-option">先自动 flush 掉 pending 操作，再执行传入的 SQL</button>
+          </div>
+          <div class="quiz-explain" hidden>课件执行时机第 3 条 + SQLAlchemy 官方文档：autoflush 是在 Session.execute() 等 SQL 执行方法开头发生的可配置自动 flush（针对 ORM 构造的 SQL）；autoflush=False 时仅执行传入 SQL，pending 操作保留不动。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. expire_on_commit=True 时，提交后读取对象字段会发生什么？（作业题）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">直接返回内存中的旧值</button>
+            <button class="quiz-option">抛出异常</button>
+            <button class="quiz-option">字段被标记过期，读取时触发重新查询，把数据库值同步回对象</button>
+            <button class="quiz-option">返回 None</button>
+          </div>
+          <div class="quiz-explain" hidden>课件执行时机第 4 条：提交后 session 把关联对象每个字段标记为过期（可能已与数据库不一致），读取时重新查询同步。该配置损耗性能且带来其他问题，通常关闭（课件在 session_factory 里配了 expire_on_commit=False）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0005-数据操作',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的搜索接口：keyword 直接 f-string 拼进 LIKE 条件——\n\n<code>sql = f"SELECT * FROM product WHERE name LIKE '%{keyword}%'"</code>\n\n用户输入 %' OR 1=1 -- 会发生什么？如何修复？`,
+              source: '来源：SQLAlchemy 官方教程 Working with Transactions and the DBAPI（"a Python literal value ... should never be stringified into SQL string directly; a parameter should always be used. This is most famously known as how to avoid SQL injection attacks"）https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《05.数据操作》课件注入演示',
+              breakdown: `拼接结果是 <code>SELECT * FROM product WHERE name LIKE '%%' OR 1=1 -- %'</code>——OR 1=1 永远为真，-- 注释掉剩余内容，<strong>全表数据暴露</strong>。换到删除接口，<code>DELETE FROM product WHERE id = 1 OR 1=1</code> 直接清空整张表。修复=参数化绑定：<code>text("SELECT * FROM product WHERE name LIKE :keyword")</code> 配 <code>{"keyword": f"%{keyword}%"}</code>。SQL 模板与参数值分开发送：数据库先解析结构，再把值作为<strong>纯数据</strong>填入——输入永远不会变成 SQL 指令。官方教程原话：连整数、日期等字面量都不该直接字符串化进 SQL，一律走参数。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `AI 写了一段「先改再查」的代码：session.add(product) 之后立刻 select 查询同一条记录，但没看到新数据（尚未 commit）。讲清：flush 与 commit 的区别是什么？autoflush 在这里扮演什么角色？`,
+              source: '来源：SQLAlchemy 官方文档 Session Basics（autoflush 定义："a configurable, automatic flush call which occurs at the beginning of methods including: Session.execute() and other SQL-executing methods, when used against ORM-enabled SQL constructs"）https://docs.sqlalchemy.org/en/20/orm/session_basics.html · 检索 2026-09-22 · 层级：一手（官方文档）',
+              breakdown: `<strong>flush</strong>：把 session 里 pending 的变更（新增/修改/删除）翻译成 SQL 发给数据库，<strong>但不提交</strong>——事务未结束，别的连接看不到。 <strong>commit</strong>：先自动 flush，再提交事务——此时变更才对其他连接可见。 上述场景里 <code>session.execute(select(...))</code> 默认 <strong>autoflush=True</strong>：执行 ORM 查询前会先把 pending 操作 flush 掉，所以「同 session 内查得到自己的变更」；但 <strong>另一个连接</strong>在 commit 前查不到——这正是 AI 代码「没看到新数据」的答案：它用了另一个 session/连接去查，而不是 autoflush 失效。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的会话封装：每个函数里手写 session_factory() → try → commit → except 裸捕获 → rollback → finally close，且没配 expire_on_commit。审查这段代码，按课件标准该怎么改？`,
+              source: '来源：SQLAlchemy 官方文档 Session Basics（expire_on_commit 段落："all objects associated with the Session are expired ... unless the Session.expire_on_commit parameter is used to disable this behavior"）https://docs.sqlalchemy.org/en/20/orm/session_basics.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《05.数据操作》课件「优化代码结构」',
+              breakdown: `课件标准解法：把 session 配置收进 <strong>session_factory 单例</strong>——async_sessionmaker(get_engine(), class_=AsyncSession, <strong>expire_on_commit=False</strong>)，全局只配一次；函数内用 <code>async with session_factory.begin() as session</code> 自动提交替代 try/except/finally 三件套（裸 except 会吞掉 KeyboardInterrupt/SystemExit，且容易漏 close）。 为什么关 expire_on_commit：官方文档说提交后 session 会把所有关联对象标记过期（expire），下次读字段时<strong>隐式触发重新查询</strong>——AI 的代码没关它，提交后循环打印对象属性就是 N+1 查询现场；且异步场景里过期属性再访问时可能踩 lazy load 报错。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：SQLAlchemy 里 ORM、Core 表达式、Raw SQL 三种方式，你什么时候选哪个？`,
+              source: '来源：渡一源课程《05.数据操作》课件总结（三层选型）· SQLAlchemy 官方教程 Working with Transactions and the DBAPI（"SQLAlchemy's Core Expression API otherwise ensures that Python literal values are passed as bound parameters where appropriate"）https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `课件总结的选型阶梯：<strong>简单 CRUD 用 ORM</strong>——操作 Python 对象、IDE 补全、自动同步；<strong>复杂查询（聚合、批量更新）混用 Core 表达式</strong>——类型化、Python 表达式构建条件、底层自动参数化（官方教程：Core 表达式保证字面量走绑定参数）、可适配方言；<strong>前两者都难以处理时才用 Raw SQL</strong>——换取高性能与极致灵活性，但必须参数化绑定防注入（官方教程：永远不要把字面量直接字符串化进 SQL）。 另外一条课件红线：耗时操作（如 I/O）尽量别放进一次连接里——连接被长任务占着，连接池压力骤增。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `在 pg16 数据库里实测本章三种数据操作与注入演示（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '按课件建表 → Raw SQL 插入 4 条商品 → 用 "%\' OR 1=1 --" 注入读出全表 → 参数化绑定后同输入无结果 → Core 表达式插入/查询/更新/删除 → ORM add/改属性/delete 全流程 → psql 里检查数据变化。',
+                accept: ['注入输入成功读出全部商品（复现漏洞）', '参数化绑定后同输入不再命中', 'Core 与 ORM 的增删改查在 psql 里可见', '能对着代码说清 flush 与 commit 的区别'],
+              },
+              source: '任务基于《05.数据操作》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：连 duyi_db（pg16 容器）跑 model/main.py 各段；注入验证用 <code>await search_products("%' OR 1=1 --")</code>；修复后同输入返回空。坑：Core/ORM 更新按 <code>Product.id == 1</code> 定位——表刚重建时 id 从 1 开始，但如果前面注入段删过数据，id 会跳过已删值（序列不回退），<strong>先 drop_all + create_all 再跑每段</strong>，输出才与课件一致。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（05.数据操作）</li>
+        <li><strong>深读推荐</strong>：<a href="https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html">官方教程：事务与 DBAPI（含参数绑定）</a> · <a href="https://docs.sqlalchemy.org/en/20/orm/session_basics.html">Session Basics</a> · <a href="https://docs.sqlalchemy.org/en/20/orm/session_state_management.html">Session State Management</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/数据操作速查表.html">数据操作速查表</a>——三种方式、会话与执行时机一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/ORM">04.ORM</a> · 下一课 <a href="/agents/python-framework/数据迁移">06.数据迁移</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（操作方式/注入/会话/expire_on_commit/flush与commit 五题）。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

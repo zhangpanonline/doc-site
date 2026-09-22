@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数据操作速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>数据操作速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0005-数据操作.html">《数据操作互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>三种操作方式</h2>
+      <table class="cmp-table">
+        <tr><th>方式</th><th>特点</th><th>适用场景</th></tr>
+        <tr><td>Raw SQL</td><td>灵活高性能；开发成本高、易错、有注入风险、不适配方言</td><td>前两者难处理的场景（小概率）</td></tr>
+        <tr><td>Core 表达式</td><td>类型化、自动参数化、无注入、适配方言</td><td>复杂查询（聚合、批量更新）</td></tr>
+        <tr><td>ORM</td><td>操作 Python 对象，自动同步</td><td>简单 CRUD</td></tr>
+      </table>
+      <p>耗时操作（如 I/O）尽量不要放到一次连接中。</p>
+    </section>
+
+    <section>
+      <h2>参数化绑定（防注入）</h2>
+      <pre># 危险：拼接
+sql = f"SELECT * FROM product WHERE name LIKE '%{keyword}%'"
+
+# 安全：结构与数据分离
+result = await conn.execute(
+    text("SELECT * FROM product WHERE name LIKE :keyword"),
+    {"keyword": f"%{keyword}%"})</pre>
+      <p>数据库先解析 SQL 结构，参数值作为纯数据填入——输入永远不会被当作 SQL 指令执行。</p>
+    </section>
+
+    <section>
+      <h2>会话与执行时机</h2>
+      <dl class="term-grid">
+        <dt>session 三能力</dt>
+        <dd>模型结合；统一管理事务；记录操作、统一执行。</dd>
+        <dt>flush()</dt>
+        <dd>执行记录的操作，不提交。</dd>
+        <dt>commit()</dt>
+        <dd>先自动 flush，再提交。</dd>
+        <dt>autoflush</dt>
+        <dd>默认 True：execute() 等执行 SQL 前先把 pending 操作 flush 掉。</dd>
+        <dt>expire_on_commit</dt>
+        <dd>True 时提交后对象字段全部过期，再读字段触发重新查询——损耗性能，通常关闭。</dd>
+        <dt>refresh()</dt>
+        <dd>把数据库真实值同步回模型对象（expire_on_commit=False 时才可能需要）。</dd>
+      </dl>
+      <pre>session_factory = async_sessionmaker(
+    get_engine(),
+    class_=AsyncSession,
+    expire_on_commit=False)   # 单例统一配置
+
+async with session_factory.begin() as session:  # 块结束自动提交
+    session.add(product)</pre>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>
