@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 统一异常处理：五条最佳实践、全局异常处理器、ERROR_MAP 错误码、MRO 回退查找、文档异常表——互动教学课程">
+  <title>统一异常处理 · 互动教学课程（Python 框架 fw-09）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>统一异常处理</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/统一异常处理">09.统一异常处理</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>背出服务端异常处理五条最佳实践（作业题）</li>
+        <li>讲清课件「现状」里各类异常原本分别被谁处理</li>
+        <li>读通全局异常处理器：ERROR_MAP 查表、MRO 回退、三路响应分支</li>
+        <li>说清为什么 API 层抛 HTTPException 要换成业务异常（NotFoundException）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《09.统一异常处理》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>五条最佳实践（作业题考点）</h3>
+        <ul class="pitfall-list">
+          <li>① 异常的自定义处理<strong>收拢到统一代码位置</strong></li>
+          <li>② 请求-响应链条中的异常<strong>不能中断服务器</strong></li>
+          <li>③ 服务端的<strong>敏感信息不能暴露给响应</strong></li>
+          <li>④ 按异常类型响应不同字段：<strong>status code / code（业务码）/ message</strong></li>
+          <li>⑤ API 文档中需要包含<strong>全局异常表</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>全局处理器机制</h3>
+        <ul class="pitfall-list">
+          <li><strong>ERROR_MAP</strong>：异常类型 → (业务错误码, HTTP 状态码, 默认消息)——硬编码字典，设计即文档</li>
+          <li><strong>_lookup</strong>：按 <code>type(exc).__mro__</code> 逐级查表，找不到回退到 Exception 兜底（500001）</li>
+          <li><strong>三路分支</strong>：HTTPException 走协议表；RequestValidationError 拼 loc: msg；BusinessException 用 message；未知异常用默认消息</li>
+          <li><strong>三处注册</strong>：add_exception_handler 覆盖 RequestValidationError / HTTPException / Exception</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《09.统一异常处理》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 统一异常处理五条最佳实践，第一条是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">所有异常都返回 200</button>
+            <button class="quiz-option">每个接口自己 try/except</button>
+            <button class="quiz-option">对异常的自定义处理要收拢到统一代码位置</button>
+            <button class="quiz-option">异常直接抛给客户端</button>
+          </div>
+          <div class="quiz-explain" hidden>课件五条之首：自定义处理收拢到统一位置——本课的 handler/handlers.py 就是那个位置，全站异常走一个 exception_handler。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 课件「现状」里，业务层抛出的 BusinessException 原来被谁处理？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">被 Pydantic 处理</button>
+            <button class="quiz-option">被 FastAPI 当做普通 Exception 自动处理（不是业务语义的响应）</button>
+            <button class="quiz-option">被专门针对它的处理器处理</button>
+            <button class="quiz-option">没人处理，直接崩服务器</button>
+          </div>
+          <div class="quiz-explain" hidden>课件现状清单：BusinessException 在业务层主动抛出，被 FastAPI 当做 Exception 自动处理——拿不到业务错误码与定制消息，这就是要统一处理的动机。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 响应字段设计里，status code / code / message 分别是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">HTTP响应码 / 错误业务码 / 错误消息</button>
+            <button class="quiz-option">都是 HTTP 状态码</button>
+            <button class="quiz-option">错误码 / 时间戳 / 请求 ID</button>
+            <button class="quiz-option">业务码 / 业务码 / 业务码</button>
+          </div>
+          <div class="quiz-explain" hidden>课件最佳实践第 4 条：status code 是 HTTP 响应码；code 是错误业务码（如 404001/422001/500001，同一 HTTP 码下可细分）；message 是错误消息。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. ERROR_MAP 里 RequestValidationError 和 DatabaseException 的 code 为什么可以相同？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">业务语义都是「数据验证错误」（422001）——业务码按语义归并，不按异常类型数数</button>
+            <button class="quiz-option">写错了，应该不同</button>
+            <button class="quiz-option">为了节省内存</button>
+            <button class="quiz-option">code 必须和 HTTP 码一致</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 errors.py：两者都是 ("422001", 422, "数据验证错误")——客户端收到 422001 就知道「我的数据不对」，无论底层是 Pydantic 校验还是数据库约束冲突。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. _lookup 为什么按 type(exc).__mro__ 逐级查找？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">随机找一个配置</button>
+            <button class="quiz-option">继承链逐级匹配（如 DatabaseException→BusinessException→Exception），精确命中优先，最终兜底 Exception</button>
+            <button class="quiz-option">为了遍历所有异常</button>
+            <button class="quiz-option">MRO 是必须的语法要求</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 _lookup：for exc_type in type(exc).__mro__ 查 ERROR_MAP，命中即返回；NotFoundException 没直接登记也能命中 BusinessException 分支……实际 NotFoundException 在表里，兜底靠 Exception: ("500001", 500, "服务器内部错误")——未知异常绝不裸奔。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. HTTPException 分支里，body 消息去哪找？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">直接返回空字符串</button>
+            <button class="quiz-option">ERROR_MAP 里查</button>
+            <button class="quiz-option">PROTOCOL_ERROR_MAP 按状态码查（404→「路径不存在」），查不到用 exc.detail</button>
+            <button class="quiz-option">随机生成</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 handlers.py：isinstance(exc, HTTPException) 分支——code=str(status_code)，body 用 PROTOCOL_ERROR_MAP.get(exc.status_code, exc.detail)。404/405/415 有定制文案，其余协议错误透出 detail。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. RequestValidationError 的 message 是怎么拼出来的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">写死一个固定文案</button>
+            <button class="quiz-option">只取第一条错误</button>
+            <button class="quiz-option">遍历 exc.errors()，把 loc 用点连接 + msg：如 "name: String should have at least 1 character"</button>
+            <button class="quiz-option">直接 str(exc)</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 _format_validation_error：loc = ".".join(str(p) for p in err["loc"])，返回 f"{loc}: {err['msg']}"——把 Pydantic 的结构化错误转成人话，多条用换行拼接。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 为什么 API 层把 HTTPException(404) 换成 NotFoundException？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了少写代码</button>
+            <button class="quiz-option">性能更好</button>
+            <button class="quiz-option">HTTPException 有 bug 不能用</button>
+            <button class="quiz-option">API 层只表达业务语义；HTTP 翻译集中到全局处理器（404001 业务码 + 404 状态）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 api 三文件统一改动：raise NotFoundException(message="商品不存在")。好处：① 业务码 404001 由处理器统一生成，接口层不碰响应格式；② 将来改响应结构（加 request_id 等）只改 handler；③ 与 ch07 边界原则一致——接口层只声明「发生了什么」，怎么响应是统一设计的事。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 接口文档里的全局异常表是怎么来的？（作业题关联）</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Swagger 自动生成</button>
+            <button class="quiz-option">generate_error_docs() 从 ERROR_MAP/PROTOCOL_ERROR_MAP 生成 markdown 表，注入 FastAPI description</button>
+            <button class="quiz-option">没有异常表</button>
+            <button class="quiz-option">手写一份放在 README</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 docs.py：遍历两张映射表生成「业务错误/协议错误」两个 markdown 表，main.py 里 description=generate_error_docs() 注入——错误码字典是单一数据源，文档随配置自动同步（最佳实践第 5 条）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0009-统一异常处理',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的全局异常处理器：except Exception as e: return {"detail": str(e)}——上线后 500 错误直接把 SQL 语句、表名、连接串片段吐给了前端。按本课最佳实践，踩了哪一条？`,
+              source: '来源：FastAPI 官方文档 Handling Errors（Override the default exception handlers / 自定义异常处理器）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《09.统一异常处理》课件最佳实践',
+              breakdown: `踩的是最佳实践第 3 条：<strong>服务端的敏感信息不能暴露给响应</strong>。str(e) 会把数据库驱动报错（含 SQL、schema 名、连接信息）原样给客户端——既是信息泄露，也帮攻击者踩点。课件标准做法：未知异常走 ERROR_MAP 兜底 <code>Exception: ("500001", 500, "服务器内部错误")</code>——客户端只拿到统一业务码与中性文案，真实细节（detail / original_exception）留给服务端日志排查（这正是 ch07 BusinessException 分 message/detail 两层的用意）。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `课件全局处理器怎么做到「一个函数处理全站所有异常」？三类异常的分支逻辑各是什么？`,
+              source: '来源：FastAPI 官方文档 Handling Errors（"Override the default exception handlers"、"Override request validation exceptions"、"Override the HTTPException error handler"）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《09.统一异常处理》课件完成代码',
+              breakdown: `机制 = <strong>三个 add_exception_handler 注册同一个 exception_handler</strong>：RequestValidationError（校验类）、HTTPException（协议类）、Exception（兜底一切）。处理器内两路：<strong>HTTPException</strong> → code=状态码字符串，body 查 PROTOCOL_ERROR_MAP（404→「路径不存在」等），查不到用 exc.detail；<strong>其余异常</strong> → _lookup 按 MRO 查 ERROR_MAP 拿 (业务码, HTTP状态码, 默认消息)，再细分——RequestValidationError 拼「字段路径: 错误信息」多行消息；BusinessException 用 message；其他未知异常用默认消息（500001）。最后统一 JSONResponse(status_code, {"code", "message"})。官方文档把这三类「override」作为标准扩展点，课件是它的业务化落地。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的错误处理：每个接口函数里 try/except 包一遍，返回格式还各不相同（有的 {"error": ...}、有的 {"detail": ...}、有的直接字符串）。按本课标准审查并给出整改方案。`,
+              source: '来源：FastAPI 官方文档 Handling Errors（自定义异常处理器统一响应格式）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《09.统一异常处理》课件最佳实践第 1 条',
+              breakdown: `违反最佳实践第 1 条：<strong>异常的自定义处理要收拢到统一代码位置</strong>。散落的 try/except 三个问题：① 响应格式漂移——前端要写多套错误解析；② 漏网——某接口忘了 catch，异常直接穿到框架默认处理器，行为不一致；③ 重复——每个接口都写一遍三件套。整改（课件方案）：接口层只抛业务异常（NotFoundException/ DatabaseException），全局 exception_handler 一处负责查 ERROR_MAP、拼 {"code", "message"}；错误码字典同时驱动接口文档异常表（generate_error_docs），单一数据源。审查口诀：<strong>接口函数里出现 try/except 就是在问——这个异常为什么不交给全局处理器？</strong>`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：为什么错误码设计成 422001 这种「HTTP码+序号」而不是纯业务编号？ERROR_MAP 为什么用硬编码字典而不是数据库配置？`,
+              source: '来源：渡一源课程《09.统一异常处理》课件（errors.py ERROR_MAP 硬编码字典）· FastAPI 官方文档 Handling Errors（异常处理器的注册机制）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `<strong>① 编码设计</strong>：422001 的前三位与 HTTP 状态码对齐——客户端拿到 code 就能立刻知道协议层的归类（4xx 还是 5xx），后三位在同类下细分业务场景（同是 422，001 数据验证 / 002 可以是库存不足）。纯业务编号（如 10001）还得再查表才知道 HTTP 层怎么表现。 <strong>② 硬编码字典</strong>：错误码是<strong>接口契约</strong>——契约要随代码版本走（code review、迁移可见），放数据库反而引入「运行时改契约」的风险，且启动时多一个外部依赖。字典同时是 docs.py 的单一数据源，改字典 = 改实现 + 改文档，不会漂移。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `跑通本章统一异常处理（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '覆盖 ch09 的 exception/ 与 main.py → 启动服务 → 触发四类异常验证响应格式：① 请求不存在的商品（NotFoundException）② 传非法字段（RequestValidationError）③ 访问未定义路径（HTTPException 404）④ 手工 raise 一个 RuntimeError（未知异常兜底）→ 打开 /docs 检查异常表。',
+                accept: ['四类异常的响应都是 {"code", "message"} 统一结构', '404 业务场景返回 code=404001，未知异常返回 500001 且不含内部细节', '/docs 的描述里能看到业务/协议两张错误码表'],
+              },
+              source: '任务基于《09.统一异常处理》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：覆盖代码后 make dev 起服务，curl 逐个触发。坑：验证未知异常兜底要临时加一个 raise RuntimeError 的调试路由（用完删）；RequestValidationError 用错误的请求体触发（如 name 传空串），message 应形如 "name: String should have at least 1 character"；HTTPException 404 走 PROTOCOL_ERROR_MAP 返回「路径不存在」，与 NotFoundException 的「商品不存在」是两条不同链路——对比验证最能理解本课设计。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（09.统一异常处理）</li>
+        <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/handling-errors/">FastAPI 官方：Handling Errors（三类处理器 override）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/统一异常处理速查表.html">统一异常处理速查表</a>——五条实践、ERROR_MAP、分支逻辑一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/依赖注入">08.依赖注入</a> · 下一课 <a href="/agents/python-framework/中间件">10.中间件</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（复述服务端异常处理的最佳实践）。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

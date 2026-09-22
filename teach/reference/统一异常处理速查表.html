@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>统一异常处理速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>统一异常处理速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0009-统一异常处理.html">《统一异常处理互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>五条最佳实践</h2>
+      <ol class="pitfall-list">
+        <li>异常的自定义处理收拢到统一代码位置</li>
+        <li>请求-响应链条中的异常不能中断服务器</li>
+        <li>服务端敏感信息不能暴露给响应</li>
+        <li>按异常类型响应不同字段：status code / code / message</li>
+        <li>API 文档中需要包含全局异常表</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>ERROR_MAP（错误码字典）</h2>
+      <table class="cmp-table">
+        <tr><th>异常类型</th><th>业务码</th><th>HTTP</th><th>默认消息</th></tr>
+        <tr><td>RequestValidationError</td><td>422001</td><td>422</td><td>数据验证错误</td></tr>
+        <tr><td>DatabaseException</td><td>422001</td><td>422</td><td>数据验证错误</td></tr>
+        <tr><td>NotFoundException</td><td>404001</td><td>404</td><td>资源不存在</td></tr>
+        <tr><td>Exception（兜底）</td><td>500001</td><td>500</td><td>服务器内部错误</td></tr>
+      </table>
+      <p>PROTOCOL_ERROR_MAP：404→路径不存在；405→请求方法不允许；415→不支持的媒体类型。</p>
+    </section>
+
+    <section>
+      <h2>处理器分支逻辑</h2>
+      <dl class="term-grid">
+        <dt>HTTPException</dt>
+        <dd>code=状态码；消息查协议表，查不到用 exc.detail。</dd>
+        <dt>RequestValidationError</dt>
+        <dd>exc.errors() 逐条拼「loc: msg」多行消息。</dd>
+        <dt>BusinessException</dt>
+        <dd>用 exc.message（不暴露 detail）。</dd>
+        <dt>未知异常</dt>
+        <dd>_lookup 按 MRO 查表回退 Exception 兜底 → 500001。</dd>
+        <dt>注册</dt>
+        <dd>add_exception_handler × 3：RequestValidationError / HTTPException / Exception。</dd>
+        <dt>文档</dt>
+        <dd>generate_error_docs() 从两张映射生成异常表注入 description。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>
