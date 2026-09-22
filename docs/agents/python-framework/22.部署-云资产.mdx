@@ -1,0 +1,91 @@
+---
+sidebar_position: 22
+title: '22. 部署-云资产'
+description: "Python 框架课程 · 部署-云资产：阿里云数字证书、VPC 网络规划、双 OSS 环境、RDS PostgreSQL Serverless、ACR 镜像仓库推送。"
+displayed_sidebar: agentsFramework
+---
+
+# 云资产
+
+源课程：[gitee.com/dev-edu/python-framework](https://gitee.com/dev-edu/python-framework)
+
+> 本节课需要阿里云充值10元左右
+>
+> 同时需要你拥有一个域名
+
+## 数字证书
+
+1. 搜索ssl，进入数字证书服务
+
+2. 购买个人测试证书
+
+3. 到左侧的证书管理去申请证书：域名填：`duyi-api.<你的域名>`
+
+4. 等待审核完成
+
+## VPC
+
+在阿里云搜索并创建vpc
+
+注意选择地区，后续几乎所有云产品都要使用该地区
+
+地区：自行选择
+
+名称：duyi-vpc
+
+ipv4：10.0.0.0/16
+
+交换机：创建4个，每个可用区两个交换机
+
+## OSS
+
+至少有两个OSS，一个用作线上测试，一个用作生产，地域必须和VPC一致
+
+## RDS
+
+RDS PostgreSQL Serverless
+
+1. 进入RDS的控制台。
+2. 创建实例
+3. 付费类型选Serverless。
+4. 地域选VPC所在地域
+5. PostgreSQL，选16版本。
+6. 点击完成SLR 授权
+7. RCU选0.5～1
+8. VPC选你之前新建的VPC
+9. 交换机选你之前新建的交换机
+10. 存储空间选最小值20G
+11. 其他默认
+12. 立即购买
+
+实例创建需要3～10分钟，创建好后
+
+1. 管理
+2. 账号管理：创建一个高权限账号
+3. 数据库管理：创建一个数据库duyi_db，授权账号填刚才那个账号
+4. 数据库连接：记录内网连接地址
+
+## ACR
+
+- 左侧菜单点「**实例列表**」→ 点「**创建个人版实例**」（如果已有默认实例就直接用）
+- 地区必须和vpc相同
+- 创建命名空间：duyiedu
+- 创建镜像仓库：duyi-service
+- 设置登录密码
+- 得到公网地址
+
+```shell
+# 本地使用docker登录
+docker login --username=<你的阿里云用户名> <你的镜像仓库公网地址>
+# 构建镜像
+docker build --platform linux/amd64 -t <你的镜像仓库公网地址>/<命名空间>/<仓库名>:<tag> .
+# 推送镜像
+docker push <你的镜像仓库公网地址>/<命名空间>/<仓库名>:<tag>
+```
+
+---
+
+配套学习：
+
+- <a href="/teach/lessons/fw-0022-部署-云资产.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/部署-云资产速查表.html">📋 部署-云资产速查表（可打印）</a>

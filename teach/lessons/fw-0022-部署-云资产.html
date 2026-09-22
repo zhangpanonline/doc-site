@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 部署-云资产：数字证书、VPC 网络规划、双 OSS、RDS Serverless 十二步、ACR 镜像推送——互动教学课程">
+  <title>部署-云资产 · 互动教学课程（Python 框架 fw-22）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>部署-云资产</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/部署-云资产">22.部署-云资产</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出五类云资产（证书/VPC/OSS/RDS/ACR）各自的职责</li>
+        <li>讲清 VPC 的规划要点：同地域、CIDR、4 个交换机</li>
+        <li>按 12 步创建 RDS Serverless 实例并记录内网连接地址</li>
+        <li>跑通「docker login → build → push」到 ACR 的镜像推送</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《22.部署-云资产》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>五类云资产（课件）</h3>
+        <ul class="pitfall-list">
+          <li><strong>数字证书</strong>：SSL 服务，为 duyi-api.域名 申请 HTTPS 证书</li>
+          <li><strong>VPC</strong>：私有网络 10.0.0.0/16，4 个交换机（每可用区 2 个）——后续所有云产品同地区</li>
+          <li><strong>OSS</strong>：至少两个——线上测试 / 生产，地域与 VPC 一致（ch14 的上传落点）</li>
+          <li><strong>RDS</strong>：PostgreSQL 16 Serverless（RCU 0.5~1、20G 起）——高权限账号 + duyi_db + 记录内网地址</li>
+          <li><strong>ACR</strong>：镜像仓库——命名空间 duyiedu、仓库 duyi-service、公网地址 push</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>连接关系（本课脉络）</h3>
+        <ul class="pitfall-list">
+          <li>RDS 只给<strong>内网地址</strong>——应用部署进同 VPC 后走内网，公网不开</li>
+          <li>应用容器（ch21 镜像）push 到 ACR，k8s（ch23）从 ACR pull</li>
+          <li>双 OSS 与「环境」对齐：测试环境用测试桶，生产用生产桶，权限分离</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《22.部署-云资产》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 本课准备了哪五类云资产？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">域名、邮箱、短信、支付、地图</button>
+            <button class="quiz-option">服务器、硬盘、内存、CPU、网卡</button>
+            <button class="quiz-option">数字证书、VPC、OSS、RDS、ACR</button>
+            <button class="quiz-option">Git、Docker、Python、uv、Nginx</button>
+          </div>
+          <div class="quiz-explain" hidden>课件五节：数字证书（HTTPS）、VPC（网络）、OSS（对象存储×2）、RDS（数据库）、ACR（镜像仓库）——部署五件套。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. VPC 的 ipv4 网段规划是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">任意公网网段</button>
+            <button class="quiz-option">不需要规划</button>
+            <button class="quiz-option">192.168.1.0/24，1 个交换机</button>
+            <button class="quiz-option">10.0.0.0/16，4 个交换机（每个可用区两个）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 VPC 节：duyi-vpc，ipv4 10.0.0.0/16，交换机 4 个、每个可用区两个——高可用布局（多可用区冗余）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. OSS 为什么要至少两个？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了备份</button>
+            <button class="quiz-option">线上测试与生产分开：环境隔离、权限与数据互不污染</button>
+            <button class="quiz-option">一个不够用</button>
+            <button class="quiz-option">随机要求</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 OSS 节：至少两个——一个线上测试、一个生产，地域必须和 VPC 一致。测试环境乱传的文件绝不进生产桶。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. RDS 选 Serverless 的 RCU 0.5~1 意味着什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">存储 0.5T</button>
+            <button class="quiz-option">固定 0.5 核 CPU</button>
+            <button class="quiz-option">内存 0.5G</button>
+            <button class="quiz-option">弹性算力 0.5~1 个计算单元区间，按需伸缩、按量付费——小流量起步省钱</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 RDS 步骤 7：RCU 选 0.5~1——Serverless 的计算单元范围，低峰缩到 0.5、高峰弹到 1，学习/小流量场景成本最低。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. RDS 创建好后要记录什么地址？为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">公网地址</button>
+            <button class="quiz-option">域名</button>
+            <button class="quiz-option">IP 白名单</button>
+            <button class="quiz-option">内网连接地址——应用在 VPC 内通过内网连库，公网不开更安全</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 RDS 步骤 4：数据库连接——记录内网连接地址。应用容器（ch21 的 DB_HOST）部署进同 VPC 后填这个地址，数据库不需要公网暴露。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. ACR 里创建了命名空间和仓库后，三句命令的顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">docker login → docker build（--platform linux/amd64）→ docker push</button>
+            <button class="quiz-option">push → build → login</button>
+            <button class="quiz-option">login → push → build</button>
+            <button class="quiz-option">build → login → push</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 ACR 命令：先 docker login（鉴权）→ docker build --platform linux/amd64（本地 Mac 是 arm，服务器是 amd，必须指定平台）→ docker push。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 「地域必须和 VPC 相同」在本课出现了两次（OSS、RDS），为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">跨地域走公网/专线，慢且贵；同地域资源才能低延迟内网互通</button>
+            <button class="quiz-option">为了省钱</button>
+            <button class="quiz-option">阿里云的规定</button>
+            <button class="quiz-option">没有原因</button>
+          </div>
+          <div class="quiz-explain" hidden>课件两处强调：OSS 与 RDS 地域都必须和 VPC 一致——同地域的资源之间走内网（低延迟、免流量费），跨地域只能走公网或专线，性能与成本都差。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 本课为什么买「个人测试证书」而不是正式证书？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有区别</button>
+            <button class="quiz-option">个人证书更安全</button>
+            <button class="quiz-option">学习/测试场景够用（便宜且能跑通 HTTPS 流程）；生产换正式证书同流程</button>
+            <button class="quiz-option">正式证书买不到</button>
+          </div>
+          <div class="quiz-explain" hidden>课件数字证书节：购买个人测试证书申请 duyi-api.域名——本课目标是跑通「证书→域名→HTTPS」的完整链路，测试证书便宜（几块钱）；生产环境换正式 DV/OV 证书，申请与部署流程一样。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 从 ch21 到本课，镜像传输方式发生了什么升级？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">从「手动传输镜像文件」升级为「push 到 ACR 仓库」——服务器/集群按需 pull</button>
+            <button class="quiz-option">没有变化</button>
+            <button class="quiz-option">改为邮件传输</button>
+            <button class="quiz-option">改为 U 盘</button>
+          </div>
+          <div class="quiz-explain" hidden>ch21 简易部署第三步是「将镜像传输给服务器」（手工）；本课 ACR 把它变成 docker push 到云端仓库——ch23 的 k8s 集群直接从 ACR pull，这是 CICD 流水线（ch24）的基础设施。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0022-部署-云资产',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 给的部署清单：把 RDS 公网地址直接填进应用的 DB_HOST，且测试和生产共用一个 OSS 桶。按本课资产规划，两个隐患是什么？`,
+              source: '来源：阿里云官方文档 What is VPC（"A virtual private cloud (VPC) is a secure and isolated virtual network on the cloud where you can deploy and access cloud resources"）https://www.alibabacloud.com/help/en/vpc/product-overview/what-is-vpc · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《22.部署-云资产》课件',
+              breakdown: `<strong>① RDS 开公网</strong>——课件明确只记录「内网连接地址」：数据库是资产里最不该暴露公网的（暴力破解、0day 扫描都盯着 5432）；应用在 VPC 内走内网，延迟低、免流量费、攻击面小（官方文档：VPC 是隔离的虚拟网络，内网资源天然不暴露）。 <strong>② 共用 OSS 桶</strong>——课件要求「至少两个，一个线上测试、一个生产」：测试环境会乱传垃圾文件、实验权限、甚至写错 key；共用桶意味着测试事故直接污染生产数据。环境隔离是部署的底线：网络（VPC）、存储（OSS）、数据库（RDS duyi_db vs prod）全部按环境分开。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `RDS Serverless 的 RCU 是什么？0.5~1 的配置为什么适合小流量服务？和传统「买固定规格」比，账单逻辑差在哪？`,
+              source: '来源：阿里云官方文档（RDS Serverless：RCU 为弹性计算单元，按需伸缩）· 渡一源课程《22.部署-云资产》课件（RDS 12 步）https://www.alibabacloud.com/help/en/ · 检索 2026-09-22 · 层级：一手（官方文档 + 源课程）',
+              breakdown: `RCU（Relational Computing Unit）是 Serverless 数据库的<strong>弹性算力单元</strong>：实例的 CPU/内存按 RCU 数量组合。课件选 0.5~1 是给了实例一个<strong>伸缩区间</strong>——低峰压在 0.5 节省成本，高峰自动弹到 1，瞬时流量再高还有突发能力。对比传统固定规格：固定规格是「按预估峰值买断」——小流量服务买 2C4G 大部分时间浪费，买小了高峰又被打爆；Serverless 按实际用量计费，学习项目/冷门服务/波动型业务的成本能降一个数量级。代价是冷启动与弹性上限——生产核心库高频稳定负载时，固定规格或 Serverless 高 RCU 更划算。<strong>选型看负载形态：平稳→固定，波动→Serverless</strong>。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的 ACR 配置：① 命名空间叫 test、仓库叫 test1；② 镜像 tag 全是 latest；③ docker build 没指定平台。逐条审查。`,
+              source: '来源：渡一源课程《22.部署-云资产》课件（ACR 节：命名空间 duyiedu/仓库 duyi-service/--platform linux/amd64）· Docker 官方文档 Dockerfile reference https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `逐条：<strong>① 命名</strong>——命名空间/仓库名是团队资产的组织方式：课件 duyiedu（组织）+ duyi-service（服务）——服务多起来后仓库按名可查；test/test1 三个月后就没人知道装的是什么。 <strong>② latest 漂移</strong>——latest 是可变指针，集群里「跑的是哪个版本」无法回答，回滚无处可退；生产惯例是语义化版本（v1.2.3）或 commit sha 做 tag（ch24 流水线会带版本）。 <strong>③ 无 --platform</strong>——课件命令 docker build --platform linux/amd64：本地 Mac 是 arm64，服务器/k8s 节点是 x86——不指定平台，本机构建的镜像 push 上去在服务器上起不来（exec format error）。审查口诀：<strong>仓库组织靠命名、版本可追溯靠 tag、平台一致性靠 --platform</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：你们上云怎么规划网络？数据库、对象存储、应用之间的连通关系怎么设计？`,
+              source: '来源：渡一源课程《22.部署-云资产》课件（VPC/OSS/RDS/ACR 全局规划）· 阿里云官方文档 What is VPC https://www.alibabacloud.com/help/en/vpc/product-overview/what-is-vpc · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `按课件规划答：<strong>① 一个 VPC 打底</strong>——10.0.0.0/16 私有网段，4 个交换机跨两个可用区（高可用）；后续所有资源（RDS/OSS 内网端点/ACK 集群）同地域挂进这个 VPC。 <strong>② 连通设计</strong>——应用 → RDS：内网地址，数据库零公网暴露；应用 → OSS：同地域内网端点（ch14 的直传是浏览器走公网到 OSS，服务端删改走内网 SDK）；外部流量 → 应用：SLB/ALB 入口 + HTTPS 证书（duyi-api.域名）。 <strong>③ 环境隔离</strong>——测试/生产两套资源（双 OSS、各自的库），同 VPC 不同安全组/子网或独立 VPC。一句话：<strong>公网只开给「必须对外」的入口（负载均衡 + 证书），数据库与存储全部内网化，环境之间物理隔离</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `完成本课云资产创建（需要阿里云账号，约 10 元，建议用 Claude Code 辅助操作），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 60 分钟',
+                goal: '按课件顺序：买测试证书申请 duyi-api.域名 → 建 VPC（10.0.0.0/16 + 4 交换机）→ 建两个 OSS → RDS Serverless 12 步 + 高权限账号 + duyi_db + 记录内网地址 → ACR 命名空间/仓库 → docker login/build(--platform linux/amd64)/push 成功。',
+                accept: ['RDS 实例运行中且内网地址已记录', '两个 OSS 桶创建且地域与 VPC 一致', 'docker push 到 ACR 成功（云端能看到镜像）', '能画出五类资产的连接关系图'],
+              },
+              source: '任务基于《22.部署-云资产》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：严格按课件五节顺序做（VPC 先建，OSS/RDS 都要选它）。坑：RDS 创建要 3~10 分钟，等待期间做 OSS/ACR；ACR 登录密码是「设置登录密码」那步单独设的（不是阿里云登录密码）；docker build 务必 --platform linux/amd64（Mac arm 机器）；做完记得把 RDS 存储选最小值 20G 控制成本。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（22.部署-云资产）</li>
+        <li><strong>深读推荐</strong>：<a href="https://www.alibabacloud.com/help/en/vpc/product-overview/what-is-vpc">阿里云官方：What is VPC</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/部署-云资产速查表.html">部署-云资产速查表</a>——五类资产、RDS 12 步、ACR 三命令一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/部署-认识Docker">21.部署-认识Docker</a> · 下一课 <a href="/agents/python-framework/部署-k8s">23.部署-k8s</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以五类云资产创建完成 + 镜像 push 到 ACR 为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

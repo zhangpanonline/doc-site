@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>部署-云资产速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>部署-云资产速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0022-部署-云资产.html">《部署-云资产互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>五类资产</h2>
+      <table class="cmp-table">
+        <tr><th>资产</th><th>要点</th></tr>
+        <tr><td>数字证书</td><td>个人测试证书 → duyi-api.域名</td></tr>
+        <tr><td>VPC</td><td>duyi-vpc，10.0.0.0/16，4 交换机（每可用区 2 个）</td></tr>
+        <tr><td>OSS ×2</td><td>线上测试 / 生产，地域与 VPC 一致</td></tr>
+        <tr><td>RDS</td><td>PostgreSQL 16 Serverless，RCU 0.5~1，存储 20G；高权限账号 + duyi_db；记录内网地址</td></tr>
+        <tr><td>ACR</td><td>命名空间 duyiedu + 仓库 duyi-service + 登录密码 + 公网地址</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>ACR 三命令</h2>
+      <pre>docker login --username=&lt;用户名&gt; &lt;仓库公网地址&gt;
+docker build --platform linux/amd64 \
+  -t &lt;仓库地址&gt;/duyiedu/duyi-service:&lt;tag&gt; .
+docker push &lt;仓库地址&gt;/duyiedu/duyi-service:&lt;tag&gt;</pre>
+      <p>规划口诀：公网只开给入口（负载均衡+证书），数据库与存储内网化，环境间物理隔离。</p>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>
