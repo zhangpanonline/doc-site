@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Python 框架课程 · 部署-CICD：CI 与 CD 职责、构建镜像仓库、云效流水线、CD 环境变量与 kubectl/Helm 命令——互动教学课程">
+  <title>部署-CICD · 互动教学课程（Python 框架 fw-24）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Python 框架</p>
+      <h1>部署-CICD</h1>
+      <p class="lesson-sub">配合《<a href="/agents/python-framework/部署-CICD">24.部署-CICD</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 CI（集成验证）与 CD（部署交付）各自的职责边界</li>
+        <li>讲出三组镜像仓库（ci/cd/python）各自装什么、为什么分开</li>
+        <li>读通 CD 命令：kubeconfig 还原、凭证 secret、TAG 版本化部署</li>
+        <li>说出 CD 流水线需要的 6 个环境变量与各自的敏感性</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把核心机制过一遍——细节都在《24.部署-CICD》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>CI 与 CD 的职责</h3>
+        <ul class="pitfall-list">
+          <li><strong>CI 持续集成</strong>：代码提交触发——装依赖（uv sync）+ 跑测试（make test-unit，注释里的 test/test-e2e/test-smoke 按需开）+ 通知</li>
+          <li><strong>CD 持续交付</strong>：构建镜像 → 推 ACR → 部署集群（kubectl + Helm）</li>
+          <li><strong>三个镜像仓库</strong>：duyi-service-ci（跑测试的环境）、duyi-service-cd（构建部署镜像的环境）、python（3.14-slim 基础镜像）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>CD 的密钥与命令</h3>
+        <ul class="pitfall-list">
+          <li><strong>6 个环境变量</strong>：KUBECONFIG_BASE64（k8s 配置编码）、ACR_USERNAME/ACR_PASSWORD、DOCKER_SERVER、DB_PASSWORD、JWT_SECRET_KEY</li>
+          <li><strong>三步命令</strong>：还原 kubeconfig → 重建拉取凭证 secret（dry-run 管道 apply）→ helm 部署（TAG=${CI_COMMIT_REF_NAME}）</li>
+          <li><strong>版本纪律</strong>：image.tag=$TAG——分支名/commit 作为镜像版本，不再 latest</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《24.部署-CICD》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. CI/CD 全称是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">代码检查与代码调试</button>
+            <button class="quiz-option">电脑集成与电脑交付</button>
+            <button class="quiz-option">云集成与云交付</button>
+            <button class="quiz-option">持续集成（Continuous Integration）和持续交付（Continuous Delivery）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件开头：CI/CD 全称持续集成与持续交付——ch12 开发日常「提交 PR 后进入流水线」指的就是它。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. CI 流水线在代码提交后做什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只发邮件</button>
+            <button class="quiz-option">装依赖（uv sync）→ 跑测试（make test-unit）→ 通知</button>
+            <button class="quiz-option">备份数据库</button>
+            <button class="quiz-option">直接部署生产</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 CI 流水线：触发方式代码提交 → 自定义镜像源 → 执行命令 uv sync --frozen --all-packages + make test-unit（test/test-e2e/test-smoke 被注释，按需开启）→ 通知插件。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 为什么 CI 和 CD 用两个不同的镜像仓库？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了备份</button>
+            <button class="quiz-option">CI 镜像含测试工具链（uv/pytest），CD 镜像面向构建部署——职责不同、依赖不同</button>
+            <button class="quiz-option">仓库只能放一个镜像</button>
+            <button class="quiz-option">没有区别，多建了一个</button>
+          </div>
+          <div class="quiz-explain" hidden>课件三个仓库：duyi-service-ci（跑测试的环境）/ duyi-service-cd（构建部署的环境）/ python（3.14-slim 基础镜像）——流水线各阶段用各自的镜像，互不干扰，也避免测试工具污染构建产物。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. CD 第一步「还原 kubeconfig」为什么用 base64？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">流水线环境变量只能存纯文本——base64 编码后安全存入，用时解码还原</button>
+            <button class="quiz-option">为了加密</button>
+            <button class="quiz-option">没有原因</button>
+            <button class="quiz-option">kubeconfig 本来就是 base64</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：KUBECONFIG_BASE64 是 k8s config 的 base64 编码（cat ~/.kube/config | base64）——多行文本塞进流水线变量要靠编码；CD 里 echo | base64 -d > /tmp/kubeconfig 还原。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. secret 创建命令里的 --dry-run=client -o yaml | kubectl apply -f - 是什么套路？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">备份 secret</button>
+            <button class="quiz-option">无意义组合</button>
+            <button class="quiz-option">声明式幂等：只生成 yaml 不落库，管道给 apply——已存在就更新，不存在就创建</button>
+            <button class="quiz-option">删除 secret</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 CD 命令：kubectl create ... --dry-run=client -o yaml（生成不执行）| kubectl apply -f -（声明式应用）——流水线反复跑不报「已存在」错，幂等。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. TAG=${CI_COMMIT_REF_NAME} 在部署里起什么作用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">设置密码</button>
+            <button class="quiz-option">用分支名作为镜像 tag——每次部署可追溯到具体版本（ch23 版本纪律的自动化）</button>
+            <button class="quiz-option">随机命名</button>
+            <button class="quiz-option">无作用</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 CD：TAG=${CI_COMMIT_REF_NAME}（流水线内置变量=分支名）→ helm --set image.tag=$TAG——镜像版本与代码版本绑定，杜绝 latest 漂移（ch22/23 反复强调的纪律在此自动化）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. CI 里 make test-e2e / test-smoke 为什么被注释掉了？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">写错了</button>
+            <button class="quiz-option">永远不开</button>
+            <button class="quiz-option">e2e 不需要跑</button>
+            <button class="quiz-option">成本与时间的取舍：单测快先跑；e2e/冒烟重，按项目阶段开启</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 CI 命令：make test-unit 生效，test/test-e2e/test-smoke 注释——单元测试秒级、每次提交必跑；e2e 起真库真服务慢，冒烟要求环境完整——按 ch12 的策略，成熟期再把红线测试接进流水线硬门禁。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. CD 的 6 个环境变量里，哪个最危险？泄露了各会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">ACR_USERNAME 最危险</button>
+            <button class="quiz-option">KUBECONFIG（集群控制权）最危险；ACR 密码可拉推镜像；DB 密码与 JWT 密钥直通生产数据与身份</button>
+            <button class="quiz-option">都一样</button>
+            <button class="quiz-option">都不危险</button>
+          </div>
+          <div class="quiz-explain" hidden>课件变量清单分级：KUBECONFIG_BASE64=集群管理员级权限（能删光所有服务）；ACR_PASSWORD 可 push 恶意镜像；DB_PASSWORD/JWT_SECRET_KEY 直通生产库与伪造身份。全部只存流水线密钥区（非代码库），ch02/ch21/ch23 的密钥纪律的终点。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 从 ch21 到 ch24，发布链路最终形态是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">git push → CI 跑测试 → CD 构建镜像推 ACR → Helm 部署集群——全自动</button>
+            <button class="quiz-option">只到镜像推送为止</button>
+            <button class="quiz-option">还是手工部署</button>
+            <button class="quiz-option">没有变化</button>
+          </div>
+          <div class="quiz-explain" hidden>四章递进：ch21 docker run 手工 → ch22 ACR 仓库化 → ch23 k8s/Helm 集群化 → ch24 云效流水线自动化——git push 即触发集成验证与交付部署，ch12 开发日常第 6 步「进入流水线」完整落地。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'fw-0024-部署-CICD',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `AI 写的流水线：CI 通过的标志是「echo 构建成功」，且把 ACR 密码和 kubeconfig 直接写进流水线 yaml 提交到 git。审查：哪里违背了本课的流水线纪律？`,
+              source: '来源：GitHub 官方文档 Understanding GitHub Actions（workflow 触发与 secret 管理）https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《24.部署-CICD》课件',
+              breakdown: `两个硬伤：<strong>① CI 没有真验证</strong>——课件 CI 的核心是 uv sync --frozen --all-packages + make test-unit：装依赖验证锁文件一致性、跑测试验证行为（ch11/12 的防回归在流水线里强制执行）；「echo 构建成功」等于没 CI，坏的提交照样进主分支。 <strong>② 密钥进 git</strong>——课件 6 个环境变量（KUBECONFIG_BASE64/ACR_PASSWORD/DB_PASSWORD/JWT_SECRET_KEY...）全部进流水线的<strong>密钥区</strong>（运行时可注入、日志自动脱敏），yaml 里只引用变量名；写进 git = 集群控制权+生产库密码对所有读仓库者公开，且永不消失（历史记录）。CI/CD 的底线：<strong>流水线定义可进代码库，流水线的钥匙只能进密钥系统</strong>。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `CD 流水线怎么用「一坨纯文本」把 kubectl 操作打进集群？KUBECONFIG 的 base64 编码是加密吗？`,
+              source: '来源：Kubernetes 官方文档（kubeconfig 与访问凭证）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《24.部署-CICD》课件（KUBECONFIG_BASE64 + CD 命令）',
+              breakdown: `机制：<strong>① 编码不是加密</strong>——kubeconfig 是多行 YAML，流水线变量只收单行文本，base64 只是「打包进一行」的运输方式（任何人拿到都能解码，所以它仍按密钥保管）；<strong>② 还原与使用</strong>——CD 里 echo "$KUBECONFIG_BASE64" | base64 -d > /tmp/kubeconfig，后续每条 kubectl/helm 命令带 --kubeconfig /tmp/kubeconfig，操作跑在流水线容器里但作用在云端集群；<strong>③ 幂等套路</strong>——secret 创建用 --dry-run=client -o yaml | kubectl apply -f -：生成而不执行，交给声明式的 apply——流水线重跑不报「已存在」。整个 CD 的三步（还原 config → 凭证 secret → helm 部署）把 ch23 手工 11 步压缩成无人值守。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 写的 CD：① 部署命令里 helm --set image.tag=latest；② CI 和 CD 共用同一个镜像仓库；③ 流水线没有失败通知。逐条按本课标准审查。`,
+              source: '来源：GitHub 官方文档 Understanding GitHub Actions（workflow 与通知集成）https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《24.部署-CICD》课件',
+              breakdown: `逐条：<strong>① latest</strong>——课件用 TAG=${CI_COMMIT_REF_NAME}（分支名做镜像 tag）：每次部署绑定一个明确版本，出问题能对照、能回滚（ch22/23 的版本纪律，流水线是它的执行者）；latest 让「线上跑的是什么」变成不可回答的问题。 <strong>② 共用仓库</strong>——课件分三个仓库（ci/cd/python）：CI 镜像带测试工具链（uv/pytest/调试器），CD 镜像面向构建，python 存 3.14-slim 基础镜像——共用一个仓库会互相覆盖 tag、依赖串味（CI 里装的调试工具被 CD 构建带进产物）。 <strong>③ 无通知</strong>——课件 CI 有「通知插件」环节：流水线的产出不是「跑完了」而是「结果到达人」——失败没人知道 = 最危险的静默事故。审查口诀：<strong>版本可追溯、环境相隔离、结果必送达</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `面试官问：你们团队 CI 和 CD 是怎么分工的？CD 什么时候触发、什么时候需要人工卡点？`,
+              source: '来源：渡一源课程《24.部署-CICD》课件（CI/CD 流水线结构）· GitHub 官方文档 Understanding GitHub Actions https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              breakdown: `按课件结构答：<strong>CI（每次代码提交触发）</strong>——装依赖 + 跑单元测试（e2e/冒烟按阶段开启），产出「这个提交能不能合」的结论；<strong>CD（合并后触发）</strong>——构建镜像推 ACR、还原 kubeconfig、重建拉取凭证、helm 带版本部署。 <strong>人工卡点的位置</strong>：① 合并前——CI 是硬门禁（测试红 = 合不了，ch12 冒烟红线同理）；② 生产环境——课件的 CD 直连集群是「持续交付」形态（自动到部署前一步）；更保守的「持续部署」要加审批：生产发布前人工点确认按钮、分环境升级（先测试集群后生产）。设计原则：<strong>验证类的活给机器（CI），决策类的活留人（发布时机）</strong>——机器不会累，人会拍板。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `搭建本课的 CICD 流水线（需要阿里云效账号，建议用 Claude Code 辅助），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 60 分钟',
+                goal: '按课件：仓库关联云效 → 建三个 ACR 仓库并推送镜像 → 创建 CI 流水线（代码提交触发 + uv sync + make test-unit + 通知插件）→ 创建 CD 流水线（配 6 个环境变量 + 课件三段命令）→ push 一次代码观察流水线全链路。',
+                accept: ['push 后 CI 自动跑测试且结果有通知', 'CD 自动完成镜像推送与集群部署（kubectl get pods 可见新版本）', '流水线里无任何明文密钥'],
+              },
+              source: '任务基于《24.部署-CICD》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：CI 先跑通再配 CD；6 个环境变量在流水线「变量与缓存」里建（KUBECONFIG_BASE64 用 cat ~/.kube/config | base64 生成）；CD 的 TAG 用 ${CI_COMMIT_REF_NAME}（云效内置变量）。坑：CI 的镜像源要选自定义（duyi-service-ci 仓库）；secret 那步必须用 dry-run+apply（重跑幂等）；验证用 git push 一个空提交触发流水线，观察各阶段日志。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（24.部署-CICD）</li>
+        <li><strong>深读推荐</strong>：<a href="https://docs.github.com/en/actions/about-github-actions/understanding-github-actions">GitHub 官方：Understanding GitHub Actions</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/部署-CICD速查表.html">部署-CICD速查表</a>——CI/CD 职责、三仓库、六变量一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/python-framework/部署-k8s">23.部署-k8s</a> · 下一课 <a href="/agents/python-framework/部署-总结">25.部署-总结</a></li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课以 push 触发流水线全链路跑通为完成标志。
+    </footer>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

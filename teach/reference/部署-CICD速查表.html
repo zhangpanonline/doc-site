@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>部署-CICD速查表 · 参考手册</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Python 框架</p>
+      <h1>部署-CICD速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/fw-0024-部署-CICD.html">《部署-CICD互动教学课程》</a>使用。源课程：gitee.com/dev-edu/python-framework。</p>
+    </header>
+
+    <section>
+      <h2>职责与仓库</h2>
+      <table class="cmp-table">
+        <tr><th>环节</th><th>触发</th><th>做什么</th></tr>
+        <tr><td>CI</td><td>代码提交</td><td>uv sync --frozen + make test-unit（e2e/冒烟按需开）+ 通知</td></tr>
+        <tr><td>CD</td><td>合并后</td><td>构建镜像推 ACR → 还原 kubeconfig → 凭证 secret → helm 部署</td></tr>
+      </table>
+      <p>三个镜像仓库：duyi-service-ci（测试环境）/ duyi-service-cd（构建环境）/ python（3.14-slim 基础镜像）。</p>
+    </section>
+
+    <section>
+      <h2>CD 六个环境变量</h2>
+      <dl class="term-grid">
+        <dt>KUBECONFIG_BASE64</dt>
+        <dd>kubeconfig 的 base64（集群控制权，最敏感）</dd>
+        <dt>ACR_USERNAME / ACR_PASSWORD</dt>
+        <dd>镜像仓库身份</dd>
+        <dt>DOCKER_SERVER</dt>
+        <dd>ACR 仓库专用网络地址</dd>
+        <dt>DB_PASSWORD / JWT_SECRET_KEY</dt>
+        <dd>生产数据库密码 / JWT 密钥</dd>
+      </dl>
+      <p>全部存流水线密钥区，不进代码库。版本：TAG=${CI_COMMIT_REF_NAME}，杜绝 latest。</p>
+    </section>
+
+    <p class="print-badge">🔖 Python 框架课程 · 源课程：gitee.com/dev-edu/python-framework</p>
+
+  </main>
+</body>
+</html>
