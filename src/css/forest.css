@@ -1,5 +1,5 @@
 /**
- * Forest 主题作用域 —— 仅 Python 框架课程（docs/agents/python-framework/）文档页。
+ * Forest 主题 —— 全站所有课程文档页（2026-09-23 用户决策：应用到所有课程及后续课程，不再限定框架课）。
  * 亮色下对齐 Typora Forest 主题（https://theme.typora.io/theme/Forest/）：
  * 色板/字体栈/代码块/表格/引用 100% 一致；不含 Typora 特有装饰（h1 居中双下划线、H2~H6 标签）。
  * 暗色模式与全站其他文档不受影响。
@@ -9,63 +9,63 @@
 }
 
 /* 作用域：文档 ID 含 python-framework 的页面 */
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] p,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] li {
+.docs-wrapper p,
+.docs-wrapper li {
   color: #363C42;
   line-height: 1.6;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] {
+.docs-wrapper {
   font-family: 'SourceHanSansSC', 'JetBrains Mono', -apple-system, sans-serif;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown h1 {
+.docs-wrapper .theme-doc-markdown h1 {
   color: rgba(0, 52, 68, 0.9);
   font-weight: 900;
   font-size: 2.1rem;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown h2 {
+.docs-wrapper .theme-doc-markdown h2 {
   font-size: 1.7rem;
   font-weight: 800;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown h3 {
+.docs-wrapper .theme-doc-markdown h3 {
   font-size: 1.4rem;
   font-weight: 800;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown h2,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown h3,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown h4 {
+.docs-wrapper .theme-doc-markdown h2,
+.docs-wrapper .theme-doc-markdown h3,
+.docs-wrapper .theme-doc-markdown h4 {
   color: #333444;
   line-height: 2;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown h5 {
+.docs-wrapper .theme-doc-markdown h5 {
   color: #00997B;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown h6 {
+.docs-wrapper .theme-doc-markdown h6 {
   color: rgba(0, 153, 123, 0.838);
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown a {
+.docs-wrapper .theme-doc-markdown a {
   color: #00997B;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown a:hover {
+.docs-wrapper .theme-doc-markdown a:hover {
   border-bottom: 1px solid;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown code {
+.docs-wrapper .theme-doc-markdown code {
   background: #f3f3f3;
   color: #00769A;
   font-weight: 700;
   border-radius: 6px;
   padding: 0 4px;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown mark {
+.docs-wrapper .theme-doc-markdown mark {
   background: #FFF3F3;
   color: #FF2F2F;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown blockquote {
+.docs-wrapper .theme-doc-markdown blockquote {
   position: relative;
   background-color: rgba(0, 153, 123, 0.05);
   border-radius: 6px;
   padding: 1rem;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown blockquote::before {
+.docs-wrapper .theme-doc-markdown blockquote::before {
   content: '';
   position: absolute;
   top: 0;
@@ -75,74 +75,74 @@
   background: #00997B;
   border-radius: 6px 0 0 6px;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown blockquote p {
+.docs-wrapper .theme-doc-markdown blockquote p {
   color: #81888D;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown hr {
+.docs-wrapper .theme-doc-markdown hr {
   border-top: 1px dashed #00997B;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown table {
+.docs-wrapper .theme-doc-markdown table {
   min-width: 80%;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown table th,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown table td {
+.docs-wrapper .theme-doc-markdown table th,
+.docs-wrapper .theme-doc-markdown table td {
   border: 1px solid #DADCDE;
   padding: 6px 13px;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown table thead {
+.docs-wrapper .theme-doc-markdown table thead {
   font-weight: 900;
   background-color: rgba(0, 153, 123, 0.03);
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-doc-markdown table tr:nth-child(2n) {
+.docs-wrapper .theme-doc-markdown table tr:nth-child(2n) {
   background-color: rgba(0, 153, 123, 0.03);
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] ::selection {
+.docs-wrapper ::selection {
   background: rgba(0, 153, 123, 0.2);
 }
 
 /* Forest 代码块：深绿底 + token 配色（映射自 code-mirror.css） */
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-code-block,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] pre {
+.docs-wrapper .theme-code-block,
+.docs-wrapper pre {
   background: #003444;
   border-radius: 6px;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .theme-code-block code,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] pre code {
+.docs-wrapper .theme-code-block code,
+.docs-wrapper pre code {
   color: #EEFFFF;
   background: transparent;
   font-weight: 400;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.keyword {
+.docs-wrapper .token.keyword {
   color: #C792EA;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.string {
+.docs-wrapper .token.string {
   color: #C3E88D;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.number,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.boolean {
+.docs-wrapper .token.number,
+.docs-wrapper .token.boolean {
   color: #F77669;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.function {
+.docs-wrapper .token.function {
   color: #00AEC4;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.comment {
+.docs-wrapper .token.comment {
   color: #AEBBC2;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.builtin {
+.docs-wrapper .token.builtin {
   color: #DECB6B;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.tag {
+.docs-wrapper .token.tag {
   color: #80CBC4;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.attr-name,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.property {
+.docs-wrapper .token.attr-name,
+.docs-wrapper .token.property {
   color: #80CBAE;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.operator,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.punctuation {
+.docs-wrapper .token.operator,
+.docs-wrapper .token.punctuation {
   color: #E9EDED;
 }
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.class-name,
-.docs-wrapper[class*="docs-doc-id-agents/python-framework"] .token.parameter {
+.docs-wrapper .token.class-name,
+.docs-wrapper .token.parameter {
   color: #82B1FF;
 }

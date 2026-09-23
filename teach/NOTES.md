@@ -57,6 +57,13 @@
 - `assets/course.css`：共享样式（中文字体栈、卡片、图表、测验、打印样式）
 - `assets/quiz.js`：可复用测验组件，纯 vanilla，无依赖；用法见 lessons/0001-python-coroutines.html
 
+## Forest 主题（2026-09-23 用户决策：全站课程统一，含后续课程）
+
+- **适用范围**：所有课程的文档页（docs/ 全站，src/css/forest.css 已全局化，不再限定框架课）+ 所有互动课与速查表（HTML 头部引 `../assets/forest.css`，位于 teach/assets/ 并同步 static/teach/assets/）。**后续新课程默认带 Forest**，无需逐课声明
+- 色板：accent `#00997B`、正文 `#363C42`、标题 rgba(0,52,68,.9)；代码块深绿底 `#003444` + token 配色；表格 zebra 全边框；引用绿底左条。无 Typora 装饰（h1 居中双下划线、H2~H6 标签）
+- 字体：思源黑体 + JetBrains Mono + 系统回落（**禁止打包自托管字体**）；**暗色模式不受 Forest 影响**（沿用纸墨暗色）
+- 实现：文档页走 `src/css/forest.css`（`.docs-wrapper` 作用域）；互动课/速查表走 `teach/assets/forest.css` 在 course.css 之后引用
+
 ## Python 框架课程（2026-09-22 完成，24 章；源 gitee dev-edu/python-framework）
 
 渡一框架课（跳 16 长事务和短事务、19 AI导购——源仓库无课件，编号保留跳号）。**结构与 30 章语言核心课不同**，新课程以此为模板：
