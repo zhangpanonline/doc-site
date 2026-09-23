@@ -298,14 +298,14 @@ print(f"共计 {prime_count} 个素数")</code></pre>
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 帮你的计费模块写了个比较：<code>0.1 + 0.2 == 0.3</code> 结果是 False，它还以为写错了。为什么？这类比较正确姿势是什么？`,
-    source: '考点来源：腾讯云「分享 10 个高频 Python 面试题」（浮点精度题）· 场景改写',
+    source: '来源：Python 官方文档《Tutorial · 15. Floating-Point Arithmetic: Issues and Limitations》（"Unfortunately, most decimal fractions cannot be represented exactly as binary fractions. A consequence is that, in general, the decimal floating-point numbers you enter are only approximated by the binary floating-point numbers actually stored in the machine."）https://docs.python.org/3/tutorial/floatingpoint.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《腾讯云「分享 10 个高频 Python 面试题」》',
     breakdown: `0.1、0.2 在二进制浮点里是<strong>无限循环小数</strong>，存的是近似值，加出来的不是精确的 0.3。涉及钱的比较/相等判断：金额用 <code>Decimal</code>（字符串构造），一般数值用 <code>math.isclose(a, b, rel_tol=1e-9)</code>，绝不直接 ==。`,
   },
   {
     type: 'mechanism',
     level: '初级岗常问',
     prompt: `<code>a = [1, 2]</code>，<code>b = a</code>，然后 <code>b.append(3)</code>。a 是什么？为什么？变量、对象、引用三者什么关系？`,
-    source: '考点来源：牛客网「最强 Python 面试题之 Python 基础题」· 场景改写',
+    source: '来源：Python 官方文档《Language Reference · 4. Execution model · Binding of names》与《3. Data model》（"Names refer to objects. Names are introduced by name binding operations. / Every object has an identity, a type and a value."）https://docs.python.org/3/reference/executionmodel.html#binding-of-names https://docs.python.org/3/reference/datamodel.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《牛客网「最强 Python 面试题之 Python 基础题」》',
     breakdown: `a 也变成 <code>[1, 2, 3]</code>。变量是<strong>贴在对象上的标签</strong>：a = [1,2] 创建一个列表对象并贴标签 a；b = a 只是给同一对象再贴一张标签 b——append 改的是那唯一的对象。判断「同一个对象」用 <code>is</code>；AI 生成代码里最常见的别名 bug 就是这个。`,
   },
   {
@@ -319,14 +319,14 @@ print(same(256, 256))                      # ?
 x, y = int('1000'), 1000 * 1
 print(same(x, y))                          # ?
 print(same('hello', ''.join(['he', 'llo'])))  # ?</code></pre>`,
-    source: '考点来源：腾讯云「分享 10 个高频 Python 面试题」（小整数缓存/字符串驻留题）· 场景改写（结论经 CPython 实测校准）',
+    source: '来源：Python 官方文档《C API · Integer Objects》与《sys — System-specific parameters and functions》（"CPython keeps an array of integer objects for all integers between -5 and 256. When you create an int in that range you actually just get back a reference to the existing object. / Enter string in the table of “interned” strings and return the interned string"）https://docs.python.org/3/c-api/long.html https://docs.python.org/3/library/sys.html#sys.intern · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写） · 实测校准+ 考点参考《腾讯云「分享 10 个高频 Python 面试题」》',
     breakdown: `<code>is</code> 判断的是<strong>对象身份</strong>，不是值相等。第一行 True：小整数（-5~256）有全局缓存池，任何写法都是同一对象；后两行 False：<code>int('1000')</code>、<code>''.join(...)</code> 都是运行时新建的对象，与比较方的常量不是同一身份——同一份代码对「相等」的值一会儿 True 一会儿 False，就是暗雷本身。修复：值比较一律 <code>==</code>，只有与 None 比较（或真要判断身份）才用 is。`,
   },
   {
     type: 'design',
     level: '初级岗常问',
     prompt: `你要用 AI 写一个「十六进制颜色转 RGB」小工具（输入如 <code>'FF8800'</code>）。给 AI 的提示词里应该要求哪些输入校验？为什么？`,
-    source: '考点来源：牛客刷题——Python 篇（2）类型转换（十六进制转换题）· 场景改写',
+    source: '来源：Python 官方文档《Built-in Functions · int()》（"If the argument is not a number or if base is given, then it must be a string, bytes, or bytearray instance representing an integer in radix base."）https://docs.python.org/3/library/functions.html#int · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《牛客刷题——Python 篇（2）类型转换》',
     breakdown: `至少要四层：① 长度与格式（6 位十六进制、可带 # 前缀）；② 字符集（只用 0-9a-fA-F）；③ 用 <code>int(s, 16)</code> 转换，别用 float；④ 输出范围断言（0~255）与类型（int）。因为 AI 生成的代码对「非法输入」最不上心——面试官问这道题，考的其实是你能不能给 AI 写出<strong>可验收的规格</strong>。`,
   },
   {
@@ -338,20 +338,20 @@ print(same('hello', ''.join(['he', 'llo'])))  # ?</code></pre>`,
       goal: '读入一组配置字符串（如 [\'3.14\', \'0xFF\', \'abc\', \'0.1+0.2\']），正确转换成 int/float/十六进制，浮点相等判断用 isclose，输出转换结果与无法解析的警告。',
       accept: ['十六进制字符串正确转 int', '浮点比较使用 math.isclose 而非 ==', '无法解析的输入有明确警告而非崩溃'],
     },
-    source: '任务基于《3.python基本语法》课程知识点 · 来源层级：一手（Python 官方文档浮点/内置函数章节）场景化',
+    source: '任务基于《3.python基本语法》课程知识点 · 来源层级：一手（官方文档《Tutorial · 15. Floating-Point Arithmetic: Issues and Limitations》https://docs.python.org/3/tutorial/floatingpoint.html、《Built-in Functions》https://docs.python.org/3/library/functions.html）场景化',
     breakdown: `思路：按 <code>int(s, 0)</code> / <code>float(s)</code> 逐级尝试转换并捕获 ValueError；浮点结果用 <code>math.isclose</code> 做容差比较；解析失败收集进 warnings 列表。坑：<code>int('FF', 0)</code> 会报错（无前缀不会猜十六进制），十六进制要用 <code>int(s, 16)</code> 或带 <code>0x</code> 前缀。`,
   }, {
     type: 'trap',
     level: '中级岗常问',
     prompt: `<code>-22 // 10</code> 在 Python 里等于几？为什么不是 -2？官方 FAQ 怎么解释这个设计？`,
-    source: '来源：Python 官方文档 FAQ「Why does -22 // 10 return -3?」· 检索 2026-09-09 · 层级：一手',
+    source: '来源：Python 官方文档《Programming FAQ · Why does -22 // 10 return -3?》（"It’s primarily driven by the desire that i % j have the same sign as j. If you want that, and also want: i == (i // j) * j + (i % j) then integer division has to return the floor."）https://docs.python.org/3/faq/programming.html#why-does-22-10-return-3 · 检索 2026-09-23 · 层级：一手（官方文档）',
     breakdown: `等于 <strong>-3</strong>：// 是<strong>向下取整（floor）</strong>。FAQ 的设计理由：保证 <code>i == (i // j) * j + (i % j)</code> 恒等式成立，且让 <code>i % j</code> 与 j <strong>同号</strong>——j 为正时余数非负最有用（时钟例子：现在 10 点，200 小时前是 -190 % 12 == 2 点）。C 系语言向零截断，结果是 -2——跨语言写 AI 代码时这里最容易翻车。`,
   },
   {
     type: 'mechanism',
     level: '初级岗常问',
     prompt: `字符串怎么「原地修改」？<code>s[0] = 'x'</code> 为什么报错？真要频繁修改文本怎么办？`,
-    source: '来源：Python 官方文档 FAQ「How do I modify a string in place?」· 检索 2026-09-09 · 层级：一手',
+    source: '来源：Python 官方文档《Programming FAQ · How do I modify a string in place?》（"You can’t, because strings are immutable. In most situations, you should simply construct a new string from the various parts you want to assemble it from."）https://docs.python.org/3/faq/programming.html#how-do-i-modify-a-string-in-place · 检索 2026-09-23 · 层级：一手（官方文档）',
     breakdown: `<strong>字符串不可变</strong>——不能原地改，常规做法是<strong>拼出新字符串</strong>；确需「原地可变 Unicode 数据」用 <code>io.StringIO</code>（seek/write 后 getvalue）或 array 模块。FAQ 原例：StringIO 里 seek(7) + write("there!") 把 "Hello, world" 改成 "Hello, there!"。AI 生成的文本处理代码里「字符串 += 拼接」循环是性能坑，高频拼接让 AI 用 join 或 StringIO。`,
   },],
         };

@@ -344,14 +344,14 @@ print(deposit2(10))   # 60</code></pre>
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 跟你说「Python 传参是值传递」。但你调用 <code>def append_one(x): x.append(1)</code> 后，外面的列表真的变了。Python 传参到底算什么？`,
-    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（传参方式题）· 场景改写',
+    source: '来源：Python 官方文档《Programming FAQ · Why did changing list ‘y’ also change list ‘x’?》（"Variables are simply names that refer to objects. Doing y = x doesn’t create a copy of the list – it creates a new variable y that refers to the same object x refers to."）https://docs.python.org/3/faq/programming.html#why-did-changing-list-y-also-change-list-x · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `准确说法：<strong>对象引用传递</strong>（pass-by-object-reference）——传的是对象的引用，不复制对象。于是不可变对象（int/str/元组）行为像值传递（重新绑定不影响外部），可变对象（list/dict）行为像引用传递（原地修改外部可见）。面试标准答法：可变对象传引用、不可变对象传值。`,
   },
   {
     type: 'mechanism',
     level: '初级岗常问',
     prompt: `函数内部找不到一个变量名时，Python 按什么顺序查找？global 和 nonlocal 分别干什么用？`,
-    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（LEGB 题）· 场景改写',
+    source: '来源：Python 官方文档《Language Reference · 4. Execution model · Resolution of names》（"If a name is bound in a block, it is a local variable of that block, unless declared as nonlocal or global. If a name is bound at the module level, it is a global variable."）https://docs.python.org/3/reference/executionmodel.html#resolution-of-names · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `<strong>LEGB</strong>：Local（函数内）→ Enclosing（外层函数）→ Global（模块）→ Builtin（内建）。<code>global</code> 声明「赋值指向模块级变量」；<code>nonlocal</code> 指向<strong>最近一层外层函数</strong>的变量（闭包里改外层计数器的唯一正路）。`,
   },
   {
@@ -365,14 +365,14 @@ def add(n):
     return total
 
 print(add(5))</code></pre>`,
-    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（作用域判定时机题）· 场景改写',
+    source: '来源：Python 官方文档《Programming FAQ · Why am I getting an UnboundLocalError when the variable has a value?》（"This is because when you make an assignment to a variable in a scope, that variable becomes local to that scope and shadows any similarly named variable in the outer scope."）https://docs.python.org/3/faq/programming.html#why-am-i-getting-an-unboundlocalerror-when-the-variable-has-a-value · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `Python 在<strong>编译期</strong>就判定名字归属：函数体内对 total 有赋值语句 → total 被判定为局部变量 → 右侧读取时局部变量还未赋值 → UnboundLocalError。修复：函数内声明 <code>global total</code>（或改成传参+返回的纯函数写法，后者更推荐——AI 时代尤其要引导 AI 写无副作用的函数）。`,
   },
   {
     type: 'design',
     level: '中级岗常问',
     prompt: `你要让 AI 实现一个「带状态的计数器」。什么时候让它用闭包，什么时候用类？各举一个场景。`,
-    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（设计选择题）· 场景改写',
+    source: '来源：Python 官方文档《Programming FAQ · How do you make a higher order function in Python?》（"The callable object approach has the disadvantage that it is a bit slower and results in slightly longer code."）https://docs.python.org/3/faq/programming.html#how-do-you-make-a-higher-order-function-in-python · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `<strong>闭包</strong>：状态单一、行为单一（计数器、缓存装饰器）——一个 <code>def make_counter()</code> + nonlocal 就够，代码最少；<strong>类</strong>：状态多、行为多（增删改查、多方法协作）——属性 + 方法更可读。追问加分：闭包在 pickle/调试/继承场景明显吃亏，AI 生成的多方法对象还是让 AI 用类。`,
   },
   {
@@ -384,20 +384,20 @@ print(add(5))</code></pre>`,
       goal: '返回一个计数器函数：每次调用按 step 递增并返回当前值；提供 reset 能力；多个计数器实例互不干扰。',
       accept: ['nonlocal 正确使用（不用 global）', 'reset 后从 0 重新开始', '两个实例的计数互不影响'],
     },
-    source: '任务基于《6.作用域》课程知识点（nonlocal 小节）· 场景化',
+    source: '任务基于《6.作用域》课程知识点（nonlocal 小节） · 来源层级：一手（官方文档《Language Reference · 7. Simple statements · The nonlocal statement》https://docs.python.org/3/reference/simple_stmts.html#the-nonlocal-statement）场景化',
     breakdown: `思路：<code>def make_counter(step): count = 0; def counter(): nonlocal count; count += step; return count; ...</code>——count 是外层函数的局部变量，靠 nonlocal 在闭包里修改。坑：忘写 nonlocal 会 UnboundLocalError（参考审查题）；reset 要记得把闭包里的 count 归零而不是重开一个。`,
   }, {
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `多个模块要共享同一份配置，官方 FAQ 推荐的规范做法是什么？原理是什么？`,
-    source: '来源：Python 官方文档 FAQ「How do I share global variables across modules?」· 检索 2026-09-09 · 层级：一手',
+    source: '来源：Python 官方文档《Programming FAQ · How do I share global variables across modules?》（"The canonical way to share information across modules within a single program is to create a special module (often called config or cfg). Just import the config module in all modules of your application; the module then becomes available as a global name. Because there is only one instance of each module, any changes made to the module object get reflected everywhere."）https://docs.python.org/3/faq/programming.html#how-do-i-share-global-variables-across-modules · 检索 2026-09-23 · 层级：一手（官方文档）',
     breakdown: `<strong>专用 config 模块模式</strong>：config.py 里定义默认值，各模块 <code>import config</code> 后通过属性读写 <code>config.x = 1</code>。原理：<strong>模块是单例</strong>（每个模块对象全局只有一份），对模块对象的改动处处可见。这是比「真全局变量」干净得多的共享方式——有命名空间、可追踪赋值点。`,
   },
   {
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 写的代码用 <code>from config import x</code> 引入配置，然后在别的模块里改 x，改动却没生效。为什么？正确姿势是什么？`,
-    source: '来源：Python 官方文档 FAQ「How do I share global variables across modules?」· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    source: '来源：Python 官方文档《Programming FAQ · How do I share global variables across modules?》（"Because there is only one instance of each module, any changes made to the module object get reflected everywhere."）https://docs.python.org/3/faq/programming.html#how-do-i-share-global-variables-across-modules · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）',
     breakdown: `<code>from config import x</code> 把<strong>当前值拷贝</strong>成局部名字——之后改 x 改的是自己的副本，config.x 纹丝不动（FAQ 的规范姿势是「import 模块、改模块属性」）。正确：<code>import config; config.x = 1</code>；需要热生效的配置对象（如 dict）同理——from 导入的引用改内部内容生效、重新赋值不生效，别混。`,
   },],
         };

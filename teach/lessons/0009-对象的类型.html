@@ -237,14 +237,14 @@
 u2 = User('张三', 18)
 print(u1 == u2)   # False</code></pre>
 为什么？怎么让 == 按业务规则工作？`,
-    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（is vs == 题）· 场景改写',
+    source: '来源：Python 官方文档《Data model · object.__eq__()》（"By default, object implements __eq__() by using is, returning NotImplemented in the case of a false comparison: True if x is y else NotImplemented."）https://docs.python.org/3/reference/datamodel.html#object.__eq__ · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `默认的 <code>__eq__</code> 继承自 object，行为就是<strong>身份比较（is）</strong>——两个不同实例必然 False。要让 == 按业务规则工作：类里实现 <code>__eq__</code>（比较关键字段）。同时记住：实现 __eq__ 会让实例变得<strong>不可哈希</strong>（用于 set/dict key 会报错），需要时配套实现 __hash__ 或声明不可哈希。`,
   },
   {
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `Agent 工具注册表要校验「参数是否为某类型的实例」。你该用 type 还是 isinstance？为什么？`,
-    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（type vs isinstance 题）· 场景改写',
+    source: '来源：Python 官方文档《Built-in Functions · isinstance()》（"Return True if the object argument is an instance of the classinfo argument, or of a (direct, indirect, or virtual) subclass thereof. / The isinstance() built-in function is recommended for testing the type of an object, because it takes subclasses into account."）https://docs.python.org/3/library/functions.html#isinstance · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `用 <code>isinstance</code>：它<strong>兼容继承</strong>（子类实例也算基类实例），type 是严格相等（type(x) is SomeClass 才为 True）。工具系统允许用户传入自定义子类扩展时，isinstance 不会误杀。只在「必须精确到某个类、拒绝子类」时才用 type。`,
   },
   {
@@ -256,14 +256,14 @@ print(isinstance(int, type))       # ?
 print(isinstance(True, int))       # ?
 print(type(1) is int)              # ?
 print(isinstance(int, int))        # ?</code></pre>`,
-    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（类型体系题）· 场景改写',
+    source: '来源：Python 官方文档《Built-in Types · Boolean Values》（"bool is a subclass of int (see Numeric Types — int, float, complex). In many numeric contexts, False and True behave like the integers 0 and 1, respectively. However, relying on this is discouraged; explicitly convert using int() instead."）https://docs.python.org/3/library/stdtypes.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `True / True / True / True / False。要点：<strong>一切皆对象</strong>——int 这个类本身是 type 的实例；bool 是 int 的子类（True 是 1 的别名子类实例）；int 的实例是整数对象，而 int 是类对象、不是自己的实例。这类题考的是「类型体系」心智模型，AI 生成类型反射代码时最容易在最后一条上犯错。`,
   },
   {
     type: 'design',
     level: '中级岗常问',
     prompt: `你要让 AI 实现「按配置动态生成数据模型类」。用 type 工厂动态建类和写死 class 定义各适合什么场景？type 工厂的签名是什么？`,
-    source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（type 工厂题）· 场景改写',
+    source: '来源：Python 官方文档《Built-in Functions · type()》（"With three arguments, return a new type object. This is essentially a dynamic form of the class statement."）https://docs.python.org/3/library/functions.html#type · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `<code>type(name, bases, namespace)</code> 动态创建类。适合：类在<strong>运行时才知道</strong>的场景（配置驱动的模型、ORM 的模型生成、序列化框架）；写死 class 适合静态业务代码。注意：动态建类失去 IDE 提示和静态检查，AI 生成的 ORM 里到处都是，能看懂机制才能审查。`,
   },
   {
@@ -275,13 +275,13 @@ print(isinstance(int, int))        # ?</code></pre>`,
       goal: '给定类型映射（如 [\'name\': str, \'count\': int]）与一批实际参数，用 isinstance 校验每个参数类型，输出不匹配项的清晰报告。',
       accept: ['isinstance 校验（子类能通过基类检查）', '不匹配项报告包含参数名/期望/实际', 'bool 不会被误当 int 报错处理（明确 bool 也属于 int 时按需放行）'],
     },
-    source: '任务基于《9.对象的类型》课程知识点（类型判断小节）· 场景化',
+    source: '任务基于《9.对象的类型》课程知识点（类型判断小节） · 来源层级：一手（官方文档《Built-in Functions · isinstance()》https://docs.python.org/3/library/functions.html#isinstance）场景化',
     breakdown: `思路：遍历映射，<code>isinstance(value, expect)</code> 判断；报告拼上参数名、期望类型、实际类型。坑：bool 是 int 的子类，校验 int 时 bool 会静默通过——要不要放行是业务决策，工具里应当显式处理（要么放行并注释，要么单独拒绝）。`,
   }, {
     type: 'design',
     level: '中级岗常问',
     prompt: `用字符串调用函数/方法（如按配置名执行对应动作），官方 FAQ 推荐的最佳做法是什么？为什么不用 eval？`,
-    source: '来源：Python 官方文档 FAQ「How do I use strings to call functions/methods?」· 检索 2026-09-09 · 层级：一手',
+    source: '来源：Python 官方文档《Programming FAQ · How do I use strings to call functions/methods?》（"There are various techniques. The best is to use a dictionary that maps strings to functions. The primary advantage of this technique is that the strings do not need to match the names of the functions."）https://docs.python.org/3/faq/programming.html#how-do-i-use-strings-to-call-functions-methods · 检索 2026-09-23 · 层级：一手（官方文档）',
     breakdown: `<strong>字典分发</strong>：<code>dispatch = {'go': a, 'stop': b}</code>（注意存函数不带括号），调用 <code>dispatch[get_input()]()</code>。FAQ 指出两大优势：字符串不必与函数同名（可读的键名映射任意函数）+ 天然充当 switch-case。eval/exec 执行任意字符串有注入风险，功能上也更笨重。Agent 工具注册表就是这个模式。`,
   },],
         };

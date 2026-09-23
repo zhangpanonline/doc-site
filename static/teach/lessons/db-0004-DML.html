@@ -239,14 +239,14 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
     type: 'trap',
     level: '初级岗常问',
     prompt: `WHERE 和 HAVING 有什么区别？能不能在 HAVING 里写非分组列的条件？`,
-    source: '考点来源：CSDN「SQL 面试高频 50 题精讲」（WHERE vs HAVING 题）· 场景改写',
+    source: '来源：PostgreSQL 官方文档《2.7. Aggregate Functions》（"The fundamental difference between WHERE and HAVING is this: WHERE selects input rows before groups and aggregates are computed (thus, it controls which rows go into the aggregate computation), whereas HAVING selects group rows after groups and aggregates are computed."）https://www.postgresql.org/docs/current/tutorial-agg.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「SQL 面试高频 50 题精讲」》',
     breakdown: `<strong>WHERE 过滤行</strong>（分组前、可用任意列、不能用聚合）；<strong>HAVING 过滤分组</strong>（分组后、条件基于聚合结果如 HAVING SUM(amount) > 100）。在 HAVING 里写非分组列：PG 会报错（列必须出现在 GROUP BY 或聚合里）——MySQL 老版本会静默乱取一值，是坑。`,
   },
   {
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `SQL 各子句的真实执行顺序是什么？为什么 WHERE 里不能引用 SELECT 里的别名？`,
-    source: '考点来源：CSDN「面试题常见」（执行顺序题）· 场景改写',
+    source: '来源：PostgreSQL 官方文档《SELECT》（"All elements in the FROM list are computed. (Each element in the FROM list is a real or virtual table.) If more than one element is specified in the FROM list, they are cross-joined together. / If the WHERE clause is specified, all rows that do not satisfy the condition are eliminated from the output."）https://www.postgresql.org/docs/current/sql-select.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「面试题常见」》',
     breakdown: `书写顺序 ≠ 执行顺序：<strong>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</strong>。WHERE 在 SELECT <strong>之前</strong>执行，别名还没诞生，所以不能用；ORDER BY 在 SELECT 之后，能用别名。理解顺序是分析 SQL 行为（哪些过滤早、哪些晚）的地基。`,
   },
   {
@@ -257,14 +257,14 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
 FROM employees e
 LEFT JOIN departments d ON e.dept_id = d.id
 WHERE d.active = true;   -- ← 把未匹配行滤掉了</code></pre>`,
-    source: '考点来源：CSDN「SQL 面试高频 50 题精讲」（LEFT JOIN 陷阱题）· 场景改写',
+    source: '来源：PostgreSQL 官方文档《2.6. Joins Between Tables》（"When outputting a left-table row for which there is no right-table match, empty (null) values are substituted for the right-table columns."）https://www.postgresql.org/docs/current/tutorial-join.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「SQL 面试高频 50 题精讲」》',
     breakdown: `LEFT JOIN 未匹配的行右表字段是 <strong>NULL</strong>——WHERE 里 d.active = true 对 NULL 判定为假，<strong>未匹配行全部被滤掉</strong>，LEFT JOIN 退化成 INNER JOIN。修复：条件移到 <strong>ON</strong>（<code>ON e.dept_id = d.id AND d.active</code>，过滤发生在连接时、保留左表行），或 WHERE 里加 <code>OR d.id IS NULL</code>。AI 写的报表 SQL 高频坑。`,
   },
   {
     type: 'design',
     level: '中级岗常问',
     prompt: `子查询结果里可能含 NULL 时，NOT IN 会发生什么？为什么专家说改用 NOT EXISTS？`,
-    source: '考点来源：CSDN「SQL 面试高频 50 题精讲」（NOT IN 陷阱题）· 场景改写',
+    source: '来源：PostgreSQL 官方文档《9.24. Subquery Expressions · NOT IN》（"Note that if the left-hand expression yields null, or if there are no equal right-hand values and at least one right-hand row yields null, the result of the NOT IN construct will be null, not true."）https://www.postgresql.org/docs/current/functions-subquery.html#FUNCTIONS-SUBQUERY-NOTIN · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「SQL 面试高频 50 题精讲」》',
     breakdown: `<code>x NOT IN (1, 2, NULL)</code> 的语义是 x≠1 AND x≠2 AND x≠NULL——与 NULL 比较结果是 <strong>unknown</strong>，整句永远不为真 → 结果<strong>空集</strong>，静默吞掉所有行。<code>NOT EXISTS</code> 用相关性检查「不存在匹配行」，无三值逻辑问题。规则：子查询可能含 NULL 就用 NOT EXISTS（或 NOT IN 子查询里加 WHERE x IS NOT NULL）。`,
   },
   {
@@ -276,20 +276,20 @@ WHERE d.active = true;   -- ← 把未匹配行滤掉了</code></pre>`,
       goal: 'employees/departments 两表：① LEFT JOIN 统计各部门人数（含没部门员工）且 HAVING 过滤人数 > 1；② 复现 NOT IN 含 NULL 返回空集，改写为 NOT EXISTS 结果正确。',
       accept: ['未匹配行保留在结果中（条件放 ON 或 OR NULL）', 'HAVING 过滤分组生效', 'NOT EXISTS 改写结果正确'],
     },
-    source: '任务基于《04.DML》课程知识点 · 来源层级：一手（PostgreSQL 官方文档查询章节）场景化',
+    source: '任务基于《04.DML》课程知识点 · 来源层级：一手（官方文档《SELECT》https://www.postgresql.org/docs/current/sql-select.html、《2.6. Joins Between Tables》https://www.postgresql.org/docs/current/tutorial-join.html）场景化',
     breakdown: `思路：① <code>LEFT JOIN ... ON e.dept_id = d.id AND d.active</code> + <code>GROUP BY ... HAVING count(*) > 1</code>；② NOT IN 空集复现后改 <code>WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE t2.x = t1.x)</code>。坑：HAVING 里用聚合别名（PG 允许 SELECT 别名，MySQL 不允许——以目标库为准）。`,
   }, {
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `官方教程用 weather 与 cities 两表演示 LEFT OUTER JOIN——这个例子说明了什么语义？`,
-    source: '来源：PostgreSQL 官方教程《3.5. Joins Between Tables》「LEFT OUTER JOIN」小节 · 检索 2026-09-09 · 层级：一手',
+    source: '来源：PostgreSQL 官方文档《2.6. Joins Between Tables》（"This query is called a left outer join because the table mentioned on the left of the join operator will have each of its rows in the output at least once, whereas the table on the right will only have those rows output that match some row of the left table."）https://www.postgresql.org/docs/current/tutorial-join.html · 检索 2026-09-23 · 层级：一手（官方文档）',
     breakdown: `<code>weather LEFT OUTER JOIN cities ON ...</code>：<strong>左表所有行全部保留</strong>——例子里 Hayward 一行在 cities 里没有匹配，城市字段全部为空照样出现（San Francisco 两行正常匹配）。教程原话：之所以叫 left，因为<strong>「the table mentioned on the left」</strong>的行全部输出。这是「保留未匹配行」语义的官方出处。`,
   },
   {
     type: 'trap',
     level: '高级岗常问',
     prompt: `基于官方教程的 LEFT JOIN 语义：在 WHERE 里过滤右表字段，为什么未匹配的行会消失（LEFT JOIN 变成内连接）？`,
-    source: '来源：PostgreSQL 官方教程《3.5. Joins Between Tables》· 检索 2026-09-09 · 层级：一手（场景化改写，结论 pg16 实测）',
+    source: '来源：PostgreSQL 官方文档《2.6. Joins Between Tables》（"If no matching row is found we want some “empty values” to be substituted for the cities table\'s columns. This kind of query is called an outer join."）https://www.postgresql.org/docs/current/tutorial-join.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写） · 实测校准',
     breakdown: `LEFT JOIN 未匹配行的右表列是 <strong>NULL</strong>（官方例子里 Hayward 的城市字段为空）；WHERE 里任何对右表列的比较（如 <code>cities.population > 100</code>）对 NULL 判<strong>unknown → 行被滤掉</strong>。修复：过滤条件写进 <strong>ON</strong>（连接时过滤、保留左表行），或 WHERE 加 <code>OR 右表主键 IS NULL</code>。这条是 LEFT JOIN 相关面试题的第一高频坑。`,
   },],
         };

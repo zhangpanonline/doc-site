@@ -304,14 +304,14 @@ class LinkedList:
     def add(self, sku):
         self.items.append(sku)</code></pre>
 两个实例 c1、c2 各自 add 了不同的商品，结果 c2.items 里出现了 c1 的商品。为什么？怎么改？`,
-              source: '考点来源：CSDN 文库「Python 面试核心考点解析：面向对象」（类属性陷阱题）· 场景改写',
+              source: '来源：Python 官方文档《Tutorial · 9.3.5. Class and Instance Variables》（"Generally speaking, instance variables are for data unique to each instance and class variables are for attributes and methods shared by all instances of the class"）https://docs.python.org/3/tutorial/classes.html#class-and-instance-variables · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN 文库「Python 面试核心考点解析：面向对象」》',
               breakdown: `<code>items = []</code> 是<strong>类属性</strong>：整个类只有一份，存在类字典里。实例访问 <code>self.items</code> 时沿查找链命中类属性，append 改的就是这个共享列表——所有实例看到同一份数据。修复：在 <code>__init__</code> 里写 <code>self.items = []</code>（实例属性，每个实例一份）。这是「可变类属性的幽灵共享」，与可变默认参数陷阱同源；AI 生成代码时非常常见，面试官也知道你在用 AI，专挑这种坑问。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `多继承 <code>class D(B, C)</code>，B、C 都继承 A，四个类都有 <code>who()</code>，且 B、C 的 <code>who()</code> 里都调用了 <code>super().who()</code>。调用 <code>D().who()</code> 时，执行顺序是怎样的？super() 到底指向谁？`,
-              source: '考点来源：千锋教育「Python 面试题：阅读下面的代码说出运行结果」（MRO 题）· 场景改写',
+              source: '来源：Python 官方文档《Built-in Functions · super()》与《The Python 2.3 Method Resolution Order》（"Return a proxy object that delegates method calls to a parent or sibling class of type. / The search starts from the class right after the type."）https://docs.python.org/3/library/functions.html#super https://docs.python.org/3/howto/mro.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《千锋教育「Python 面试题：阅读下面的代码说出运行结果」》',
               breakdown: `MRO 由 C3 线性化得出：<strong>D → B → C → A → object</strong>。<code>super()</code> 指向的不是「父类」，而是<strong>MRO 中的下一个类</strong>——所以 B.who 里的 super 走到 C.who（而不是 A），C 里的 super 再走到 A.who，A 只执行一次。把「super = MRO 下一个」刻进脑子，菱形继承的所有走位题都能手推。`,
             },
             {
@@ -336,14 +336,14 @@ class Duck(Flyer, Swimmer):
     def __init__(self, name):
         Flyer.__init__(self, name, 2)
         Swimmer.__init__(self, name, 2)</code></pre>`,
-              source: '考点来源：CSDN「一份高质量的 Python 基础知识笔试题完整解析」（super 硬编码调用题）· 场景改写',
+              source: '来源：Python 官方文档《Built-in Functions · super()》（"Return a proxy object that delegates method calls to a parent or sibling class of type."）https://docs.python.org/3/library/functions.html#super · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「一份高质量的 Python 基础知识笔试题完整解析」》',
               breakdown: `两个问题：① <code>Animal.__init__</code> 被调用了<strong>两次</strong>（Flyer、Swimmer 各硬编码一次）——若 __init__ 里有计数/注册等副作用就会翻倍；② 硬编码父类名切断了 super 的 MRO 协作链：Swimmer 在链上被跳过，「每个类只执行一次且有序」的保证不复存在。修复：全部改用 <code>super().__init__(...)</code>，多继承时参数全量透传，让 MRO 自己调度。`,
             },
             {
               type: 'design',
               level: '高级岗常问',
               prompt: `你要用 AI 搭一个 Agent 工具系统，每个工具都要有「日志、超时、重试」能力。在给 AI 的提示词里，你该让它用继承还是组合来复用这些能力？为什么？`,
-              source: '考点来源：Real Python《Inheritance and Composition: A Python OOP Guide》· 场景改写',
+              source: '来源：GeeksforGeeks《Inheritance and Composition in Python》（"Inheritance represents an “is-a” relationship between classes. Composition represents a “has-a” relationship between objects."）https://www.geeksforgeeks.org/python/inheritance-and-composition-in-python/ · 检索 2026-09-23 · 层级：二级（技术博客，场景化改写）+ 考点参考《Real Python《Inheritance and Composition: A Python OOP Guide》》',
               breakdown: `优先<strong>组合</strong>：把日志/超时/重试做成独立组件注入（如 <code>Tool(runner, logger, retry)</code>）。继承只应表达严格的 is-a 关系，用它复用横切能力会掉进多继承 MRO 的深水区（上一题就是活例）。组合可插拔、可独立测试、也更容易让 AI 一次写对——这是「多用组合、少用继承」在 AI 协作时代的实践版。`,
             },
             {
@@ -355,20 +355,20 @@ class Duck(Flyer, Swimmer):
                 goal: '传入任意类，打印它的 MRO 与方法分类（实例方法 / 类方法 / 静态方法），并校验一组 isinstance / issubclass 关系（如 issubclass(Duck, Animal)）。',
                 accept: ['MRO 对多继承类打印正确', '三种方法分类无遗漏、无错分', 'isinstance / issubclass 结论与 MRO 一致'],
               },
-              source: '任务基于《8.类和对象》课程知识点（反射工具小节）· 来源层级：一手（Python 官方文档 inspect 模块）场景化',
+              source: '任务基于《8.类和对象》课程知识点（反射工具小节） · 来源层级：一手（官方文档《inspect — Inspect live objects》https://docs.python.org/3/library/inspect.html#inspect.getmembers）场景化',
               breakdown: `思路：<code>cls.__mro__</code> 拿 MRO；遍历 <code>cls.__dict__</code>，用 <code>isinstance(v, classmethod)</code> / <code>isinstance(v, staticmethod)</code> / <code>types.FunctionType</code> 区分三种方法；isinstance/issubclass 直接调用即可。坑：判断「实例方法」时别在实例上 hasattr（会踩类属性共享的幽灵），在类字典上分类才干净。`,
             }, {
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 写的类里有 <code>def __secret(self)</code>，你发现外部居然能 <code>obj._A__secret()</code> 调到它。双下划线开头到底发生了什么？它是「私有」吗？`,
-    source: '来源：Python 官方文档 FAQ「private names / name mangling」条目 + datamodel 名称改写规范 · 检索 2026-09-09 · 层级：一手',
+    source: '来源：Python 官方文档《Tutorial · 9.6. Private Variables》（"Any identifier of the form __spam (at least two leading underscores, at most one trailing underscore) is textually replaced with _classname__spam, where classname is the current class name with leading underscore(s) stripped."）https://docs.python.org/3/tutorial/classes.html#private-variables · 检索 2026-09-23 · 层级：一手（官方文档）',
     breakdown: `<strong>名称改写</strong>：<code>__spam</code>（至少两个前导下划线、最多一个尾部）在类体内被文本替换为 <code>_classname__spam</code>。目的不是安全（官方 FAQ 明说「Python programmers never bother to use private variable names」），而是<strong>防止子类无意覆盖</strong>：B(A) 里再写 __spam 会变成 _B__spam，碰不到 A 的。结论：防手滑用 __、真需要私有靠约定（单下划线）。`,
   },
   {
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 把「文件句柄清理」写进了 <code>__del__</code>，结果句柄迟迟不关。审查：del 语句和 __del__ 是什么关系？为什么不推荐用 __del__ 做资源清理？`,
-    source: '来源：Python 官方文档 FAQ「My class defines __del__ but it is not called when I delete the object」· 检索 2026-09-09 · 层级：一手',
+    source: '来源：Python 官方文档《Programming FAQ · My class defines __del__ but it is not called when I delete the object》（"The del statement does not necessarily call __del__() – it simply decrements the object’s reference count, and if this reaches zero __del__() is called. / It is not guaranteed that __del__() methods are called for objects that still exist when the interpreter exits."）https://docs.python.org/3/faq/programming.html#my-class-defines-del-but-it-is-not-called-when-i-delete-the-object · 检索 2026-09-23 · 层级：一手（官方文档）',
     breakdown: `<code>del x</code> 只是<strong>减引用计数</strong>——计数归零时 __del__ 才被调用；若有循环引用（子节点存父引用），计数永不归零，只能等 GC 的<strong>不定时</strong>回收。所以 __del__ 的调用时机<strong>不可预测</strong>，不适合做资源清理。正确：with / contextmanager / 显式 close()。AI 生成代码把「销毁即清理」当 C++ 析构来用是经典错位。`,
   },],
         };

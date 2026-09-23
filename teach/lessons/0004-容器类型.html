@@ -260,14 +260,14 @@ else:
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 帮你写「复制一份配置再改」的代码，用了 <code>copy.copy()</code>：嵌套的列表改一处、两处一起变。为什么？深拷贝和浅拷贝差在哪？`,
-    source: '考点来源：CSDN「Python 面试八股大全｜数据类型、深浅拷贝」· 场景改写',
+    source: '来源：Python 官方文档《copy — Shallow and deep copy operations》（"The difference between shallow and deep copying is only relevant for compound objects (objects that contain other objects, like lists or class instances): A shallow copy constructs a new compound object and then (to the extent possible) inserts references into it to the objects found in the original."）https://docs.python.org/3/library/copy.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「Python 面试八股大全｜数据类型、深浅拷贝」》',
     breakdown: `<code>copy.copy()</code> 是<strong>浅拷贝</strong>：只复制外层容器，内层元素仍指向原来的对象——嵌套列表（或其他可变对象）还是共享的。需要完全独立时用 <code>copy.deepcopy()</code>。真实项目里 AI 生成的「复制后修改」代码是最常见的埋雷点。`,
   },
   {
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `在交互式解释器里逐行输入 <code>a = 256; b = 256</code>，<code>a is b</code> 是 True；改成 <code>a = 1000; b = 1000</code> 就是 False。但同一个 .py 文件里写 <code>1000 is 1000</code> 又可能是 True。为什么？`,
-    source: '考点来源：腾讯云「分享 10 个高频 Python 面试题」（小整数缓存题）· 场景改写（结论经 CPython 实测校准）',
+    source: '来源：Python 官方文档《C API · Integer Objects》（"CPython keeps an array of integer objects for all integers between -5 and 256. When you create an int in that range you actually just get back a reference to the existing object."）https://docs.python.org/3/c-api/long.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写） · 实测校准+ 考点参考《腾讯云「分享 10 个高频 Python 面试题」》',
     breakdown: `两层机制叠加：① CPython 启动时预建 <strong>-5 ~ 256</strong> 的整数缓存池，范围内任何写法都指向同一对象，is 恒 True；② 范围外没有缓存，但<strong>编译器会合并同一编译单元内的相同常量</strong>——同一个 .py 文件里的两个 1000 字面量是同一对象（is True），交互式逐行（每行独立编译）则各自新建（is False）。is 的结果随运行方式而变，这正是值比较不能依赖 is 的铁证：用 <code>==</code>。`,
   },
   {
@@ -282,14 +282,14 @@ else:
 
 print(drop_evens([1, 2, 4, 5, 8]))  # 结果不对</code></pre>
 找出 bug，给出至少两种正确写法。`,
-    source: '考点来源：红客联盟「Python 面试必避 20 个代码坑」（遍历中修改题）· 场景改写',
+    source: '来源：Python 官方文档《Programming FAQ · How do you remove multiple items from a list》（"As with removing duplicates, explicitly iterating in reverse with a delete condition is one possibility. However, it is easier and faster to use slice replacement with an implicit or explicit forward iteration."）https://docs.python.org/3/faq/programming.html#how-do-you-remove-multiple-items-from-a-list · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《红客联盟「Python 面试必避 20 个代码坑」》',
     breakdown: `<strong>边遍历边修改列表会漏删</strong>：remove 后元素前移，迭代器按索引走就跳过了下一个元素（[1,2,4,5,8] 会漏掉 4）。修复：① 列表推导 <code>[x for x in nums if x % 2]</code>；② 遍历副本 <code>for x in nums[:]</code>；③ 倒序遍历 <code>for i in range(len(nums)-1, -1, -1)</code>。AI 生成代码的三大经典坑之一，面试官必问。`,
   },
   {
     type: 'design',
     level: '中级岗常问',
     prompt: `你要用 AI 实现「订单列表去重且保持顺序」（重复定义：完全相同的记录）。你会在提示词里指定哪种方案？为什么不用 set(nums)？`,
-    source: '考点来源：腾讯云「分享 10 个高频 Python 面试题」（去重保序题）· 场景改写',
+    source: '来源：Python 官方文档《itertools — Functions creating iterators for efficient looping · Recipes》（""Yield unique elements, preserving order. Remember all elements ever seen.""）https://docs.python.org/3/library/itertools.html#itertools-recipes · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《腾讯云「分享 10 个高频 Python 面试题」》',
     breakdown: `<code>set(nums)</code> 会<strong>丢失顺序</strong>。保序去重的标准姿势：<code>list(dict.fromkeys(nums))</code>（现代 Python）或「seen 集合 + 列表」双结构。追问加分点：如果订单是元组（可哈希）可以直接进 set；如果含列表（不可哈希）要先转成可哈希 key——这正是「元组可哈希」考点的落点。`,
   },
   {
@@ -301,20 +301,20 @@ print(drop_evens([1, 2, 4, 5, 8]))  # 结果不对</code></pre>
       goal: '输入一批重复订单（元组列表，如 (订单号, 商品, 数量)），输出保序去重后的列表，并统计每笔重复订单出现了几次。',
       accept: ['去重后保持首次出现顺序', '重复次数统计正确', '元组作为可哈希 key 使用正确'],
     },
-    source: '任务基于《4.容器类型》课程知识点（去重保序/元组可哈希小节）· 场景化',
+    source: '任务基于《4.容器类型》课程知识点（去重保序/元组可哈希小节） · 来源层级：一手（官方文档《itertools — Functions creating iterators for efficient looping · Recipes》https://docs.python.org/3/library/itertools.html#itertools-recipes）场景化',
     breakdown: `思路：遍历时用 dict 记录每个订单首次位置和出现次数（元组可哈希，直接当 key）；输出按首次位置排序。坑：不要把「顺序」交给 set；用 <code>dict.fromkeys</code> 一行去重虽然简洁，但统计次数需要额外一趟遍历——两件事可以合并成一次遍历。`,
   }, {
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `面试官问：复制对象有哪些姿势？各自的深浅语义是什么？`,
-    source: '来源：Python 官方文档 FAQ「How do I copy an object in Python?」· 检索 2026-09-09 · 层级：一手',
+    source: '来源：Python 官方文档《Programming FAQ · How do I copy an object in Python?》（"In general, try copy.copy() or copy.deepcopy() for the general case. Not all objects can be copied, but most can. Some objects can be copied more easily. Dictionaries have a copy() method"）https://docs.python.org/3/faq/programming.html#how-do-i-copy-an-object-in-python · 检索 2026-09-23 · 层级：一手（官方文档）',
     breakdown: `官方 FAQ 给三法：① <strong>通用</strong> <code>copy.copy()</code>（浅）/ <code>copy.deepcopy()</code>（深）——大多数对象都可用；② <strong>字典</strong>自带 <code>olddict.copy()</code>；③ <strong>序列</strong>切片 <code>new_l = l[:]</code>。后两者都是<strong>浅拷贝</strong>（内层可变对象仍共享）。FAQ 也提醒「Not all objects can be copied」——含锁/文件句柄的对象拷贝会失败或行为异常。`,
   },
   {
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 写的代码用 <code>dict.copy()</code> 复制了配置，改嵌套值却把原配置也改了。为什么？什么时候必须上 deepcopy？`,
-    source: '来源：Python 官方文档 FAQ「How do I copy an object in Python?」· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    source: '来源：Python 官方文档《copy — Shallow and deep copy operations》（"A deep copy constructs a new compound object and then, recursively, inserts copies into it of the objects found in the original."）https://docs.python.org/3/library/copy.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）',
     breakdown: `<code>dict.copy()</code> 与切片都是<strong>浅拷贝</strong>：外层容器新了，内层可变对象（嵌套 dict/list）还是原引用——改嵌套即改原对象。规则：<strong>只有一层</strong>用 copy()/切片；嵌套结构要完全独立必须 <code>copy.deepcopy()</code>（性能更贵，按需用）。审查 AI 的「复制后修改」代码先看嵌套层级。`,
   },],
         };

@@ -231,14 +231,14 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `你用 AI 写了一条高频搜索：<code>SELECT * FROM users WHERE name LIKE '%明%'</code>，name 列上有 B+ 树索引，但 EXPLAIN 显示 Seq Scan（全表扫）。为什么索引没生效？怎么改？`,
-              source: '考点来源：牛客专刊「数据库索引-笔面试必考点 15 讲」（索引失效题）· PostgreSQL 场景改写（答案以 PG16 实测执行计划为准）',
+              source: '来源：PostgreSQL 官方文档《11.2. Index Types》（"The optimizer can also use a B-tree index for queries involving the pattern matching operators LIKE and ~ if the pattern is a constant and is anchored to the beginning of the string — for example, col LIKE \'foo%\' or col ~ \'^foo\', but not col LIKE \'%bar\'."）https://www.postgresql.org/docs/current/indexes-types.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写） · 实测校准+ 考点参考《牛客专刊「数据库索引-笔面试必考点 15 讲」》',
               breakdown: `前导 % 破坏了 B+ 树的字典序定位——「任意位置含『明』」无法用树缩小范围，只能全表扫（左模糊连 text_pattern_ops 索引也无能为力）。改法：① 前缀匹配改成右模糊 <code>name LIKE '明%'</code>，注意 PG 默认排序规则下<strong>普通 btree 索引不服务 LIKE</strong>——需要 C 排序规则或 <code>text_pattern_ops</code> 索引（实测：建 pattern_ops 索引后走 Bitmap Index Scan，Index Cond 落在「明」到「昏」的区间）；② 中缀/模糊搜索用 pg_trgm 的 GIN 三元组索引或全文检索（tsvector + GIN）。同类失效还包括：对索引列做运算/函数、隐式类型转换、OR 关联非索引列。`,
             },
             {
               type: 'mechanism',
               level: '初级岗常问',
               prompt: `面试官连问：为什么 B+ 树索引能加快查询？二级索引不是直接拿到数据了吗，为什么还要「回表」？`,
-              source: '考点来源：CSDN「MySQL 索引、锁、三大范式一篇搞定」+ 牛客网回表考点 · PostgreSQL 口径改写',
+              source: '来源：PostgreSQL 官方文档《11.9. Index-Only Scans and Covering Indexes》（"All indexes in PostgreSQL are secondary indexes, meaning that each index is stored separately from the table\'s main data area (which is called the table\'s heap in PostgreSQL terminology). This means that in an ordinary index scan, each row retrieval requires fetching data from both the index and the heap."）https://www.postgresql.org/docs/current/indexes-index-only-scans.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「MySQL 索引、锁、三大范式一篇搞定」+ 牛客网回表考点》',
               breakdown: `B+ 树是排好序的查找结构：树高 2~4 层，几次 IO 就能定位（O(log n)），替代逐行比对的全表扫（O(n)）——就像书的目录。二级索引叶子只存<strong>索引键 + 行指针（PG 的 TID）</strong>，整行数据在表（heap）里；要拿索引外的列，必须再按 TID 查一次表——这次再查就是「回表」。若查询列全在索引里（覆盖索引 / Index Only Scan），可免回表。`,
             },
             {
@@ -255,14 +255,14 @@ SELECT * FROM orders WHERE status = 'paid' AND created_at > now() - interval '7 
 SELECT * FROM orders WHERE user_id = 1 AND created_at > now() - interval '7 days';
 -- ④
 SELECT * FROM orders WHERE user_id = 1 ORDER BY created_at DESC LIMIT 20;</code></pre>`,
-              source: '考点来源：CSDN「MySQL 索引、锁、三大范式一篇搞定」（最左前缀题）· PostgreSQL 场景改写（答案以 PG16 + 100 万行实测执行计划为准）',
+              source: '来源：PostgreSQL 官方文档《11.3. Multicolumn Indexes》（"A multicolumn B-tree index can be used with query conditions that involve any subset of the index\'s columns, but the index is most efficient when there are constraints on the leading (leftmost) columns."）https://www.postgresql.org/docs/current/indexes-multicolumn.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写） · 实测校准+ 考点参考《CSDN「MySQL 索引、锁、三大范式一篇搞定」》',
               breakdown: `联合索引按 user_id → status → created_at 排序（PG16 + 100 万行实测）：① 从最左列连续命中，user_id、status 都进入 Index Cond，索引范围定位 ✓；② 跳过最左列，索引无法定位起点 → Parallel Seq Scan，完全用不上；③ user_id 定位到子树，created_at 因中间 status 断层只能作为<strong>索引内过滤</strong>（逐条检查而非范围 seek，选择性大打折扣）——注意：MySQL 经典答案说「范围后断最左前缀」，PG 里它仍会进 Index Cond，但只是过滤器；④ 索引序是 (status, created_at)，ORDER BY created_at 缺 status 等式 → 出现 Sort 节点；补上 <code>AND status = 'paid'</code> 后变成 Index Only Scan Backward，免排序。`,
             },
             {
               type: 'design',
               level: '高级岗常问',
               prompt: `团队要做一个 RAG 问答系统，AI 提议「文档全放向量库就够了」。你坚持保留 PostgreSQL。向量索引和 B+ 树索引各解决什么问题？混合检索为什么离不开关系库？`,
-              source: '来源层级：一手（PostgreSQL 官方文档 pgvector / indexes 章节）+ 场景化改写',
+              source: '来源：pgvector 官方项目 README（GitHub）（"You can add an index to use approximate nearest neighbor search, which trades some recall for speed. Unlike typical indexes, you will see different results for queries after adding an approximate index. / An HNSW index creates a multilayer graph. It has better query performance than IVFFlat (in terms of speed-recall tradeoff), but has slower build times and uses more memory."）https://raw.githubusercontent.com/pgvector/pgvector/master/README.md · 检索 2026-09-23 · 层级：一手（官方文档 / GitHub 官方项目 README，场景化改写）',
               breakdown: `向量索引（如 pgvector 的 HNSW）解决<strong>相似度召回</strong>（语义相近的文档块），B+ 树解决<strong>结构化精确查询</strong>（用户、权限、元数据、状态过滤）。RAG 实际要的是混合检索：先按 user_id/权限/时间做结构化过滤，再向量召回，还要事务（计费、去重）与一致性——这些是关系库的标配。pgvector 让向量与 B+ 树共存一个库，避免两套系统同步的复杂度。`,
             },
             {
@@ -274,20 +274,20 @@ SELECT * FROM orders WHERE user_id = 1 ORDER BY created_at DESC LIMIT 20;</code>
                 goal: 'orders 表 100 万行、建有联合索引，某高频查询 EXPLAIN 显示 Seq Scan。诊断索引为什么没生效，写出修正 SQL，并用 EXPLAIN 验证执行计划改变。',
                 accept: ['能指出失效原因（列上运算 / 左模糊 / 跳过最左列等）', '修正后的 SQL 执行计划出现 Index Scan（或 Index Only Scan）', '能说出新计划的代价变化'],
               },
-              source: '任务基于《06.索引》课程知识点 · 来源层级：一手（PostgreSQL 官方文档 EXPLAIN 章节）场景化',
+              source: '任务基于《06.索引》课程知识点 · 来源层级：一手（官方文档《14.1. Using EXPLAIN》https://www.postgresql.org/docs/current/using-explain.html）场景化',
               breakdown: `思路：先 <code>EXPLAIN (ANALYZE, BUFFERS)</code> 看计划与代价；对照 WHERE/ORDER BY 检查最左前缀、列上是否有函数/运算/类型转换、是否左模糊；修正后再次 EXPLAIN 对比。坑：统计信息过期时计划可能仍不走索引——先 <code>ANALYZE orders;</code> 再验证。`,
             }, {
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `登录查询是 <code>WHERE lower(email) = ?</code>——email 上的普通索引用不上（对列做了函数运算）。官方文档给的解法是什么？UNIQUE 表达式索引还能多约束什么？`,
-    source: '来源：PostgreSQL 官方文档 11.7「Indexes on Expressions」· 检索 2026-09-09 · 层级：一手',
+    source: '来源：PostgreSQL 官方文档《11.7. Indexes on Expressions》（"An index column need not be just a column of the underlying table, but can be a function or scalar expression computed from one or more columns of the table."）https://www.postgresql.org/docs/current/indexes-expressional.html · 检索 2026-09-23 · 层级：一手（官方文档）',
     breakdown: `<strong>表达式索引</strong>：<code>CREATE INDEX ON users (lower(email))</code>——索引建在函数结果上，查询里的 lower(email) 直接命中。声明 <code>UNIQUE</code> 后还能防「大小写不同但业务上重复」的行（<code>User@x.com</code> 与 <code>user@x.com</code> 无法并存）——普通唯一约束做不到这点。文档原句：「indexes on expressions can be used to enforce constraints that are not definable as simple unique constraints」。`,
   },
   {
     type: 'design',
     level: '高级岗常问',
     prompt: `产品要求「邮箱大小写不敏感 + 唯一」。候选方案：① lower(email) 表达式索引；② citext 类型；③ 应用层统一小写。你选哪个？依据是什么？`,
-    source: '来源：PostgreSQL 官方文档 11.7「Indexes on Expressions」（大小写不敏感查询场景）· 检索 2026-09-09 · 层级：一手（场景化改写）',
+    source: '来源：PostgreSQL 官方文档《F.9. citext — a case-insensitive character string type》（"The citext data type allows you to eliminate calls to lower in SQL queries, and allows a primary key to be case-insensitive. / If you declare a column as UNIQUE or PRIMARY KEY, the implicitly generated index is case-sensitive. So it\'s useless for case-insensitive searches, and it won\'t enforce uniqueness case-insensitively."）https://www.postgresql.org/docs/current/citext.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）',
     breakdown: `① <strong>表达式索引</strong>：不改列类型、存量数据不动，查询处写 lower(email) 即可命中——<strong>侵入最小</strong>，首选；② <strong>citext</strong>：列类型换成大小写不敏感文本，查询零改动，但改类型要迁移数据、扩展依赖；③ 应用层统一：最弱——历史数据/多入口（API、后台、导入脚本）总有一处漏小写。结论：默认 ①，类型可控的新表可选 ②，③ 只做最后兜底不依赖。`,
   },],
         };
