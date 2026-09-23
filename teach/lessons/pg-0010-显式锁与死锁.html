@@ -15,7 +15,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
       <h1>显式锁与死锁</h1>
-      <p class="lesson-sub">来源：官方文档 §13.3 显式锁定（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">来源：官方文档 §13.3 显式锁定（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -168,54 +168,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>四道题覆盖本课全部要点——答完它们，显式锁与死锁就过关了。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核一：为什么「SELECT ... FOR UPDATE」要放在事务里使用？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">为了绕过 MVCC</button>
-            <button class="quiz-option">没有这个要求</button>
-            <button class="quiz-option">行级锁在事务结束时释放；事务外锁立即失效、没有保护意义</button>
-            <button class="quiz-option">FOR UPDATE 只能在事务里写</button>
-          </div>
-          <div class="quiz-explain" hidden>行锁随事务结束释放——锁的保护期必须覆盖「检查→修改→提交」的整个过程。</div>
-        </div>
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核二：TRUNCATE 与 SELECT 并发执行时，官方说 TRUNCATE 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">取得 ACCESS EXCLUSIVE 锁，等待其他操作完成（官方例）</button>
-            <button class="quiz-option">与 SELECT 并行无冲突</button>
-            <button class="quiz-option">自动改名为 DELETE</button>
-            <button class="quiz-option">跳过有 SELECT 的表</button>
-          </div>
-          <div class="quiz-explain" hidden>官方原文：TRUNCATE 无法安全地与同一表上的其他操作并发执行，因此它在表上获得 ACCESS EXCLUSIVE 锁来强制。</div>
-        </div>
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核三：业务代码持有行锁期间又调了一个慢外部 API（2 秒）。问题在哪？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">没有影响</button>
-            <button class="quiz-option">只影响自己</button>
-            <button class="quiz-option">API 会更快</button>
-            <button class="quiz-option">锁持有时间被拉长——其他事务排队，死锁概率与阻塞都上升</button>
-          </div>
-          <div class="quiz-explain" hidden>官方预防原则之一就是「缩短锁的持有时间」——持锁期间做慢 IO 等于把所有竞争方都拖住。</div>
-        </div>
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核四：pg_locks 里看到 grant = false 的一行，表示什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">一个事务正在等待这个锁（未授予）</button>
-            <button class="quiz-option">锁损坏</button>
-            <button class="quiz-option">锁已释放</button>
-            <button class="quiz-option">死锁已发生</button>
-          </div>
-          <div class="quiz-explain" hidden>pg_locks 的 granted 字段：true=持有、false=<strong>等待中</strong>——排查锁等待时先看 grant=false 的行是谁在等谁。</div>
-        </div>
-      </div>
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了显式锁与死锁——继续学习 <a href="/common/database-pg/pg-11-EXPLAIN进阶">pg-11 · EXPLAIN 进阶与查询优化</a>。</p>
-    </section>
+    
 
     <section>
       <h2>💼 面试实战</h2>
@@ -225,35 +178,36 @@
         window.__interview = {
           lesson: 'pg-0010-显式锁与死锁',
           questions: [
-            {
+
+{
               type: 'trap',
               level: '高级岗常问',
               prompt: `AI 写的扣库存逻辑：事务里 SELECT 查库存（无 FOR UPDATE）→ 应用判断 → UPDATE 扣减。压测出现超卖。为什么？正确姿势？`,
               source: '来源：postgres.cn 官方文档 §13.3 显式锁定（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `READ COMMITTED 下两条 SELECT 读到同一库存、都通过判断、都 UPDATE——<strong>检查与修改之间的竞态窗口</strong>（MVCC 不保护「先读后写」的原子性）。这正是官方「MVCC 无法给出期望行为」的场景。修复：<code>SELECT ... FOR UPDATE</code> 锁住库存行（检查→扣减→提交都在锁内），或单条条件 UPDATE。`,
             },
-            {
+{
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `官方说 PG 的锁分哪两级？「ROW EXCLUSIVE 是行级锁」这句话对吗？为什么？`,
               source: '来源：postgres.cn 官方文档 §13.3 显式锁定（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
               breakdown: `两级：<strong>表级锁</strong>（ACCESS SHARE 到 ACCESS EXCLUSIVE 多模式，LOCK 命令显式获取）与<strong>行级锁</strong>（FOR UPDATE/FOR NO KEY UPDATE/FOR SHARE/FOR KEY SHARE）。「ROW EXCLUSIVE 是行级锁」<strong>错</strong>——官方原文：所有锁模式都是表级锁，即使名字包含 row，这些名称是历史遗产。`,
             },
-            {
+{
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写了两段代码：订单支付锁 order 行再锁 account 行；对账任务锁 account 行再锁 order 行。上线偶发 deadlock detected。审查：根因与修复？`,
               source: '来源：postgres.cn 官方文档 §13.3.4 死锁（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `两条路径<strong>加锁顺序相反</strong> → 循环等待 → 死锁（PG 自动检测并终止其一，所以是「偶发报错」不是挂死）。修复：<strong>全局一致的加锁顺序</strong>（如都先 account 后 order，或按 id 排序取锁）；应用侧同时做好 deadlock 捕获重试（防御性兜底）。审查 AI 的多表事务：把所有路径的取锁顺序列出来对比，顺序不一致就是死锁隐患。`,
             },
-            {
+{
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：PG 有 MVCC 了，为什么还需要显式锁？什么时候必须用 FOR UPDATE？`,
               source: '来源：postgres.cn 官方文档 §13.3 显式锁定（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `MVCC 解决「读不阻塞写」，但不提供「<strong>读到的值在我写之前不变</strong>」的保证——<strong>读-判断-写</strong>三步跨越多个语句时，快照隔离不顶用。必须 FOR UPDATE 的场景：检查后修改（扣库存/余额）、条件性更新、跨表一致性调整。官方定位原文：锁模式用于<strong>MVCC 无法给出期望行为的情境</strong>。`,
             },
-            {
+{
               type: 'scenario',
               level: '初级岗常问',
               prompt: `在 pg16 里实测锁与死锁（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -264,8 +218,8 @@
               },
               source: '任务基于官方文档 §13.3 · 来源层级：官方翻译·一手（postgres.cn）场景化',
               breakdown: `思路：两个 psql 会话交错（复用不可重复读实验的会话模式）；pg_locks 观察 <code>SELECT locktype, mode, granted FROM pg_locks WHERE relation = '表名'::regclass</code>。坑：死锁复现要精确控制两事务的锁获取时机（先各自拿第一把锁、再交叉拿第二把）；FOR UPDATE 的阻塞是「等待」不是报错，别和死锁混淆。`,
-            },
-          ],
+            }
+
         };
       </script>
     </section>
@@ -281,7 +235,7 @@
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

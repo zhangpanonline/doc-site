@@ -133,6 +133,99 @@ print("事件循环已停止")
 
 ```
 
+
+## 作业
+
+### 一、预测以下代码的输出结果
+
+```python
+import asyncio
+
+loop = asyncio.new_event_loop()
+
+
+def task1():
+    print("任务1")
+
+
+def task2():
+    print("任务2")
+
+
+def task3():
+    print("任务3")
+
+
+loop.call_soon(task1)
+print("task1 over")
+loop.call_soon(task2)
+print("task2 over")
+loop.call_soon(task3)
+print("task3 over")
+
+loop.run_forever()
+print("已结束")
+```
+
+### 二、预测以下代码的输出结果
+
+```python
+import asyncio
+
+loop = asyncio.new_event_loop()
+
+
+def delayed():
+    print(1)
+    loop.call_later(0, lambda: print(2))
+    loop.call_soon(lambda: print(3))
+
+
+def soon():
+    print(4)
+    loop.call_soon(lambda: print(5))
+
+
+loop.call_later(0, delayed)
+loop.call_soon(soon)
+
+
+loop.run_forever()
+print("done")
+
+```
+
+### 三、预测以下代码的输出结果
+
+```python
+import asyncio
+
+loop = asyncio.new_event_loop()
+
+
+def first():
+    print(1)
+
+
+def second():
+    print(2)
+    loop.call_soon(lambda: print(3))
+    loop.stop()
+
+
+def third():
+    print(4)
+
+
+loop.call_soon(first)
+loop.call_soon(second)
+loop.call_soon(third)
+
+loop.run_forever()
+print("循环已停止")
+
+```
+
 ---
 
 ## 🎓 互动教学课程
@@ -141,6 +234,6 @@ print("事件循环已停止")
 
 <a href="/teach/lessons/0024-事件循环.html"><strong>👉 点击进入《事件循环互动教学课程》</strong></a>
 
-- ⏱️ 预计 10–15 分钟，9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 3 道源课程作业改编的最终考核
+- ⏱️ 预计 15–20 分钟，9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 3 道源课程作业改编的作业
 - 📋 配套<a href="/teach/reference/事件循环速查表.html">《事件循环速查表》</a>，术语与 `_run_once` 五步骤一页装下，可打印
 - 💬 有不理解的地方，随时可以问你的 AI 老师

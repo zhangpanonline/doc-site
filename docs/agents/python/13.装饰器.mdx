@@ -58,6 +58,138 @@ def func():
 # func = decorator_a(decorator_b(func))
 ```
 
+
+## 作业
+
+> **前置知识：** 本章作业中会用到 `time` 模块的两个功能：
+> - `time.time()`：返回当前时间的时间戳（一个浮点数）
+> - `time.sleep(seconds)`：让程序暂停执行指定的秒数
+>
+> 例如：
+> ```python
+> import time
+>
+> start = time.time()
+> time.sleep(1)
+> elapsed = time.time() - start
+> print(f"耗时: {elapsed} 秒")
+> ```
+
+### 一、实现timer装饰器
+
+```python
+import time
+
+def timer(func):
+    # 你的代码
+    pass
+
+@timer
+def slow_function():
+    time.sleep(1)
+    return "Done"
+
+slow_function()
+# 输出：slow_function 执行时间: 1.0012 秒
+```
+
+
+
+### 二、实现wraps装饰器
+
+实现wraps装饰器，用于不改变函数的名称和注释
+
+```python
+# 实现wraps装饰器，用于不改变函数的名称和注释
+
+
+def wraps(func):
+    # 你的代码
+    pass
+
+
+def my_decorator(func):
+    @wraps(func)
+    def wrapper():
+        print("函数执行前")
+        func()
+        print("函数执行后")
+
+    return wrapper
+
+
+@my_decorator
+def say_hello():
+    """打招呼"""
+    print("Hello!")
+
+
+say_hello()
+# 输出：
+# 函数执行前
+# Hello!
+# 函数执行后
+print("name", say_hello.__name__)
+print("doc", say_hello.__doc__)
+```
+
+### 三、实现repeat装饰器
+
+```python
+def repeat(n):
+    # 你的代码
+    pass
+
+
+@repeat(3)
+def say_hello(s):
+    print(s)
+
+
+say_hello(1)  # 输出: 1 1 1
+```
+
+### 四、实现cache装饰器
+
+编写一个装饰器 `cache`，缓存函数的计算结果。当使用相同的参数调用函数时，直接返回缓存的结果：
+
+```python
+def cache(func):
+    # 你的代码
+    pass
+
+@cache
+def fibonacci(n):
+    if n < 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+print(fibonacci(35))  # 应该快速返回结果
+```
+
+**提示：** 使用字典存储参数到结果的映射。
+
+
+
+### 五、实现to_dict装饰器
+
+编写一个类装饰器 `to_dict`，自动为类生成 `to_dict` 方法，该方法可以将对象转换为字典
+
+```python
+def to_dict(cls):
+    # 你的代码
+    pass
+
+@to_dict
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+p = Point(3, 4)
+print(p.to_dict())  # 应该输出: {"x":3, "y":4}
+```
+
 ---
 
 ## 🎓 互动教学课程
@@ -66,6 +198,6 @@ def func():
 
 <a href="/teach/lessons/0013-装饰器.html"><strong>👉 点击进入《装饰器互动教学课程》</strong></a>
 
-- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业（timer/wraps）改编的最终考核
+- ⏱️ 预计 15–20 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业（timer/wraps）改编的作业
 - 📋 配套<a href="/teach/reference/装饰器速查表.html">《装饰器速查表》</a>，可打印
 - 💬 有不理解的地方，随时可以问你的 AI 老师

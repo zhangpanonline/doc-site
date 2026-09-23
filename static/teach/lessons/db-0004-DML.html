@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《04.DML》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业改编最终考核 + 真实面试题，15-20 分钟掌握增删改查">
+  <meta name="description" content="配合《04.DML》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业改编作业 + 真实面试题，15-20 分钟掌握增删改查">
   <title>DML · 互动教学课程（数据库第 4 节）</title>
   <link rel="icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
@@ -15,7 +15,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 4 节</p>
       <h1>DML</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/DML/">04.DML</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 5 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/common/database/DML">db-0004-DML</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -23,7 +23,7 @@
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>熟练写 INSERT / DELETE / UPDATE，并<strong>避开「忘写 WHERE」两大危险操作</strong></li>
-        <li>用 WHERE / ORDER BY / LIMIT / 聚合 / GROUP BY / HAVING 组合出正确的查询——<strong>最终考核考的就是这个</strong></li>
+        <li>用 WHERE / ORDER BY / LIMIT / 聚合 / GROUP BY / HAVING 组合出正确的查询——<strong>作业考的就是这个</strong></li>
         <li>在 JOIN 与子查询之间正确选型，读懂执行顺序</li>
       </ol>
     </section>
@@ -166,67 +166,7 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《04.DML》源课程作业 35 题中挑出的 5 道改编题——<strong>这就是本课的最终考核</strong>（表结构：电商数据库，category / product / sku / "order" / order_items）。规则：不查资料，先在脑中写出完整 SQL，再点击核对。全部答对且能讲清理由，才算过关。答案均已在本课程的 scratch 数据库上实际运行验证。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核一（作业 16·分组统计）：「统计每个分类下有多少个商品」，哪条 SQL 正确？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">SELECT c.name, COUNT(p.id) FROM category c, product p;</button>
-            <button class="quiz-option">SELECT name, COUNT(*) FROM category GROUP BY name;</button>
-            <button class="quiz-option">SELECT c.name, COUNT(p.id) AS 商品数 FROM category c LEFT JOIN product p ON p.category_id = c.id GROUP BY c.name ORDER BY c.name;</button>
-            <button class="quiz-option">SELECT c.name, COUNT(p.id) FROM product p JOIN category c ON p.category_id = c.id WHERE COUNT(p.id) &gt; 0;</button>
-          </div>
-          <div class="quiz-explain" hidden>正确姿势：<strong>category LEFT JOIN product + GROUP BY</strong>。LEFT JOIN 保证没有商品的分类也出现（商品数 0）；GROUP BY c.name 后 COUNT(p.id) 数每组的非空商品。第一项漏 JOIN 条件成笛卡尔积；第二项 WHERE 里用聚合报错；第四项数的是分类自身行数。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核二（作业 25·分页 JOIN）：「订单明细，显示订单编号、商品名称、SKU 规格、数量、单价，每页 10 条显示第 3 页」，哪条正确？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">…FROM order_items oi LIMIT 30 OFFSET 10;</button>
-            <button class="quiz-option">…FROM product p LIMIT 10 OFFSET 3;</button>
-            <button class="quiz-option">…FROM "order" o LIMIT 10 OFFSET 30;</button>
-            <button class="quiz-option">…FROM order_items oi JOIN "order" o ON o.id = oi.order_id JOIN sku s ON s.id = oi.sku_id JOIN product p ON p.id = s.product_id ORDER BY o.order_no LIMIT 10 OFFSET 20;</button>
-          </div>
-          <div class="quiz-explain" hidden>四表串联：明细 → 订单（拿 order_no）→ SKU（拿 sku_code）→ 商品（拿 name）。第 3 页每页 10 条 = <strong>OFFSET 20</strong>（前 20 条属于前两页）。陷阱：LIMIT 10 OFFSET 30 是第 4 页；只查一张表拿不到跨表字段。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核三（作业 27·子查询）：「哪些商品从未被任何订单购买过」，哪条思路正确？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">SELECT p.name FROM product p WHERE stock = 0;</button>
-            <button class="quiz-option">SELECT p.name FROM product p JOIN order_items oi ON oi.sku_id = p.id;</button>
-            <button class="quiz-option">SELECT p.name FROM product p WHERE p.id NOT IN (SELECT p.id FROM product p);</button>
-            <button class="quiz-option">SELECT p.name FROM product p WHERE NOT EXISTS (SELECT 1 FROM sku s JOIN order_items oi ON oi.sku_id = s.id WHERE s.product_id = p.id);</button>
-          </div>
-          <div class="quiz-explain" hidden>「从未被购买」= 该商品的任何 SKU 都不在 order_items 里 → <strong>NOT EXISTS</strong>（相关子查询：product → sku → order_items 层层探测）。第一项 JOIN 出的恰恰是「被买过的」；stock 是库存与购买无关；第四项逻辑自相矛盾。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核四（作业 30·标量子查询）：「价格高于所有 SKU 平均价格的 SKU」，哪条正确？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">SELECT sku_code, price FROM sku WHERE price &gt; AVG(price);</button>
-            <button class="quiz-option">SELECT sku_code, price FROM sku WHERE price &gt; (SELECT AVG(price) FROM sku);</button>
-            <button class="quiz-option">SELECT sku_code, price FROM sku HAVING price &gt; AVG(price);</button>
-            <button class="quiz-option">SELECT sku_code, price FROM sku WHERE price &gt; (SELECT MAX(price) FROM sku);</button>
-          </div>
-          <div class="quiz-explain" hidden><strong>标量子查询</strong>返回单个值：先把 AVG(price) 算出来，再逐行比较。第一、二项把聚合直接放 WHERE/HAVING 里不行（WHERE 阶段无聚合；无 GROUP BY 的 HAVING 语义不符）；第三项是「高于最高价」（恒空）。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核五（作业 33·时间分组）：「每个月的订单数量和总金额」，哪条正确？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">SELECT MONTH(created_at), COUNT(*) FROM "order" GROUP BY created_at;</button>
-            <button class="quiz-option">SELECT to_char(created_at, 'YYYY-MM') AS 月份, COUNT(*) AS 订单数, SUM(total_amount) AS 总金额 FROM "order" GROUP BY 1 ORDER BY 1;</button>
-            <button class="quiz-option">SELECT created_at, COUNT(*), SUM(total_amount) FROM "order" GROUP BY 1;</button>
-            <button class="quiz-option">SELECT EXTRACT(YEAR FROM created_at), COUNT(*) FROM "order";</button>
-          </div>
-          <div class="quiz-explain" hidden>按月分组：<code>to_char(created_at, 'YYYY-MM')</code> 把时间戳格式化成月份字符串，再 GROUP BY。注意 <code>"order"</code> 是保留字要加双引号。第一项 GROUP BY created_at 按「每秒」分组没意义；第二项同病；第四项漏了 SUM 且按整年取。</div>
-        </div>
-      </div>
-    </section>
+    
 
                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -235,21 +175,22 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
         window.__interview = {
           lesson: 'db-0004-DML',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '初级岗常问',
     prompt: `WHERE 和 HAVING 有什么区别？能不能在 HAVING 里写非分组列的条件？`,
     source: '来源：PostgreSQL 官方文档《2.7. Aggregate Functions》（"The fundamental difference between WHERE and HAVING is this: WHERE selects input rows before groups and aggregates are computed (thus, it controls which rows go into the aggregate computation), whereas HAVING selects group rows after groups and aggregates are computed."）https://www.postgresql.org/docs/current/tutorial-agg.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「SQL 面试高频 50 题精讲」》',
     breakdown: `<strong>WHERE 过滤行</strong>（分组前、可用任意列、不能用聚合）；<strong>HAVING 过滤分组</strong>（分组后、条件基于聚合结果如 HAVING SUM(amount) > 100）。在 HAVING 里写非分组列：PG 会报错（列必须出现在 GROUP BY 或聚合里）——MySQL 老版本会静默乱取一值，是坑。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `SQL 各子句的真实执行顺序是什么？为什么 WHERE 里不能引用 SELECT 里的别名？`,
     source: '来源：PostgreSQL 官方文档《SELECT》（"All elements in the FROM list are computed. (Each element in the FROM list is a real or virtual table.) If more than one element is specified in the FROM list, they are cross-joined together. / If the WHERE clause is specified, all rows that do not satisfy the condition are eliminated from the output."）https://www.postgresql.org/docs/current/sql-select.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「面试题常见」》',
     breakdown: `书写顺序 ≠ 执行顺序：<strong>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</strong>。WHERE 在 SELECT <strong>之前</strong>执行，别名还没诞生，所以不能用；ORDER BY 在 SELECT 之后，能用别名。理解顺序是分析 SQL 行为（哪些过滤早、哪些晚）的地基。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写的「查所有员工及其部门名」：LEFT JOIN 后在 WHERE 里过滤右表字段，没部门的员工消失了。审查：
@@ -260,14 +201,14 @@ WHERE d.active = true;   -- ← 把未匹配行滤掉了</code></pre>`,
     source: '来源：PostgreSQL 官方文档《2.6. Joins Between Tables》（"When outputting a left-table row for which there is no right-table match, empty (null) values are substituted for the right-table columns."）https://www.postgresql.org/docs/current/tutorial-join.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「SQL 面试高频 50 题精讲」》',
     breakdown: `LEFT JOIN 未匹配的行右表字段是 <strong>NULL</strong>——WHERE 里 d.active = true 对 NULL 判定为假，<strong>未匹配行全部被滤掉</strong>，LEFT JOIN 退化成 INNER JOIN。修复：条件移到 <strong>ON</strong>（<code>ON e.dept_id = d.id AND d.active</code>，过滤发生在连接时、保留左表行），或 WHERE 里加 <code>OR d.id IS NULL</code>。AI 写的报表 SQL 高频坑。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `子查询结果里可能含 NULL 时，NOT IN 会发生什么？为什么专家说改用 NOT EXISTS？`,
     source: '来源：PostgreSQL 官方文档《9.24. Subquery Expressions · NOT IN》（"Note that if the left-hand expression yields null, or if there are no equal right-hand values and at least one right-hand row yields null, the result of the NOT IN construct will be null, not true."）https://www.postgresql.org/docs/current/functions-subquery.html#FUNCTIONS-SUBQUERY-NOTIN · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「SQL 面试高频 50 题精讲」》',
     breakdown: `<code>x NOT IN (1, 2, NULL)</code> 的语义是 x≠1 AND x≠2 AND x≠NULL——与 NULL 比较结果是 <strong>unknown</strong>，整句永远不为真 → 结果<strong>空集</strong>，静默吞掉所有行。<code>NOT EXISTS</code> 用相关性检查「不存在匹配行」，无三值逻辑问题。规则：子查询可能含 NULL 就用 NOT EXISTS（或 NOT IN 子查询里加 WHERE x IS NOT NULL）。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `写一组报表查询并复现两个陷阱（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -278,20 +219,8 @@ WHERE d.active = true;   -- ← 把未匹配行滤掉了</code></pre>`,
     },
     source: '任务基于《04.DML》课程知识点 · 来源层级：一手（官方文档《SELECT》https://www.postgresql.org/docs/current/sql-select.html、《2.6. Joins Between Tables》https://www.postgresql.org/docs/current/tutorial-join.html）场景化',
     breakdown: `思路：① <code>LEFT JOIN ... ON e.dept_id = d.id AND d.active</code> + <code>GROUP BY ... HAVING count(*) > 1</code>；② NOT IN 空集复现后改 <code>WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE t2.x = t1.x)</code>。坑：HAVING 里用聚合别名（PG 允许 SELECT 别名，MySQL 不允许——以目标库为准）。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方教程用 weather 与 cities 两表演示 LEFT OUTER JOIN——这个例子说明了什么语义？`,
-    source: '来源：PostgreSQL 官方文档《2.6. Joins Between Tables》（"This query is called a left outer join because the table mentioned on the left of the join operator will have each of its rows in the output at least once, whereas the table on the right will only have those rows output that match some row of the left table."）https://www.postgresql.org/docs/current/tutorial-join.html · 检索 2026-09-23 · 层级：一手（官方文档）',
-    breakdown: `<code>weather LEFT OUTER JOIN cities ON ...</code>：<strong>左表所有行全部保留</strong>——例子里 Hayward 一行在 cities 里没有匹配，城市字段全部为空照样出现（San Francisco 两行正常匹配）。教程原话：之所以叫 left，因为<strong>「the table mentioned on the left」</strong>的行全部输出。这是「保留未匹配行」语义的官方出处。`,
-  },
-  {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `基于官方教程的 LEFT JOIN 语义：在 WHERE 里过滤右表字段，为什么未匹配的行会消失（LEFT JOIN 变成内连接）？`,
-    source: '来源：PostgreSQL 官方文档《2.6. Joins Between Tables》（"If no matching row is found we want some “empty values” to be substituted for the cities table\'s columns. This kind of query is called an outer join."）https://www.postgresql.org/docs/current/tutorial-join.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写） · 实测校准',
-    breakdown: `LEFT JOIN 未匹配行的右表列是 <strong>NULL</strong>（官方例子里 Hayward 的城市字段为空）；WHERE 里任何对右表列的比较（如 <code>cities.population > 100</code>）对 NULL 判<strong>unknown → 行被滤掉</strong>。修复：过滤条件写进 <strong>ON</strong>（连接时过滤、保留左表行），或 WHERE 加 <code>OR 右表主键 IS NULL</code>。这条是 LEFT JOIN 相关面试题的第一高频坑。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -348,7 +277,7 @@ WHERE d.active = true;   -- ← 把未匹配行滤掉了</code></pre>`,
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/common/database/DML/">回到《04.DML》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（35 题）。
     </footer>
 
   </main>

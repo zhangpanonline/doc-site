@@ -15,7 +15,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
       <h1>CTE 与递归查询</h1>
-      <p class="lesson-sub">来源：官方文档 §7.8 WITH 查询（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">来源：官方文档 §7.8 WITH 查询（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -162,54 +162,7 @@ SELECT sum(n) FROM t;   -- 5050</pre>
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>四道题覆盖本课全部要点——答完它们，CTE 与递归查询就过关了。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核一：员工表（id, name, manager_id），要列出 CEO 的所有层级下属。递归 CTE 的递归项里应该写什么关联？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">JOIN 员工表 ON e.manager_id = 递归CTE.id（逐层下钻）</button>
-            <button class="quiz-option">WHERE e.id = 固定值</button>
-            <button class="quiz-option">JOIN 部门表按部门关联</button>
-            <button class="quiz-option">GROUP BY 部门</button>
-          </div>
-          <div class="quiz-explain" hidden>树形结构的标准模式：递归项把「上一轮的员工 id」当作下一轮的 manager_id——每轮向下钻一层。</div>
-        </div>
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核二：求值机制的完整顺序是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只算非递归项一次</button>
-            <button class="quiz-option">非递归项 → 结果+工作表 → 循环（工作表替换自引用算递归项 → 去重 → 结果+中间表 → 中间表替换工作表）</button>
-            <button class="quiz-option">非递归项与递归项并行计算</button>
-            <button class="quiz-option">递归项 → 非递归项 → 去重 → 结果</button>
-          </div>
-          <div class="quiz-explain" hidden>官方五步：先非递归项播种，再以工作表为「上一轮」循环扩展，直到工作表为空。</div>
-        </div>
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核三：为什么递归 CTE 里通常推荐 UNION ALL 而非 UNION？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">UNION 不允许递归</button>
-            <button class="quiz-option">UNION ALL 免去每轮去重开销；且树形数据天然无重复（前提：终止条件正确）</button>
-            <button class="quiz-option">UNION ALL 更安全</button>
-            <button class="quiz-option">UNION 语法会报错</button>
-          </div>
-          <div class="quiz-explain" hidden>UNION 每轮全量去重有开销；树形结构（每条路径天然唯一）用 UNION ALL 更快——代价是要自己保证终止条件。</div>
-        </div>
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核四：CTE 在同一个 WITH 里定义了两个辅助语句，后面的可以引用前面的吗？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">可以——后面的 CTE 可引用前面定义的 CTE</button>
-            <button class="quiz-option">只有递归 CTE 能互相引用</button>
-            <button class="quiz-option">不可以——每个 CTE 完全独立</button>
-            <button class="quiz-option">只有主查询能引用 CTE</button>
-          </div>
-          <div class="quiz-explain" hidden>WITH 里按声明顺序组织：后面的辅助语句可以引用前面已声明的 CTE——复杂查询的层层拆解就是靠这个。</div>
-        </div>
-      </div>
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了 CTE 与递归查询——继续学习 <a href="/common/database-pg/pg-05-数据类型-基础">pg-05 · 数据类型 · 基础</a>。</p>
-    </section>
+    
 
     <section>
       <h2>💼 面试实战</h2>
@@ -219,35 +172,36 @@ SELECT sum(n) FROM t;   -- 5050</pre>
         window.__interview = {
           lesson: 'pg-0004-CTE与递归查询',
           questions: [
-            {
+
+{
               type: 'trap',
               level: '高级岗常问',
               prompt: `AI 写的递归 CTE 用了 UNION ALL，但递归项的 JOIN 条件写错，查询卡死跑不完。为什么 UNION ALL 会无限循环？怎么防御？`,
               source: '来源：postgres.cn 官方文档 §7.8 WITH 查询（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `UNION ALL <strong>不去重</strong>——工作表每轮都有新行，终止只能靠「递归项 WHERE 无输出 → 工作表为空」。JOIN 条件错（如关联列写反）会让同一批行反复进入工作表 → 无限循环。防御：① 递归项必须有单调推进的终止条件；② 开发时设 <code>statement_timeout</code>；③ 对「可能成环」的图数据加访问标记/深度上限（如 n &lt; 100）。`,
             },
-            {
+{
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `复述官方文档对递归 CTE 求值机制的五步描述。`,
               source: '来源：postgres.cn 官方文档 §7.8 WITH 查询（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
               breakdown: `① 计算<strong>非递归项</strong>，UNION 去重；② 剩余行入<strong>结果 + 工作表</strong>；③ 工作表非空则循环：用<strong>当前工作表内容替换递归自引用</strong>算递归项；④ UNION 去重（含与历史结果的重复），剩余行入结果 + <strong>中间表</strong>；⑤ 中间表替换工作表、清空中间表，回到 ③。官方补充：RECURSIVE 在内部是<strong>迭代评估</strong>。`,
             },
-            {
+{
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的树遍历：递归 CTE 的<strong>非递归项</strong>里也写了 <code>FROM 自身CTE名</code>。审查：这能跑吗？为什么？`,
               source: '来源：postgres.cn 官方文档 §7.8 WITH 查询（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `不能——官方原文：<strong>只有递归项能够包含对于查询自身输出的引用</strong>。非递归项是「种子」，它引用自身在语义上无起点（先有鸡还是先有蛋），PG 直接报错。AI 把种子行写成自引用是常见笔误：种子必须是<strong>可独立求值的固定行集</strong>（如 CEO 那一行、根节点）。`,
             },
-            {
+{
               type: 'design',
               level: '中级岗常问',
               prompt: `团队要查「组织树所有下属」：方案 A 应用层递归循环逐层查；方案 B 一条递归 CTE。你选哪个？依据是什么？`,
               source: '来源：postgres.cn 官方文档 §7.8 WITH 查询（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `默认选 <strong>B</strong>：一次往返、数据库侧迭代（官方：内部迭代评估），避免 N 次查询的网络开销与代码递归复杂度。选 A 的场景：需要<strong>逐层副作用</strong>（每层做业务处理）、深度极小且层数固定、或数据量太大需要流式处理。原则：纯读取的树遍历让数据库做，带业务逻辑的遍历才回应用层。`,
             },
-            {
+{
               type: 'scenario',
               level: '初级岗常问',
               prompt: `在 pg16 里实测递归 CTE（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -258,8 +212,8 @@ SELECT sum(n) FROM t;   -- 5050</pre>
               },
               source: '任务基于官方文档 §7.8 · 来源层级：官方翻译·一手（postgres.cn）场景化',
               breakdown: `思路：<code>WITH RECURSIVE org(id, name, depth) AS (种子 UNION ALL SELECT e.id, e.name, o.depth+1 FROM emp e JOIN org o ON e.manager_id = o.id) SELECT ...</code>；无限递归实验先 <code>SET statement_timeout = '2s'</code>。坑：树里有环（A 管 B、B 管 A）时 UNION ALL 也会死循环——加 depth &lt; 10 之类的深度上限。`,
-            },
-          ],
+            }
+
         };
       </script>
     </section>
@@ -275,7 +229,7 @@ SELECT sum(n) FROM t;   -- 5050</pre>
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

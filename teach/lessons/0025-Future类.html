@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《25.Future类》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（读懂延时/网络封装 demo）+ 真实面试题">
-  <title>Future类 · 互动教学课程（第 25 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《25.Future类》的互动教学课程：9 道分级测验 + 面试实战（第 25 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 23 课</p>
       <h1>Future类</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/Future类/">23.Future类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/Future类">25-Future类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说清 Future 表达的语义：<strong>「将来某个时间点完成」的异步任务</strong></li>
         <li>操作 Future 状态：<code>done</code> / <code>result</code> / <code>set_result</code> / <code>set_exception</code> / <code>cancel</code></li>
-        <li>读懂源课程的两段封装代码：<strong>延时函数与网络请求的异步封装</strong>——最终考核就考它们</li>
+        <li>读懂源课程的两段封装代码：<strong>延时函数与网络请求的异步封装</strong>——作业就考它们</li>
       </ol>
     </section>
 
@@ -165,72 +163,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《25.Future类》源课程作业（读懂 demo 目录两个封装）的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一（延时封装·执行顺序）：以下代码由 <code>run.run(main)</code> 驱动（call_soon 后 run_forever），输出顺序是？
-<pre><code>def async_delay(duration: int):
-    loop = asyncio.get_event_loop()
-    future = loop.create_future()
-    loop.call_later(duration, future.set_result, None)
-    return future
-
-def main():
-    async_delay(2).add_done_callback(lambda _: print("2 seconds have passed"))
-    print("不影响其他代码的执行")</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">两行同时打印</button>
-            <button class="quiz-option">先打印「不影响」，2 秒后打印「2 seconds have passed」，随后程序挂住</button>
-            <button class="quiz-option">先等 2 秒，再按代码顺序打印两行，程序正常退出</button>
-            <button class="quiz-option">只打印第一行，回调永远不执行</button>
-          </div>
-          <div class="quiz-explain" hidden><code>async_delay(2)</code> 立即返回 Future（不等待），所以「不影响其他代码的执行」先打印；2 秒后 <code>call_later</code> 到点触发 <code>set_result</code>，完成回调进 ready 队列并执行，打印第二行。注意：这段代码<strong>没有调用 loop.stop()</strong>——回调执行完后 <code>run_forever</code> 不会退出，程序挂住（这正是第 22 课「没有 stop 就死循环」的教训）。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核二（网络封装·连接完成）：<code>async_connect</code> 中，连接成功后 <code>fut.set_result(sock)</code> 由谁触发？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">另一个线程触发</button>
-            <button class="quiz-option">connect 调用返回后立即同步触发</button>
-            <button class="quiz-option">socket 可写事件到达时，事件循环调用的 on_writable 回调</button>
-            <button class="quiz-option">主线程定时轮询触发</button>
-          </div>
-          <div class="quiz-explain" hidden>非阻塞 connect 不会立刻完成：<code>loop.add_writer(sock, on_writable)</code> 把「socket 变为可写」注册给事件循环——连接建立后描述符可写，事件循环回调 <code>on_writable</code>，检查 <code>SO_ERROR</code> 无误后 <code>fut.set_result(sock)</code>。这正是第 22 课「阻塞等待 I/O，I/O 到达立刻进 ready」的具体应用。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核三（状态预测）：以下代码的输出是？
-<pre><code>loop = asyncio.new_event_loop()
-fut = loop.create_future()
-print(fut.done())
-fut.set_result("result")
-print(fut.done(), fut.result())</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">False 然后 False result</button>
-            <button class="quiz-option">True 然后 True result</button>
-            <button class="quiz-option">第一行就抛 InvalidStateError</button>
-            <button class="quiz-option">False 然后 True result</button>
-          </div>
-          <div class="quiz-explain" hidden><code>done()</code> 只是<strong>查询</strong>状态不报错：初始 False；<code>set_result("result")</code> 后 done() 为 True、<code>result()</code> 返回 "result"。顺序：<strong>False → True result</strong>。（只有未完成时调用 result() 才抛 InvalidStateError。）</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核四（回调时机）：<code>fut</code> 已完成（done() 为 True），此时 <code>fut.add_done_callback(on_done)</code>，on_done 会？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">抛 RuntimeError</button>
-            <button class="quiz-option">立即在当前调用栈同步执行</button>
-            <button class="quiz-option">被放入 ready 队列尽快调度，而不是同步执行</button>
-            <button class="quiz-option">永远不会执行（错过了完成时机）</button>
-          </div>
-          <div class="quiz-explain" hidden>对已完成 Future 注册回调同样有效：回调被放入 ready 队列，事件循环下一轮调度它。回调<strong>永远不是同步执行</strong>的——理解这一点才能看懂封装代码里「注册回调 + 返回 Future」的链式写法。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经读懂 Future 与两段封装——可以继续学习《<a href="/agents/python/协程 Coroutine/">24.协程</a>》了。</p>
-    </section>
+    
 
                                                                                                     <section>
       <h2>💼 面试实战</h2>
@@ -239,21 +172,22 @@ print(fut.done(), fut.result())</code></pre></div>
         window.__interview = {
           lesson: '0025-Future类',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `asyncio 里 Task 与 Future 是什么关系？各在什么场景出现？`,
     source: '考点来源：Skillup「Python 后端面试题（asyncio 高频面试题汇总）」（Task vs Future 题）· 场景改写',
     breakdown: `<strong>Task 是 Future 的子类</strong>：Future 是「未来结果的占位符」（谁都可以 set_result 完成它，库/框架用它做回调桥接）；Task 额外<strong>包装一个协程</strong>并由事件循环调度执行——<code>asyncio.create_task(coro)</code> 得到的都是 Task。业务代码几乎总是跟 Task 打交道，Future 出现在自定义同步原语/桥接层。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `在协程里调用了同步阻塞函数（如 <code>time.sleep(5)</code> 或 requests.get），会发生什么？正确做法是什么？`,
     source: '考点来源：腾讯云「Python 并发编程模型」（事件循环陷阱题）· 场景改写',
     breakdown: `<strong>整个事件循环被阻塞 5 秒</strong>——所有协程全部停摆（单线程，睡死就是全死）。正确做法：① 有异步版本换 <code>await asyncio.sleep</code> / httpx；② 没有异步版本的 CPU/阻塞调用丢进线程池 <code>await loop.run_in_executor(None, blocking_fn)</code>。AI 在 asyncio 代码里塞同步 requests 是并发性能杀手，审查必查。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写的代码创建了 Task 但没 await、也没取异常。审查：Task 抛异常后会发生什么？
@@ -266,14 +200,14 @@ async def main():
     source: '考点来源：Runebook（Python 官方文档中文版）（Task 异常题）· 场景改写',
     breakdown: `异常<strong>不会中断主流程</strong>——事件循环只在 Task 被回收时打一条 <code>Task exception was never retrieved</code> 警告，然后静默丢弃。危害：任务失败无人知晓。修复：<code>await task</code>（异常照常抛）、<code>gather</code> 收集、或显式 <code>task.exception()</code>。规则：创建 Task 就必须有人「认领」它的结果或异常。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `一个 Future 注册了多个 done 回调，其中一个回调抛异常，其他回调还会执行吗？依赖回调做关键业务逻辑的设计有什么问题？`,
     source: '考点来源：Skillup「Python 后端面试题（asyncio 高频汇总）」（回调隔离题）· 场景改写',
     breakdown: `<strong>其他回调照常执行</strong>——回调异常被 loop 异常处理器单独记录，互不影响（隔离性其实不错）。但设计问题：回调是「发后不理」语义，业务关键路径（比如支付结果处理）放进回调，失败只打日志、无法可靠重试与告警。正确姿势：关键流程用 await/Task 编排，回调只做「通知/清理」类非关键工作。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `写一个带超时的任务管理器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -284,20 +218,8 @@ async def main():
     },
     source: '任务基于《25.Future类》课程知识点 · 场景化',
     breakdown: `思路：<code>await asyncio.wait_for(task, timeout=1)</code> 逐个包裹（或 wait+timeout 批量）；捕获 TimeoutError/CancelledError 分类；每个任务都 await/exception() 认领。坑：wait_for 超时会<strong>取消</strong>任务——任务里 finally 清理要能扛取消；被取消的任务别重复 await。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档对 <code>asyncio.create_task</code> 的定义原文是什么？它的返回值和「裸协程」有什么区别？`,
-    source: '来源：Python 官方文档 asyncio「asyncio.create_task」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `原文：<strong>「Wrap the coro coroutine into a Task and schedule its execution. Return the Task object.」</strong>——把协程包成 Task、交给事件循环调度、返回 Task 句柄。与裸协程的区别：Task 被循环<strong>持有引用并立即调度</strong>，可以 cancel/查状态/挂回调；裸协程没人 await 就是「从未执行 + RuntimeWarning」。签名里还有 name（调试命名）与 eager_start（是否立即执行到首个 await）参数。`,
-  },
-  {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `你用 <code>wait_for(task, timeout=5)</code> 给任务限时，但超时后不想让它被取消（比如它是共享的后台清理任务）。官方文档给的解法是什么？`,
-    source: '来源：Python 官方文档 asyncio「asyncio.wait_for」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `文档原文：<strong>超时发生时 wait_for 会取消 aw 并抛 TimeoutError</strong>；「To prevent aw from being cancelled, <strong>wrap it in shield()</strong>」——<code>await wait_for(asyncio.shield(task), timeout=5)</code>：超时只取消 shield 外壳，里面的任务继续跑；wait_for 还会等任务真正取消完才返回（原文：waits until the future is actually cancelled）。AI 写限时逻辑时不知道 shield，超时把不该停的任务一并杀了。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -361,7 +283,7 @@ async def main():
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/Future类/">回到《25.Future类》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（0 题）。
     </footer>
 
   </main>

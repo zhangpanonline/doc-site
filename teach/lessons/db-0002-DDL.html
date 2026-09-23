@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《02.DDL》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题，15-20 分钟掌握建表、约束与结构修改">
+  <meta name="description" content="配合《02.DDL》的互动教学课程：9 道分级测验 + 面试实战，15-20 分钟掌握建表、约束与结构修改">
   <title>DDL · 互动教学课程（数据库第 2 节）</title>
   <link rel="icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
@@ -15,7 +15,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 2 节</p>
       <h1>DDL</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/DDL/">02.DDL</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/common/database/DDL">db-0002-DDL</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -23,7 +23,7 @@
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 SQL 四分类（DDL/DML/DCL/TCL）各自管什么</li>
-        <li>独立建表：为每个字段选对<strong>数据类型</strong>与<strong>约束</strong>——<strong>最终考核考的就是这个</strong></li>
+        <li>独立建表：为每个字段选对<strong>数据类型</strong>与<strong>约束</strong>——<strong>作业考的就是这个</strong></li>
         <li>用 <code>ALTER</code> / <code>DROP</code> / <code>TRUNCATE</code> 修改结构，并说清三者与 <code>DELETE</code> 的区别</li>
       </ol>
     </section>
@@ -181,56 +181,7 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《02.DDL》源课程作业「让 AI 帮你生成 SQL 完成建库建表 + 导出恢复」的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料，先在脑中写出语句，再点击核对。全部答对且能讲清理由，才算过关。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核一：为「学生表」选建表语句——需求：姓名、年龄、性别（作业原题）。哪条最合适？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">CREATE TABLE students (id UUID PRIMARY KEY, name TEXT, age REAL, gender BOOLEAN);</button>
-            <button class="quiz-option">CREATE TABLE students (name VARCHAR(50), age NUMERIC(5,2), gender JSONB);</button>
-            <button class="quiz-option">CREATE TABLE students (name CHAR(10), age TEXT, gender VARCHAR(1));</button>
-            <button class="quiz-option">CREATE TABLE students (id SERIAL PRIMARY KEY, name VARCHAR(50) NOT NULL, age INTEGER CHECK (age &gt; 0), gender VARCHAR(10));</button>
-          </div>
-          <div class="quiz-explain" hidden>要点：自增主键 <code>SERIAL PRIMARY KEY</code>；姓名用 VARCHAR(50) NOT NULL；年龄是整数，加 CHECK 防负数；性别短字符串 VARCHAR(10)。其他项的错误：age TEXT 类型错、age NUMERIC 类型错、gender BOOLEAN 语义错。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核二：为「课程表」选建表语句——需求：课程名称、课程描述、授课老师（作业原题）。哪条最合适？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">CREATE TABLE courses (name CHAR(3), desc TEXT, teacher VARCHAR(10));</button>
-            <button class="quiz-option">CREATE TABLE courses (name VARCHAR(100), description VARCHAR(10), teacher TEXT);</button>
-            <button class="quiz-option">CREATE TABLE courses (id SERIAL PRIMARY KEY, name VARCHAR(100) NOT NULL, description TEXT, teacher VARCHAR(50));</button>
-            <button class="quiz-option">CREATE TABLE courses (id INT, name TEXT, description JSON, teacher SERIAL);</button>
-          </div>
-          <div class="quiz-explain" hidden>课程名 VARCHAR(100) 且 NOT NULL；<strong>课程描述长文本用 TEXT</strong>（第二项里 description TEXT 正确）；老师 VARCHAR(50)。陷阱项：name CHAR(3) 放不下课程名；description VARCHAR(10) 更放不下描述；teacher SERIAL 把老师当自增数。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核三：作业第 4 步「导出 courses_db 为 SQL，只要干干净净的建表语句」，应该用什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">docker exec pg16 pg_dump -U admin courses_db——全量导出含数据</button>
-            <button class="quiz-option">COPY (SELECT * FROM pg_tables) TO STDOUT;</button>
-            <button class="quiz-option">docker exec pg16 pg_dump -U admin -s courses_db——schema-only 只导结构</button>
-            <button class="quiz-option">SELECT table_name FROM information_schema.tables; 然后手动抄</button>
-          </div>
-          <div class="quiz-explain" hidden><code>pg_dump -s</code>（= <code>--schema-only</code>）只导出<strong>表结构定义</strong>（CREATE TABLE 语句），不含数据——正是「干干净净的建表语句」。不带 -s 的全量导出会把数据也打成 INSERT。pg_dump 是 PG 官方备份工具（<a href="https://www.postgresql.org/docs/16/app-pgdump.html">官方文档</a>）。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核四：作业第 5 步「删除并重建干净的数据库，再用导出的 SQL 恢复」，正确顺序是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">TRUNCATE 所有表即可，不需要重建数据库</button>
-            <button class="quiz-option">DROP DATABASE → CREATE DATABASE → 在 pgAdmin/psql 中执行导出 SQL → 验证表已建</button>
-            <button class="quiz-option">先执行导出 SQL 再 DROP DATABASE，顺序无所谓</button>
-            <button class="quiz-option">把导出的 SQL 粘贴到 pgAdmin 里对旧库直接执行</button>
-          </div>
-          <div class="quiz-explain" hidden>干净恢复 = <strong>删库 → 建库 → 执行结构 SQL → 验证</strong>。注意两点：DROP DATABASE 会连数据一起销毁（这正是「干净」的目的）；导出的 SQL 只含 CREATE TABLE，执行它就把表结构原样重建出来。</div>
-        </div>
-      </div>
-    </section>
+    
 
                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -239,35 +190,36 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
         window.__interview = {
           lesson: 'db-0002-DDL',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '初级岗常问',
     prompt: `DELETE、TRUNCATE、DROP 三者有什么区别？谁保留表结构？谁最快？`,
     source: '来源：PostgreSQL 官方文档《TRUNCATE》（"TRUNCATE quickly removes all rows from a set of tables. It has the same effect as an unqualified DELETE on each table, but since it does not actually scan the tables it is faster."）https://www.postgresql.org/docs/current/sql-truncate.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《牛客网「DELETE、TRUNCATE 和 DROP 区别」》',
     breakdown: `<strong>DELETE</strong>：按行删除（可带 WHERE），表结构保留，最慢（逐行记日志/MVCC）；<strong>TRUNCATE</strong>：清空全部数据，表结构保留，极快（整表操作）；<strong>DROP</strong>：表结构连数据一起删。口诀：删行 DELETE、清表 TRUNCATE、删表 DROP。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `TRUNCATE 为什么比 DELETE 快得多？PG 里对一张大表海量 DELETE 后表文件却没变小，为什么？`,
     source: '来源：PostgreSQL 官方文档《VACUUM》（"tuples that are deleted or obsoleted by an update are not physically removed from their table; they remain present until a VACUUM is done. / extra space is not returned to the operating system (in most cases); it\'s just kept available for re-use within the same table."）https://www.postgresql.org/docs/current/sql-vacuum.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《牛客网「DELETE、TRUNCATE 和 DROP 区别」+ 腾讯云「[数据库]基础面试题总结」》',
     breakdown: `TRUNCATE 是<strong>整表级操作</strong>（直接重置数据文件/段），不做逐行处理；DELETE 逐行生成<strong>死元组</strong>（MVCC 旧版本），表文件不变小——空间要靠 <code>VACUUM</code> 回收标记、VACUUM FULL 才真正压缩文件。PG 面试的「DELETE 后表没变小」答案就是 MVCC + 死元组。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 生成的建表语句给所有文本列用了 CHAR(255)。审查：定长 CHAR 与变长 VARCHAR 怎么选？CHAR(255) 有什么问题？`,
     source: '来源：PostgreSQL 官方文档《8.3. Character Types》（"There is no performance difference among these three types, apart from increased storage space when using the blank-padded type / values of type character will be space-padded; values of type character varying will simply store the shorter string."）https://www.postgresql.org/docs/current/datatype-character.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「Java 最新面试题」》',
     breakdown: `<strong>CHAR(n)</strong>：不足补空格到定长，适合长度固定的值（哈希码、状态码）；<strong>VARCHAR(n)</strong>：按实际长度存储，适合长度可变的文本。CHAR(255) 的问题：短值<strong>全部补空格</strong>（浪费存储 + 比较/去空格陷阱），AI 从 MySQL 抄来的坏习惯。通用原则：默认 VARCHAR。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `建一张订单表的 DDL，你会怎么设计字段与约束？DDL 与 DML 的本质区别是什么？`,
     source: '来源：PostgreSQL 官方文档《Chapter 5. Data Definition》（"This chapter covers how one creates the database structures that will hold one\'s data."）https://www.postgresql.org/docs/current/ddl.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「SQL 基础面试考点总结」》',
     breakdown: `DDL = <strong>定义结构</strong>（CREATE/ALTER/DROP，改 schema）；DML = <strong>操作数据</strong>（INSERT/UPDATE/DELETE/SELECT，改行）。订单表要点：主键（id）、金额用 NUMERIC 不用 float、状态列 CHECK 约束、created_at 默认 now()、外键列加索引。AI 建表常见漏项：没主键、金额用浮点、缺时间列。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `建表并对比 DELETE/TRUNCATE（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -278,20 +230,8 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
     },
     source: '任务基于《02.DDL》课程知识点 · 来源层级：一手（官方文档《TRUNCATE》https://www.postgresql.org/docs/current/sql-truncate.html、《CREATE TABLE》https://www.postgresql.org/docs/current/sql-createtable.html）场景化',
     breakdown: `思路：<code>CREATE TABLE orders(...); INSERT ...; DELETE WHERE ...; TRUNCATE orders;</code> 对比；DELETE 大表后查 pg_stat_user_tables 的 n_dead_tup 再 VACUUM。坑：TRUNCATE 在事务里可回滚但不可带 WHERE；VACUUM 不是 VACUUM FULL（后者锁表重写，生产慎用）。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档说 TRUNCATE 比 DELETE 快的机制原因是什么？磁盘空间回收上有什么区别？`,
-    source: '来源：PostgreSQL 官方文档《TRUNCATE》（"Furthermore, it reclaims disk space immediately, rather than requiring a subsequent VACUUM operation. This is most useful on large tables."）https://www.postgresql.org/docs/current/sql-truncate.html · 检索 2026-09-23 · 层级：一手（官方文档）',
-    breakdown: `原文两句话：① <strong>「it does not actually scan the tables」</strong>——不做逐行扫描（DELETE 逐行生成死元组），所以快；② <strong>「reclaims disk space immediately, rather than requiring a subsequent VACUUM operation」</strong>——磁盘空间<strong>立即回收</strong>，而 DELETE 后要等 VACUUM。语义上等价于<strong>无 WHERE 的 DELETE</strong>（原文：same effect as an unqualified DELETE）。`,
-  },
-  {
-    type: 'trap',
-    level: '中级岗常问',
-    prompt: `AI 想「清理 90 天前的日志」写了 <code>TRUNCATE logs</code>。审查：按官方定义，这个命令实际做了什么？问题在哪？`,
-    source: '来源：PostgreSQL 官方文档《TRUNCATE》（"TRUNCATE — empty a table or set of tables"）https://www.postgresql.org/docs/current/sql-truncate.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）',
-    breakdown: `TRUNCATE 等价于<strong>无 WHERE 的 DELETE</strong>——不带任何过滤条件，<strong>整表瞬间清空</strong>，90 天前的没删、昨天的全没了，而且空间立即回收意味着<strong>更难恢复</strong>。正确姿势：按时间过滤的 DELETE 分批删（配 VACUUM），或用<strong>分区表</strong>按月滚删（DROP PARTITION）。审查 AI 的清理脚本：见到 TRUNCATE 先确认「整表清空」确实是意图。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -348,7 +288,7 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/common/database/DDL/">回到《02.DDL》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（5 题）。
     </footer>
 
   </main>

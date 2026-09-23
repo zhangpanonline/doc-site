@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《07.拓展知识》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 等效最终考核 + 真实面试题，15-20 分钟掌握 PG 能力地图与数据库选型">
+  <meta name="description" content="配合《07.拓展知识》的互动教学课程：9 道分级测验 + 面试实战，15-20 分钟掌握 PG 能力地图与数据库选型">
   <title>拓展知识 · 互动教学课程（数据库第 7 节）</title>
   <link rel="icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
@@ -15,14 +15,14 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 7 节</p>
       <h1>拓展知识</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/拓展知识/">07.拓展知识</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/common/database/拓展知识">db-0007-拓展知识</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
       <h2 style="margin-top:0">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
-        <li>对着 PG 的 18 项能力说出<strong>「它是什么 + 什么场景用它」</strong>——<strong>最终考核考的就是这个</strong></li>
+        <li>对着 PG 的 18 项能力说出<strong>「它是什么 + 什么场景用它」</strong>——<strong>作业考的就是这个</strong></li>
         <li>按数据模型区分五类数据库，会做基本选型</li>
         <li>用三范式判断表设计问题并说出怎么修</li>
       </ol>
@@ -170,56 +170,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>本节源课程没有作业，下面四道题由《07.拓展知识》内容改编——<strong>这就是本课的最终考核</strong>。规则：不查资料，先在脑中作答，再点击核对。全部答对且能讲清理由，才算过关。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一（能力选配）：下列「场景 → 能力」配对，全部正确的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">读写分离灾备→FDW；超大时间序列表→分区；审计日志→VACUUM</button>
-            <button class="quiz-option">读写分离灾备→复制；超大时间序列表→BRIN；审计日志→触发器</button>
-            <button class="quiz-option">读写分离灾备→触发器；超大时间序列表→GIN；审计日志→复制</button>
-            <button class="quiz-option">读写分离灾备→物化视图；超大时间序列表→B+树；审计日志→CTE</button>
-          </div>
-          <div class="quiz-explain" hidden>配对：<strong>流/逻辑复制 → 读写分离与灾备</strong>；<strong>BRIN → 天然有序的巨表范围查询</strong>；<strong>触发器 → 审计日志</strong>。另两组也常用：表分区 → 按时间淘汰的超大表；物化视图 → 定时刷新的统计看板。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核二（选型）：社交 App 的「好友关系 + 二度人脉推荐」，主数据库之外应该补什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">再加一台关系型数据库做分库</button>
-            <button class="quiz-option">列族数据库</button>
-            <button class="quiz-option">键值数据库存好友列表</button>
-            <button class="quiz-option">图数据库——多跳关系遍历正是它的主场</button>
-          </div>
-          <div class="quiz-explain" hidden>「谁认识谁、几度可达」是典型的<strong>图问题</strong>（节点+边），图数据库的多跳遍历远快于关系型的多层 JOIN 递归。主库仍用关系型存用户资料；好友图放 Neo4j 类图库是业界常见组合。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核三（范式诊断）：下面哪张表设计同时违反了 2NF 和 3NF？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">orders(id, customer_id, customer_name)——customer_name 部分依赖非主键、传递依赖 customer_id</button>
-            <button class="quiz-option">category(id, name, description)——每列都直接依赖 id</button>
-            <button class="quiz-option">order_items(order_id, sku_id, quantity, price)——quantity/price 依赖整个联合主键</button>
-            <button class="quiz-option">users(id, username, email)——主键单列，每列都原子</button>
-          </div>
-          <div class="quiz-explain" hidden>orders 表里 customer_name 不直接依赖主键 id，而是依赖非主键列 customer_id → <strong>传递依赖（3NF）</strong>；若换个角度按联合主键审视也是<strong>部分依赖（2NF）</strong>。修法：customer 信息拆进 customers 表，orders 只留 customer_id。其余三项是合规设计。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核四（能力辨析）：大报表查询很慢，且业务能接受数据延迟 1 小时，最佳优化是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">物化视图 + 定时刷新——结果落地成物理表，查询直接读</button>
-            <button class="quiz-option">给报表 SQL 每列都加 GIN 索引</button>
-            <button class="quiz-option">把报表 SQL 改成视图，查询就快了</button>
-            <button class="quiz-option">用 CTE 把报表 SQL 拆小，性能自然提升</button>
-          </div>
-          <div class="quiz-explain" hidden>能接受延迟 → <strong>物化视图</strong>：复杂聚合先算好存成物理表（每小时 REFRESH），查询变「读表」。普通视图每次现场算，不解决慢；CTE 只改善可读性；GIN 是 JSONB/全文索引，不是万能加速器。</div>
-        </div>
-      </div>
-    </section>
+    
 
                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -228,35 +179,36 @@
         window.__interview = {
           lesson: 'db-0007-拓展知识',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '初级岗常问',
     prompt: `数据库三大范式分别是什么？一句话说清每层解决什么。`,
     source: '来源：微软官方文档《Description of the database normalization basics》（"Eliminate repeating groups in individual tables. / Create separate tables for sets of values that apply to multiple records. / Eliminate fields that don\'t depend on the key."）https://learn.microsoft.com/en-us/office/troubleshoot/access/database-normalization-description · 检索 2026-09-23 · 层级：一手（微软官方文档，场景化改写）+ 考点参考《CSDN「MySQL 索引、锁、三大范式一篇搞定」》',
     breakdown: `<strong>1NF</strong>：列不可再分（单元格原子值）；<strong>2NF</strong>：非主键列完全依赖<strong>整个</strong>主键（消除部分依赖——联合主键时代码列只依赖一半）；<strong>3NF</strong>：非主键列不传递依赖主键（消除冗余——部门名放员工表就是冗余）。口诀：1 拆格子、2 拆半依赖、3 拆传递。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `Redis 和 PostgreSQL 的本质区别是什么？各自解决什么问题？`,
     source: '来源：Redis 官方文档《Redis as an in-memory data structure store》（"Redis is a data structure server. At its core, Redis provides a collection of native data types that help you solve a wide variety of problems / Redis can be used as a database, cache, streaming engine, message broker, and more."）https://redis.io/docs/latest/develop/data-types/ https://redis.io/docs/latest/develop/get-started/ · 检索 2026-09-23 · 层级：一手（Redis 官方文档，场景化改写）+ 考点参考《牛客专刊「数据库索引-笔面试必考点 15 讲」》',
     breakdown: `<strong>Redis</strong>：内存键值存储，主打<strong>高速缓存/计数器/会话</strong>——毫秒级读写、数据可丢（或 AOF/RDB 兜底）；<strong>PostgreSQL</strong>：磁盘关系库，主打<strong>结构化数据 + ACID 事务 + 复杂查询</strong>。典型组合：<strong>PG 存真相、Redis 做缓存</strong>（读多写少的查询结果/热点数据），缓存失效策略要配套。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 把 50 个字段的报表逻辑全塞进一个视图，还计划「视图当表用」。审查：视图的本质是什么？滥用视图有什么代价？`,
     source: '来源：PostgreSQL 官方文档《CREATE VIEW》（"CREATE VIEW defines a view of a query. The view is not physically materialized. Instead, the query is run every time the view is referenced in a query. / Making liberal use of views is a key aspect of good SQL database design."）https://www.postgresql.org/docs/current/sql-createview.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「3.数据库部分面试题」》',
     breakdown: `普通视图只是<strong>保存的查询</strong>：每次引用都重新执行底层 SQL——视图套视图/复杂连接会带来<strong>多层展开的执行计划膨胀</strong>与性能黑洞，且底层表结构一改视图就失效。正确用法：视图做<strong>接口抽象</strong>（权限隔离、常见查询封装），重报表用物化视图（REFRESH 定时刷新）或独立报表表。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `为什么实际项目里有时故意违反三范式（反范式）？举一个典型场景。`,
     source: '来源：微软官方文档《Description of the database normalization basics》（"If you decide to violate one of the first three rules of normalization, make sure that your application anticipates any problems that could occur, such as redundant data and inconsistent dependencies."）https://learn.microsoft.com/en-us/office/troubleshoot/access/database-normalization-description · 检索 2026-09-23 · 层级：一手（微软官方文档，场景化改写）+ 考点参考《CSDN「MySQL 索引、锁、三大范式一篇搞定」》',
     breakdown: `范式减少<strong>冗余</strong>，代价是<strong>多表 JOIN</strong>——高频查询要 JOIN 三张表才能拼出订单列表时，性能与复杂度都不划算。反范式：把高频读取的<strong>冗余字段</strong>（如订单表冗余存商品名快照）落库，牺牲少量一致性换查询性能。原则：<strong>写路径走范式保一致，读路径允许受控冗余换性能</strong>（冗余字段要有更新机制）。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `建视图并做范式分析（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -267,20 +219,8 @@
     },
     source: '任务基于《07.拓展知识》课程知识点 · 来源层级：一手（官方文档《CREATE VIEW》https://www.postgresql.org/docs/current/sql-createview.html）场景化',
     breakdown: `思路：<code>CREATE VIEW v_orders AS SELECT ...</code>；范式分析对照「非主键列是否依赖主键、是否传递依赖」。坑：视图上的写入有限制（多表视图不可直接 UPDATE）；视图引用底层表结构变更要重验。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档说视图是「物化」的吗？每次引用视图时数据库做什么？`,
-    source: '来源：PostgreSQL 官方文档《CREATE VIEW》（"The view is not physically materialized. Instead, the query is run every time the view is referenced in a query."）https://www.postgresql.org/docs/current/sql-createview.html · 检索 2026-09-23 · 层级：一手（官方文档）',
-    breakdown: `原文：<strong>「The view is not physically materialized. Instead, the query is run every time the view is referenced in a query.」</strong>——视图只是<strong>保存的查询</strong>，每次引用都重新执行底层 SQL。推论：视图不是缓存、不是性能优化手段——视图套视图时查询会层层展开，复杂视图的代价是实打实的。要「物化」用 MATERIALIZED VIEW（另需 REFRESH）。`,
-  },
-  {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `AI 想给视图加一列，用了 <code>CREATE OR REPLACE VIEW</code>。官方文档说这能成功吗？约束是什么？`,
-    source: '来源：PostgreSQL 官方文档《CREATE VIEW》（"The new query must generate the same columns that were generated by the existing view query (that is, the same column names in the same order and with the same data types), but it may add additional columns to the end of the list."）https://www.postgresql.org/docs/current/sql-createview.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）',
-    breakdown: `不能随便改：原文要求新查询<strong>「must generate the same columns」——列名、列顺序、数据类型必须与旧视图完全一致</strong>，否则报错。改结构正确姿势：<code>DROP VIEW ... ; CREATE VIEW ...</code>（注意级联依赖，下游视图/函数会失效）。AI 生成 schema 迁移脚本时拿 OR REPLACE 当「万能更新」，是视图结构变更的头号坑。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -337,7 +277,7 @@
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/common/database/拓展知识/">回到《07.拓展知识》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

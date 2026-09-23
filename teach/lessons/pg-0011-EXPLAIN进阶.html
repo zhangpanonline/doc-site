@@ -15,7 +15,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
       <h1>EXPLAIN 进阶与查询优化</h1>
-      <p class="lesson-sub">来源：官方文档 §14.1 使用 EXPLAIN（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">来源：官方文档 §14.1 使用 EXPLAIN（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -160,54 +160,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>四道题覆盖本课全部要点——答完它们，EXPLAIN 进阶就过关了。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一：EXPLAIN 输出里 (cost=4.65..118.50) 两个数字分别是什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">最小与最大行数</button>
-            <button class="quiz-option">启动成本（返回第一行前）与总成本</button>
-            <button class="quiz-option">两个节点的成本</button>
-            <button class="quiz-option">估算与实际成本</button>
-          </div>
-          <div class="quiz-explain" hidden>官方例（Nested Loop cost=4.65..118.50）：区间形式是<strong>启动成本..总成本</strong>——优化排序/首行延迟看前者，全量看后者。</div>
-        </div>
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核二：官方文档的示例数据经过了什么处理？为什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">随机抽样了数据</button>
-            <button class="quiz-option">没有特别处理</button>
-            <button class="quiz-option">删除了索引</button>
-            <button class="quiz-option">VACUUM ANALYZE——保证统计信息新鲜，示例计划才可复现</button>
-          </div>
-          <div class="quiz-explain" hidden>官方原文：示例来自回归测试数据库，经过一次 <strong>VACUUM ANALYZE</strong>——统计新鲜计划才可信。</div>
-        </div>
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核三：看到计划里的 Seq Scan 是否一定需要优化？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">Seq Scan 是语法错误</button>
-            <button class="quiz-option">是，Seq Scan 永远该消灭</button>
-            <button class="quiz-option">是，说明索引坏了</button>
-            <button class="quiz-option">看情况，小表/返回大比例行时顺序扫本来就是最优</button>
-          </div>
-          <div class="quiz-explain" hidden>官方方法论是「对照数据属性」：小表或要读大部分行时顺序扫最快——计划好坏看匹配不匹配数据，不是看节点名字。</div>
-        </div>
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核四：一个查询有时快有时慢（同一 SQL），EXPLAIN 相关的最可能原因？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">SQL 每次都不同</button>
-            <button class="quiz-option">规划器根据参数/统计选择了不同计划（计划不稳定）</button>
-            <button class="quiz-option">硬件在变</button>
-            <button class="quiz-option">索引自动重建</button>
-          </div>
-          <div class="quiz-explain" hidden>同一 SQL 不同参数/统计变化 → 规划器可能切换计划（这正是 EXPLAIN 要观察的对象）——官方「选择正确计划」的难度就在这。</div>
-        </div>
-      </div>
-      <p style="margin-top:1.2rem">四道考核全部答对——本课是官方文档拓展的收官课，11 节全部学完，回到<a href="/common/database/">数据库首页</a>回顾完整路径。</p>
-    </section>
+    
 
     <section>
       <h2>💼 面试实战</h2>
@@ -217,35 +170,36 @@
         window.__interview = {
           lesson: 'pg-0011-EXPLAIN进阶',
           questions: [
-            {
+
+{
               type: 'trap',
               level: '高级岗常问',
               prompt: `AI 写的慢查询排查：在生产库上直接跑 <code>EXPLAIN ANALYZE</code> 分析一条大表聚合查询，把生产打慢了。审查：错在哪？正确顺序是什么？`,
               source: '来源：postgres.cn 官方文档 §14.1 使用 EXPLAIN（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `官方原文：ANALYZE 选项会<strong>实际执行查询</strong>——大查询在生产上真跑一遍，IO/CPU 实打实。正确顺序：① 先普通 <code>EXPLAIN</code>（只看计划不执行）定位可疑节点；② 必要时才 ANALYZE，且先评估执行代价；③ 生产更稳妥的是在从库/影子环境 ANALYZE。AI 生成排查脚本最爱直接 ANALYZE，是「排查把库查崩」的经典事故。`,
             },
-            {
+{
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `官方文档说 EXPLAIN ANALYZE 的输出有什么特殊价值？估算与实测怎么对照？`,
               source: '来源：postgres.cn 官方文档 §14.1 使用 EXPLAIN（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
               breakdown: `官方原文：ANALYZE 选项下 EXPLAIN <strong>实际执行查询</strong>，显示<strong>每个计划节点内累积的真实行数和真实运行时间</strong>，同时保留普通 EXPLAIN 的估算值——同一节点上 (rows=估算) vs (actual rows=实测) 并列，规划器「估错」的地方直接暴露（估算 10 行实测 10 万行 = 统计过期）。`,
             },
-            {
+{
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 说「EXPLAIN 显示 cost 很高，所以给这张表每个查询列都建了索引」。审查：按官方方法论，这个推理哪里不对？`,
               source: '来源：postgres.cn 官方文档 §14.1 使用 EXPLAIN（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `官方定位：选择正确计划要匹配<strong>查询结构和数据的属性</strong>。cost 高不高要看<strong>对照实际负载</strong>——高成本可能合理（大结果集）；「每列建索引」反而制造写放大。正确流程：EXPLAIN 找<strong>哪个节点</strong>是瓶颈（全表扫？排序？回表？）→ 针对该节点的谓词/连接列建索引 → ANALYZE 验证变化。无差别建索引是「用成本最高的方式优化」。`,
             },
-            {
+{
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：估算行数与实际行数差多少算「统计信息过期」？你的判断标准与动作？`,
               source: '来源：postgres.cn 官方文档 §14.1 使用 EXPLAIN（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `官方依据：ANALYZE 统计是<strong>随机样本</strong>、成本依赖平台——所以<strong>几倍偏差是常态</strong>，不追绝对一致。判断标准：<strong>数量级</strong>（10 倍以上且持续偏差，尤其导致计划明显变差时）即视为过期。动作：<code>ANALYZE 表名</code>（或 VACUUM ANALYZE）刷新统计 → 再看计划是否回归。定期 ANALYZE（autovacuum 默认做）是统计新鲜度的保障。`,
             },
-            {
+{
               type: 'scenario',
               level: '初级岗常问',
               prompt: `在 pg16 里实测 EXPLAIN 方法论（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -256,8 +210,8 @@
               },
               source: '任务基于官方文档 §14.1 · 来源层级：官方翻译·一手（postgres.cn）场景化',
               breakdown: `思路：<code>CREATE TABLE ... INSERT 万行; EXPLAIN SELECT ...; EXPLAIN ANALYZE SELECT ...;</code> 对照 rows 与 actual rows；插大量行不 ANALYZE 再看估算偏差，<code>ANALYZE t;</code> 后复查。坑：小表 ANALYZE 的样本偏差更大属正常（官方随机样本提醒）；对照索引效果时记得 ANALYZE 后再 EXPLAIN。`,
-            },
-          ],
+            }
+
         };
       </script>
     </section>
@@ -273,7 +227,7 @@
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

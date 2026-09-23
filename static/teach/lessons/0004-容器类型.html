@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《4.容器类型》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题（深浅拷贝/元组陷阱）">
-  <title>容器类型 · 互动教学课程（第 4 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《4.容器类型》的互动教学课程：9 道分级测验 + 面试实战（第 4 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 2 课</p>
       <h1>容器类型</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/容器类型/">2.容器类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/容器类型">4-容器类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说清 <strong>list / tuple / dict / set / str</strong> 五种容器的可变、有序、可重复特征，选对容器</li>
         <li>预测<strong>切片、解包、集合运算、字典访问</strong>的输出</li>
-        <li>用 <code>==</code> 与 <code>is</code> 区分「值相等」与「身份相同」——<strong>最终考核的重点</strong></li>
+        <li>用 <code>==</code> 与 <code>is</code> 区分「值相等」与「身份相同」——<strong>作业的重点</strong></li>
       </ol>
     </section>
 
@@ -163,91 +161,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《4.容器类型》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一（作业一·切片拷贝）：执行以下代码，最后的 <code>print(nums == copy, nums is copy)</code> 输出是？
-<pre><code>nums = [3, 1, 4, 1, 5]
-copy = nums[:]          # 切片拷贝
-nums[0] = 10
-print(nums == copy, nums is copy)</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">True True</button>
-            <button class="quiz-option">False False</button>
-            <button class="quiz-option">False True</button>
-            <button class="quiz-option">True False</button>
-          </div>
-          <div class="quiz-explain" hidden><code>nums[:]</code> 创建的是<strong>新列表</strong>（内容相同但身份不同）。修改 nums 后内容也不同了：<code>==</code> 比内容 → False，<code>is</code> 比身份 → 本来就不是同一对象 → False。输出 <strong>False False</strong>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核二（作业三·字典遍历）：执行 <code>d = {"x": 10, "y": 20}</code> 后，<code>print("x" in d, 20 in d)</code> 输出是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">False False</button>
-            <button class="quiz-option">False True</button>
-            <button class="quiz-option">True False</button>
-            <button class="quiz-option">True True</button>
-          </div>
-          <div class="quiz-explain" hidden>字典的 <code>in</code> 只查<strong>键</strong>：<code>"x"</code> 是键 → True；<code>20</code> 是值不是键 → False。输出 <strong>True False</strong>。想查值要用 <code>20 in d.values()</code>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核三（作业五·zip 与 get）：以下代码最后一行输出是？
-<pre><code>names = ["Alice", "Bob"]
-ages = (25, 30)
-
-d = {}
-i = 0
-while i &lt; len(names):
-    if ages[i] &gt; 20:
-        d[names[i]] = ages[i]
-    i += 1
-print(d.get("Charlie", "not found"))</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">not found</button>
-            <button class="quiz-option">None</button>
-            <button class="quiz-option">Charlie</button>
-          </div>
-          <div class="quiz-explain" hidden><code>d</code> 里只有 Alice 和 Bob（年龄都 &gt; 20 被加入）。<code>get("Charlie", "not found")</code> 键不存在时返回<strong>默认值</strong>，不报错 → 输出 <strong>not found</strong>。对比：<code>d["Charlie"]</code> 会抛 KeyError。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核四（作业六·学生信息查找）：任务要求「找到 id 为 796997 的学生，打印其姓名和电话；找不到打印 未找到」。下列实现中<strong>正确</strong>的是？（students 为字典列表，学生数据见下方折叠区）</div>
-          <div class="quiz-options">
-            <button class="quiz-option">if s["id"]==796997 打印，但第一次迭代后无条件 break</button>
-            <button class="quiz-option">遍历时 if s["id"]==796997 打印并 break；循环外无条件打印未找到</button>
-            <button class="quiz-option">遍历时 if s["id"]==796997 打印并 break；循环 else 打印未找到</button>
-            <button class="quiz-option">遍历时 if s["id"]==796997 打印但不 break；循环 else 打印未找到</button>
-          </div>
-          <div class="quiz-explain" hidden>正确答案是<strong>for-else 模式</strong>：找到就打印并 <code>break</code>；循环的 else 只在「没被 break 打断」时执行，恰好表达「没找到」。第二个选项不 break，找到后仍会走 else 多打印一行 ✗；第三个无论找到与否都打印未找到 ✗；第四个第一次迭代就 break，若目标不在第一个就漏找 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看学生数据与参考答案（作业六·任务12）</summary>
-<pre><code># 学生数据（源课程作业，节选前 3 条；完整 60 条见源课程）
-students = [
-    {"id": 988985, "name": "梁平", "sex": "女", "age": 15, "tel": "12957961008"},
-    {"id": 299422, "name": "邱杰", "sex": "男", "age": 25, "tel": "12685726676"},
-    {"id": 796997, "name": "郝霞", "sex": "女", "age": 29, "tel": "15734778439"},
-    # ... 共 60 条
-]
-
-# 参考答案：for-else 查找
-for student in students:
-    if student["id"] == 796997:
-        print(f"找到学生: {student['name']}, 电话: {student['tel']}")
-        break
-else:
-    print("未找到")
-# 输出：找到学生: 郝霞, 电话: 15734778439</code></pre>
-          </details>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握容器类型的核心操作——可以继续学习《<a href="/agents/python/函数/">3.函数</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -256,21 +170,22 @@ else:
         window.__interview = {
           lesson: '0004-容器类型',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 帮你写「复制一份配置再改」的代码，用了 <code>copy.copy()</code>：嵌套的列表改一处、两处一起变。为什么？深拷贝和浅拷贝差在哪？`,
     source: '来源：Python 官方文档《copy — Shallow and deep copy operations》（"The difference between shallow and deep copying is only relevant for compound objects (objects that contain other objects, like lists or class instances): A shallow copy constructs a new compound object and then (to the extent possible) inserts references into it to the objects found in the original."）https://docs.python.org/3/library/copy.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「Python 面试八股大全｜数据类型、深浅拷贝」》',
     breakdown: `<code>copy.copy()</code> 是<strong>浅拷贝</strong>：只复制外层容器，内层元素仍指向原来的对象——嵌套列表（或其他可变对象）还是共享的。需要完全独立时用 <code>copy.deepcopy()</code>。真实项目里 AI 生成的「复制后修改」代码是最常见的埋雷点。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `在交互式解释器里逐行输入 <code>a = 256; b = 256</code>，<code>a is b</code> 是 True；改成 <code>a = 1000; b = 1000</code> 就是 False。但同一个 .py 文件里写 <code>1000 is 1000</code> 又可能是 True。为什么？`,
     source: '来源：Python 官方文档《C API · Integer Objects》（"CPython keeps an array of integer objects for all integers between -5 and 256. When you create an int in that range you actually just get back a reference to the existing object."）https://docs.python.org/3/c-api/long.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写） · 实测校准+ 考点参考《腾讯云「分享 10 个高频 Python 面试题」》',
     breakdown: `两层机制叠加：① CPython 启动时预建 <strong>-5 ~ 256</strong> 的整数缓存池，范围内任何写法都指向同一对象，is 恒 True；② 范围外没有缓存，但<strong>编译器会合并同一编译单元内的相同常量</strong>——同一个 .py 文件里的两个 1000 字面量是同一对象（is True），交互式逐行（每行独立编译）则各自新建（is False）。is 的结果随运行方式而变，这正是值比较不能依赖 is 的铁证：用 <code>==</code>。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写了一段「删除列表中的偶数」：
@@ -285,14 +200,14 @@ print(drop_evens([1, 2, 4, 5, 8]))  # 结果不对</code></pre>
     source: '来源：Python 官方文档《Programming FAQ · How do you remove multiple items from a list》（"As with removing duplicates, explicitly iterating in reverse with a delete condition is one possibility. However, it is easier and faster to use slice replacement with an implicit or explicit forward iteration."）https://docs.python.org/3/faq/programming.html#how-do-you-remove-multiple-items-from-a-list · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《红客联盟「Python 面试必避 20 个代码坑」》',
     breakdown: `<strong>边遍历边修改列表会漏删</strong>：remove 后元素前移，迭代器按索引走就跳过了下一个元素（[1,2,4,5,8] 会漏掉 4）。修复：① 列表推导 <code>[x for x in nums if x % 2]</code>；② 遍历副本 <code>for x in nums[:]</code>；③ 倒序遍历 <code>for i in range(len(nums)-1, -1, -1)</code>。AI 生成代码的三大经典坑之一，面试官必问。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `你要用 AI 实现「订单列表去重且保持顺序」（重复定义：完全相同的记录）。你会在提示词里指定哪种方案？为什么不用 set(nums)？`,
     source: '来源：Python 官方文档《itertools — Functions creating iterators for efficient looping · Recipes》（""Yield unique elements, preserving order. Remember all elements ever seen.""）https://docs.python.org/3/library/itertools.html#itertools-recipes · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《腾讯云「分享 10 个高频 Python 面试题」》',
     breakdown: `<code>set(nums)</code> 会<strong>丢失顺序</strong>。保序去重的标准姿势：<code>list(dict.fromkeys(nums))</code>（现代 Python）或「seen 集合 + 列表」双结构。追问加分点：如果订单是元组（可哈希）可以直接进 set；如果含列表（不可哈希）要先转成可哈希 key——这正是「元组可哈希」考点的落点。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `写一个订单去重保序小工具（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -303,20 +218,8 @@ print(drop_evens([1, 2, 4, 5, 8]))  # 结果不对</code></pre>
     },
     source: '任务基于《4.容器类型》课程知识点（去重保序/元组可哈希小节） · 来源层级：一手（官方文档《itertools — Functions creating iterators for efficient looping · Recipes》https://docs.python.org/3/library/itertools.html#itertools-recipes）场景化',
     breakdown: `思路：遍历时用 dict 记录每个订单首次位置和出现次数（元组可哈希，直接当 key）；输出按首次位置排序。坑：不要把「顺序」交给 set；用 <code>dict.fromkeys</code> 一行去重虽然简洁，但统计次数需要额外一趟遍历——两件事可以合并成一次遍历。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `面试官问：复制对象有哪些姿势？各自的深浅语义是什么？`,
-    source: '来源：Python 官方文档《Programming FAQ · How do I copy an object in Python?》（"In general, try copy.copy() or copy.deepcopy() for the general case. Not all objects can be copied, but most can. Some objects can be copied more easily. Dictionaries have a copy() method"）https://docs.python.org/3/faq/programming.html#how-do-i-copy-an-object-in-python · 检索 2026-09-23 · 层级：一手（官方文档）',
-    breakdown: `官方 FAQ 给三法：① <strong>通用</strong> <code>copy.copy()</code>（浅）/ <code>copy.deepcopy()</code>（深）——大多数对象都可用；② <strong>字典</strong>自带 <code>olddict.copy()</code>；③ <strong>序列</strong>切片 <code>new_l = l[:]</code>。后两者都是<strong>浅拷贝</strong>（内层可变对象仍共享）。FAQ 也提醒「Not all objects can be copied」——含锁/文件句柄的对象拷贝会失败或行为异常。`,
-  },
-  {
-    type: 'trap',
-    level: '中级岗常问',
-    prompt: `AI 写的代码用 <code>dict.copy()</code> 复制了配置，改嵌套值却把原配置也改了。为什么？什么时候必须上 deepcopy？`,
-    source: '来源：Python 官方文档《copy — Shallow and deep copy operations》（"A deep copy constructs a new compound object and then, recursively, inserts copies into it of the objects found in the original."）https://docs.python.org/3/library/copy.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）',
-    breakdown: `<code>dict.copy()</code> 与切片都是<strong>浅拷贝</strong>：外层容器新了，内层可变对象（嵌套 dict/list）还是原引用——改嵌套即改原对象。规则：<strong>只有一层</strong>用 copy()/切片；嵌套结构要完全独立必须 <code>copy.deepcopy()</code>（性能更贵，按需用）。审查 AI 的「复制后修改」代码先看嵌套层级。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -382,7 +285,7 @@ print(drop_evens([1, 2, 4, 5, 8]))  # 结果不对</code></pre>
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/容器类型/">回到《4.容器类型》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（6 题）。
     </footer>
 
   </main>

@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《29.构建发布》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（库构建/私有发布/安装流程）+ 真实面试题">
-  <title>构建发布 · 互动教学课程（第 29 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《29.构建发布》的互动教学课程：9 道分级测验 + 面试实战（第 29 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 27 课</p>
       <h1>构建发布</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/构建发布/">27.构建发布</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/构建发布">29-构建发布</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>读懂 <code>pyproject.toml</code> 的 <code>[build-system]</code> 与 <code>[project]</code> 配置</li>
         <li>走通完整流程：<strong>构建 → 校验 → 发布 → 安装</strong>（官方仓库与私有仓库）</li>
-        <li>用 <code>pip install -e .</code> 可编辑安装提升日常开发效率——<strong>最终考核围绕源作业的构建流程复述展开</strong></li>
+        <li>用 <code>pip install -e .</code> 可编辑安装提升日常开发效率——<strong>作业围绕源作业的构建流程复述展开</strong></li>
       </ol>
     </section>
 
@@ -167,59 +165,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《29.构建发布》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出答案，再点击核对。</p>
-      <p>📣 源作业还要求<strong>费曼复述</strong>：把「一个库从源码到可安装」的完整构建流程讲一遍（源码+配置 → 构建 → 校验 → 上传 → 安装），讲不通就回到对话里让 AI 老师给你反馈。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核一（构建流程排序）：一个库从零到可安装，正确的操作顺序是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">建 venv → 激活 → 装 build 工具 → python -m build → dist 产物</button>
-            <button class="quiz-option">python -m build → 建 venv → 装 build 工具</button>
-            <button class="quiz-option">直接 twine upload，上传会自动构建</button>
-            <button class="quiz-option">pip install 包名 即可，无需构建</button>
-          </div>
-          <div class="quiz-explain" hidden>标准流程：<code>python -m venv .venv</code> → <code>source .venv/bin/activate</code> → <code>pip install build</code> → <code>python -m build</code> → 产物在 <code>dist/</code>。构建在前、上传在后，twine 只上传不构建。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核二（pyproject 配置）：duyi-utils 库声明 name/version/requires-python/dependencies，下列 <code>[project]</code> 配置中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">name="duyi-utils"，version="0.1.3"，requires-python="&gt;=3.14"，dependencies=[...]</button>
-            <button class="quiz-option">把 dependencies 放进 [build-system] 段</button>
-            <button class="quiz-option">name 写成 "Duyi Utils"（带空格）</button>
-            <button class="quiz-option">version 写成 "最新"</button>
-          </div>
-          <div class="quiz-explain" hidden><code>[project]</code> 段：<code>name</code>（发行版名称，小写连字符）、<code>version</code>（语义化版本号）、<code>requires-python</code>（支持的 Python 版本）、<code>dependencies</code>（第三方依赖清单）。带空格的名字 ✗；非数字版本 ✗；依赖放错段 ✗。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核三（发布流程）：构建完成后发布到 PyPI，正确的操作是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">pip install 包名 就是把包发布上去</button>
-            <button class="quiz-option">注册账号 → 创建 token → twine check → twine upload</button>
-            <button class="quiz-option">twine upload 不需要任何凭证</button>
-            <button class="quiz-option">git push 后自动发布</button>
-          </div>
-          <div class="quiz-explain" hidden>发布流程：注册 PyPI 账号 → 创建 API <strong>token</strong>（比密码安全）→ <code>twine check dist/*</code> 校验 → <code>twine upload dist/*</code> 上传。私有仓库则按仓库指南配置 index-url 后安装。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核四（可编辑安装预测）：项目 A 用 <code>pip install -e ../duyi-utils</code> 安装了公共库，随后修改了 duyi-utils 的源码，项目 A 需要做什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">重新构建并重新安装</button>
-            <button class="quiz-option">重新激活虚拟环境</button>
-            <button class="quiz-option">什么都不用做，下次调用自动用新代码</button>
-            <button class="quiz-option">清空 pip 缓存</button>
-          </div>
-          <div class="quiz-explain" hidden>可编辑安装通过 <code>.pth</code> 链接<strong>直指源码</strong>：源码一改，下次导入/调用立即用新代码——这正是开发模式下「改完即测」的核心价值。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对且费曼复述能讲清楚，说明你已经掌握构建发布——可以继续学习《<a href="/agents/python/项目管理工具/">28.项目管理工具</a>》了。</p>
-    </section>
+    
 
                                                                                                 <section>
       <h2>💼 面试实战</h2>
@@ -228,35 +174,36 @@
         window.__interview = {
           lesson: '0029-构建发布',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `如何把一个带依赖的服务发布到生产环境，保证「在我机器上能跑」？完整链路是什么？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（工程可复现题）· 场景改写',
     breakdown: `完整链路：<strong>pyproject.toml 声明依赖 → 锁文件（uv.lock）固定全树 → venv/容器隔离 → 构建产物（wheel/镜像）→ CI 构建 → 生产按锁文件安装</strong>。可复现三件套：锁文件（版本一致）、隔离环境（不依赖全局）、构建一次发布多次（不在生产现场跑 pip install 源码）。AI 给的「生产环境 pip install -r requirements.txt 就行」是事故配方。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `sdist 与 wheel 的区别是什么？现代 Python 安装为什么都走 wheel？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（sdist vs wheel 题）· 场景改写',
     breakdown: `<strong>sdist</strong>（源码分发包）：打包源码 + 元数据，安装时现场编译——需要编译器和依赖环境，慢且易失败；<strong>wheel</strong>（二进制分发包）：预编译好的成品，pip 直接解压安装，<strong>快、无需编译器、字节级可复现</strong>。现代发布标准：sdist 留作源码归档，<strong>安装走 wheel</strong>；带 C 扩展的包按平台标签（cp312-macosx_arm64 等）发布对应 wheel。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写了个安装脚本：pip install 时它把密码明文传给了私有源。审查：私有仓库/发布凭证的正确做法是什么？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（凭证安全题）· 场景改写',
     breakdown: `正确姿势：① 用<strong> token</strong> 代替密码（可最小权限、可单独吊销）；② token 只进<strong>环境变量/密钥管理</strong>（CI secret、.env 不入库），绝不写进 requirements 或脚本；③ 发布前检查 <code>.gitignore</code> 覆盖 .env/.pypirc；④ 定期轮换 + 最小权限（只读发布权限不要给 admin）。AI 生成脚本最爱把凭证内嵌——审查时 grep 密码/token 关键字。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `可编辑安装（pip install -e .）为什么「改源码即时生效」？它靠什么机制实现？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（.pth 机制题）· 场景改写',
     breakdown: `可编辑安装不复制源码，而是在 site-packages 里放一个 <strong>.pth 文件</strong>——Python 启动时逐行读 .pth，把里面列出的<strong>源码目录路径追加进 sys.path</strong>。于是 import 直接命中你的源码目录，改什么立刻生效什么。适合本地开发；发布部署绝不能用 -e（生产依赖源码目录存在，删了源码服务就起不来）。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `把你的小工具做成可发布的包（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -267,20 +214,8 @@
     },
     source: '任务基于《29.构建发布》课程知识点 · 来源层级：一手（Python 官方文档 packaging 章节）场景化',
     breakdown: `思路：pyproject.toml 里 [project] 元数据 + [build-system]（hatchling/setuptools）→ <code>python -m build</code> 产出 dist/ 两种产物 → 新 venv <code>pip install dist/*.whl</code> 验证入口。坑：入口点写在 [project.scripts]；构建前确认包目录结构（src 布局或平铺）；私有凭证别写进配置（审查题同款）。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方打包教程怎么区分 sdist 与 wheel？pip 安装时的优先级是什么？`,
-    source: '来源：PyPA 官方打包教程《Packaging Python Projects》「Uploading the distribution archives」节 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `教程原文：tar.gz 是 <strong>source distribution（源码分发包）</strong>，.whl 是 <strong>built distribution（构建产物）</strong>；<strong>新版 pip 优先装 built distribution</strong>，没有合适的才回退源码包。发布建议原文：<strong>「You should always upload a source distribution and provide built distributions for the platforms your project is compatible with」</strong>——sdist 兜底 + 各平台 wheel 主打。`,
-  },
-  {
-    type: 'design',
-    level: '中级岗常问',
-    prompt: `你要发布一个纯 Python 包和一个带 C 扩展的包。按官方打包教程的建议，两者各要准备哪些产物？为什么？`,
-    source: '来源：PyPA 官方打包教程《Packaging Python Projects》「Uploading the distribution archives」节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
-    breakdown: `纯 Python 包：一个通用 wheel（py3-none-any）+ sdist 兜底；带 C 扩展的包：<strong>每个目标平台一个 wheel</strong>（按平台标签 cpXXX-platform 区分）——教程原文「provide built distributions for the platforms your project is compatible with」。原因：C 扩展在目标平台现场编译又慢又易失败（缺编译器/依赖），wheel 是预编译成品。审查 AI 的发布脚本：只见 sdist 不见对应平台 wheel = 生产环境要现场编译，直接打回。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -342,7 +277,7 @@
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/构建发布/">回到《29.构建发布》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（2 题）。
     </footer>
 
   </main>

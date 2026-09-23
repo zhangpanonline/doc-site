@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《5.函数》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题（闭包/可变默认参数）">
-  <title>函数 · 互动教学课程（第 5 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《5.函数》的互动教学课程：9 道分级测验 + 面试实战（第 5 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 3 课</p>
       <h1>函数</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/函数/">3.函数</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/函数">5-函数</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>分清<strong>位置参数、默认参数、关键字参数、<code>*args</code>、<code>**kwargs</code></strong> 的用法与顺序</li>
         <li>说出 <code>*args</code> 是元组、<code>**kwargs</code> 是字典、多返回值本质是元组</li>
-        <li>避开<strong>可变默认值</strong>陷阱，读懂并改写带默认参数的函数——<strong>最终考核的重点</strong></li>
+        <li>避开<strong>可变默认值</strong>陷阱，读懂并改写带默认参数的函数——<strong>作业的重点</strong></li>
       </ol>
     </section>
 
@@ -182,128 +180,7 @@ print(x * 10 + y)</code></pre></div>
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《5.函数》源课程作业的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。全部答对且能讲清理由，才算过关。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核一（作业一·默认参数陷阱）：以下代码最后一行 <code>print(result1)</code> 输出是？
-<pre><code>def add_items(base, items=None, *tags):
-    if items is None:
-        items = []
-    items.append(base)
-    for tag in tags:
-        items.append(tag)
-    return items
-
-result1 = add_items(10)
-result2 = add_items(20, [1, 2], 30, 40)
-print(result1)</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">[10]</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">[1, 2, 20, 30, 40]</button>
-            <button class="quiz-option">None</button>
-          </div>
-          <div class="quiz-explain" hidden>两次调用互不影响：第一次 <code>add_items(10)</code> 里 <code>items is None</code> 成立，<strong>新建列表</strong>后 append → <code>[10]</code>；第二次调用传入了自己的 <code>[1, 2]</code>，与 result1 无关。所以 result1 仍是 <strong>[10]</strong>。若默认值写成 <code>items=[]</code>，两次调用会共享同一列表，result1 就会被污染——这正是「可变默认值」陷阱。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核二（作业二·**kwargs 合并）：以下代码 <code>print(merged)</code> 输出是？
-<pre><code>def merge_data(base, **extra):
-    result = base.copy()
-    for key, value in extra.items():
-        if key in result:
-            result[key] += value
-        else:
-            result[key] = value
-    return result
-
-data = {"a": 10, "b": [1, 2]}
-merged = merge_data(data, a=5, b=[3], c="hello")
-print(merged)</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">{'a': 15, 'b': [1, 2, 3], 'c': 'hello'}</button>
-            <button class="quiz-option">{'a': 5, 'b': [3], 'c': 'hello'}</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">{'a': 10, 'b': [1, 2], 'c': 'hello'}</button>
-          </div>
-          <div class="quiz-explain" hidden>逐键推演：<code>a=5</code> → 键存在，<code>10 + 5 = 15</code>；<code>b=[3]</code> → 键存在，<code>[1, 2] + [3] = [1, 2, 3]</code>（列表相加是拼接）；<code>c="hello"</code> → 键不存在，直接放入。输出 <strong>{'a': 15, 'b': [1, 2, 3], 'c': 'hello'}</strong>。进阶注意：<code>base.copy()</code> 是<strong>浅拷贝</strong>——顶层字典被保护（a 键是重新赋值），但嵌套列表 b 与原 data <strong>共享</strong>，<code>result["b"] += [3]</code> 会顺带把原 data 的 b 也改成 <code>[1, 2, 3]</code>。想彻底隔离要用 <code>copy.deepcopy</code>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核三（作业三·多返回值与 enumerate）：以下代码 <code>print(result)</code> 输出是？
-<pre><code>def split_data(data):
-    mid = len(data) // 2
-    return data[:mid], data[mid:]
-
-def find_indices(items, target):
-    indices = []
-    for i, item in enumerate(items):
-        if item == target:
-            indices.append(i)
-    return indices
-
-nums = [1, 2, 3, 4, 5, 6]
-first, second = split_data(nums)
-scores = [85, 92, 85, 78, 85]
-positions = find_indices(scores, 85)
-result = second + [len(positions)]
-print(result)</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">[4, 5, 6]</button>
-            <button class="quiz-option">[4, 5, 6, 3]</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">[4, 5, 6, 85]</button>
-          </div>
-          <div class="quiz-explain" hidden><code>split_data</code> 从中间切开：second = <code>[4, 5, 6]</code>；<code>find_indices</code> 收集 85 出现的位置 <code>[0, 2, 4]</code>；<code>second + [len(positions)]</code> = <code>[4, 5, 6] + [3]</code> → <strong>[4, 5, 6, 3]</strong>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核四（作业四·列表扁平化）：实现 <code>flatten</code>，把任意嵌套的列表展开为一维，如 <code>flatten([1, [2, 3], [[4], 5]])</code> 应返回 <code>[1, 2, 3, 4, 5]</code>。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只展开一层：内层嵌套列表保留原样</button>
-            <button class="quiz-option">递归：元素是列表则 append(flatten(元素))，否则 append(元素)</button>
-            <button class="quiz-option">不判断类型一律 append，原样收集不做展开</button>
-            <button class="quiz-option">递归：元素是列表则 extend(flatten(元素))，否则 append(元素)</button>
-          </div>
-          <div class="quiz-explain" hidden>关键是两个 API 的差别：<code>extend</code> 把内层列表的元素<strong>逐个并入</strong>，<code>append</code> 把内层列表<strong>整体作为一个元素</strong>。正确答案递归处理：<code>flatten([1, [2, 3], [[4], 5]])</code> → 1 直接 append，<code>[2, 3]</code> 递归展开后 extend → <code>[1, 2, 3]</code>，<code>[[4], 5]</code> 递归得到 <code>[4, 5]</code> 再 extend → <strong>[1, 2, 3, 4, 5]</strong>。第三个选项用 append 接递归结果，内层列表会变成嵌套元素 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业四·三个函数）</summary>
-<pre><code># 任务 1：列表扁平化
-def flatten(nested_list):
-    result = []
-    for item in nested_list:
-        if type(item) is list:
-            result.extend(flatten(item))
-        else:
-            result.append(item)
-    return result
-
-# 任务 2：列表/元组转链表
-def to_linked_list(items):
-    if not items:
-        return None
-    head = {"value": items[0], "next": None}
-    current = head
-    for item in items[1:]:
-        current["next"] = {"value": item, "next": None}
-        current = current["next"]
-    return head
-
-# 任务 3：字典合并（后面的覆盖前面的）
-def merge_dicts(*dicts):
-    result = {}
-    for item in dicts:
-        result.update(item)
-    return result</code></pre>
-          </details>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握函数的参数与返回值——可以继续学习《<a href="/agents/python/作用域/">4.作用域</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -312,21 +189,22 @@ def merge_dicts(*dicts):
         window.__interview = {
           lesson: '0005-函数',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 帮你写了个工具函数：<code>def add_item(item, items=[])</code>，多次调用后 items 里出现了上次调用的数据。为什么？正确写法是什么？`,
     source: '来源：Python 官方文档《Tutorial · 4.9.1. Default Argument Values》（"Important warning: The default value is evaluated only once. This makes a difference when the default is a mutable object such as a list, dictionary, or instances of most classes."）https://docs.python.org/3/tutorial/controlflow.html#default-argument-values · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `<strong>默认参数在函数定义时只求值一次</strong>：那个 [] 是所有调用共享的同一列表对象。修复：默认值用 <code>None</code>，函数体内再建：<code>def add_item(item, items=None): items = items or []</code>。可变默认参数是 Python 面试第一陷阱，AI 生成代码也最爱犯。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `什么是闭包？闭包成立的三个要素是什么？为什么内层函数能「记住」外层函数的变量？`,
     source: '来源：Python 官方文档《Programming FAQ · How do you make a higher order function in Python?》（"You have two choices: you can use nested scopes or you can use callable objects. For example, suppose you wanted to define linear(a,b) which returns a function f(x) that computes the value a*x+b."）https://docs.python.org/3/faq/programming.html#how-do-you-make-a-higher-order-function-in-python · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《itying「分享下你遇到过的 Python 经典面试题」》',
     breakdown: `闭包 = <strong>内层函数 + 它捕获的外层变量（自由变量）</strong>。三要素：① 嵌套函数；② 内层引用外层变量；③ 外层函数返回内层函数。机制：函数对象带 <code>__closure__</code>（cell 元组）保存被引用的外层变量，所以外层函数退出后变量依然活着。AI 时代这题的新问法：为什么 Agent 工具的回调能记住配置——答案就是闭包。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写了一个装饰器，但被装饰函数的文档和名字都变了。审查下面的代码并修复：
@@ -348,14 +226,14 @@ print(fetch_data.__name__, fetch_data.__doc__)</code></pre>`,
     source: '来源：Python 官方文档《functools · functools.wraps》（"Without the use of this decorator factory, the name of the example function would have been \'wrapper\', and the docstring of the original example() would have been lost."）https://docs.python.org/3/library/functools.html#functools.wraps · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `不处理时 <code>fetch_data.__name__</code> 变成 wrapper、__doc__ 变成 None——<strong>函数元信息丢失</strong>，日志、文档、反射（如 Agent 工具注册表读 __name__/__doc__ 生成工具描述）全都踩坑。修复：<code>@functools.wraps(fn)</code> 加在 wrapper 上（拷贝 __name__/__doc__/__module__ 等）。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `你要让 AI 给一批 API 函数统一加「重试 + 耗时日志」能力，重试次数各函数不同。你该让它写普通装饰器还是带参装饰器？提示词里要强调哪些点？`,
     source: '来源：PEP 318《Decorators for Functions and Methods》（"@dec2 @dec1 def func(arg1, arg2, ...): pass This is equivalent to: def func(arg1, arg2, ...): pass func = dec2(dec1(func))"）https://peps.python.org/pep-0318/#current-syntax · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `需要 <strong>带参装饰器</strong>（装饰器工厂）：<code>@retry(times=3)</code> 这层先接收参数、返回真正的装饰器。提示词必须强调：① 默认值给合理兜底；② <code>@functools.wraps</code> 保留元信息（上一题的坑）；③ 异常要区分「可重试」与「不可重试」，别把参数错误也重试 3 遍；④ 重试间加退避延迟。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `实现一个带参装饰器 <code>@retry(times, delay)</code>（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -366,13 +244,8 @@ print(fetch_data.__name__, fetch_data.__doc__)</code></pre>`,
     },
     source: '任务基于《5.函数》课程知识点（装饰器小节） · 来源层级：一手（官方文档《functools — Higher-order functions and operations on callable objects》https://docs.python.org/3/library/functools.html#functools.wraps）场景化',
     breakdown: `思路：外层 <code>def retry(times, delay)</code> 返回装饰器；wrapper 里 for 循环 + try/except + time.sleep(delay)；耗尽后 raise 最后一次异常；记得 <code>@functools.wraps(fn)</code>。坑：只捕获目标异常（如 ConnectionError），别吞 KeyboardInterrupt 或参数类型错误；delay 要可配置为 0 方便测试。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `面试官问：Python 怎么写「输出参数」（call by reference）风格的函数？官方 FAQ 的答案是什么？`,
-    source: '来源：Python 官方文档《Programming FAQ · How do I write a function with output parameters (call by reference)?》（"Remember that arguments are passed by assignment in Python. Since assignment just creates references to objects, there’s no alias between an argument name in the caller and callee, and consequently no call-by-reference."）https://docs.python.org/3/faq/programming.html#how-do-i-write-a-function-with-output-parameters-call-by-reference · 检索 2026-09-23 · 层级：一手（官方文档）',
-    breakdown: `FAQ 开宗明义：参数是<strong>按赋值传递</strong>，不存在 call-by-reference——形参与实参之间没有别名。要「返回多个结果」的正路：① <strong>返回元组</strong> <code>return a, b</code>；② 传可变对象进去改内容；③ 用实例属性/全局（不推荐）。别让 AI 写「函数里改参数名希望外面变」的代码——外面不会变。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -438,7 +311,7 @@ print(fetch_data.__name__, fetch_data.__doc__)</code></pre>`,
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/函数/">回到《5.函数》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（4 题）。
     </footer>
 
   </main>

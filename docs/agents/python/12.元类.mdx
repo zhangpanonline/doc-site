@@ -269,6 +269,77 @@ dog = Dog()
 * class 语句是语法糖，底层就是调用 type 创建类
 :::
 
+
+## 作业
+
+### 一、实现单例元类
+
+编写一个元类 `SingletonMeta`，使得任何使用该元类的类都自动成为单例模式：
+
+```python
+class SingletonMeta(type):
+    # 你的代码
+    pass
+
+class Database(metaclass=SingletonMeta):
+    def __init__(self, host):
+        self.host = host
+
+db1 = Database("localhost")
+db2 = Database("remote")
+print(db1 is db2)  # 应该输出 True
+print(db1.host)    # 应该输出 localhost
+```
+
+### 二、自动注册子类
+
+编写一个元类 `PluginMeta`，使得任何继承自 `Plugin` 的子类都会被自动注册到 `PluginMeta.registry` 字典中（键为类名，值为类本身）：
+
+```python
+class PluginMeta(type):
+    # 你的代码
+    pass
+
+class Plugin(metaclass=PluginMeta):
+    pass
+
+class ImagePlugin(Plugin):
+    pass
+
+class TextPlugin(Plugin):
+    pass
+
+print(PluginMeta.registry)
+# 应该输出类似：{'ImagePlugin': <class '__main__.ImagePlugin'>, 'TextPlugin': <class '__main__.TextPlugin'>}
+```
+
+### 三、为所有方法添加日志
+
+编写一个元类 `LogMeta`，自动为类中每个非私有方法（即不以 `_` 开头的方法）添加执行日志。调用方法时，先打印 `[LOG] 调用 {方法名}`，再执行原方法：
+
+```python
+class LogMeta(type):
+    # 你的代码
+    pass
+
+class Calculator(metaclass=LogMeta):
+    def add(self, a, b):
+        return a + b
+    
+    def sub(self, a, b):
+        return a - b
+
+calc = Calculator()
+print(calc.add(3, 5))
+print(calc.sub(10, 4))
+
+# 应该输出：
+# [LOG] 调用 add
+# 8
+# [LOG] 调用 sub
+# 6
+```
+
 ---
 
 ## 🎓 互动教学课程
@@ -277,7 +348,7 @@ dog = Dog()
 
 <a href="/teach/lessons/0012-元类.html"><strong>👉 点击进入《元类互动教学课程》</strong></a>
 
-- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业（单例元类/自动注册/日志元类）改编的最终考核
+- ⏱️ 预计 15–20 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业（单例元类/自动注册/日志元类）改编的作业
 - 📋 配套<a href="/teach/reference/元类速查表.html">《元类速查表》</a>，可打印
 - 💬 有不理解的地方，随时可以问你的 AI 老师
 

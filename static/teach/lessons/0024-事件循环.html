@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《24.事件循环》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题，15-20 分钟掌握事件循环的调度机制">
-  <title>事件循环 · 互动教学课程（第 24 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《24.事件循环》的互动教学课程：9 道分级测验 + 面试实战（第 24 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 22 课</p>
       <h1>事件循环</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/事件循环/">22.事件循环</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 3 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/事件循环">24-事件循环</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说清<strong>同步代码为什么浪费 CPU</strong>，以及异步解决问题的思路</li>
         <li>说清事件循环是什么，会用 <code>new_event_loop</code> / <code>run_forever</code> / <code>stop</code> 操作它</li>
-        <li>推演 <code>_run_once</code> 的五个步骤，<strong>预测 <code>call_soon</code> / <code>call_later</code> 代码的输出顺序</strong>——这也是本课最终考核要考的能力</li>
+        <li>推演 <code>_run_once</code> 的五个步骤，<strong>预测 <code>call_soon</code> / <code>call_later</code> 代码的输出顺序</strong>——这也是本课作业要考的能力</li>
       </ol>
     </section>
 
@@ -232,108 +230,7 @@ print("C")</code></pre></div>
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《24.事件循环》源课程作业的三道预测题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在纸上预测输出，再点击选项核对。每一道都要能说清「为什么是这个顺序」才算过关。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一：预测以下代码的输出结果（注意最后一行是否会打印）
-<pre><code>import asyncio
-
-loop = asyncio.new_event_loop()
-
-def task1():
-    print("任务1")
-
-def task2():
-    print("任务2")
-
-def task3():
-    print("任务3")
-
-loop.call_soon(task1)
-print("task1 over")
-loop.call_soon(task2)
-print("task2 over")
-loop.call_soon(task3)
-print("task3 over")
-
-loop.run_forever()
-print("已结束")</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">只输出一行 task1 over 就死循环，其余全部不输出</button>
-            <button class="quiz-option">先输出三行 task over，再输出 任务1、任务2、任务3，然后死循环，已结束 永不输出</button>
-            <button class="quiz-option">先输出 任务1、任务2、任务3，再输出三行 task over，最后输出 已结束</button>
-            <button class="quiz-option">先输出三行 task over，再输出 任务1、任务2、任务3，最后输出 已结束</button>
-          </div>
-          <div class="quiz-explain" hidden>三行 <code>print("taskX over")</code> 是同步代码，<strong>立即输出</strong>；三个 <code>call_soon</code> 只是把回调放入 ready 队列。随后 <code>run_forever</code> 执行 ready：依次输出 任务1、任务2、任务3。<strong>但代码里没有 <code>stop()</code></strong>——循环不会退出，<code>print("已结束")</code> 永远执行不到，程序卡死。这正是要点 3：没有 stop 就死循环。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核二：预测以下代码的输出结果（call_later(0) 表示延时 0 秒）
-<pre><code>import asyncio
-
-loop = asyncio.new_event_loop()
-
-def delayed():
-    print(1)
-    loop.call_later(0, lambda: print(2))
-    loop.call_soon(lambda: print(3))
-
-def soon():
-    print(4)
-    loop.call_soon(lambda: print(5))
-
-loop.call_later(0, delayed)
-loop.call_soon(soon)
-
-loop.run_forever()
-print("done")</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">4 1 5 3 2，最后输出 done</button>
-            <button class="quiz-option">4 1 5 3 2，然后死循环，done 永不输出</button>
-            <button class="quiz-option">4 1 3 5 2，然后死循环，done 永不输出</button>
-            <button class="quiz-option">1 4 5 3 2，最后输出 done</button>
-          </div>
-          <div class="quiz-explain" hidden>第一轮 <code>_run_once</code>：延时队列里 <code>delayed</code> 到期（0 秒）先进 ready，ready = [soon, delayed]；执行副本——<code>soon</code> 输出 4 并 <code>call_soon</code> 5，<code>delayed</code> 输出 1、<code>call_later</code> 2 进延时队列、<code>call_soon</code> 3。第二轮：2 到期进 ready，ready = [5, 3, 2]，输出 <strong>5 3 2</strong>。全程没有 <code>stop()</code>，<code>done</code> 永不输出。完整顺序：<strong>4 1 5 3 2</strong>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核三：预测以下代码的输出结果（3 会打印吗？）
-<pre><code>import asyncio
-
-loop = asyncio.new_event_loop()
-
-def first():
-    print(1)
-
-def second():
-    print(2)
-    loop.call_soon(lambda: print(3))
-    loop.stop()
-
-def third():
-    print(4)
-
-loop.call_soon(first)
-loop.call_soon(second)
-loop.call_soon(third)
-
-loop.run_forever()
-print("循环已停止")</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">1 2 3 4 循环已停止</button>
-            <button class="quiz-option">1 2 循环已停止，4 与 3 永不输出</button>
-            <button class="quiz-option">1 2 4 3 循环已停止</button>
-            <button class="quiz-option">1 2 4 循环已停止，3 永不输出</button>
-          </div>
-          <div class="quiz-explain" hidden>本轮 ready 的副本是 [first, second, third]：first 输出 1；second 输出 2、<code>call_soon</code> 3（进入下一轮的 ready）并 <code>stop()</code>；<strong>third 仍在本轮副本中</strong>，继续输出 4。本轮结束后 <code>_stopping</code> 为真，循环退出——下一轮的 3 永远轮不到。输出：<strong>1 2 4 循环已停止</strong>。要点 2（副本语义）+ 要点 3（stop 终止循环）的叠加。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">三道考核全部答对且能讲清理由，说明你已经吃透 <code>_run_once</code> 的调度机制——可以继续学习《<a href="/agents/python/Future类/">23.Future类</a>》了。</p>
-    </section>
+    
 
                                                                                                     <section>
       <h2>💼 面试实战</h2>
@@ -342,21 +239,22 @@ print("循环已停止")</code></pre></div>
         window.__interview = {
           lesson: '0024-事件循环',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `asyncio 是单线程的，为什么能实现高并发？事件循环到底在做什么？`,
     source: '考点来源：腾讯云「Python 并发编程模型：面试中的重点考察点」（并发模型题）· 场景改写',
     breakdown: `单线程通过<strong>事件循环</strong>调度成千上万个协程：协程在<strong>等待 IO 时让出控制权</strong>（await），循环立刻切换到其他就绪协程——CPU 几乎不空闲，一个线程扛住大量并发连接。适合 <strong>IO 密集</strong>（网络请求、数据库、文件）；CPU 密集计算会独占线程，得用进程池/线程池。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `协程在什么时机切换？一段没有 await 的同步代码会打断其他协程吗？`,
     source: '考点来源：腾讯云「Python 并发编程模型」（协程切换题）· 场景改写',
     breakdown: `只在 <code>await</code> 处切换（等待不可立即完成的 IO/任务时让出）。<strong>没有 await 的代码是原子的</strong>——一段同步计算会一路跑完，期间其他协程全部排队（所以循环里做重计算/调阻塞函数会卡死整个 loop）。这就是「协程是协作式调度」的含义：不让，谁也抢不走。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写的代码给 Future 挂了 done 回调，回调里没写 try/except。审查：回调抛异常会发生什么？主流程能捕获到吗？
@@ -369,14 +267,14 @@ def boom(fut):
     source: '考点来源：Runebook（Python 官方文档中文版）（回调异常题）· 场景改写',
     breakdown: `回调异常<strong>不会传播回 await 方</strong>——它被事件循环捕获并交给 <code>loop 的异常处理器</code>（默认打日志），主流程若无其事继续跑。危害：关键失败静默。修复：回调内部 try/except 显式处理；需要「失败即中止」语义时改用 await/回调链返回。AI 生成的回调代码最爱裸奔。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `在子线程里 await 主线程事件循环创建的 Task/Future，会发生什么？跨线程该怎么做？`,
     source: '考点来源：Runebook（Python 官方文档中文版）（线程亲和性题）· 场景改写',
     breakdown: `Future/Task <strong>绑定创建它的循环</strong>：在别的线程直接 await 会 RuntimeError（Future attached to a different loop）。跨线程协作的姿势：① <code>loop.call_soon_threadsafe(cb)</code> 把回调投递回主循环；② <code>asyncio.run_coroutine_threadsafe(coro, loop)</code> 拿到 concurrent Future 在别的线程等待。Agent 服务里「后台线程发事件给主循环」就是这个模式。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `写一个 asyncio 并发下载器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -387,20 +285,8 @@ def boom(fut):
     },
     source: '任务基于《24.事件循环》课程知识点 · 场景化',
     breakdown: `思路：<code>async def fetch(i): await asyncio.sleep(0.1); return i</code>；<code>results = await asyncio.gather(*[fetch(i) for i in range(10)], return_exceptions=True)</code>。坑：gather 默认任一失败即抛（其余被取消）——收集部分失败要 return_exceptions；并发数无上限时注意对端限流（下节课的限流工具）。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档对 <code>asyncio.gather</code> 的关键语义有三条：协程参数怎么处理？结果顺序？异常怎么传播？`,
-    source: '来源：Python 官方文档 asyncio「asyncio.gather」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `文档原文三要点：① 参数里的<strong>协程会被自动排成 Task</strong>（不用自己 create_task）；② 全部成功时返回<strong>按参数顺序</strong>排列的结果列表；③ <code>return_exceptions=False</code>（默认）时<strong>第一个异常立即传播</strong>给 await gather 的一方。这正是「并发一批请求」的标准姿势的官方语义背书。`,
-  },
-  {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `gather 里某个任务抛异常后，其他任务会被取消吗？想「一个失败不连累其他、结果照收」该怎么写？`,
-    source: '来源：Python 官方文档 asyncio「asyncio.gather」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `文档原文：return_exceptions=False 时首个异常立即传播，但 <strong>aws 里其他任务不会被取消、继续运行</strong>——gather 不搞连坐。要「失败也把结果/异常全收回来」：<code>await gather(*aws, return_exceptions=True)</code>——返回列表里成功项是结果、失败项是<strong>异常对象</strong>，逐个 isinstance(x, Exception) 分类。AI 写的批量任务收集代码默认忘了这个参数，第一个失败就丢了其余结果。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -464,7 +350,7 @@ def boom(fut):
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/事件循环/">回到《24.事件循环》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（0 题）。
     </footer>
 
   </main>

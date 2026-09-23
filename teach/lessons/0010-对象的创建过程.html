@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《10.对象的创建过程》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（单例模式）+ 真实面试题">
-  <title>对象的创建过程 · 互动教学课程（第 10 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《10.对象的创建过程》的互动教学课程：9 道分级测验 + 面试实战（第 10 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 8 课</p>
       <h1>对象的创建过程</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/对象的创建过程/">8.对象的创建过程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/对象的创建过程">10-对象的创建过程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -23,7 +21,7 @@
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出对象创建的三步：<strong><code>__new__</code> → 类型检查 → <code>__init__</code></strong></li>
-        <li>用 <code>__new__</code> 亲手实现<strong>单例模式与对象池</strong>——最终考核考的就是它</li>
+        <li>用 <code>__new__</code> 亲手实现<strong>单例模式与对象池</strong>——作业考的就是它</li>
         <li>解释为什么 <code>__new__</code> 返回别的类型时 <code>__init__</code> 不会执行</li>
       </ol>
     </section>
@@ -178,97 +176,7 @@ print(type(p).__name__, type(n).__name__)</code></pre></div>
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《10.对象的创建过程》源课程作业（自己写一遍单例模式）的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核一（作业·单例实现）：实现单例类 Database——多次实例化返回同一个对象。下列 <code>__new__</code> 中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">if cls._instance is None 才创建并缓存，最后 return cls._instance</button>
-            <button class="quiz-option">if cls._instance is not None 时才创建，最后 return None</button>
-            <button class="quiz-option">每次都 super().__new__(cls) 并直接 return 新对象</button>
-            <button class="quiz-option">每次都 super().__new__(cls) 创建，但忘记 return</button>
-          </div>
-          <div class="quiz-explain" hidden>正确答案：<code>cls._instance is None</code> 时调用 <code>super().__new__(cls)</code> 创建并<strong>缓存</strong>，最后无条件 <code>return cls._instance</code>——第一次创建、之后复用。第二个忘了 return，实例化得到 None ✗；第三个不缓存，每次都是新对象 ✗；第四个条件写反 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业·单例模式）</summary>
-<pre><code>class Database:
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-conn1 = Database()
-conn2 = Database()
-print(conn1 is conn2)  # True，说明是同一个实例</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核二（正整数类预测）：以下代码输出是？
-<pre><code>class PositiveInt:
-    def __new__(cls, value):
-        if value &lt; 0:
-            return 0
-        return super().__new__(cls)
-
-    def __init__(self, value):
-        print("__init__ 被调用")
-        self.value = value
-
-n = PositiveInt(-3)
-print(type(n))
-print(n)</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">&lt;class 'int'&gt; 然后 0，且没有 __init__ 打印</button>
-            <button class="quiz-option">&lt;class 'PositiveInt'&gt; 然后 0，且有 __init__ 打印</button>
-            <button class="quiz-option">&lt;class 'int'&gt; 然后 0，且有 __init__ 打印</button>
-          </div>
-          <div class="quiz-explain" hidden><code>__new__</code> 对负数直接 <code>return 0</code>——返回的是 int 实例，不是 PositiveInt 实例，<code>isinstance</code> 检查失败 → <code>__init__</code> <strong>被跳过</strong>（不打印）。<code>type(n)</code> 是 int，<code>n</code> 是 0。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核三（对象池预测）：以下代码输出是？
-<pre><code>class ConnectionPool:
-    _pool = {}
-
-    def __new__(cls, conn_id):
-        if conn_id not in cls._pool:
-            cls._pool[conn_id] = super().__new__(cls)
-        return cls._pool[conn_id]
-
-pool1 = ConnectionPool("conn_1")
-pool2 = ConnectionPool("conn_1")
-pool3 = ConnectionPool("conn_2")
-print(pool1 is pool2, pool1 is pool3)</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">True False</button>
-            <button class="quiz-option">False False</button>
-            <button class="quiz-option">True True</button>
-            <button class="quiz-option">False True</button>
-          </div>
-          <div class="quiz-explain" hidden>缓存键是 <code>conn_id</code>：pool1 创建并缓存 "conn_1"；pool2 命中缓存 → <code>pool1 is pool2 → True</code>；pool3 用新键 "conn_2" → 新对象 → <code>pool1 is pool3 → False</code>。输出：<strong>True False</strong>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核四（机制理解）：单例类 Database 实例化两次，<code>__init__</code> 会被调用几次？（假设定义了 __init__ 且单例用 _instance 缓存）</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只调用一次</button>
-            <button class="quiz-option">一次都不调用</button>
-            <button class="quiz-option">调用次数随机</button>
-            <button class="quiz-option">两次都调用，第二次会重新初始化</button>
-          </div>
-          <div class="quiz-explain" hidden>这是单例的经典坑：<code>__new__</code> 每次返回<strong>同一个</strong>实例，而实例是 cls 的实例（isinstance 通过），所以 <code>__init__</code> <strong>每次实例化都会执行</strong>——第二次创建会覆盖第一次的属性（如 host）。需要时可在 <code>__init__</code> 里加「已初始化」标志跳过。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握对象的创建过程——可以继续学习《<a href="/agents/python/可调用对象/">9.可调用对象</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -277,35 +185,36 @@ print(pool1 is pool2, pool1 is pool3)</code></pre></div>
         window.__interview = {
           lesson: '0010-对象的创建过程',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 写的单例类每次实例化都会重新执行 <code>__init__</code>，把计数器清零了。为什么？__new__ 和 __init__ 的分工是什么？`,
     source: '考点来源：CSDN「一份高质量的 Python 基础知识笔试题完整解析」（__new__ vs __init__ 题）· 场景改写',
     breakdown: `<code>__new__</code> 负责<strong>创建并返回实例</strong>（类方法，先于 __init__ 执行），<code>__init__</code> 负责<strong>初始化实例属性</strong>。单例里 __new__ 返回缓存的同一实例，但 __init__ 每次实例化都会在「这个返回的实例」上再跑一遍——所以单例的初始化要放进 __new__ 只执行一次，或 __init__ 里做幂等保护。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `用 __new__ 实现单例的完整机制是什么？多线程下怎么保证只创建一次？`,
     source: '考点来源：51CTO「你想要的 Python 面试题都在这里了」（单例/线程安全单例题）· 场景改写',
     breakdown: `<code>__new__</code> 里判断 <code>cls._instance</code> 是否已存在：不存在则 <code>super().__new__(cls)</code> 创建并缓存，存在则直接返回缓存。多线程版加<strong>双重检查 + threading.Lock</strong>：先无锁判空、再拿锁判空创建，避免每次实例化都争锁。AI 时代这题的新考法：你的 Agent 服务里哪些对象应该是单例（配置、连接池），哪些绝对不能（请求级状态）。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 在项目里把「当前登录用户」也写成了单例。审查这段设计：单例模式的代价是什么？哪些对象不该是单例？`,
     source: '考点来源：CSDN「一份高质量的 Python 基础知识笔试题完整解析」（设计权衡题）· 场景改写',
     breakdown: `代价：<strong>全局可变状态</strong>（隐藏耦合、测试难隔离、并发下互相污染）；多进程部署下每个 worker 各有一份「单例」，根本不单；序列化/热更新也会破坏。不该单例的：请求级状态（当前用户！）、带状态的业务对象。适合单例的：进程内配置、连接池、无状态工具。AI 生成代码时「当前用户」放全局是高频事故。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `面试官问：Python 里最「正统」的单例是什么？为什么模块级单例比手写 __new__ 更推荐？`,
     source: '考点来源：51CTO「你想要的 Python 面试题都在这里了」（模块级单例题）· 场景改写',
     breakdown: `<strong>模块只被导入执行一次</strong>（有 sys.modules 缓存）——模块里的实例天然全局唯一，即「模块级单例」：<code># config.py\nCONFIG = load_config()</code>。比手写 __new__ 单例更推荐：零魔法代码、可读、天然线程安全（导入锁）、测试时可重载模块。面试官爱听的答案：先问「你真的需要单例吗」，需要就用模块级。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `实现一个线程安全单例（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -316,20 +225,8 @@ print(pool1 is pool2, pool1 is pool3)</code></pre></div>
     },
     source: '任务基于《10.对象的创建过程》课程知识点（__new__/单例小节）· 场景化',
     breakdown: `思路：类属性 <code>_instance</code> + <code>_lock = threading.Lock()</code>；__new__ 里先无锁判空，未命中再 with lock 二次判空后创建。坑：忘记类属性放锁（每个实例一把锁就失效）；__init__ 每次仍会执行（陷阱题同款），把初始化幂等化或用标志位跳过。`,
-  }, {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `官方文档说：__new__ 返回什么，__init__ 才一定会被调用？什么情况下 __init__ 会被跳过？这对写单例/缓存的 AI 代码意味着什么？`,
-    source: '来源：Python 官方文档 datamodel「Basic customization」object.__new__ 条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `文档原文规则：<strong>__new__ 返回 cls 的实例 → 该实例的 __init__ 被调用</strong>（self = 新实例，其余参数照传）；<strong>返回的不是 cls 实例 → __init__ 不被调用</strong>。所以单例里 __new__ 返回缓存的旧实例时，初始化会「悄悄不执行」——AI 写的单例/对象池代码依赖 __init__ 做初始化就是踩这条规则。初始化要么放 __new__ 成功后，要么显式幂等保护。`,
-  },
-  {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `面试官问：__new__ 存在的主要目的是什么？官方文档怎么定位它的用途？`,
-    source: '来源：Python 官方文档 datamodel「Basic customization」object.__new__ 条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `文档原文：__new__ <strong>intended mainly to allow subclasses of immutable types</strong>（主要是让不可变类型的子类化成为可能）——如 int/str/tuple/frozenset 的内容在创建时就定型，必须赶在 __init__ 之前（__new__ 里）过滤/调整。其余场景（缓存实例、单例）是「顺手能做的扩展用途」，不是它的设计主场。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -395,7 +292,7 @@ print(pool1 is pool2, pool1 is pool3)</code></pre></div>
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/对象的创建过程/">回到《10.对象的创建过程》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（0 题）。
     </footer>
 
   </main>

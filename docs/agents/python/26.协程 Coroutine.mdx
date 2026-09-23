@@ -206,6 +206,83 @@ print("over")
 
 4. `asyncio.run`可接收一个协程对象，其在内部转换为`Task`
 
+
+## 作业
+
+### 一、实现 gather 函数
+
+```python
+import asyncio
+from async_delay import async_delay
+from typing import Coroutine
+
+
+def gather(*aws: Coroutine) -> asyncio.Future:
+    # 你的代码
+    pass
+
+
+async def coro(name: str, duration: int):
+    await async_delay(duration)
+    return f"{name} 完成"
+
+
+async def main():
+    results = await gather(
+        coro("A", 2),
+        coro("B", 1),
+        coro("C", 3),
+    )
+    print(results)  # 预期: ['A 完成', 'B 完成', 'C 完成']
+
+
+asyncio.run(main())
+
+```
+
+### 二、实现 Event 类
+
+```python
+import asyncio
+from async_delay import async_delay
+from gather import gather
+
+
+class Event:
+    # 你的代码
+    pass
+
+
+async def test():
+    event = Event()
+
+    async def waiter():
+        print("waiter: 开始等待")
+        await event.wait()
+        print("waiter: 被唤醒")
+
+    async def setter():
+        print("setter: 1秒后设置事件")
+        await async_delay(1)
+        event.set()
+        print("setter: 事件已设置")
+
+    await gather(waiter(), setter())
+
+
+asyncio.run(test())
+
+# 预期结果：
+""" 
+waiter: 开始等待
+setter: 1秒后设置事件
+setter: 事件已设置
+waiter: 被唤醒 
+"""
+```
+
+###
+
 ---
 
 ## 🎓 互动教学课程

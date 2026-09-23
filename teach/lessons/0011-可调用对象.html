@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《11.可调用对象》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（Counter 计数器）+ 真实面试题">
-  <title>可调用对象 · 互动教学课程（第 11 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《11.可调用对象》的互动教学课程：9 道分级测验 + 面试实战（第 11 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 9 课</p>
       <h1>可调用对象</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/可调用对象/">9.可调用对象</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/可调用对象">11-可调用对象</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -23,7 +21,7 @@
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>用 <code>callable()</code> 判断对象是否可调用，并说出判断依据</li>
-        <li>通过定义 <code>__call__</code> 把实例变成「带状态的函数」——<strong>最终考核考的就是它</strong></li>
+        <li>通过定义 <code>__call__</code> 把实例变成「带状态的函数」——<strong>作业考的就是它</strong></li>
         <li>说清「调用协议」：<code>x()</code> 永远走 <code>type(x).__call__(x)</code></li>
       </ol>
     </section>
@@ -173,105 +171,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《11.可调用对象》源课程作业的两道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里算出答案，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核一（作业一·计数器）：实现 Counter 类——实例化时指定起始值，每次调用实例值加 1，支持 reset() 与 get()。要求 <code>c = Counter(10); c() → 11</code>。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">get 返回起始值 start 而不是当前值</button>
-            <button class="quiz-option">reset 把 value 重置为 0 而不是初始值</button>
-            <button class="quiz-option">__call__ 中 value 自增并返回；reset 恢复初始值；get 返回当前值</button>
-            <button class="quiz-option">__call__ 中 value 自增但不 return，依赖 get 取当前值</button>
-          </div>
-          <div class="quiz-explain" hidden>正确实现：<code>__init__</code> 同时存 <code>start</code> 和 <code>value</code>；<code>__call__</code> 里 <code>self.value += 1; return self.value</code>；<code>reset</code> 恢复 <code>self.value = self.start</code>；<code>get</code> 返回 <code>self.value</code>。第二个调用 <code>c()</code> 返回 None，题目要求输出 11 ✗；第三个重置错目标 ✗；第四个拿到的是旧值 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业一）</summary>
-<pre><code>class Counter:
-    def __init__(self, start):
-        self.start = start
-        self.value = start
-
-    def __call__(self):
-        self.value += 1
-        return self.value
-
-    def reset(self):
-        self.value = self.start
-
-    def get(self):
-        return self.value
-
-c = Counter(10)
-print(c())      # 11
-c()             # 12
-print(c.get())  # 12
-c.reset()
-print(c.get())  # 10</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核二（作业二·思考题）：以下代码的输出是？
-<pre><code>class A:
-    def __call__(self):
-        print("A called")
-
-class B(A):
-    def __call__(self):
-        print("B called")
-        super().__call__()
-
-b = B()
-b()</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">只输出 B called</button>
-            <button class="quiz-option">先 B called，再 A called</button>
-            <button class="quiz-option">只输出 A called</button>
-            <button class="quiz-option">运行时报错</button>
-          </div>
-          <div class="quiz-explain" hidden><code>b()</code> 调 <code>B.__call__(b)</code>：先打印 B called，然后 <code>super().__call__()</code> 沿 MRO 调到父类 A 的 <code>__call__</code>，打印 A called。顺序：<strong>B called → A called</strong>。与第 6 课 MRO 知识呼应。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核三（状态保持回调）：以下代码第二次调用的输出是？
-<pre><code>class Logger:
-    def __init__(self, prefix):
-        self.prefix = prefix
-        self.log_count = 0
-
-    def __call__(self, message):
-        self.log_count += 1
-        print(f"[{self.prefix}] #{self.log_count}: {message}")
-
-error_log = Logger("ERROR")
-error_log("文件未找到")
-error_log("网络连接失败")</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">[ERROR] #2: 网络连接失败</button>
-            <button class="quiz-option">运行时报错</button>
-            <button class="quiz-option">[ERROR] #0: 网络连接失败</button>
-            <button class="quiz-option">[ERROR] #1: 网络连接失败</button>
-          </div>
-          <div class="quiz-explain" hidden><code>log_count</code> 是实例属性，第一次调用后为 1，第二次 <code>+= 1</code> 后为 2 → <strong>[ERROR] #2: 网络连接失败</strong>。实例「记住」了调用历史，这是闭包之外的另一种状态保存方式。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核四（callable 判断组合）：下列哪一组 <code>callable()</code> 结果全部正确？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">len→True，int→True，[1,2]→False，lambda→True</button>
-            <button class="quiz-option">len→False，int→True，[1,2]→False，lambda→True</button>
-            <button class="quiz-option">len→True，int→False，[1,2]→False，lambda→True</button>
-            <button class="quiz-option">len→True，int→True，[1,2]→True，lambda→False</button>
-          </div>
-          <div class="quiz-explain" hidden>逐项核对：<code>len</code> 是内置函数 → True；<code>int</code> 是类（type.__call__ 实例化）→ True；<code>[1, 2]</code> 列表无 <code>__call__</code> → False；<code>lambda: 1</code> 是函数 → True。<strong>第一个组合全部正确</strong>。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握可调用对象——可以继续学习《<a href="/agents/python/元类/">10.元类</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -280,21 +180,22 @@ error_log("网络连接失败")</code></pre></div>
         window.__interview = {
           lesson: '0011-可调用对象',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 写了一个 <code>class Logger</code>，里面定义了 <code>def __call__(self, msg)</code>，然后 <code>log = Logger()</code>、<code>log('开始任务')</code>——实例居然能当函数调用。这个机制叫什么？哪些内置对象也是可调用的？`,
     source: '考点来源：腾讯云「剖析 Python 面试知识点（一）：魔法方法、闭包/自省、装饰器/生成器」· 场景改写',
     breakdown: `定义了 <code>__call__</code> 的类，其实例就是<strong>可调用对象</strong>——<code>obj(...)</code> 等价于 <code>type(obj).__call__(obj, ...)</code>。常见可调用对象：函数、类（调用即实例化）、带 __call__ 的实例、partial 对象。它在 Agent 工具系统里很常见（工具注册的往往就是可调用对象而非裸函数）。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `面试官追问：需要「带状态的函数」（计数器、带前缀的日志回调），除了闭包，还有哪些实现方式？各有什么特点？`,
     source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（场景选择题）· 场景改写',
     breakdown: `① <strong>可调用对象</strong>：状态存实例属性，行为在 __call__，可继承、可加方法——最工程化；② <strong>偏函数</strong>：<code>functools.partial(log, prefix='[A]')</code> 固定部分参数，适合「同一函数不同配置」的轻量场景；③ <strong>闭包</strong>：最轻但难扩展。面试加分点：能说出三者取舍（可扩展性 / 简洁性 / 固定参数）。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 想给一个实例「挂上 __call__ 方法」让它可调用，审查这段代码：
@@ -308,14 +209,14 @@ print(t())   # TypeError: 'Task' object is not callable</code></pre>
     source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（调用协议题）· 场景改写',
     breakdown: `<strong>特殊方法在类型上查找，不在实例字典上</strong>：t() 调用的是 type(t).__call__，实例属性里的 __call__ 被忽略（也更快——免去每次查找实例字典）。修复：在类里定义 <code>__call__</code>。同理 __getattr__、__len__ 等都不能往实例上挂。AI 经常犯这种「动态打补丁」的错。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `你要让 AI 实现一个「带前缀的日志器」：每个模块一个实例，前缀可配置、可以再挂新方法。闭包、可调用对象、类装饰器，你让它用哪个？为什么？`,
     source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（设计选择题）· 场景改写',
     breakdown: `首选<strong>可调用对象</strong>：前缀存 <code>self.prefix</code>（实例间隔离），行为在 <code>__call__</code>，后续要加 <code>set_level()</code> 等方法直接加——闭包做不到「再加方法」这一条。类装饰器适合「装饰器本身要带复杂状态」的场景。原则：状态 + 多行为 → 对象；单行为轻状态 → 闭包。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `实现一个可调用的 <code>RetryClient</code>（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -326,20 +227,8 @@ print(t())   # TypeError: 'Task' object is not callable</code></pre>
     },
     source: '任务基于《11.可调用对象》课程知识点（__call__ 小节）· 场景化',
     breakdown: `思路：<code>__init__</code> 里存 <code>self.prefix / self.retries</code>；<code>__call__</code> 里循环重试并打印。坑：实例属性与类属性别混用（幽灵共享同款坑）；__call__ 的返回值要正常透传，重试耗尽后 raise 而不是返回 None。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档说 <code>x(arg1, arg2)</code> 大致等价于什么？为什么普通 object 实例不可调用、而「类」本身却可调用？`,
-    source: '来源：Python 官方文档 datamodel「Emulating callable objects」object.__call__ 条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `文档原文：x(arg1, arg2, ...) 大致等价于 <code>type(x).__call__(x, arg1, ...)</code>——调用协议在<strong>类型上</strong>执行。类可调用是因为 <code>type</code> 定义了 __call__（调用即实例化）；而 <strong>object 本身不提供 __call__</strong>（文档原话），所以普通对象默认不可调用——想让实例可调用，得自己的类定义 __call__。`,
-  },
-  {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `审查 AI 的代码：它想在运行时给某个实例「挂上 __call__」让它可调用（<code>t.__call__ = lambda: 1</code>）。为什么按官方文档的定义，这不可能生效？`,
-    source: '来源：Python 官方文档 datamodel「Emulating callable objects」+「Special method lookup」· 检索 2026-09-09 · 层级：一手',
-    breakdown: `调用翻译是 <code>type(x).__call__(x, ...)</code>——直接在<strong>类型对象上查找</strong> __call__，实例字典里的同名属性根本不参与；文档在「Special method lookup」一节明确：特殊方法的隐式调用<strong>只保证在对象类型上定义时正确工作</strong>（理由是跳过实例字典查找更快）。修复：把 __call__ 定义在类里；动态场景用 types.MethodType 绑到实例（普通属性调用不受此限）。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -405,7 +294,7 @@ print(t())   # TypeError: 'Task' object is not callable</code></pre>
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/可调用对象/">回到《11.可调用对象》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（4 题）。
     </footer>
 
   </main>

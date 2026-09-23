@@ -264,6 +264,99 @@ def outer():
 outer()
 ```
 
+
+## 作业
+
+### 作业一：作用域判断
+
+阅读以下代码，预测每行 `print` 的输出结果，并在注释中写出你的答案。
+
+```python
+x = 1
+
+def func_a():
+    x = 2
+    
+    def func_b():
+        print(x)      # ?
+    
+    func_b()
+    print(x)          # ?
+
+func_a()
+print(x)              # ?
+```
+
+### 作业二：global 与 nonlocal
+
+阅读以下代码，预测输出结果：
+
+```python
+count = 0
+
+def outer():
+    count = 10
+    
+    def inner():
+        global count
+        count += 1
+        print(count)  # ?
+    
+    inner()
+    print(count)      # ?
+
+outer()
+print(count)          # ?
+```
+
+### 作业三：修复代码
+
+以下代码用于统计函数调用次数，先读取全局计数器打印日志，再递增计数。但实际运行会报错，请修改使其正确运行：
+
+```python
+call_count = 0
+
+def process_data(data):
+  	result = sum(data)
+    # 处理完成后递增计数器
+    call_count += 1 
+    return result
+
+print(process_data([1, 2, 3]))
+print(process_data([4, 5, 6]))
+print(f"总共调用了 {call_count} 次")
+```
+
+### 作业四：闭包计数器
+
+实现一个函数 `make_multiplier(n)`，返回一个函数。返回的函数接收一个参数 `x`，返回 `n * x`。
+
+要求使用闭包实现，不要使用 `global`。
+
+```python
+triple = make_multiplier(3)
+print(triple(5))   # 15
+print(triple(10))  # 30
+
+double = make_multiplier(2)
+print(double(7))   # 14
+```
+
+### 作业五：综合练习
+
+实现一个函数 `create_account(initial_balance)`，返回两个字典：
+- `deposit(amount)`: 存款，返回新余额
+- `withdraw(amount)`: 取款，余额不足返回 `"余额不足"`，否则返回新余额
+
+要求使用闭包保存余额状态，不要暴露余额变量。
+
+```python
+deposit, withdraw = create_account(100)
+print(deposit(50))    # 150
+print(withdraw(30))   # 120
+print(withdraw(200))  # 余额不足
+```
+
 ---
 
 ## 🎓 互动教学课程
@@ -272,6 +365,6 @@ outer()
 
 <a href="/teach/lessons/0006-作用域.html"><strong>👉 点击进入《作用域互动教学课程》</strong></a>
 
-- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业改编的最终考核
+- ⏱️ 预计 15–20 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战
 - 📋 配套<a href="/teach/reference/作用域速查表.html">《作用域速查表》</a>，可打印
 - 💬 有不理解的地方，随时可以问你的 AI 老师

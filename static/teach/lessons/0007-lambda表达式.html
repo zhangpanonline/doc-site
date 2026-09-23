@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《7.lambda表达式》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核 + 真实面试题（lambda 局限/闭包延迟绑定）">
-  <title>lambda 表达式 · 互动教学课程（第 7 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《7.lambda表达式》的互动教学课程：9 道分级测验 + 面试实战（第 7 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 5 课</p>
       <h1>lambda 表达式</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/lambda表达式/">5.Lambda表达式</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/lambda表达式">7-lambda表达式</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说出 lambda 的语法限制：<strong>单表达式、自动返回、匿名</strong></li>
         <li>熟练使用 <code>map</code> / <code>filter</code> / <code>sorted</code> / <code>max</code> / <code>reduce</code> 与 lambda 的组合</li>
-        <li>在真实数据集上完成「排序、筛选、聚合」任务——<strong>最终考核就是源课程的产品数据练习</strong></li>
+        <li>在真实数据集上完成「排序、筛选、聚合」任务——<strong>作业就是源课程的产品数据练习</strong></li>
       </ol>
     </section>
 
@@ -165,85 +163,7 @@ print([f() for f in funcs])</code></pre></div>
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《7.lambda表达式》源课程作业的改编题，数据为源课程的 <code>products</code> 产品列表（41 条，折叠区可见完整数据）——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先用 lambda + 高阶函数在心里算出答案，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核一（作业·任务5）：找出<strong>价格最高的产品所属的公司</strong>列表（字符串列表），结果是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">['APPLE']</button>
-            <button class="quiz-option">['MICROSOFT']</button>
-            <button class="quiz-option">['DELL']</button>
-            <button class="quiz-option">['LENOVO']</button>
-          </div>
-          <div class="quiz-explain" hidden>先找最高价：<code>max(products, key=lambda p: p["price"])</code> → MacBook Pro，14999 元，公司 APPLE。思路：<code>max</code> 取最高价 → <code>filter</code> 出价格等于最高价的产品 → <code>map</code> 取公司 → <code>set</code> 去重 → <strong>['APPLE']</strong>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核二（作业·任务2）：按价格<strong>降序</strong>排序，前三个产品名是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">['MacBook Pro', 'Dell XPS 13', 'ThinkPad X1']</button>
-            <button class="quiz-option">['Dell XPS 13', 'MacBook Pro', 'ThinkPad X1']</button>
-            <button class="quiz-option">['ThinkPad X1', 'Legion Y9000', 'Surface Pro']</button>
-            <button class="quiz-option">['Mi Band 8', 'Vivo TWS', 'OPPO Enco']</button>
-          </div>
-          <div class="quiz-explain" hidden>价格前三：MacBook Pro 14999 → Dell XPS 13 10999 → ThinkPad X1 9999。代码：<code>sorted(products, key=lambda p: p["price"], reverse=True)[:3]</code>。注意 <code>reverse=True</code> 才是降序。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核三（作业·任务4）：XIAOMI 的所有产品共有几个？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">7</button>
-            <button class="quiz-option">5</button>
-            <button class="quiz-option">4</button>
-            <button class="quiz-option">6</button>
-          </div>
-          <div class="quiz-explain" hidden>XIAOMI 的产品：Xiaomi 14、Redmi K70、Mi Pad 6、Mi Band 8、Xiaomi Buds、Xiaomi Book——共 <strong>6</strong> 个。代码：<code>list(filter(lambda p: p["inc"] == "XIAOMI", products))</code> 再取 <code>len</code>（或 <code>map</code> 出名字得字符串列表）。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核四（作业·任务7）：APPLE 公司的产品<strong>平均价格</strong>是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">7150.0</button>
-            <button class="quiz-option">6139.0</button>
-            <button class="quiz-option">4199.0</button>
-            <button class="quiz-option">5999.0</button>
-          </div>
-          <div class="quiz-explain" hidden>APPLE 有 5 款产品：(5999 + 14999 + 1899 + 4799 + 2999) / 5 = 30695 / 5 = <strong>6139.0</strong>。代码：先 <code>filter</code> 出该公司产品 → <code>map</code> 出价格列表 → <code>sum / len</code>。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（任务 3/4/5/7 核心写法）与完整数据</summary>
-<pre><code># 按库存总额升序（价格 × 库存）
-sorted(products, key=lambda p: p["price"] * p["stock"])
-
-# XIAOMI 所有产品（字符串列表）
-list(map(lambda p: p["name"], filter(lambda p: p["inc"] == "XIAOMI", products)))
-
-# 价格最高产品的公司列表
-max_price = max(products, key=lambda p: p["price"])["price"]
-list(set(map(lambda p: p["inc"], filter(lambda p: p["price"] == max_price, products))))
-
-# 每家公司平均价格
-def avg(inc):
-    inc_prices = list(map(lambda p: p["price"], filter(lambda p: p["inc"] == inc, products)))
-    return sum(inc_prices) / len(inc_prices)
-
-companies = set(map(lambda p: p["inc"], products))
-list(map(lambda inc: {"inc": inc, "avg_price": avg(inc)}, companies))
-
-# 完整 products 数据（41 条）见源课程作业；节选示例：
-products = [
-    {"name": "iPhone 15", "inc": "APPLE", "price": 5999, "stock": 3012},
-    {"name": "MacBook Pro", "inc": "APPLE", "price": 14999, "stock": 580},
-    # ... 共 41 条，字段：name / inc / price / stock
-]</code></pre>
-          </details>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握 lambda 与高阶函数的组合使用——可以继续学习《<a href="/agents/python/类和对象/">6.类和对象</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -252,21 +172,22 @@ products = [
         window.__interview = {
           lesson: '0007-lambda表达式',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 在项目里到处写多行 lambda（含循环、赋值、try）。代码审查时你要求它改成 def。lambda 的边界在哪？什么场景才适合用？`,
     source: '来源：PEP 8《Style Guide for Python Code》（"Always use a def statement instead of an assignment statement that binds a lambda expression directly to an identifier"）https://peps.python.org/pep-0008/#programming-recommendations · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《老男孩 IT 教育「Python 基础教程之最常见的面试题」》',
     breakdown: `lambda 只能是<strong>单个表达式</strong>：不能有语句、赋值、注解、try——超过一行的逻辑用 def（有名字、可调试、可文档）。适合场景：<code>sorted(key=...)</code>、map/filter 的一次性小回调。AI 时代给 AI 的规则同样适用：lambda 只用于「一行能说清的表达式回调」。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `产品列表要先按公司名升序、同公司内按价格升序，正确写法是什么？背后的机制（元组 key + 排序稳定性）是什么？`,
     source: '来源：Python 官方文档《Sorting Techniques》（"Sorts are guaranteed to be stable. That means that when multiple records have the same key, their original order is preserved. / The value of the key parameter should be a function (or other callable) that takes a single argument and returns a key to use for sorting purposes."）https://docs.python.org/3/howto/sorting.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「Python 篇——常考的数据类型」》',
     breakdown: `<code>sorted(products, key=lambda p: (p['company'], p['price']))</code>：key 返回<strong>元组</strong>，依次按元组元素比较即多级排序。机制补充：sorted 是<strong>稳定排序</strong>——key 相同的元素保持原相对顺序，所以先按价格排、再按公司排，也能得到等价结果。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写了一段「过滤后取前 3 个」的代码，第二次循环是空的。审查并修复：
@@ -278,14 +199,14 @@ print(list(evens))   # []  ← 为什么？</code></pre>`,
     source: '来源：Python 官方文档《Glossary · iterator》（"At this point, the iterator object is exhausted and any further calls to its __next__() method just raise StopIteration again."）https://docs.python.org/3/glossary.html#term-iterator · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「Python 面试宝典（终极版）」》',
     breakdown: `filter/map 返回的是<strong>惰性迭代器</strong>，只能完整遍历<strong>一次</strong>——第一次 list() 已把它耗尽。修复：结果要复用时立刻转成 list（<code>evens = list(filter(...))</code>），或每次重新生成。AI 生成的代码最爱把迭代器当列表反复用，审查时看到 map/filter 赋值给变量就要警觉。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `你要让 AI 写一段数据清洗：过滤 + 映射 + 排序一连串操作。什么时候用 map/filter/lambda 链，什么时候用列表推导？`,
     source: '来源：Python 官方文档《Functional Programming HOWTO》（"Two of Python’s built-in functions, map() and filter() duplicate the features of generator expressions"）https://docs.python.org/3/howto/functional.html · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《CSDN「Python 面试宝典（终极版）」》',
     breakdown: `单步变换优先<strong>列表推导</strong>（可读性最好，[x*2 for x in xs if x>0]）；多步链式（清洗→转换→聚合）用推导嵌套会很难读，可以用 map/filter 分步命名中间结果，或上生成器表达式省内存。原则：让 AI 写「人能一眼读懂的代码」优先于「最短的代码」。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `写一个产品列表处理器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -296,20 +217,8 @@ print(list(evens))   # []  ← 为什么？</code></pre>`,
     },
     source: '任务基于《7.lambda表达式》课程知识点（排序与函数式小节） · 来源层级：一手（官方文档《Sorting Techniques》https://docs.python.org/3/howto/sorting.html、《Functional Programming HOWTO》https://docs.python.org/3/howto/functional.html）场景化',
     breakdown: `思路：<code>filter(lambda p: p['stock'] > 0, ...)</code> 过滤 → <code>sorted(key=lambda p: (p['company'], p['price']))</code> 两级排序 → 切片取前 N。坑：filter 迭代器不能复用（审查题同款）；取前 N 用切片 <code>[:n]</code> 而不是 sort 之后再 filter。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方 FAQ 说高阶函数有哪两种实现方式？以「生成 y = a*x + b 的函数」为例说明。`,
-    source: '来源：Python 官方文档《Programming FAQ · How do you make a higher order function in Python?》（"You have two choices: you can use nested scopes or you can use callable objects."）https://docs.python.org/3/faq/programming.html#how-do-you-make-a-higher-order-function-in-python · 检索 2026-09-23 · 层级：一手（官方文档）',
-    breakdown: `① <strong>嵌套函数/闭包</strong>：<code>def linear(a, b): def result(x): return a*x + b; return result</code>；② <strong>可调用对象</strong>：类里存 a、b，实现 __call__。两者都能 <code>taxes = linear(0.3, 2)</code> 后像函数一样调用。FAQ 的取舍提示：可调用对象能放更多方法与状态——多行为选类、单行为选闭包。`,
-  },
-  {
-    type: 'design',
-    level: '中级岗常问',
-    prompt: `你要让 AI 实现一个「函数工厂」：生成带配置的回调（如按税率计算税费）。什么时候让它用闭包、什么时候用可调用对象？`,
-    source: '来源：Python 官方文档《Programming FAQ · How do you make a higher order function in Python?》（"The callable object approach has the disadvantage that it is a bit slower and results in slightly longer code."）https://docs.python.org/3/faq/programming.html#how-do-you-make-a-higher-order-function-in-python · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）',
-    breakdown: `单行为、状态简单（linear 这种只算一个公式）→ <strong>闭包</strong>，代码最少；需要<strong>再挂方法/多状态/可继承</strong>（税率对象还要 set_rate()、历史记录）→ <strong>可调用对象</strong>。给 AI 的提示词里把「是否需要后续扩展方法」说清楚，AI 就不会在两个形态间摇摆。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -375,7 +284,7 @@ print(list(evens))   # []  ← 为什么？</code></pre>`,
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/lambda表达式/">回到《7.lambda表达式》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（6 题）。
     </footer>
 
   </main>

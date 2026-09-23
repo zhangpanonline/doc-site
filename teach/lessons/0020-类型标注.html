@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《20.类型标注》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（函数标注/泛型缓存/TypedDict）+ 真实面试题">
-  <title>类型标注 · 互动教学课程（第 20 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《20.类型标注》的互动教学课程：9 道分级测验 + 面试实战（第 20 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 18 课</p>
       <h1>类型标注</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/类型标注/">18.类型标注</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/类型标注">20-类型标注</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说清类型标注的定位：<strong>运行时不管制，IDE/类型检查器负责把关</strong></li>
         <li>熟练使用 <code>Optional</code> / <code>Union</code> / <code>Callable</code> / <code>TypeVar</code> / <code>TypedDict</code> 等常用构造</li>
-        <li>为函数、泛型类、嵌套数据结构写<strong>正确且完整</strong>的标注——最终考核的三道题</li>
+        <li>为函数、泛型类、嵌套数据结构写<strong>正确且完整</strong>的标注——作业的三道题</li>
       </ol>
     </section>
 
@@ -165,94 +163,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《20.类型标注》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确标注，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一（作业一·函数标注）：<code>calculate_bmi(weight, height)</code> 与 <code>get_grade(score) -&gt; "A"/"B"/.../</code>，下列标注中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">weight: int, height: int → int</button>
-            <button class="quiz-option">weight: float, height: float → float；score: int → str</button>
-            <button class="quiz-option">weight: float, height: float → str</button>
-            <button class="quiz-option">都不标注，靠函数名自解释</button>
-          </div>
-          <div class="quiz-explain" hidden>BMI 计算输入是浮点（体重/身高），返回 <code>weight / height**2</code> 也是 float → <code>(weight: float, height: float) -&gt; float</code>；<code>get_grade</code> 接收分数（int）返回等级字符串（str）→ <code>(score: int) -&gt; str</code>。第二个把身高体重当 int 会丢精度 ✗；第三个返回值错 ✗。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核二（作业二·泛型缓存）：<code>Cache[K, V]</code> 的 set 存值、get 返回 Optional[V]、clear 清空。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">Cache 不继承 Generic[K, V]</button>
-            <button class="quiz-option">self._data: dict[K, V]；set 赋值；get 用 .get(key) 返回 Optional[V]</button>
-            <button class="quiz-option">_data 标注为 dict 不带类型参数</button>
-            <button class="quiz-option">get 用 self._data[key] 直接下标访问</button>
-          </div>
-          <div class="quiz-explain" hidden>正确实现：<code>class Cache(Generic[K, V])</code>，<code>self._data: dict[K, V] = {}</code>；<code>get</code> 用 <code>self._data.get(key)</code>（键不存在返回 None，正好匹配 <code>Optional[V]</code>）。第二个键不存在会 KeyError ✗；第三个类型参数失效 ✗；第四个检查器推断不了 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业二）</summary>
-<pre><code>from typing import TypeVar, Generic, Optional
-
-K = TypeVar("K")
-V = TypeVar("V")
-
-class Cache(Generic[K, V]):
-    def __init__(self) -> None:
-        self._data: dict[K, V] = {}
-
-    def set(self, key: K, value: V) -> None:
-        self._data[key] = value
-
-    def get(self, key: K) -> Optional[V]:
-        return self._data.get(key)
-
-    def clear(self) -> None:
-        self._data.clear()</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核三（作业三·TypedDict）：AppConfig 含 app_name(str)、debug(bool)、db(DatabaseConfig)——db 又含 host/port/username/password/database。下列标注中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">用 Dict[str, Any] 一笔带过 db</button>
-            <button class="quiz-option">AppConfig 里把 db 标成 str</button>
-            <button class="quiz-option">TypedDict 里嵌套 TypedDict 会报错，改用 dict</button>
-            <button class="quiz-option">先定义 DatabaseConfig(TypedDict) 五个字段，再定义 AppConfig 引用它</button>
-          </div>
-          <div class="quiz-explain" hidden><strong>TypedDict 可以嵌套</strong>：先定义 <code>class DatabaseConfig(TypedDict)</code>（host: str, port: int, username: str, password: str, database: str），再 <code>class AppConfig(TypedDict)</code> 里写 <code>db: DatabaseConfig</code>。第二个丢失结构信息 ✗；第三个 Any 等于放弃检查 ✗；第四个说法错误 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业三）</summary>
-<pre><code>from typing import TypedDict
-
-class DatabaseConfig(TypedDict):
-    host: str
-    port: int
-    username: str
-    password: str
-    database: str
-
-class AppConfig(TypedDict):
-    app_name: str
-    debug: bool
-    db: DatabaseConfig</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核四（作业四·思考题）：<code>def process_data(items: List) -&gt; Dict</code> 与 <code>def find_max(a: int, b: int) -&gt; int | None</code>（相等时返回 None），哪项标注需要修改？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">两者都正确，不用改</button>
-            <button class="quiz-option">find_max 应改为 int；process_data 没问题</button>
-            <button class="quiz-option">两者都需要修改</button>
-            <button class="quiz-option">process_data 的裸 List/Dict 要带类型参数；find_max 标注正确</button>
-          </div>
-          <div class="quiz-explain" hidden><code>List</code>/<code>Dict</code> 裸用时检查器不知道元素类型——应写 <code>items: list[dict[str, Any]]</code>、返回 <code>dict[Any, Any]</code>（或更精确的 TypedDict）。<code>find_max</code> 相等时返回 None，标注 <code>int | None</code> <strong>完全正确</strong>——返回值本来就可能是 None。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握类型标注——可以继续学习《<a href="/agents/python/模块化/">19.模块化</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -261,35 +172,36 @@ class AppConfig(TypedDict):
         window.__interview = {
           lesson: '0020-类型标注',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `Python 的类型标注会在运行时强制吗？不会的话，它的价值在哪？`,
     source: '考点来源：CSDN「Python 面试宝典（终极版）」（类型标注题）· 场景改写',
     breakdown: `<strong>运行时完全不强制</strong>（除非用 pydantic 等库主动校验）——标注只是元数据。价值：① 静态检查器（mypy/pyright）提前发现类型错误；② IDE 补全/跳转；③ 给 AI 与协作者的「接口文档」——AI 时代这是最大的价值：标注写清楚，AI 生成代码的类型错误率显著下降。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `写一个「类型安全的通用容器」，get 返回的元素类型与放入的一致，用什么实现？核心写法是什么？`,
     source: '考点来源：CSDN「Python 面试宝典（终极版）」（泛型场景题）· 场景改写',
     breakdown: `<strong>TypeVar + Generic</strong>：<code>T = TypeVar('T'); class Box(Generic[T]): def get(self) -> T: ...</code>——<code>Box[int].get()</code> 静态检查推断为 int。类型检查器据此追踪类型流转：从 Box[int] 取出的值赋给 str 会报错。这是「类型安全容器」的标准答案。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写的代码参数全标 <code>Any</code>，审查时你要求收敛。Any 和 object 有什么区别？为什么专家说 Any 是「类型检查的黑洞」？`,
     source: '考点来源：CSDN「Python 面试宝典（终极版）」（Any vs object 题）· 场景改写',
     breakdown: `<code>Any</code>：<strong>关闭所有检查</strong>——与任何类型双向兼容，赋值/调用都不报错，一个 Any 污染整条链（黑洞）；<code>object</code>：最宽但<strong>具体</strong>的类型——只能当普通 object 用，调方法要 isinstance 收窄。审查规则：Any 只出现在「真·动态」边界（反序列化、插件参数），内部逻辑必须收窄成具体类型。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `要给一个存量大型项目引入类型检查，正确的推进策略是什么？一次全标为什么行不通？`,
     source: '考点来源：Maxiom「Python Developer Interview Questions（2026）」（渐进式类型化题）· 场景改写',
     breakdown: `<strong>渐进式</strong>：① 从<strong>核心模块/公共接口</strong>开始标注（收益最大）；② 检查器增量开启（先 basic 再 strict，或用 per-file 忽略列表）；③ 第三方库无标注的补 stub 或用 Any 隔离；④ CI 里逐步收紧。一次全标会引爆几千条既有错误，没人敢合——类型化是过程不是开关。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `给一段现有代码补类型标注（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -300,20 +212,8 @@ class AppConfig(TypedDict):
     },
     source: '任务基于《20.类型标注》课程知识点 · 来源层级：一手（Python 官方文档 typing 章节）场景化',
     breakdown: `思路：参数 <code>-> list[User]</code>、可空字段 <code>Optional[str]</code>（3.10+ 用 str | None）；容器 <code>T = TypeVar('T'); class Result(Generic[T])</code>。坑：别用 Any 偷懒（审查题同款）；dict 要标全 <code>dict[str, int]</code> 而不是裸 dict。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档给 Any 的定义原文是什么？3.11 之后 Any 多了什么用法？`,
-    source: '来源：Python 官方文档 typing「typing.Any」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `原文：Any = <strong>unconstrained type</strong>（无约束类型），<strong>「Every type is assignable to Any. Any is assignable to every type.」</strong>——双向兼容，所以它是类型检查的黑洞：把 Any 传给 int 参数不报错、从 Any 取值调任何方法也不报错。3.11 起 Any 还<strong>可作基类</strong>（文档：用于高度动态/任意鸭子类型的类避免检查器报错）。审查 AI 代码时 Any 泛滥即「类型标注形同虚设」。`,
-  },
-  {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档说 Protocol 类「primarily used with static type checkers that recognize structural subtyping」——这句话怎么理解？`,
-    source: '来源：Python 官方文档 typing「class typing.Protocol」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `<strong>结构化子类型（静态鸭子类型）</strong>：<code>class Proto(Protocol): def meth(self) -> int: ...</code> 定义一个「形状」；任何定义了 meth 的类<strong>自动被静态检查器视为 Proto 的子类型</strong>（无需继承/注册），官方例子 func(x: Proto) 传普通类 C 就能过检查。与 ABC 的本质区别：Protocol 的判定发生在<strong>类型检查器里</strong>（零运行时开销、零继承侵入），ABC 判定发生在运行时。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -379,7 +279,7 @@ class AppConfig(TypedDict):
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/类型标注/">回到《20.类型标注》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

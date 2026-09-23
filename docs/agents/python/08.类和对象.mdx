@@ -610,6 +610,108 @@ del dog.age
 - `isinstance()`：判断对象是否是指定类（或其子类）的实例
 - `type()`：返回对象的类型（对象是通过哪个类创建的）
 
+
+## 作业
+
+### 一、腾讯面试题
+
+说出下面代码的打印结果
+
+```python
+class Base(object):
+    def __init__(self):
+        print("enter Base")
+        print("leave Base")
+
+class A(Base):
+    def __init__(self):
+        print("enter A")
+        super().__init__()
+        print("leave A")
+
+class B(Base):
+    def __init__(self):
+        print("enter B")
+        super().__init__()
+        print("leave B")
+
+class C(A, B):
+    def __init__(self):
+        print("enter C")
+        super().__init__()
+        print("leave C")
+
+c = C()
+```
+
+### 二、综合预测题
+
+说出下面代码的打印结果
+
+```python
+class Animal:
+    kingdom = "Animalia"
+
+    def __init__(self, name):
+        self.name = name
+
+class Dog(Animal):
+    count = 0
+
+    def __init__(self, name, age):
+        super().__init__(name)
+        self.age = age
+        Dog.count += 1
+
+    def bark(self):
+        return f"{self.name} says Woof!"
+
+dog1 = Dog("Buddy", 3)
+dog2 = Dog("Max", 5)
+
+print(type(dog1))
+print(type(Dog))
+print(isinstance(dog1, Animal))
+print(isinstance(dog1, (int, Dog)))
+print(issubclass(Dog, object))
+print(dog1.__class__.__name__)
+print(Dog.__base__.__name__)
+print(hasattr(dog1, "kingdom"))
+print(getattr(dog1, "age"))
+print(getattr(dog2, "color", "brown"))
+setattr(dog1, "color", "golden")
+print(dog1.color)
+print("bark" in dir(dog1))
+print(vars(dog2))
+delattr(dog1, "color")
+print(hasattr(dog1, "color"))
+print(Dog.count)
+```
+
+### 三、实现链表类
+
+请实现一个单链表类 `LinkedList`，支持以下操作：
+
+**需要实现的方法：**
+
+| 方法                     | 说明                                                         |
+| ------------------------ | ------------------------------------------------------------ |
+| `__init__(data=None)`    | 初始化空链表；`data` 可以是列表、元组或集合，其中的值会被初始化为链表的节点 |
+| `traverse(callback)`     | 遍历链表，对每个节点值调用 `callback(index, value)`          |
+| `__str__()`              | 返回链表的字符串表示，如 `"1 -> 2 -> 3"`                     |
+| `to_list()`              | 将链表转换为 Python 列表并返回                               |
+| `append(value)`          | 在链表尾部添加一个新节点                                     |
+| `prepend(value)`         | 在链表头部添加一个新节点                                     |
+| `insert(index, value)`   | 在指定索引位置插入新节点，索引从 0 开始                      |
+| `delete_by_value(value)` | 删除第一个值等于 `value` 的节点，返回是否删除成功            |
+| `delete_by_index(index)` | 删除指定索引位置的节点，返回被删除的值，索引越界时返回 `None` |
+| `find(value)`            | 查找值等于 `value` 的节点，返回其索引，不存在返回 -1         |
+| `get(index)`             | 获取指定索引位置的值，索引越界时返回 `None`                  |
+| `get_length()`           | 返回链表长度                                                 |
+| `is_empty()`             | 判断链表是否为空                                             |
+
+**提示：** 你可能需要先定义一个 `Node` 类来表示链表节点。
+
 ---
 
 ## 🎓 互动教学课程
@@ -618,6 +720,6 @@ del dog.age
 
 <a href="/teach/lessons/0008-类和对象.html"><strong>👉 点击进入《类和对象互动教学课程》</strong></a>
 
-- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业改编的最终考核（含腾讯面试题）
+- ⏱️ 预计 15–20 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战（含腾讯面试题）
 - 📋 配套<a href="/teach/reference/类和对象速查表.html">《类和对象速查表》</a>，可打印
 - 💬 有不理解的地方，随时可以问你的 AI 老师

@@ -15,7 +15,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
       <h1>函数与窗口函数</h1>
-      <p class="lesson-sub">来源：教程 §3.5 窗口函数 + 官方文档 §9.4（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">来源：教程 §3.5 窗口函数 + 官方文档 §9.4（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -160,54 +160,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>四道题覆盖本课全部要点——答完它们，函数与窗口函数就过关了。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核一：每个部门工资最高的员工（同名次都列出）——标准写法是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">GROUP BY 后 MAX(salary)</button>
-            <button class="quiz-option">ORDER BY salary LIMIT 1</button>
-            <button class="quiz-option">JOIN 两次表</button>
-            <button class="quiz-option">RANK() OVER (PARTITION BY depname ORDER BY salary DESC) 包一层取 rank = 1</button>
-          </div>
-          <div class="quiz-explain" hidden>分组内排名 + 外层过滤的标准模式；RANK（并列同名次）配合 rank=1 可列出并列最高。</div>
-        </div>
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核二：输出每个部门「员工名单：张三、李四」这样的聚合字符串，用什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">split_part</button>
-            <button class="quiz-option">format 函数</button>
-            <button class="quiz-option">string_agg(name, '、') 配合 GROUP BY</button>
-            <button class="quiz-option">CONCAT 逐行拼接</button>
-          </div>
-          <div class="quiz-explain" hidden>string_agg 聚合组内文本——「组内名单」场景的标准答案。</div>
-        </div>
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核三：给订单按时间排序后算「截至当前行的累计金额」，写法是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">SUM(amount) OVER (ORDER BY created_at)</button>
-            <button class="quiz-option">SUM(amount) OVER (PARTITION BY created_at)</button>
-            <button class="quiz-option">子查询 SUM 全表</button>
-            <button class="quiz-option">GROUP BY 后 SUM</button>
-          </div>
-          <div class="quiz-explain" hidden>OVER (ORDER BY ...) 定义「从窗口起点到当前行」的滑动窗口——累积和的标准写法。</div>
-        </div>
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核四：format('%1$s 的分数是 %2$s', name, score) 中 %1$s 表示？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">表示 1 个空格</button>
-            <button class="quiz-option">引用第 1 个参数（name），按字符串格式化</button>
-            <button class="quiz-option">美元符号语法错误</button>
-            <button class="quiz-option">引用第 2 个参数</button>
-          </div>
-          <div class="quiz-explain" hidden>官方说明符 <code>%[position][flags][width]type</code>：<code>n$</code> 指定参数索引（1$=第一个参数），s 表示字符串格式。</div>
-        </div>
-      </div>
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了函数与窗口函数——继续学习 <a href="/common/database-pg/pg-08-索引进阶">pg-08 · 索引进阶</a>。</p>
-    </section>
+    
 
     <section>
       <h2>💼 面试实战</h2>
@@ -217,35 +170,36 @@
         window.__interview = {
           lesson: 'pg-0007-函数与窗口函数',
           questions: [
-            {
+
+{
               type: 'trap',
               level: '中级岗常问',
               prompt: `AI 写的报表：<code>SELECT ..., row_number() OVER (...) AS rn FROM t WHERE rn = 1;</code> 直接报错。为什么？正确姿势是什么？`,
               source: '来源：postgres.cn 官方教程 §3.5 窗口函数（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `<strong>窗口函数的求值发生在 WHERE/GROUP BY/HAVING 之后</strong>——WHERE 里看不到别名 rn，也不允许直接引用窗口函数。正确姿势：包一层——<code>SELECT * FROM (SELECT ..., row_number() OVER (...) AS rn FROM t) x WHERE x.rn = 1;</code>（或 CTE）。AI 生成「每组取前 N」类报表时这个错误高频出现。`,
             },
-            {
+{
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `官方文档对窗口函数的定义是什么？与聚合函数的可比点与不同点各是什么？`,
               source: '来源：postgres.cn 官方教程 §3.5 窗口函数（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
               breakdown: `官方原文：窗口函数<strong>在与当前行有某种关联的表行上执行计算</strong>——与聚合函数可比（都是行集上的计算）；不同点：窗口函数<strong>不会使多行聚合成一个单独的输出行</strong>，<strong>行保留它们独立的标识</strong>。补充官方细节：窗口函数可以访问的不仅仅是查询结果的当前行。`,
             },
-            {
+{
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 拼动态 SQL 用字符串拼接：<code>'SELECT * FROM ' + table_name + ' WHERE name = ''' + user_input + ''''</code>。审查：风险与官方推荐做法？`,
               source: '来源：postgres.cn 官方文档 §9.4 字符串函数（format 条目，官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `手拼引号 = <strong>SQL 注入</strong>（user_input 带引号即可逃逸）。官方姿势：<code>format('SELECT * FROM %I WHERE name = %L', table_name, user_input)</code>——<code>%I</code> 按标识符引用（表名/列名加引号）、<code>%L</code> 按字面量引用（值加引号并转义）。审查 AI 生成的动态 SQL：见到字符串拼接进 SQL 一律打回改 format。`,
             },
-            {
+{
               type: 'design',
               level: '中级岗常问',
               prompt: `报表需求「每行显示本组小计占比 + 全表总计占比」。用窗口函数还是多次子查询？怎么写？`,
               source: '来源：postgres.cn 官方教程 §3.5 窗口函数（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `窗口函数一枪双雕：<code>amount / sum(amount) OVER (PARTITION BY grp)</code> 给组内占比、<code>amount / sum(amount) OVER ()</code> 给全表占比——一次扫描、每行保留明细（这正是官方定义「行保留独立标识」的价值）。多次子查询方案扫描多遍且易出错。原则：<strong>「明细行 + 分组统计并存」的需求就是窗口函数的场景</strong>。`,
             },
-            {
+{
               type: 'scenario',
               level: '初级岗常问',
               prompt: `在 pg16 里实测窗口函数与字符串函数（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -256,8 +210,8 @@
               },
               source: '任务基于官方教程 §3.5 + §9.4 · 来源层级：官方翻译·一手（postgres.cn）场景化',
               breakdown: `思路：官方原例数据（develop 5 人、personnel 2 人、sales 2 人）建表；<code>SELECT ... rank() OVER (ORDER BY salary DESC), dense_rank() ...</code> 对照并列行；<code>SELECT format('SELECT %I FROM %I', 'name', 't')</code> 观察加引号结果。坑：窗口函数不能进 WHERE（陷阱题同款）；format 的 %s 会输出 NULL 而 %L 输出 NULL 字面量。`,
-            },
-          ],
+            }
+
         };
       </script>
     </section>
@@ -273,7 +227,7 @@
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

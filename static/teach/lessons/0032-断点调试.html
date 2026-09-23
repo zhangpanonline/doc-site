@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《32.断点调试》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（复现 monorepo 工程调试）+ 真实面试题">
-  <title>断点调试 · 互动教学课程（第 32 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《32.断点调试》的互动教学课程：9 道分级测验 + 面试实战（第 32 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 30 课</p>
       <h1>断点调试</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/断点调试/">30.断点调试</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/断点调试">32-断点调试</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说清调试的组成：<strong>调试适配器 + 调试客户端 + 调试协议</strong></li>
         <li>看懂 <code>sys.settrace</code> 追踪原理：frame/event/行号</li>
-        <li>配置 launch.json 单文件调试与 <strong>monorepo 工程的 attach 调试</strong>——最终考核就是源作业的复现题</li>
+        <li>配置 launch.json 单文件调试与 <strong>monorepo 工程的 attach 调试</strong>——作业就是源作业的复现题</li>
       </ol>
     </section>
 
@@ -165,58 +163,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《32.断点调试》源课程作业（复现 monorepo 工程的调试）的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出答案，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一（settrace 预测）：用 settrace 追踪 <code>demo.py</code>（三行函数 + 调用 + print），tracer 打印的第一条记录是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">line 事件，行号 1（从第一行开始）</button>
-            <button class="quiz-option">call 事件（exec 本身触发）</button>
-            <button class="quiz-option">没有任何输出</button>
-            <button class="quiz-option">return 事件（函数先返回）</button>
-          </div>
-          <div class="quiz-explain" hidden>实测第一条是 <strong>call 事件</strong>——<code>exec(code)</code> 本身触发 call 事件（源课程 demo 中行号为 0）；随后才是逐行 line 事件，调用 main() 时穿插 call、函数结束有 return 事件。事件顺序：call → line → call（main）→ line → return。关键点：首事件是 call 而不是 line。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核二（launch.json 配置）：调试「当前打开的文件」，正确的 launch.json 配置是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">type="debugpy"，request="launch"，不写 program</button>
-            <button class="quiz-option">type="python"，request="attach"，program="${file}"</button>
-            <button class="quiz-option">type="pdb"，request="launch"</button>
-            <button class="quiz-option">type="debugpy"，request="launch"，program="${file}"</button>
-          </div>
-          <div class="quiz-explain" hidden>单文件调试：<code>"type": "debugpy"</code> + <code>"request": "launch"</code> + <code>"program": "${file}"</code>（当前打开的文件）。type 写 python/pdb 都不是 VSCode debugpy 扩展的名字 ✗；不写 program 不知道调谁 ✗。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核三（attach 配置）：工程调试——debugpy 已监听 5678 端口，客户端 attach 配置正确的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">request="attach"，但不写 connect 信息</button>
-            <button class="quiz-option">request="launch"，program 指向 main.py</button>
-            <button class="quiz-option">request="attach"，connect 里 host="localhost"、port=5678</button>
-            <button class="quiz-option">request="launch" 且 port 随意填</button>
-          </div>
-          <div class="quiz-explain" hidden>attach 配置：<code>"request": "attach"</code> + <code>"connect": {"host": "localhost", "port": 5678}</code>——与 debugpy 的 <code>--listen 5678</code> 对应。launch 会试图自己启动程序（重复启动）✗。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核四（工程调试复现）：monorepo 里给 web-service 配调试，Makefile 目标正确的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">debugpy 监听 80 端口（HTTP 端口）</button>
-            <button class="quiz-option">uv run --package web-service python -m debugpy --listen 5678 --wait-for-client app/web-service/main.py</button>
-            <button class="quiz-option">python -m debugpy app/web-service/main.py（不带监听参数）</button>
-            <button class="quiz-option">uv run --package web-service app/web-service/main.py（不经过 debugpy）</button>
-          </div>
-          <div class="quiz-explain" hidden>工程调试命令三要素：<code>--package web-service</code> 用成员依赖环境；<code>python -m debugpy --listen 5678 --wait-for-client</code> 启动适配器并等客户端；最后是被调试入口。第二个不监听无法 attach ✗；第三个没经过调试器 ✗；第四个端口随意且不是调试器用法 ✗。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握断点调试——<strong>恭喜你完成了《Python 语言核心》全部 30 章的互动课程！</strong>🎉</p>
-    </section>
+    
 
                                                                                             <section>
       <h2>💼 面试实战</h2>
@@ -225,35 +172,36 @@
         window.__interview = {
           lesson: '0032-断点调试',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `Python 调试器（pdb/debugpy）是怎么「停住」程序的？breakpoint() 背后发生了什么？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目」（调试原理题）· 场景改写',
     breakdown: `断点/breakpoint() 处调用 <code>sys.settrace</code> 注入<strong>跟踪函数</strong>——解释器<strong>每执行一行字节码前</strong>回调它，跟踪函数发现「该停了」就进入交互循环（pdb 提示符）。开销即来源：跟踪期间每一行都有回调成本，所以调试态明显变慢。<code>breakpoint()</code> 就是 <code>import pdb; pdb.set_trace()</code> 的内置快捷方式（可用 PYTHONBREAKPOINT 换成其他调试器）。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `线上/远程服务出问题，你常用的排查手段有哪些？优先级怎么排？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目」（调试实践题）· 场景改写',
     breakdown: `标准顺序：① <strong>日志</strong>（结构化、含 trace id/参数/耗时——线上第一现场）；② <strong>监控指标</strong>（CPU/内存/慢查询/错误率，定位时间点与范围）；③ <strong>错误聚合</strong>（Sentry 类，拿完整堆栈+上下文）；④ 可复现问题才上<strong>本地/远程调试器</strong>（debugpy attach）。「线上直接下断点」只在万不得已且不影响流量时做。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `VS Code 调试 asyncio 程序，断点「看起来跳过了 await 之后的行」、变量状态也不对。审查：为什么异步代码难调试？怎么设断点才对？`,
     source: '考点来源：PHP 中文站「为什么 Python 异步代码比同步代码难调试」（异步调试题）· 场景改写',
     breakdown: `协程是<strong>交错执行</strong>的：断点停住时，别的协程可能已在你挂起期间改过状态；await 之后「跳行」是因为执行在多个协程/回调间来回跳，不是顺序流。对策：① 单步用 <code>debugpy 的 asyncio 感知模式</code>（VS Code 支持按 Task 隔离堆栈）；② 断点打在<strong>await 之后的第一个同步行</strong>；③ 配合日志时间戳看交错顺序；④ 一次只调试一个协程（临时注释并发）。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `生产环境问题排查，为什么「先日志后断点」？什么情况下断点反而更高效？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（调试策略题）· 场景改写',
     breakdown: `<strong>日志是事后取证</strong>：生产问题多是「已经发生了」——断点只能逮现行，日志能还原历史（谁在什么时候做了什么）。且断点会暂停服务（流量受损）、影响时序（停一下竞态就没了）。断点更高效的场景：<strong>本地可稳定复现</strong>的复杂状态推导（循环几百次才出问题的第 N 次、深递归、复杂条件）——此时条件断点秒杀 print 轰炸。原则：先日志缩小范围，断点做最后一击。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `用条件断点定位「循环第 N 次出错」（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -264,20 +212,8 @@
     },
     source: '任务基于《32.断点调试》课程知识点 · 来源层级：一手（Python 官方文档 pdb 章节）场景化',
     breakdown: `思路：<code>for i in range(500): if i == 299: breakpoint()</code>（或 VS Code 条件断点）；日志版在出错分支打 error 日志 + i 值。坑：循环里 breakpoint 要配条件，无脑断点要按 299 次继续；异步代码里的断点注意交错状态（审查题同款）。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档说 pdb 支持哪些调试能力？逐条列出。`,
-    source: '来源：Python 官方文档 pdb「pdb — The Python Debugger」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `原文清单：① <strong>（条件）断点</strong>与<strong>源码行级单步</strong>；② <strong>栈帧检查</strong>；③ <strong>源码列表</strong>；④ 在<strong>任意栈帧上下文里求值任意 Python 代码</strong>（交互式改局部变量）；⑤ <strong>post-mortem 调试</strong>（崩溃后进现场）；⑥ 程序内嵌调用；⑦ <strong>可扩展</strong>（本质是个 Pdb 类）。面试答「pdb 能干什么」按这个清单答就齐了。`,
-  },
-  {
-    type: 'design',
-    level: '高级岗常问',
-    prompt: `服务崩溃了、异常栈已打印。官方文档说的 post-mortem 调试怎么用？和常规断点调试比适合什么场景？`,
-    source: '来源：Python 官方文档 pdb「pdb — The Python Debugger」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
-    breakdown: `<code>python -m pdb script.py</code>（崩溃后自动停在异常现场）或 except 块里 <code>pdb.pm()</code>——<strong>进入崩溃时刻的栈帧</strong>，用 p 查看当时变量、w 看栈、u/d 切换帧。适合：异常已发生、想<strong>事后取证</strong>而无法复现的场景（AI 生成的服务代码崩溃排查首选）；常规断点适合可稳定复现、要单步推演的场景。两者结合 = 生产排障的「断点收尾」策略。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -337,7 +273,7 @@
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/断点调试/">回到《32.断点调试》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（0 题）。
     </footer>
 
   </main>

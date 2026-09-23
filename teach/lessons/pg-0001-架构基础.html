@@ -15,7 +15,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
       <h1>架构基础</h1>
-      <p class="lesson-sub">来源：官方教程 §1.2（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">来源：官方教程 §1.2（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -168,54 +168,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>四道题覆盖本课全部要点——答完它们，架构基础就过关了。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一：一次 PG 会话的完整生命周期，正确的顺序是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">客户端连接 → 客户端进程并入服务器 → 常驻</button>
-            <button class="quiz-option">客户端连接 → 守护进程 fork 新进程 → 客户端与新进程直连 → 会话结束新进程退出</button>
-            <button class="quiz-option">客户端连接 → 守护进程自己全程服务 → 连接关闭守护进程退出</button>
-            <button class="quiz-option">客户端连接 → 每个 SQL 语句 fork 一个进程 → 语句结束进程退出</button>
-          </div>
-          <div class="quiz-explain" hidden>fork 发生在<strong>连接</strong>时（不是每条语句），会话结束连接进程退出；守护进程自始至终常驻。</div>
-        </div>
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核二：Web 服务上线后数据库连接数暴涨、内存告急。从本课的架构知识出发，最先该排查/引入什么？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">禁止客户端使用 TCP/IP</button>
-            <button class="quiz-option">把服务器换成线程模型数据库</button>
-            <button class="quiz-option">增大每个连接的内存配额</button>
-            <button class="quiz-option">检查连接复用并引入连接池（进程模型下连接开销大）</button>
-          </div>
-          <div class="quiz-explain" hidden">每连接一个进程 → 连接不复用则开销线性放大。标准解法：应用侧连接池（如 PgBouncer）复用连接。</div>
-        </div>
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核三：AI 写的导入脚本在客户端机器上执行 <code>COPY t FROM '/data/file.csv'</code> 报「文件不存在」。最可能的原因是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">COPY 命令只能导出不能导入</button>
-            <button class="quiz-option">该路径由服务器进程读取，服务器机器上没有这个文件</button>
-            <button class="quiz-option">客户端版本太旧不支持 COPY</button>
-            <button class="quiz-option">CSV 文件编码必须是 GBK</button>
-          </div>
-          <div class="quiz-explain" hidden">文件可见性陷阱：服务器执行的 COPY 读的是<strong>服务器所在机器</strong>的文件；客户机文件要用 <code>\\copy</code>（psql 客户端命令）中转。</div>
-        </div>
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核四：一个连接进程被 kill 掉，其他连接会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">该连接自动重连继续</button>
-            <button class="quiz-option">守护进程也随之退出</button>
-            <button class="quiz-option">只有该连接受影响，其他连接照常工作</button>
-            <button class="quiz-option">所有连接一起断开</button>
-          </div>
-          <div class="quiz-explain" hidden">进程隔离的收益：每个连接独立进程，<strong>单连接崩溃不影响其他连接与守护进程</strong>。</div>
-        </div>
-      </div>
-      <p style="margin-top:1.2rem">四道考核全部答对，架构基础就掌握了——继续学习 <a href="/common/database-pg/pg-02-RETURNING与UPSERT">pg-02 · RETURNING 与 UPSERT</a>。</p>
-    </section>
+    
 
     <section>
       <h2>💼 面试实战</h2>
@@ -225,35 +178,36 @@
         window.__interview = {
           lesson: 'pg-0001-架构基础',
           questions: [
-            {
+
+{
               type: 'trap',
               level: '中级岗常问',
               prompt: `AI 写的后端服务每个请求都新建一个连接，请求结束就断开。运行一段时间后数据库内存告警、新连接建立变慢。从 PG 架构角度解释为什么，并给出修复方向。`,
               source: '来源：postgres.cn 官方教程 §1.2（官方翻译·一手）+ 官方英文 tutorial-arch.html · 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `PG 为<strong>每个连接 fork 一个独立进程</strong>（官方原文：forks a new process for each connection）——短连接风暴 = 频繁 fork/退出 + 峰值大量进程驻留内存。修复方向：<strong>连接池</strong>（PgBouncer 等）复用连接、应用层限制并发连接数。面试官爱听「进程模型 → 连接成本高 → 池化」这条因果链。`,
             },
-            {
+{
               type: 'mechanism',
               level: '初级岗常问',
               prompt: `描述一次 PostgreSQL 会话的两类角色与进程模型：postgres 守护进程、连接进程、客户端三者是什么关系？`,
               source: '来源：postgres.cn 官方教程 §1.2（官方翻译·一手）· 检索 2026-09-09 · 层级：一手',
               breakdown: `① <strong>postgres 守护进程</strong>：管理数据库文件、接受连接、常驻等待；② 新连接到来时守护进程 <strong>fork 一个新进程</strong>；③ 此后<strong>客户端与这个新进程直接通信，不再经过最初的 postgres 进程</strong>；④ 会话结束连接进程退出——「守护进程永远在，连接进程起起停停」（官方原文）。`,
             },
-            {
+{
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的运维脚本在<strong>客户端机器</strong>上执行 <code>COPY orders FROM '/data/orders.csv'</code>，报文件不存在。它在客户端机器上明明能看到这个文件。审查并给出正确做法。`,
               source: '来源：postgres.cn 官方教程 §1.2（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `官方原文提醒：<strong>客户机上可访问的文件，服务器机器上未必能访问</strong>。COPY 的路径由<strong>服务器进程</strong>读取——文件必须放在服务器机器（或共享存储）上。客户端本地文件应改用 psql 的 <code>\\copy</code>（客户端侧读取后送入）。AI 生成跨机运维脚本时这个坑一踩一个准。`,
             },
-            {
+{
               type: 'design',
               level: '中级岗常问',
               prompt: `新项目部署 PG：应用是长连接多、并发可控的内部系统，团队在「直接连接」与「前置 PgBouncer 连接池」之间犹豫。按官方架构知识，你的建议与依据是什么？`,
               source: '来源：postgres.cn 官方教程 §1.2（官方翻译·一手）· 检索 2026-09-09 · 层级：一手（场景化改写）',
               breakdown: `决策依据是<strong>每连接一个进程</strong>的成本：内部系统连接数少且复用 → 直连即可，引入池子徒增运维面；若未来出现连接数波动/多服务共享 → 再前置 PgBouncer（transaction 模式）。原则：<strong>先量化连接数与 churn，再决定要不要池</strong>——架构题的加分点是不为「看起来专业」引入组件。`,
             },
-            {
+{
               type: 'scenario',
               level: '初级岗常问',
               prompt: `用 psql 观察 PG 的进程模型（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -264,8 +218,8 @@
               },
               source: '任务基于官方教程 §1.2 课程知识点 · 来源层级：官方翻译·一手（postgres.cn）场景化',
               breakdown: `思路：<code>SELECT pid, usename, state FROM pg_stat_activity WHERE usename = current_user;</code> 看到自己两个连接的 pid；<code>SELECT pg_terminate_backend(<pid>)</code> 杀掉其一；另一连接继续查询正常。坑：pg_stat_activity 里也有后台进程（checkpointer 等），过滤 usename 只看自己的；docker 环境下宿主机 ps 看不到容器内进程，别用 ps 验证。`,
-            },
-          ],
+            }
+
         };
       </script>
     </section>
@@ -281,7 +235,7 @@
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

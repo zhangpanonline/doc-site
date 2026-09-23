@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《22.标准库》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（树形目录展示/Markdown 合并）+ 真实面试题">
-  <title>标准库 · 互动教学课程（第 22 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《22.标准库》的互动教学课程：9 道分级测验 + 面试实战（第 22 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 20 课</p>
       <h1>标准库</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/标准库/">20.标准库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/标准库">22-标准库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -161,105 +159,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《22.标准库》源课程作业的两道实现题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一（作业一·树形目录展示）：<code>show_tree(dir_path, show_hidden=False)</code> 输出 tree 风格的目录树（隐藏项 = 以 . 开头；目录递归；最后一项用 └──，其余用 ├──）。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">所有层级前缀相同，不区分是否最后一个</button>
-            <button class="quiz-option">递归 + _prefix 缩进：兄弟未完用 │，最后一个用空格，目录继续递归</button>
-            <button class="quiz-option">隐藏过滤条件写反（show_hidden=True 时过滤）</button>
-            <button class="quiz-option">只打印第一层，不递归子目录</button>
-          </div>
-          <div class="quiz-explain" hidden>正确实现三要素：① <code>show_hidden=False</code> 时过滤 <code>basename.startswith(".")</code> 的项；② 按 <code>is_last</code> 选 <code>└──</code>/<code>├──</code>；③ 递归子目录时前缀追加 <code>"    "</code>（该项是最后一个）或 <code>"│   "</code>（还有兄弟）。第二个没有树 ✗；第三个该显示的没显示 ✗；第四个竖线连不到底 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业一）</summary>
-<pre><code>import os
-
-def show_tree(dir_path: str, show_hidden: bool = False, _prefix: str = "") -> None:
-    path = os.path.abspath(dir_path)
-    if not _prefix:
-        print(os.path.basename(path) or path)
-
-    entries = os.listdir(path)
-    if not show_hidden:
-        entries = [e for e in entries
-                   if not os.path.basename(e).startswith(".")]
-    entries.sort()
-
-    for i, entry in enumerate(entries):
-        is_last = i == len(entries) - 1
-        print(f"{_prefix}{'└── ' if is_last else '├── '}{entry}")
-        entry_path = os.path.join(path, entry)
-        if os.path.isdir(entry_path):
-            show_tree(entry_path, show_hidden,
-                      _prefix + ("    " if is_last else "│   "))</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核二（作业二·Markdown 合并）：<code>merge_markdown(files, output)</code>——首行固定 <code># 合并结果</code>，所有原文件标题降一级（一级→二级…六级→加粗正文）。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">所有标题都降一级，六级直接丢弃</button>
-            <button class="quiz-option">不降级，直接拼接文件内容</button>
-            <button class="quiz-option">正则 ^(#{1,6})\s+(.+)$：1-5 级加一个井号，6 级改成 **加粗**</button>
-            <button class="quiz-option">只把一级标题降为二级，其他不动</button>
-          </div>
-          <div class="quiz-explain" hidden>正确实现：<code>HEADING_RE.sub</code> 回调里 <code>level &lt; 6</code> → 井号 +1；<code>level == 6</code> → <code>**内容**</code>（题目规定六级降为正文加粗）。第二个只处理一级 ✗；第三个丢了六级内容 ✗；第四个标题没降级 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业二）</summary>
-<pre><code>import re
-import os
-
-HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
-
-def _demote_heading(match):
-    hashes, content = match.group(1), match.group(2)
-    level = len(hashes)
-    if level &lt; 6:
-        return f'{"#" * (level + 1)} {content}'
-    return f"**{content}**"
-
-def merge_markdown(files: list[str], output: str) -> None:
-    parts: list[str] = ["# 合并结果", ""]
-    for filepath in files:
-        with open(os.path.abspath(filepath), encoding="utf-8") as f:
-            content = f.read()
-        parts.append(HEADING_RE.sub(_demote_heading, content).strip())
-        parts.append("")
-    with open(os.path.abspath(output), "w", encoding="utf-8") as f:
-        f.write("\n".join(parts).strip() + "\n")</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核三（合并结果预测）：a.md 内容为 <code># 标题一</code> 与正文「你好」；b.md 内容为 <code>## 标题二</code>。用正确实现合并后，b.md 的标题在结果中是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option"># 标题二（升为一级）</button>
-            <button class="quiz-option">## 标题二（保持不变）</button>
-            <button class="quiz-option">**标题二**（二级降为加粗）</button>
-            <button class="quiz-option">### 标题二（二级降为三级）</button>
-          </div>
-          <div class="quiz-explain" hidden>降级规则：一级 → 二级、二级 → 三级……所以 <code>## 标题二</code> 变成 <strong>### 标题二</strong>；只有六级才会变成加粗正文。首行固定是 <code># 合并结果</code>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核四（隐藏过滤预测）：目录里有 <code>.env</code>（文件）与 <code>app.py</code>。<code>show_tree(dir, show_hidden=False)</code> 的输出包含？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只有 .env，app.py 被过滤</button>
-            <button class="quiz-option">两者都不显示</button>
-            <button class="quiz-option">两者都显示</button>
-            <button class="quiz-option">只有 app.py，.env 被过滤</button>
-          </div>
-          <div class="quiz-explain" hidden><code>show_hidden=False</code> 时，<code>basename.startswith(".")</code> 的项被过滤——<code>.env</code> 不显示，<code>app.py</code> 显示。传 <code>show_hidden=True</code> 才全部显示。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握标准库的实战用法——可以继续学习《<a href="/agents/python/第三方库/">21.第三方库</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -268,21 +168,22 @@ def merge_markdown(files: list[str], output: str) -> None:
         window.__interview = {
           lesson: '0022-标准库',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `读写文件的标准姿势是什么？为什么 open 必须显式写 <code>encoding='utf-8'</code>？`,
     source: '考点来源：CSDN 文库「Python 面试核心考点解析」（文件操作题）· 场景改写',
     breakdown: `<code>with open(path, 'r', encoding='utf-8') as f: ...</code>——with 保证异常路径也关闭句柄；encoding 显式指定避免<strong>平台默认编码</strong>（Windows 是 GBK，读 UTF-8 文件直接乱码/UnicodeDecodeError）。AI 生成的跨平台脚本漏写 encoding 是乱码事故头号来源。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `用正则匹配「行首 1–6 个 # 后跟至少一个空格」的 Markdown 标题，正确的模式是什么？贪婪与非贪婪怎么选？`,
     source: '考点来源：CSDN 文库「Python 面试核心考点解析」（正则题）· 场景改写',
     breakdown: `<code>^#{1,6} \\S</code> 或 <code>^#{1,6} +</code>（注意量词后跟空格是字面空格）；用 <code>re.MULTILINE</code> 让 ^ 匹配每行行首。贪婪 vs 非贪婪：<code>.*</code> 贪婪尽量多吃（容易跨行多吃），<code>.*?</code> 非贪婪见好就收——提取一对标记之间的内容用非贪婪，匹配「整行注释」这类有明确边界时贪婪更快更安全。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写的路径拼接：<code>path = dir + '/' + filename</code>。审查：在 Windows 上会怎样？正确姿势是什么？
@@ -295,14 +196,14 @@ def save(dir, name):
     source: '考点来源：CSDN「100 道 Python 面试必背题目」（路径拼接陷阱题）· 场景改写',
     breakdown: `硬编码 <code>'/'</code> 在 Windows 上方向错误、且尾部多斜杠/目录缺斜杠都会出问题；同目录判等、规范化都没保障。正确：<code>os.path.join(dir, name)</code> 或更现代的 <code>pathlib.Path(dir) / name</code>——自动处理分隔符与边界。AI 生成代码最爱手拼路径，跨平台部署（服务器 Linux、本地 Windows）时必炸。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `pathlib 相比 os.path 好在哪里？新项目为什么推荐 pathlib？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目」（pathlib 题）· 场景改写',
     breakdown: `<strong>面向对象</strong>：Path 对象自带属性与操作（<code>p.parent / p.suffix / p.read_text()</code>），链式 <code>p / 'a' / 'b'</code> 比嵌套 join 可读得多；<strong>跨平台</strong>：WindowsPath/PosixPath 自动适配；内置遍历 <code>p.glob('**/*.py')</code> 比 os.walk 简洁。os.path 仍可用（兼容老代码），但新代码默认 pathlib。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `写一个目录扫描统计工具（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -313,20 +214,8 @@ def save(dir, name):
     },
     source: '任务基于《22.标准库》课程知识点 · 来源层级：一手（Python 官方文档 pathlib/re 章节）场景化',
     breakdown: `思路：<code>for p in Path(root).rglob('*.py'): if re.search(r'_test\\.py$', p.name)</code> 过滤；<code>p.read_text(encoding='utf-8').count('\\n')</code> 行数；结果 sorted。坑：read_text 记得 encoding（陷阱题同款）；二进制/大文件用迭代计数而不是整读。`,
-  }, {
-    type: 'mechanism',
-    level: '初级岗常问',
-    prompt: `官方文档说 pathlib 的 Path 类分哪两大类？日常写代码该用哪个？`,
-    source: '来源：Python 官方文档 pathlib「pathlib — Object-oriented filesystem paths」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `原文：Path 类分<strong>纯路径（PurePath）</strong>——只做<strong>纯计算操作、不碰 IO</strong>；<strong>具体路径（Path）</strong>——继承纯路径并<strong>增加 IO 操作</strong>（读写、mkdir、glob）。文档原话「If you've never used this module... Path is most likely what you need」——日常直接用 Path 即可。这层划分也是面试题「PurePath 和 Path 区别」的官方答案。`,
-  },
-  {
-    type: 'design',
-    level: '中级岗常问',
-    prompt: `AI 写的配置处理模块在「校验/规范化路径字符串」时用了 Path。按官方文档的划分，这里用 PurePath 更合适——为什么？`,
-    source: '来源：Python 官方文档 pathlib「pathlib — Object-oriented filesystem paths」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
-    breakdown: `官方划分依据：<strong>纯计算（拼接、规范化、判断后缀）不需要 IO</strong>——用 PurePath 明确表达「我不碰磁盘」：配置校验、模板路径处理、Windows 路径在 Linux 上分析等场景不会<strong>误触本地文件系统</strong>（Path 的 IO 方法还在，调用就真去读盘了）。用类型本身当契约：只做字符串级操作 → PurePath；要读写 → Path。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -392,7 +281,7 @@ def save(dir, name):
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/标准库/">回到《22.标准库》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

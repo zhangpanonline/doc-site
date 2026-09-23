@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《03.表间关系》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 练习题改编最终考核 + 真实面试题，15-20 分钟掌握 1:1/1:N/M:N 与外键">
+  <meta name="description" content="配合《03.表间关系》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 练习题改编作业 + 真实面试题，15-20 分钟掌握 1:1/1:N/M:N 与外键">
   <title>表间关系 · 互动教学课程（数据库第 3 节）</title>
   <link rel="icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
@@ -15,14 +15,14 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 3 节</p>
       <h1>表间关系</h1>
-      <p class="lesson-sub">配合《<a href="/common/database/表间关系/">03.表间关系</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/common/database/表间关系">db-0003-表间关系</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
       <h2 style="margin-top:0">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
-        <li>判断 1:1 / 1:N / M:N 场景，并说清每种关系的<strong>建表实现方式</strong>——<strong>最终考核考的就是这个</strong></li>
+        <li>判断 1:1 / 1:N / M:N 场景，并说清每种关系的<strong>建表实现方式</strong>——<strong>作业考的就是这个</strong></li>
         <li>说清外键 4 种约束行为（NO ACTION / RESTRICT / CASCADE / SET NULL）的差异</li>
         <li>读懂 ERD 实体关系图，并能给错误的 ER 图找茬</li>
       </ol>
@@ -181,56 +181,7 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>本节源课程没有作业，下面四道题由《03.表间关系》的<strong>练习题</strong>（场景判断 + ERD 找茬）改编——<strong>这就是本课的最终考核</strong>。规则：不查资料，先自己在脑中画表，再点击核对。全部答对且能讲清理由，才算过关。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核一（场景题·选课系统）：学生与课程的关系及「选修后记录成绩」怎么实现？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">学生 M:N 课程，中间表放 student_id、course_id 和成绩列</button>
-            <button class="quiz-option">学生与课程 1:1，成绩放在课程表里</button>
-            <button class="quiz-option">学生 1:N 课程，成绩放在学生表的一个列里</button>
-            <button class="quiz-option">课程 1:N 学生，成绩放在课程表的一个列里</button>
-          </div>
-          <div class="quiz-explain" hidden>学生可选多门课、一门课被多个学生选 → <strong>M:N</strong>。中间表 = (student_id, course_id) 联合主键 + <strong>成绩列</strong>（关系属性）。另外：院系 1:N 学生、院系 1:N 老师、老师 1:N 课程。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核二（场景题·视频平台）：「用户收藏视频」的关系与实现是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">视频 1:N 用户，在用户表加 video_id 外键</button>
-            <button class="quiz-option">收藏是单向操作，不需要建表</button>
-            <button class="quiz-option">用户 M:N 视频，中间表 (user_id, video_id) 联合主键</button>
-            <button class="quiz-option">用户 1:N 视频，在视频表加 user_id 外键</button>
-          </div>
-          <div class="quiz-explain" hidden>一个用户收藏多个视频、一个视频被多个用户收藏 → <strong>M:N</strong>，用中间表收藏表实现。同场景里还有：用户 1:N 视频（上传）、分类 1:N 视频、视频 1:N 弹幕、弹幕 N:1 用户。注意「上传」与「收藏」是两段不同关系，别混在一张表。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核三（找茬题·超市收银 ERD）：下图中隐藏了一处错误关系，错在哪？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">小票与小票明细应该是一对一，图中标成了一对多</button>
-            <button class="quiz-option">分类与商品应该是多对多，图中标成了一对多</button>
-            <button class="quiz-option">商品与小票明细标成了一对一，应是一对多</button>
-            <button class="quiz-option">会员与小票应该是一对一，图中标成了一对多</button>
-          </div>
-          <div class="quiz-explain" hidden>场景：每张小票记录多个商品及数量。一个商品可以出现在多张小票的明细里 → 商品与小票明细是 <strong>1:N</strong>，原图却画成 <code>||--||</code> 一对一。正确应为 <code>商品 ||--o{ 小票明细</code>。其余关系（会员 1:N 小票、小票 1:N 明细、分类 1:N 商品、供应商 1:N 商品）都是对的。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核四（设计题）：为「多对多 + 附加属性」设计建表语句，下面哪条最合适？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">两个外键都加 UNIQUE，保证组合唯一</button>
-            <button class="quiz-option">把课程列直接塞进 students 表的 JSONB 字段</button>
-            <button class="quiz-option">student_courses 表只放一个外键 course_id，student_id 用 UNIQUE</button>
-            <button class="quiz-option">中间表：PRIMARY KEY (student_id, course_id) 双外键 + enroll_date</button>
-          </div>
-          <div class="quiz-explain" hidden>中间表标准姿势：两个外键 <strong>组成联合主键</strong>（同一组合不重复）、关系属性 enroll_date 独立成列。陷阱项：单个外键表达不了双向多；JSONB 绕开关系模型，失去外键约束与联合查询能力；给单个外键加 UNIQUE 会把关系错变成 1:N。</div>
-        </div>
-      </div>
-    </section>
+    
 
                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -239,35 +190,36 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
         window.__interview = {
           lesson: 'db-0003-表间关系',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '初级岗常问',
     prompt: `外键（Foreign Key）的作用是什么？为什么说它是「引用完整性」的最后防线？`,
     source: '来源：PostgreSQL 官方文档《5.5. Constraints · Foreign Keys》（"A foreign key constraint specifies that the values in a column (or a group of columns) must match the values appearing in some row of another table. We say this maintains the referential integrity between two related tables."）https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《php.cn「MySQL 外键使用面试题解析」》',
     breakdown: `外键保证<strong>引用完整性</strong>：子表的外键值必须存在于父表主键中——插入不存在的引用直接报错、父表删除被引用的行会被约束拦截。它是数据库层最后防线：应用 bug 漏校验时，脏数据在写入层就被挡住。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `<code>ON DELETE CASCADE</code> 与 <code>ON DELETE SET NULL</code> 各是什么语义？SET NULL 有什么前提条件？`,
     source: '来源：PostgreSQL 官方文档《5.5. Constraints · Foreign Keys》（"CASCADE specifies that when a referenced row is deleted, row(s) referencing it should be automatically deleted as well. / SET NULL and SET DEFAULT. These cause the referencing column(s) in the referencing row(s) to be set to nulls or their default values, respectively, when the referenced row is deleted."）https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）+ 考点参考《php.cn「MySQL 外键使用面试题解析」》',
     breakdown: `CASCADE：删父行时<strong>级联删除</strong>子表引用行；SET NULL：删父行时把子表外键列<strong>置 NULL</strong>（保留子行、断开关系）。SET NULL 前提：<strong>外键列必须可空</strong>（NOT NULL 列会报错），且业务上允许「孤儿行」语义。AI 写 schema 时常漏这个前提，建表直接失败。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `面试官问「为什么大厂都禁止使用外键」。最核心的原因是什么？AI 生成的 schema 里到处外键，你如何审查？`,
     source: '来源：博客园《为什么大厂都不推荐使用外键》（"阿里java规范 不得使用外键与级联，一切外键概念必须在应用层解决"）https://www.cnblogs.com/2678066103hs/p/19047614 · 检索 2026-09-23 · 层级：二级（技术博客，场景化改写）',
     breakdown: `核心：<strong>外键在写入时做跨行/跨表校验并加锁</strong>——大表高频写入时成为锁竞争与性能瓶颈；且<strong>分库分表/数据迁移时外键无法跨库生效</strong>，扩容即拆约束。审查 AI 的 schema：核心交易表可以留外键，高频大表/待分库表去掉、一致性改由应用层保证。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `不用外键后，靠什么保证数据一致性？什么场景适合用外键、什么场景必须禁用？`,
     source: '来源：博客园《为什么大厂都不推荐使用外键》（"因为互联网大厂的产品并发量高，并且一般是分布式项目，为了提高数据库的并发性能，一般都禁用外键，在业务层面实现数据一致性"）https://www.cnblogs.com/2678066103hs/p/19047614 · 检索 2026-09-23 · 层级：二级（技术博客，场景化改写）',
     breakdown: `应用层手段：① 事务内先查父行再写子行；② <strong>定期对账任务</strong>扫孤儿数据修复/告警；③ 软删除 + 业务状态机兜底。适合外键：内部工具、数据量小、一致性优先（订单明细）；禁用外键：高频写入大表、分库分表、多团队共享表。原则：<strong>外键买的是即时一致性，代价是写入性能与扩展性</strong>。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `建一对父子表并验证外键行为（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -278,20 +230,8 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
     },
     source: '任务基于《03.表间关系》课程知识点 · 来源层级：一手（官方文档《5.5. Constraints · Foreign Keys》https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK）场景化',
     breakdown: `思路：<code>REFERENCES orders(id) ON DELETE CASCADE</code>；孤儿行对账 <code>SELECT ... LEFT JOIN parent p ON ... WHERE p.id IS NULL</code>。坑：外键列类型要与父表主键完全一致；CASCADE 会穿透多级（A→B→C 删 A 把 C 也删了）。`,
-  }, {
-    type: 'mechanism',
-    level: '高级岗常问',
-    prompt: `官方文档说外键对被引用的列有什么硬性要求？这个要求带来什么连锁效应？`,
-    source: '来源：PostgreSQL 官方文档《5.5. Constraints · Foreign Keys》（"A foreign key must reference columns that either are a primary key or form a unique constraint, or are columns from a non-partial unique index."）https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK · 检索 2026-09-23 · 层级：一手（官方文档）',
-    breakdown: `原文：外键必须引用<strong>主键、唯一约束列、或非部分唯一索引列</strong>——因此被引用列<strong>总是有索引</strong>（高效判断引用行是否存在）。连锁效应：父表 <strong>DELETE 行 / UPDATE 被引用列</strong>时，需要<strong>扫描引用表</strong>找匹配行——引用表的外键列若没索引，删一条父行就会<strong>全表扫子表</strong>，大表下删除变成灾难。`,
-  },
-  {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `AI 建的 order_items 表有外键列 order_id，但忘了给它建索引。审查：哪些操作会变慢？官方文档的哪句话解释了原因？`,
-    source: '来源：PostgreSQL 官方文档《5.5. Constraints · Foreign Keys》（"Since a DELETE of a row from the referenced table or an UPDATE of a referenced column will require a scan of the referencing table for rows matching the old value, it is often a good idea to index the referencing columns too."）https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK · 检索 2026-09-23 · 层级：一手（官方文档，场景化改写）',
-    breakdown: `官方原文：「a DELETE of a row from the referenced table or an UPDATE of a referenced column will require <strong>a scan of the referencing table</strong>」——删订单、改订单 id 时都要在 order_items 里找匹配行；外键列没索引 → 每次都是<strong>顺序全表扫</strong>。修复：<code>CREATE INDEX ON order_items(order_id)</code>——外键列建索引是 PG 建表清单里的标准项，AI 生成 schema 十有八九漏。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -348,7 +288,7 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/common/database/表间关系/">回到《03.表间关系》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

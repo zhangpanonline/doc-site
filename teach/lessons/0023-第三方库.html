@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《23.第三方库》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（命令行 AI 聊天工具）+ 真实面试题">
-  <title>第三方库 · 互动教学课程（第 23 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《23.第三方库》的互动教学课程：9 道分级测验 + 面试实战（第 23 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 21 课</p>
       <h1>第三方库</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/第三方库/">21.第三方库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/第三方库">23-第三方库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>熟练使用 <code>pip</code> 安装/升级/卸载/查询，读懂版本约束符号</li>
         <li>用 <code>requirements.txt</code> + <code>venv</code> 管理项目依赖</li>
-        <li>用 requests 实现<strong>流式 AI 聊天命令行工具</strong>——最终考核围绕源课程作业展开</li>
+        <li>用 requests 实现<strong>流式 AI 聊天命令行工具</strong>——作业围绕源课程作业展开</li>
       </ol>
     </section>
 
@@ -166,99 +164,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《23.第三方库》源课程作业（实现命令行 AI 聊天工具）的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核一（聊天主循环）：终端聊天工具要求——循环读输入；<code>/exit</code> 退出；空输入跳过；每轮把用户消息发给 AI，再把 AI 回复记回消息历史。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只用 for 循环读三次输入就退出</button>
-            <button class="quiz-option">AI 回复不写回 messages，每次都无上下文</button>
-            <button class="quiz-option">while True：/exit 则 break；空输入 continue；append 用户消息、请求后 append AI 回复</button>
-            <button class="quiz-option">/exit 判断放在消息 append 之后</button>
-          </div>
-          <div class="quiz-explain" hidden>正确结构：<code>while True</code> 读输入 → <code>/exit</code> break → 空输入 <code>continue</code> → <code>messages.append({"role": "user", ...})</code> → 请求 → <code>messages.append({"role": "assistant", ...})</code>（多轮对话靠历史上下文）。第二个三次就结束 ✗；第三个退出词也会发给 AI ✗；第四个没有对话记忆 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（chat 主循环）</summary>
-<pre><code>def chat() -> None:
-    messages: list[dict[str, str]] = []
-    print("AI 聊天工具 (输入 /exit 退出)")
-    while True:
-        user_input: str = input("\n你: ").strip()
-        if user_input == "/exit":
-            print("再见！")
-            break
-        if not user_input:
-            continue
-        messages.append({"role": "user", "content": user_input})
-        stream = completions(messages)
-        print("AI: ", end="", flush=True)
-        full_content = ""
-        for content in stream:
-            print(content, end="", flush=True)
-            full_content += content
-        messages.append({"role": "assistant", "content": full_content})
-        print()</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核二（流式输出）：AI 回复是逐块到达的生成器，要「边到边打印」。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">print(content, end="") 但不加 flush=True</button>
-            <button class="quiz-option">每块都 print(content)（默认换行）</button>
-            <button class="quiz-option">for content in stream：print(content, end="", flush=True) 并累积 full_content</button>
-            <button class="quiz-option">先 list(stream) 全部收完，再一次性 print</button>
-          </div>
-          <div class="quiz-explain" hidden>流式输出要点：<code>print(content, end="", flush=True)</code>——<code>end=""</code> 不换行拼成一句话，<code>flush=True</code> 立即刷出（否则终端缓冲，看不到「边到边」）。第二个失去流式体验 ✗；第三个可能被缓冲 ✗；第四个每块一行 ✗。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核三（依赖清单）：该聊天工具用了 requests（发 HTTP 请求）与 python-dotenv（读 .env 配置），requirements.txt 应为？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只写 requests 一行，dotenv 是标准库</button>
-            <button class="quiz-option">写 pip 与 python 两个包名</button>
-            <button class="quiz-option">requests&gt;=2.31.0 与 python-dotenv&gt;=1.0.0 两行</button>
-            <button class="quiz-option">不需要 requirements.txt</button>
-          </div>
-          <div class="quiz-explain" hidden>两个第三方依赖都要进清单：<code>requests&gt;=2.31.0</code> 与 <code>python-dotenv&gt;=1.0.0</code>（dotenv <strong>不是</strong>标准库）。api 密钥等敏感配置放 <code>.env</code>，不进 git。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核四（SSE 解析）：逐行解析流式响应——行格式为 <code>data: {...}</code>，遇到 <code>data: [DONE]</code> 结束，JSON 解析失败要跳过该行。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">跳过非 data: 行；[DONE] 则 break；解析异常 try/except 后 continue</button>
-            <button class="quiz-option">遇到 [DONE] 不 break，继续读到超时</button>
-            <button class="quiz-option">JSON 解析失败直接让程序崩溃</button>
-            <button class="quiz-option">不判断 data: 前缀，每行都当 JSON 解析</button>
-          </div>
-          <div class="quiz-explain" hidden>正确解析三步：<code>if not text.startswith("data: "): continue</code> → 去掉前缀后 <code>[DONE]</code> 则 <code>break</code> → <code>json.loads</code> 包 try/except 跳过坏行。第二个把心跳行（如 <code>: ping</code>）当 JSON 会崩 ✗；第三个多等一轮 ✗；第四个一个坏块就崩溃 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（SSE 解析核心）</summary>
-<pre><code>for line in resp.iter_lines():
-    if not line:
-        continue
-    text: str = line.decode("utf-8")
-    if not text.startswith("data: "):
-        continue
-    data_str = text[6:]
-    if data_str.strip() == "[DONE]":
-        break
-    try:
-        chunk = json.loads(data_str)
-        content = chunk["choices"][0].get("delta", {}).get("content", "")
-        if content:
-            yield content
-    except (json.JSONDecodeError, KeyError, IndexError):
-        continue</code></pre>
-          </details>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握第三方库的实战用法——可以继续学习《<a href="/agents/python/事件循环/">22.事件循环</a>》了。</p>
-    </section>
+    
 
                                                                                                     <section>
       <h2>💼 面试实战</h2>
@@ -267,35 +173,36 @@
         window.__interview = {
           lesson: '0023-第三方库',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `AI 让你直接 <code>pip install xxx</code> 装到系统 Python。审查：项目依赖管理的正确工作流是什么？为什么必须先建虚拟环境？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（依赖管理工作流题）· 场景改写',
     breakdown: `正确工作流：<strong>建 venv（每项目一个）→ 激活 → pip install → 记录依赖到 requirements.txt → 锁版本</strong>。不建 venv 直接装全局：多个项目依赖互相污染、版本冲突无法隔离、系统 Python 被第三方包搞坏（macOS/服务器都踩过）。AI 给的安装命令默认没 venv，是新手项目事故的头号来源。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `<code>requirements.txt</code> 里的 <code>==</code>、<code>>=</code>、<code>~=</code> 各是什么意思？写「范围」有什么风险？`,
     source: '考点来源：pip 官方文档 Requirement Specifiers · 场景改写',
     breakdown: `<code>==</code> 精确版本；<code>>=</code> 下限不限上限（未来大版本可能不兼容）；<code>~=</code> 兼容版本（<code>~=1.4.2</code> == >=1.4.2, <1.5.0——允许补丁/次版本升级、禁止主版本跳变）。风险：范围过大时「今天能装、半年后装出来行为不同」——部署不可复现，生产环境必须锁死。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 装了两个库：库 A 依赖 X==1.0、库 B 依赖 X==2.0。审查：pip 会怎么处理？运行时会发生什么？怎么解决？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（依赖冲突题）· 场景改写',
     breakdown: `pip 默认<strong>不做全局依赖解析</strong>——后装的 X 覆盖先装的（版本漂移），运行时谁的行为错随导入顺序「随机」爆发：A 调 X 的旧 API 报 AttributeError，或更糟——<strong>静默行为不一致</strong>。解决：① 锁文件 + 依赖解析器（uv/pip-tools）提前发现冲突；② 找兼容版本组合；③ 隔离到不同 venv/服务。AI 装包不检查依赖树是生产环境「依赖地狱」的起点。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `手写 requirements.txt（直接依赖 + 版本范围）与锁文件（uv.lock / poetry.lock）的区别是什么？部署环境为什么必须用锁文件？`,
     source: '考点来源：CSDN「100 道 Python 面试必背题目（工程实践篇）」（锁定策略题）· 场景改写',
     breakdown: `requirements.txt 通常只列<strong>直接依赖</strong>（可带范围），间接依赖版本不受控；锁文件记录<strong>完整依赖树的精确版本 + 哈希</strong>——同一份锁文件在任何机器装出来字节级一致。部署/CI 原则：开发用范围（宽松、好升级），<strong>发布与部署用锁文件</strong>（可复现、可回滚）。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `搭一个可复现的项目环境（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -306,20 +213,8 @@
     },
     source: '任务基于《23.第三方库》课程知识点 · 来源层级：一手（Python 官方文档 venv / pip freeze 章节）场景化',
     breakdown: `思路：<code>python3 -m venv .venv && source .venv/bin/activate && pip install requests pytest</code>；<code>pip freeze > requirements.lock.txt</code>；第二个 venv 里 <code>pip install -r requirements.lock.txt</code> 后 <code>pip show</code> 对比。坑：freeze 输出含全部间接依赖（这是锁文件的特性不是 bug）；pip 自身的版本也影响安装行为，必要时一并记录。`,
-  }, {
-    type: 'mechanism',
-    level: '初级岗常问',
-    prompt: `官方教程对 venv 的定义是什么？创建虚拟环境的标准命令是什么？`,
-    source: '来源：Python 官方教程《Virtual Environments and Packages》12.2 节 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `教程原文：venv 是<strong>「创建与管理虚拟环境的模块」</strong>；关键行为——<strong>venv 安装的是运行命令时所用的那个 Python 版本</strong>（原文：executing the command with python3.12 will install version 3.12）。标准命令：<code>python -m venv tutorial-env</code>（目录自定）→ 激活 → pip install。每个项目一个 venv = 依赖隔离的地基。`,
-  },
-  {
-    type: 'trap',
-    level: '中级岗常问',
-    prompt: `AI 给你的命令是 <code>python -m venv .venv</code>，但机器上装了多个 Python 版本，装出来的环境版本不对。按官方教程的说法，问题出在哪？`,
-    source: '来源：Python 官方教程《Virtual Environments and Packages》12.2 节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
-    breakdown: `venv <strong>绑定「命令实际解析到的那个解释器」</strong>——PATH 里 python 指向哪个版本，环境就是哪个版本。多版本机器上要<strong>用完整路径/版本名</strong>建环境：<code>python3.12 -m venv .venv</code>（或 uv venv --python 3.12）。装错版本再卸载重建成本高——AI 生成命令时不会知道你机器上 python 指向谁，审查部署脚本先确认解释器版本。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -383,7 +278,7 @@
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/第三方库/">回到《23.第三方库》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《14.魔术方法》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（Fraction 分数类）+ 真实面试题">
-  <title>魔术方法 · 互动教学课程（第 14 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《14.魔术方法》的互动教学课程：9 道分级测验 + 面试实战（第 14 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 12 课</p>
       <h1>魔术方法</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/魔术方法/">12.魔术方法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/魔术方法">14-魔术方法</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说出 <code>__str__</code> / <code>__repr__</code> / <code>__eq__</code> / <code>__add__</code> 等魔术方法各自拦截什么操作</li>
         <li>理解 <code>NotImplemented</code> 与 <code>__rmul__</code> 的配合机制</li>
-        <li>为自定义类实现字符串表示、比较、算术运算——<strong>最终考核：实现 Fraction 分数类</strong></li>
+        <li>为自定义类实现字符串表示、比较、算术运算——<strong>作业：实现 Fraction 分数类</strong></li>
       </ol>
     </section>
 
@@ -164,102 +162,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《14.魔术方法》源课程作业（实现 Fraction 分数类）的四道改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核一（Fraction.__add__）：<code>1/2 + 1/3 = 5/6</code>。实现 <code>__add__</code>，下列<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">分子 = a*d + b*c，分母 = b*d，返回 Fraction(新分子, 新分母)</button>
-            <button class="quiz-option">分子相加、分母不变，返回 Fraction(a+c, b)</button>
-            <button class="quiz-option">直接返回两个分数的元组</button>
-            <button class="quiz-option">分子相加、分母相加，返回 Fraction(a+c, b+d)</button>
-          </div>
-          <div class="quiz-explain" hidden>分数加法要<strong>通分</strong>：<code>a/b + c/d = (a*d + b*c) / (b*d)</code>——1/2 + 1/3 = (1×3 + 2×1)/(2×3) = 5/6 ✓。第二个是典型错误（1/2 + 1/3 ≠ 2/5）✗；第三个分母不对 ✗；第四个不返回 Fraction ✗。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核二（Fraction.__eq__）：判断 <code>f1 == f2</code>，下列<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">比较字符串表示是否相等</button>
-            <button class="quiz-option">比较两个分数的分子是否相等</button>
-            <button class="quiz-option">交叉相乘比较：a*d == c*b，非 Fraction 返回 NotImplemented</button>
-            <button class="quiz-option">直接比较两个 Fraction 对象的内存地址</button>
-          </div>
-          <div class="quiz-explain" hidden>交叉相乘：<code>a/b == c/d ⟺ a*d == c*b</code>——1/2 与 2/4 不约分也能判等。先 <code>isinstance(other, Fraction)</code> 检查，不符返回 <code>NotImplemented</code>。第二个是比较身份（is 语义）✗；第三个 1/2 与 1/3 会被误判相等 ✗；第四个依赖字符串格式，脆弱 ✗。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核三（字符串表示与转换预测）：<code>f1 = Fraction(1, 2)</code>，以下输出组合正确的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">float(f1)→0.5，str(f1)→"1/2"，repr(f1)→"Fraction(1, 2)"</button>
-            <button class="quiz-option">float(f1)→0.5，str(f1)→"Fraction(1, 2)"，repr(f1)→"1/2"</button>
-            <button class="quiz-option">float(f1)→1.2，str(f1)→"1/2"，repr(f1)→"1/2"</button>
-            <button class="quiz-option">三者都报错，Fraction 不支持转换</button>
-          </div>
-          <div class="quiz-explain" hidden>实现 <code>__float__</code> → <code>float(f1)</code> 是 1/2 = 0.5；<code>__str__</code> 返回 "1/2"；<code>__repr__</code> 返回 "Fraction(1, 2)"（精确重建格式）。第一个组合全部正确。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核四（Fraction.__lt__）：实现 <code>f1 &gt; f2</code>（1/2 &gt; 1/3 为 True）。下列 <code>__lt__</code> 中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">先转 float 再比较，但忘记类型检查</button>
-            <button class="quiz-option">a*d &lt; c*b 时返回 True，非 Fraction 返回 NotImplemented</button>
-            <button class="quiz-option">b &lt; d 时返回 True（只比分母）</button>
-            <button class="quiz-option">a &lt; c 时返回 True（只比分子）</button>
-          </div>
-          <div class="quiz-explain" hidden>交叉相乘比较：<code>a/b &lt; c/d ⟺ a*d &lt; c*b</code>——1/2 &lt; 1/3 → 1×3 &lt; 1×2 → False，所以 <code>f1 &gt; f2</code>（即 f2 &lt; f1）为 True。只比分子：1/2 与 1/3 会相等 ✗；只比分母更乱 ✗；转 float 有精度风险且漏类型检查 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（Fraction 核心）</summary>
-<pre><code>import math
-from functools import total_ordering
-
-@total_ordering
-class Fraction:
-    def __init__(self, numerator, denominator):
-        if denominator == 0:
-            raise ValueError("分母不能为0")
-        if denominator &lt; 0:               # 负号统一到分子
-            numerator, denominator = -numerator, -denominator
-        g = math.gcd(abs(numerator), abs(denominator))   # 约分
-        self.numerator = numerator // g
-        self.denominator = denominator // g
-
-    def __str__(self):
-        return f"{self.numerator}/{self.denominator}"
-
-    def __repr__(self):
-        return f"Fraction({self.numerator}, {self.denominator})"
-
-    def __eq__(self, other):
-        if not isinstance(other, Fraction):
-            return NotImplemented
-        return (self.numerator == other.numerator
-                and self.denominator == other.denominator)
-
-    def __lt__(self, other):
-        if not isinstance(other, Fraction):
-            return NotImplemented
-        return self.numerator * other.denominator &lt; other.numerator * self.denominator
-
-    def __add__(self, other):
-        if not isinstance(other, Fraction):
-            return NotImplemented
-        return Fraction(self.numerator * other.denominator + other.numerator * self.denominator,
-                        self.denominator * other.denominator)
-
-    def __float__(self):
-        return self.numerator / self.denominator
-
-    # __sub__ / __mul__ / __truediv__ 同模式，请动手补齐后让 AI 老师 review</code></pre>
-          </details>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握魔术方法——可以继续学习《<a href="/agents/python/描述符/">13.描述符</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -268,21 +171,22 @@ class Fraction:
         window.__interview = {
           lesson: '0014-魔术方法',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `继承不可变类型 <code>tuple</code> 时想过滤掉空串，为什么必须改写 __new__ 而不是 __init__？`,
     source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（__new__ 应用题）· 场景改写',
     breakdown: `不可变对象在 <code>__new__</code> 返回时<strong>内容就已定型</strong>，__init__ 里改不动。正确姿势：<code>def __new__(cls, items): items = [i for i in items if i]; return super().__new__(cls, items)</code>。AI 生成的「过滤后的元组」子类常在这里翻车——审查时看到继承 str/tuple/frozenset 的类就要检查 __new__。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `<code>__getattr__</code> 和 <code>__getattribute__</code> 有什么区别？实现 __getattribute__ 最容易踩的坑是什么？`,
     source: '考点来源：腾讯云「剖析 Python 面试知识点（一）」（属性拦截题）· 场景改写',
     breakdown: `<code>__getattr__</code> 是<strong>兜底</strong>：常规查找找不到属性时才被调用；<code>__getattribute__</code> 是<strong>总闸</strong>：每次属性访问都先过它。坑：__getattribute__ 里再访问 self.xxx 会<strong>无限递归</strong>——必须用 <code>super().__getattribute__('xxx')</code>。AI 写属性代理类（lazy 加载、动态属性）时递归爆炸是标配 bug。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写了一个「可去重」的数据类：只定义了 <code>__eq__</code>，放进 set 立刻报错。审查并修复：
@@ -295,14 +199,14 @@ users = {User('张三'), User('张三')}   # TypeError!</code></pre>`,
     source: '考点来源：PHP 中文站「如何使用 Python 的 __hash__ 和 __eq__ 实现类对象去重」· 场景改写',
     breakdown: `定义了 <code>__eq__</code> 后，Python 把 <code>__hash__</code> 置为 <strong>None</strong>（相等的对象哈希必须一致，默认哈希已不可信）——放进 set/dict 就报 unhashable。修复：同时定义 <code>__hash__ = lambda self: hash(self.name)</code>（与 __eq__ 用同一组字段），或声明 __hash__ = None 明确不可哈希。AI 生成 dataclass 时不传 frozen/eq 参数也会踩这个。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `为什么不能用「浮点容差近似相等」来实现 __eq__（比如 abs(a.x - b.x) < 1e-9 就算相等）？`,
     source: '考点来源：PHP 中文站「__hash__ 与 __eq__ 实现类对象去重」（相等传递性题）· 场景改写',
     breakdown: `近似相等<strong>不满足传递性</strong>：a≈b、b≈c 推不出 a≈c——而 == 的契约（和 set 的哈希逻辑）要求相等关系是等价关系（自反/对称/传递）。破坏传递性后，set 去重、dict 键、in 判断都会出现「幽灵行为」（同一个集合里两个「相等」元素并存）。正确做法：值比较用 isclose（不定义 __eq__），或给坐标做定点化（Decimal/整数分）再精确比较。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `实现一个 <code>Point2D</code> 类（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -313,20 +217,8 @@ users = {User('张三'), User('张三')}   # TypeError!</code></pre>`,
     },
     source: '任务基于《14.魔术方法》课程知识点 · 来源层级：一手（Python 官方文档 datamodel 章节）场景化',
     breakdown: `思路：__eq__ 比较 (x, y) 元组，__hash__ = hash((self.x, self.y))；__repr__ 输出 <code>Point2D(3, 4)</code> 这种可 eval 形式；近似比较做成 <code>def close_to(self, other, tol=1e-9)</code> 普通方法。坑：__hash__ 与 __eq__ 必须用同一组字段（审查题同款）；repr 里变量名要能被 eval 找到。`,
-  }, {
-    type: 'mechanism',
-    level: '高级岗常问',
-    prompt: `<code>c.__len__ = lambda: 5</code> 之后 <code>len(c)</code> 还是报 TypeError。官方文档给出的规则是什么？为什么这样设计？`,
-    source: '来源：Python 官方文档 datamodel「Special method lookup」小节 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `文档原文规则：对自定义类，特殊方法的<strong>隐式调用只保证在对象类型上定义时正确工作，实例字典里的定义无效</strong>（文档原例正是 c.__len__ = lambda: 5 后 len(c) 抛 TypeError: object of type 'C' has no len()）。设计理由：特殊方法若走实例字典查找，每个对象都要带一份方法表，<strong>性能和一致性</strong>都差。结论：len/str/iter/call 等协议方法一律定义在类上。`,
-  },
-  {
-    type: 'trap',
-    level: '中级岗常问',
-    prompt: `AI 写的「给对象打补丁」代码：<code>obj.__str__ = 自定义函数</code> 想让 print 变格式。按官方规则会怎样？正确做法是什么？`,
-    source: '来源：Python 官方文档 datamodel「Special method lookup」小节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
-    breakdown: `print(obj) 走 <code>type(obj).__str__</code>——实例字典里的 __str__ 被<strong>无视</strong>，print 输出照旧。正确做法：① 类上定义（设计时就该有）；② 临时需求用 <code>type(obj).__str__ = ...</code> 猴子补丁（改的是类型，会生效但影响所有实例，慎用）；③ 换协议函数显式调用（自己调 obj.attr 而不是依赖隐式协议）。审查规则：看到「实例上挂 dunder」直接判无效。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -392,7 +284,7 @@ users = {User('张三'), User('张三')}   # TypeError!</code></pre>`,
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/魔术方法/">回到《14.魔术方法》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

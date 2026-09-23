@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《12.元类》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（单例元类/自动注册/日志元类）+ 真实面试题">
-  <title>元类 · 互动教学课程（第 12 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《12.元类》的互动教学课程：9 道分级测验 + 面试实战（第 12 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 10 课</p>
       <h1>元类</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/元类/">10.元类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/元类">12-元类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说清 <code>class</code> 语句是语法糖：底层就是 <code>type("Dog", (), {})</code></li>
         <li>写出自定义元类：<code>class MyMeta(type)</code> + 重写 <code>__new__(mcs, name, bases, namespace)</code></li>
-        <li>用元类实现<strong>单例、自动注册、方法日志</strong>——最终考核的三道实现题</li>
+        <li>用元类实现<strong>单例、自动注册、方法日志</strong>——作业的三道实现题</li>
       </ol>
     </section>
 
@@ -168,123 +166,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《12.元类》源课程作业的三道实现题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核一（作业一·单例元类）：用元类实现单例——<code>Database("localhost")</code> 与 <code>Database("remote")</code> 返回同一实例（<code>is</code> 为 True，host 保持 localhost）。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">重写 __call__：cls 不在缓存则 super().__call__ 创建并缓存，最后返回缓存实例</button>
-            <button class="quiz-option">重写 __new__：在创建类时缓存，实例化时不拦截</button>
-            <button class="quiz-option">重写 __call__：条件写反，第一次实例化就 KeyError</button>
-            <button class="quiz-option">重写 __call__：每次都 super().__call__ 新建，不缓存</button>
-          </div>
-          <div class="quiz-explain" hidden>实例化走 <code>元类.__call__</code>，所以单例要重写 <code>__call__</code>：用 <code>cls not in cls._instance</code> 判断，未缓存时 <code>super().__call__(*args, **kwds)</code> 创建并缓存，最后统一返回缓存实例。第二个改的是 <code>__new__</code>——它只在「创建类」时执行一次，拦不住实例化 ✗；第三个不缓存 ✗；第四个第一次调用就崩 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业一）</summary>
-<pre><code>class SingletonMeta(type):
-    _instance = {}
-
-    def __call__(cls, *args, **kwds):
-        if cls not in cls._instance:
-            ins = super().__call__(*args, **kwds)
-            cls._instance[cls] = ins
-        return cls._instance[cls]
-
-class Database(metaclass=SingletonMeta):
-    def __init__(self, host):
-        self.host = host
-
-db1 = Database("localhost")
-db2 = Database("remote")
-print(db1 is db2)   # True
-print(db1.host)     # localhost</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核二（作业二·自动注册）：用元类把 Plugin 的所有子类自动注册进 <code>PluginMeta.registry</code>（键为类名）。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">__new__ 中把 Plugin 自己也注册进去</button>
-            <button class="quiz-option">__new__ 创建类后，name 不是 Plugin 才注册，返回新类</button>
-            <button class="quiz-option">改为在 __call__（实例化时）才注册</button>
-            <button class="quiz-option">用 name.startswith("_") 作为注册条件</button>
-          </div>
-          <div class="quiz-explain" hidden>正确答案：在 <code>__new__</code> 里先 <code>cls = super().__new__(mcs, name, bases, namespace)</code>，再 <code>if name != "Plugin": mcs.registry[name] = cls</code>，最后 return cls。这样定义子类（不实例化）就会触发注册。第二个把 Plugin 基类也注册了 ✗；第三个要求实例化才注册 ✗；第四个条件错误，什么都注册不上 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业二）</summary>
-<pre><code>class PluginMeta(type):
-    registry = {}
-
-    def __new__(mcs, name, bases, namespace):
-        cls = super().__new__(mcs, name, bases, namespace)
-        if name != "Plugin":
-            mcs.registry[name] = cls
-        return cls
-
-class Plugin(metaclass=PluginMeta):
-    pass
-
-class ImagePlugin(Plugin):
-    pass
-
-print(PluginMeta.registry)
-# {'ImagePlugin': &lt;class '__main__.ImagePlugin'&gt;, ...}</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核三（作业三·方法日志）：用元类自动为类中每个非私有方法（不以 _ 开头）加日志——调用前打印 <code>[LOG] 调用 方法名</code>。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">不替换 namespace 里的函数，指望 __new__ 之后自动生效</button>
-            <button class="quiz-option">跳过条件写成 not key.startswith("__")，把单下划线方法也包裹</button>
-            <button class="quiz-option">__new__ 遍历 namespace，对不以 _ 开头且 callable 的成员用 wrapper 包裹后替换</button>
-            <button class="quiz-option">wrapper 里只打印日志，忘记调用原函数</button>
-          </div>
-          <div class="quiz-explain" hidden>正确答案：在 <code>__new__</code> 创建类<strong>之前</strong>遍历 <code>namespace</code>，对 <code>not key.startswith("_") and callable(value)</code> 的成员，用打印日志再调用原函数的 wrapper <strong>替换</strong> <code>namespace[key]</code>，然后才交给 <code>super().__new__</code>。第二个把 _ 开头（私有）方法也包裹 ✗；第三个方法被吞掉 ✗；第四个不替换就没有效果 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业三）</summary>
-<pre><code>class LogMeta(type):
-    def __new__(mcs, name, bases, namespace):
-        for key, value in namespace.items():
-            if not key.startswith("_") and callable(value):
-                namespace[key] = mcs.log_wrapper(value)
-        return super().__new__(mcs, name, bases, namespace)
-
-    @staticmethod
-    def log_wrapper(func):
-        def wrapper(*args, **kwargs):
-            print(f"[LOG] 调用 {func.__name__}")
-            return func(*args, **kwargs)
-        return wrapper
-
-class Calculator(metaclass=LogMeta):
-    def add(self, a, b):
-        return a + b
-
-calc = Calculator()
-print(calc.add(3, 5))
-# [LOG] 调用 add
-# 8</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核四（调用协议预测）：执行 <code>class Dog(metaclass=DogMeta)</code> 创建类时，<code>DogMeta.__call__</code> 会被调用吗？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">不会，走 type.__call__ 转调 DogMeta.__new__</button>
-            <button class="quiz-option">会，创建类前先调用一次</button>
-            <button class="quiz-option">创建类与实例化时各调用一次</button>
-            <button class="quiz-option">只在之后实例化 Dog() 时调用</button>
-          </div>
-          <div class="quiz-explain" hidden>创建类时，<code>DogMeta</code> 的类型是 type，入口是 <code>type.__call__</code>，其内部转调 <code>DogMeta.__new__</code>——<code>DogMeta.__call__</code> 此时<strong>不参与</strong>。等到 <code>Dog()</code> 实例化时，<code>type(Dog) = DogMeta</code>，<code>DogMeta.__call__</code> 才出场。详见文档「深入：DogMeta 调用协议拆解」。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握元类的核心玩法——可以继续学习《<a href="/agents/python/装饰器/">11.装饰器</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -293,21 +175,22 @@ print(calc.add(3, 5))
         window.__interview = {
           lesson: '0012-元类',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `什么是元类？<code>type(int)</code> 等于什么？什么场景下会真的用到元类？`,
     source: '考点来源：博客园「史上最全 python 面试题详解（三）」（元类概念题）· 场景改写',
     breakdown: `元类 = <strong>类的类</strong>：创建类的工厂，默认是 type（<code>type(int)</code> 就是 <code>type</code> 自己）。真实场景：ORM 的模型生成、类定义时的规范检查（命名/抽象方法）、自动注册表（把子类收集进 registry）、给类批量加属性。其余时候别用——元类难读难调试，AI 生成框架代码里常见，能看懂才能审查。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `面试官追问单例：用元类实现单例的核心思路是什么？为什么它比 __new__ 方案更「干净」？`,
     source: '考点来源：51CTO「你想要的 Python 面试题都在这里了」（单例元类题）· 场景改写',
     breakdown: `在元类的 <code>__call__</code> 里拦实例化：<code>class SingletonMeta(type): def __call__(cls, *a, **kw): if not cls._instance: cls._instance = super().__call__(*a, **kw); return cls._instance</code>。比 __new__ 干净：① __init__ 只在首次创建时执行（因为后续根本不再走实例化）；② 单例逻辑与业务类解耦，<code>class DB(metaclass=SingletonMeta)</code> 一行接入。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 把两个带不同元类的库混用，运行时报 <code>TypeError: metaclass conflict</code>。审查：为什么会冲突？怎么解决？
@@ -317,14 +200,14 @@ class C(A, B): pass   # TypeError!</code></pre>`,
     source: '考点来源：博客园「史上最全 python 面试题详解（三）」（元类冲突题）· 场景改写',
     breakdown: `C 的元类必须是 A、B 元类的<strong>共同子类</strong>（派生关系链中最具体者）；MetaA、MetaB 互不继承 → 找不到合法元类 → TypeError。修复：让 <code>MetaB(MetaA)</code>（元类沿继承方向派生），或显式 <code>class C(A, B, metaclass=Common)</code>（Common 继承两者）。审查库混用代码时这个错误是红灯信号。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `元类的 <code>__new__</code>、<code>__init__</code>、<code>__call__</code> 分别在什么时候触发？各自适合干什么？`,
     source: '考点来源：博客园「史上最全 python 面试题详解（三）」（元类分工题）· 场景改写',
     breakdown: `<code>__new__</code>：<strong>类对象创建时</strong>（定义 class 语句即触发）——适合改类结构（收集方法、加属性）；<code>__init__</code>：类对象初始化时——适合校验类定义；<code>__call__</code>：<strong>实例化时</strong>（每次 Obj() 触发）——适合拦实例化（单例元类就是它）。记法：元类管类的三件事 = 创建、初始化、实例化。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `用元类实现两个约束（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -335,20 +218,8 @@ class C(A, B): pass   # TypeError!</code></pre>`,
     },
     source: '任务基于《12.元类》课程知识点 · 来源层级：一手（Python 官方文档 3.3.3 自定义类创建）场景化',
     breakdown: `思路：<code>class CheckMeta(type): def __new__(mcs, name, bases, ns): 遍历 ns 检查 callable 成员名 islower()；super().__new__ 建类后写 registry[name] = cls</code>。坑：检查要在建类<strong>之前</strong>（__new__ 里，raise 阻断创建）；django 风格方法名要放行（__xxx__ 与 _ 开头）；registry 用类属性挂在元类上避免子类覆盖。`,
-  }, {
-    type: 'mechanism',
-    level: '高级岗常问',
-    prompt: `官方文档描述 class 语句背后发生了什么？元类（metaclass）在哪一步介入？`,
-    source: '来源：Python 官方文档 datamodel「Metaclasses」小节 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `文档原文：<strong>类体在一个新命名空间中执行，类名被绑定到 type(name, bases, namespace) 的结果</strong>。所以：① 类体里的代码在 class 语句执行时就<strong>真正运行</strong>（可以 print、可以算）；② 元类 = 定制这一步——用 metaclass 参数（或继承带元类的类）替换 type 的调用，从而拦下「类对象诞生」的瞬间。`,
-  },
-  {
-    type: 'trap',
-    level: '中级岗常问',
-    prompt: `既然 <code>MyClass = type('MyClass', (Base,), ns)</code> 与 class 语句等价，AI 写动态建类代码时这两者可以随便互换吗？有什么区别？`,
-    source: '来源：Python 官方文档 datamodel「Metaclasses」小节 · 检索 2026-09-09 · 层级：一手（场景化改写）',
-    breakdown: `等价但不完全互换：type() 调用<strong>跳过了类体执行</strong>——ns 里的方法/属性要手动用 dict 组装（没有语句、装饰器、注解的自动执行）；class 语句则完整走「执行类体 → 交给元类」。且 class 语句里 <code>__qualname__</code>、模块归属等自动填充，type() 建类这些要手填（影响 pickle/日志）。动态建类适合「配置驱动生成」，写死 class 适合正常业务代码。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -414,7 +285,7 @@ class C(A, B): pass   # TypeError!</code></pre>`,
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/元类/">回到《12.元类》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（0 题）。
     </footer>
 
   </main>

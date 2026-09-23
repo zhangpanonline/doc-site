@@ -15,7 +15,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
       <h1>日常维护</h1>
-      <p class="lesson-sub">来源：官方文档 §24.1 日常清理（postgres.cn）<span class="dot"></span>非渡一课程内容<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">来源：官方文档 §24.1 日常清理（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -162,54 +162,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>四道题覆盖本课全部要点——答完它们，日常维护就过关了。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核一：VACUUM 与 ANALYZE 的分工是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">两者完全等价</button>
-            <button class="quiz-option">VACUUM 管统计</button>
-            <button class="quiz-option">ANALYZE 是 VACUUM 的别名</button>
-            <button class="quiz-option">VACUUM 管空间/可见性/防回卷；ANALYZE 管统计信息（可分开调）</button>
-          </div>
-          <div class="quiz-explain" hidden>官方四个职责中统计信息只是其一，且「每个原因指示不同的频率和范围」——所以两者独立可调。</div>
-        </div>
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核二：DELETE 十万行后表文件没变小，该怎么理解与处理？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">死元组仍在：标准 VACUUM 回收空间供重用（文件大小不变属正常）；要缩文件才需要 FULL</button>
-            <button class="quiz-option">需要重启</button>
-            <button class="quiz-option">磁盘坏了</button>
-            <button class="quiz-option">数据没删掉</button>
-          </div>
-          <div class="quiz-explain" hidden>标准 VACUUM 的语义就是「恢复或重用」而非缩小文件——文件缩小是 VACUUM FULL 的活，且代价大。</div>
-        </div>
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核三：Index Only Scan 突然退化为回表（多出 heap fetch），VACUUM 四职责里哪个相关？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">空间回收</button>
-            <button class="quiz-option">统计信息</button>
-            <button class="quiz-option">防回卷</button>
-            <button class="quiz-option">可见性映射过期——VACUUM 更新它才能免回表</button>
-          </div>
-          <div class="quiz-explain" hidden>官方原文：更新可见性映射，它可以加速只用索引的扫描——映射陈旧时优化器无法确认行可见性，只能回表。</div>
-        </div>
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核四：监控发现某表 n_dead_tup 持续增长且 autovacuum 迟迟不触发。合理的干预顺序？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">重启数据库</button>
-            <button class="quiz-option">先手动 VACUUM 该表止损，再排查 autovacuum 阈值/长事务阻塞原因</button>
-            <button class="quiz-option">删表</button>
-            <button class="quiz-option">立即 VACUUM FULL</button>
-          </div>
-          <div class="quiz-explain" hidden>先止损（手动 VACUUM 并行安全），再治本（autovacuum 配置或长事务/复制槽阻塞）——官方「手动是补充或替代」的正确用法。</div>
-        </div>
-      </div>
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你掌握了日常维护——继续学习 <a href="/common/database-pg/pg-16-服务器配置">pg-16 · 服务器配置</a>。</p>
-    </section>
+    
 
     <section>
       <h2>💼 面试实战</h2>
@@ -219,35 +172,36 @@
         window.__interview = {
           lesson: 'pg-0015-日常维护',
           questions: [
-            {
+
+{
               type: 'trap',
               level: '高级岗常问',
               prompt: `AI 写的「表瘦身」脚本：大表 UPDATE 后直接跑 <code>VACUUM FULL</code>，结果生产查询全被阻塞。审查：错在哪？正确姿势？`,
               source: '来源：postgres.cn 官方文档 §24.1 日常清理（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
               breakdown: `官方原文：<strong>标准 VACUUM 可以和生产操作并行运行；VACUUM FULL 收回更多但慢得多</strong>（且需独占锁）。生产白天直接 FULL = 停表。正确：先标准 VACUUM（并行安全、回收空间供重用）；真要压缩文件——放维护窗口 FULL，或 pg_repack 在线重建。AI 生成运维脚本把 FULL 当日常命令是最常见事故。`,
             },
-            {
+{
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `官方说 VACUUM 必须定期处理每一个表，四个原因分别是什么？`,
               source: '来源：postgres.cn 官方文档 §24.1 日常清理（官方翻译·一手）· 检索 2026-09-11 · 层级：一手',
               breakdown: `官方原文四条：① <strong>恢复或重用</strong>被更新/删除行占用的磁盘空间；② <strong>更新统计信息</strong>（规划器用）；③ <strong>更新可见性映射</strong>（加速 Index Only Scan）；④ <strong>防事务 ID 回卷</strong>导致老旧数据丢失。并强调：每个原因指示<strong>不同的频率和范围</strong>——这是 VACUUM 与 ANALYZE 分家的依据。`,
             },
-            {
+{
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的监控只盯「磁盘使用率」，没盯任何 VACUUM 指标。审查：按官方四个职责，应该补哪些观测点？`,
               source: '来源：postgres.cn 官方文档 §24.1 日常清理（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
               breakdown: `对照四职责补观测：① <code>pg_stat_user_tables</code> 的 <strong>n_dead_tup / n_live_tup</strong>（死元组堆积=空间问题）；② <strong>last_analyze</strong> 时效（统计过期=计划劣化）；③ <strong>n_ins_since_vacuum</strong> 类计数（可见性映射陈旧→IOS 退化）；④ <strong>autovacuum 运行日志/age(relfrozenxid)</strong>（回卷风险）。磁盘满了才报警 = 已经晚了。`,
             },
-            {
+{
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：autovacuum 开着的，还需要人工管 VACUUM 吗？你的分层答案？`,
               source: '来源：postgres.cn 官方文档 §24.1 日常清理（官方翻译·一手）· 检索 2026-09-11 · 层级：一手（场景化改写）',
               breakdown: `官方定位：手动 VACUUM 用于对守护进程活动进行<strong>补充或者替换</strong>。分层：① 默认<strong>信任 autovacuum</strong> + 监控其指标（dead_tup 趋势、触发延迟）；② 特例手动介入：批量 DDL 后立即 ANALYZE、大事务/复制槽阻塞导致 autovacuum 失效、维护窗口主动清理；③ 高频小表可调低阈值。原则：先看懂 autovacuum 在干什么，再决定手动补什么。`,
             },
-            {
+{
               type: 'scenario',
               level: '初级岗常问',
               prompt: `在 pg16 里实测 VACUUM 行为（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -258,8 +212,8 @@
               },
               source: '任务基于官方文档 §24.1 · 来源层级：官方翻译·一手（postgres.cn）场景化',
               breakdown: `思路：<code>SELECT n_dead_tup, last_vacuum FROM pg_stat_user_tables WHERE relname = '...';</code>；大 DELETE 后复查；<code>VACUUM t;</code> 再看；文件大小 <code>pg_relation_size('t')</code> 对照 FULL。坑：autovacuum 可能自己先跑了（观察 last_autovacuum 时间戳）；小表的文件大小变化不明显，用万行级数据。`,
-            },
-          ],
+            }
+
         };
       </script>
     </section>
@@ -275,7 +229,7 @@
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。本课为 PostgreSQL 官方文档拓展内容，非渡一《数据库》课程。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《18.上下文管理器》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（timer/TempDirectory）+ 真实面试题">
-  <title>上下文管理器 · 互动教学课程（第 18 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《18.上下文管理器》的互动教学课程：9 道分级测验 + 面试实战（第 18 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 16 课</p>
       <h1>上下文管理器</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/上下文管理器/">16.上下文管理器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/上下文管理器">18-上下文管理器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说清 <code>with</code> 语句的等效形式：<strong><code>__enter__</code> → 代码块 → <code>__exit__</code></strong></li>
         <li>理解 <code>__exit__</code> 返回 True 的「吞异常」语义</li>
-        <li>写出 <code>timer</code> 计时与 <code>TempDirectory</code> 临时目录两个上下文管理器——<strong>最终考核的两道实现题</strong></li>
+        <li>写出 <code>timer</code> 计时与 <code>TempDirectory</code> 临时目录两个上下文管理器——<strong>作业的两道实现题</strong></li>
       </ol>
     </section>
 
@@ -165,110 +163,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《18.上下文管理器》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核一（作业一·timer 计时）：用 <code>@contextmanager</code> 实现——<code>with timer("数据处理")</code> 块结束时打印 <code>数据处理 耗时: X.XXXX 秒</code>（异常时也要打印）。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">用 __exit__ 里 except 吞掉所有异常后再打印</button>
-            <button class="quiz-option">yield 后直接打印耗时，不放在 finally 里</button>
-            <button class="quiz-option">yield 前记 start；try: yield 后 finally 打印耗时</button>
-            <button class="quiz-option">打印耗时放在 yield 之前</button>
-          </div>
-          <div class="quiz-explain" hidden>正确结构：<code>start = time.time(); try: yield; finally: print(耗时)</code>——finally 保证<strong>异常时也打印</strong>。第二个块里抛异常会跳过打印 ✗；第三个计的是 0 秒 ✗；第四个吞异常改变语义 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业一）</summary>
-<pre><code>import time
-from contextlib import contextmanager
-
-@contextmanager
-def timer(name):
-    start = time.time()
-    try:
-        yield
-    finally:
-        elapsed = time.time() - start
-        print(f"{name} 耗时: {elapsed:.4f} 秒")
-
-with timer("数据处理"):
-    time.sleep(1)
-    print("处理完成")
-# 处理完成
-# 数据处理 耗时: 1.0012 秒</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核二（作业二·TempDirectory）：进入时创建临时目录（返回路径），退出时自动删除整个目录。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">__exit__ 返回 True 吞掉所有异常</button>
-            <button class="quiz-option">__enter__ 里 mkdtemp 存路径并返回；__exit__ 里 rmtree 删除，返回 False</button>
-            <button class="quiz-option">__exit__ 里只删除目录本身，不递归删除内容</button>
-            <button class="quiz-option">__enter__ 里创建目录但返回 self 而不是路径</button>
-          </div>
-          <div class="quiz-explain" hidden>正确结构：<code>__enter__</code> 里 <code>self.path = tempfile.mkdtemp()</code> 并 <code>return self.path</code>；<code>__exit__</code> 里 <code>shutil.rmtree(self.path)</code>（递归删内容）并 <code>return False</code>（不吞异常）。第二个拿到的是对象不是路径 ✗；第三个目录里的文件删不掉 ✗；第四个吞异常不合题意 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业二）</summary>
-<pre><code>import os
-import tempfile
-import shutil
-
-class TempDirectory:
-    def __enter__(self):
-        self.path = tempfile.mkdtemp()
-        return self.path
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        shutil.rmtree(self.path)
-        return False
-
-with TempDirectory() as tmp_dir:
-    print(f"临时目录: {tmp_dir}")
-    with open(os.path.join(tmp_dir, "test.txt"), "w") as f:
-        f.write("hello")
-
-print("临时目录已清理")</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核三（作业四·思考题1）：以下代码的输出是？
-<pre><code>@contextmanager
-def demo():
-    print("进入")
-    yield
-    print("正常退出")
-
-with demo():
-    print("执行中")
-    raise ValueError("出错了")
-    print("这行不会执行")</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">进入 → 执行中 → 正常退出，然后 ValueError 向外抛出</button>
-            <button class="quiz-option">进入 → 执行中，异常被吞掉不向外抛</button>
-            <button class="quiz-option">进入 → 正常退出 → 执行中</button>
-            <button class="quiz-option">进入 → 执行中，随后 ValueError 向外抛出（正常退出不打印）</button>
-          </div>
-          <div class="quiz-explain" hidden>块内 raise 后，<code>@contextmanager</code> 把异常<strong>从 yield 处抛进生成器</strong>——生成器不继续执行，<code>print("正常退出")</code> 被跳过，异常向外传播。完整输出：进入 → 执行中 → ValueError。这正是清理代码必须写进 <code>finally</code> 的原因（下一题）。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核四（作业四·思考题2）：把 demo 改成 <code>try: yield / except Exception as e: print(f"捕获异常: {e}") / finally: print("清理")</code>，with 块里同样 raise ValueError，输出是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">进入 → 执行中 → 捕获异常 → 清理 → 异常再抛出</button>
-            <button class="quiz-option">进入 → 执行中 → 捕获异常: 出错了 → 清理，且异常不再向外抛</button>
-            <button class="quiz-option">进入 → 执行中，程序崩溃无清理</button>
-            <button class="quiz-option">进入 → 执行中 → 清理，异常仍然向外抛</button>
-          </div>
-          <div class="quiz-explain" hidden>except 把异常<strong>接住</strong>了：打印「捕获异常: 出错了」后生成器正常收尾，finally 打印「清理」——with 块像没发生过异常一样继续。这就是上下文管理器「吞异常」的完整演示（等价于 __exit__ 返回 True）。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握上下文管理器——可以继续学习《<a href="/agents/python/ABC/">17.抽象类</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -277,35 +172,36 @@ with demo():
         window.__interview = {
           lesson: '0018-上下文管理器',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `with 语句的工作原理是什么？它比「手动 open + try/finally + close」好在哪里？`,
     source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（with 原理题）· 场景改写',
     breakdown: `with 是 <strong>__enter__ / __exit__ 协议</strong>的语法糖：进入时调 __enter__（拿返回值绑到 as 变量），<strong>无论正常退出还是抛异常</strong>都调 __exit__（参数含异常信息）。好处：资源释放（close/commit/释放锁）由协议保证，不可能忘写；异常路径和正常路径同一条清理逻辑。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `自定义上下文管理器有哪两种实现方式？各自怎么用、怎么选？`,
     source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（实现方式题）· 场景改写',
     breakdown: `① <strong>类实现 __enter__ / __exit__</strong>：状态多、逻辑重、要复用方法时用；② <strong>@contextlib.contextmanager</strong> 装饰生成器函数：yield 前是 __enter__、yield 后是 __exit__，适合一次性轻量场景（计时、临时改配置）。选择原则：要多次使用/带状态 → 类；用完即弃的包装 → contextmanager。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写的数据库上下文管理器，__exit__ 里 <code>return True</code>。审查：线上事务失败为什么没报警？什么场景才该吞异常？`,
     source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（吞异常代价题）· 场景改写',
     breakdown: `<code>__exit__</code> 返回 True 会把异常<strong>吞掉</strong>——事务失败静默，调用方以为成功，监控永远不响。正确：__exit__ 返回 None/False 让异常继续传播（回滚后再传播是标准姿势）；只有「显式预期中的无关紧要错误」才吞（<code>contextlib.suppress</code>）。AI 代码默认吞异常是生产事故高发写法。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `为什么「失败重试」必须用装饰器实现，而上下文管理器实现不了？两者的职责边界是什么？`,
     source: '考点来源：腾讯云「Python 高级特性解析与面试应对策略」（retry 设计题）· 场景改写',
     breakdown: `with 块是<strong>一次性进入-退出</strong>：__exit__ 在退出时执行，无法「重新进入」代码块——重试需要把同一段代码<strong>循环执行</strong>，只有装饰器（包装函数、循环调用）做得到。职责边界：上下文管理器管<strong>资源生命周期</strong>（连接、锁、临时状态），装饰器管<strong>调用行为</strong>（重试、缓存、限流、日志）。判断标准：问「要不要再执行一遍？」——要 → 装饰器。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `实现一个 <code>timer</code> 上下文管理器（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -316,20 +212,8 @@ with demo():
     },
     source: '任务基于《18.上下文管理器》课程知识点 · 来源层级：一手（Python 官方文档 contextlib 章节）场景化',
     breakdown: `思路：类版 __enter__ 记 time.perf_counter() 返回 self，__exit__ 算差值打印并<strong>返回 None</strong>（不吞异常）；生成器版 yield 放中间、finally 里打印。坑：__exit__ 别返回 True（审查题同款）；计时用 perf_counter 不用 time.time（墙钟会被系统时间调整干扰）。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档定义的 <code>__exit__</code> 签名与语义是什么？三个异常参数什么时候会是 None？`,
-    source: '来源：Python 官方文档 datamodel「With Statement Context Managers」object.__exit__ 条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `签名 <code>__exit__(self, exc_type, exc_value, traceback)</code>——参数描述<strong>导致退出上下文的异常</strong>；<strong>无异常退出时三者全为 None</strong>。若异常存在且方法想<strong>抑制</strong>（阻止传播），<strong>返回真值</strong>；返回 None/假值则异常照常向上传播。这就是 with 块异常语义的完整官方定义。`,
-  },
-  {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `AI 写的上下文管理器 __exit__ 里无条件 <code>return True</code>，想「保证不崩」。审查：官方语义下这会怎样？只想抑制特定异常该怎么写？`,
-    source: '来源：Python 官方文档 datamodel「With Statement Context Managers」object.__exit__ 条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
-    breakdown: `return True = <strong>抑制一切异常</strong>——业务错误、程序员 bug 全部静默，调用方永远以为成功（线上事故标配）。正确写法：<code>if exc_type is 目标异常: 处理; return True</code>——<strong>只对明确预期的异常返回真值</strong>，其余返回 None 让异常传播。无异常时（三个参数 None）别去 return True 做多余事。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -395,7 +279,7 @@ with demo():
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/上下文管理器/">回到《18.上下文管理器》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

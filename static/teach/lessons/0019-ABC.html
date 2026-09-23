@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《19.ABC》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（抽象缓存/抽象序列）+ 真实面试题">
-  <title>ABC · 互动教学课程（第 19 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《19.ABC》的互动教学课程：9 道分级测验 + 面试实战（第 19 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 17 课</p>
       <h1>ABC</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/ABC/">17.抽象类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/ABC">19-ABC</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说出抽象类的作用：<strong>定义子类必须实现的接口，且自身不能实例化</strong></li>
         <li>用 <code>ABC</code> + <code>@abstractmethod</code> 定义抽象方法/抽象属性</li>
-        <li>实现抽象缓存与抽象序列——<strong>最终考核的两道实现题</strong>，并预测「漏实现」的报错</li>
+        <li>实现抽象缓存与抽象序列——<strong>作业的两道实现题</strong>，并预测「漏实现」的报错</li>
       </ol>
     </section>
 
@@ -165,124 +163,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《19.ABC》源课程作业的改编题——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核一（作业一·抽象缓存）：抽象基类 Cache 声明 get/set/delete 三个抽象方法，MemoryCache 用字典实现。下列做法中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">MemoryCache 不继承 Cache，自己独立实现</button>
-            <button class="quiz-option">MemoryCache(Cache) 用字典实现全部三个抽象方法</button>
-            <button class="quiz-option">只实现 get 和 set，delete 留到调用时再说</button>
-            <button class="quiz-option">Cache 不继承 ABC，只用注释说明接口</button>
-          </div>
-          <div class="quiz-explain" hidden>正确做法：<code>MemoryCache(Cache)</code> 继承抽象基类，<strong>三个方法全部实现</strong>（<code>get → dict.get(key)</code>；<code>set → 赋值</code>；<code>delete → del</code>）。第二个不继承就失去契约约束 ✗；第三个漏实现，实例化直接 TypeError ✗；第四个没有强制力 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业一·MemoryCache）</summary>
-<pre><code>from abc import ABC, abstractmethod
-
-class Cache(ABC):
-    @abstractmethod
-    def get(self, key): pass
-
-    @abstractmethod
-    def set(self, key, value): pass
-
-    @abstractmethod
-    def delete(self, key): pass
-
-class MemoryCache(Cache):
-    def __init__(self):
-        self._data = {}
-
-    def get(self, key):
-        return self._data.get(key)
-
-    def set(self, key, value):
-        self._data[key] = value
-
-    def delete(self, key):
-        if key in self._data:
-            del self._data[key]
-
-# FileCache 同接口，用文件 + json 存储，请动手补齐</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="1">
-          <div class="quiz-prompt">考核二（作业二·抽象序列）：Sequence 声明 append/get/length/__iter__ 四个抽象方法，并带普通方法 is_empty（<code>return self.length() == 0</code>）。实现 ListSequence 时正确的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">只实现 append 和 get 两个即可实例化</button>
-            <button class="quiz-option">基于列表实现四个抽象方法，is_empty 直接继承使用</button>
-            <button class="quiz-option">连 is_empty 也要在子类里重写一遍</button>
-            <button class="quiz-option">__iter__ 用 yield 实现而不是 return iter(...)</button>
-          </div>
-          <div class="quiz-explain" hidden><code>ListSequence</code> 实现四个抽象方法（<code>__iter__</code> 直接 <code>return iter(self._data)</code>），普通方法 <code>is_empty</code> <strong>自动继承</strong>。第二个重复劳动 ✗；第三个漏两个方法，实例化 TypeError ✗；四个抽象方法必须全部实现。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业二·ListSequence）</summary>
-<pre><code>class Sequence(ABC):
-    @abstractmethod
-    def append(self, item): pass
-
-    @abstractmethod
-    def get(self, index): pass
-
-    @abstractmethod
-    def length(self): pass
-
-    @abstractmethod
-    def __iter__(self): pass
-
-    def is_empty(self):
-        return self.length() == 0
-
-class ListSequence(Sequence):
-    def __init__(self):
-        self._data = []
-
-    def append(self, item):
-        self._data.append(item)
-
-    def get(self, index):
-        return self._data[index]
-
-    def length(self):
-        return len(self._data)
-
-    def __iter__(self):
-        return iter(self._data)
-
-# LinkedListSequence 基于链表实现同一接口，请动手补齐</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核三（作业三·思考题）：<code>class B(A)</code> 实现了 foo；<code>class C(B): pass</code>。执行 <code>c.foo(); c.bar()</code>（bar 是 A 的普通方法），输出是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">B.foo 然后 A.bar</button>
-            <button class="quiz-option">实例化 C 直接 TypeError</button>
-            <button class="quiz-option">A.foo 然后 A.bar</button>
-            <button class="quiz-option">B.foo 然后 B.bar</button>
-          </div>
-          <div class="quiz-explain" hidden>C 没写任何方法，但 B 已实现抽象方法 foo，所以 <strong>C 可以实例化</strong>。调用沿 MRO 查找：<code>c.foo() → B.foo</code>（输出 B.foo）；<code>c.bar() → A.bar</code>（普通方法，输出 A.bar）。顺序：<strong>B.foo → A.bar</strong>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核四（思考题第二问）：<code>class D(A): pass</code>（A 有抽象方法 foo，D 不实现），执行 <code>d = D()</code> 会怎样？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">SyntaxError</button>
-            <button class="quiz-option">自动继承 A 的 pass 实现</button>
-            <button class="quiz-option">正常创建，foo 调用时报错</button>
-            <button class="quiz-option">TypeError：不能实例化抽象类 D</button>
-          </div>
-          <div class="quiz-explain" hidden>D 没有实现抽象方法 foo，<strong>仍是抽象类</strong>——实例化抛 <code>TypeError: Can't instantiate abstract class D with abstract method foo</code>。错误在创建对象时就暴露，这正是抽象类的价值。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握抽象类——可以继续学习《<a href="/agents/python/类型标注/">18.类型标注</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -291,21 +172,22 @@ class ListSequence(Sequence):
         window.__interview = {
           lesson: '0019-ABC',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `Python 的「鸭子类型」是什么意思？AI 生成的代码里没有任何 isinstance 检查，反而更 Pythonic——为什么？`,
     source: '考点来源：博客园「Python 面试题面向对象」（鸭子类型题）· 场景改写',
     breakdown: `<strong>「走起来像鸭子、叫起来像鸭子，就是鸭子」</strong>：只关心对象<strong>有没有所需的方法</strong>，不关心它的类型。所以函数参数不写类型检查、任何实现了 read() 的对象都能传给读文件的逻辑——协议兼容即类型。代价：错误推迟到运行时才暴露（TypeError: missing method）。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `面向对象的三大特性是什么？Python 的多态靠什么实现？`,
     source: '考点来源：博客园「Python 面试题面向对象」（OOP 三特性题）· 场景改写',
     breakdown: `<strong>封装</strong>（隐藏实现细节，暴露接口）、<strong>继承</strong>（复用与扩展）、<strong>多态</strong>（同一接口、不同行为）。Python 的多态主要靠<strong>鸭子类型</strong>实现——不要求继承同一基类，只要实现相同方法就能互换（这也是 ABC 存在的原因：当接口需要显式契约时用它约束）。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写的代码用 <code>register()</code> 把没实现接口的类注册成了 ABC 的虚拟子类。审查：虚拟子类与真实继承有什么区别？register 有什么风险？
@@ -321,14 +203,14 @@ print(isinstance(Weird(), Storage))   # True！</code></pre>`,
     source: '考点来源：博客园「Python 面试题面向对象」（虚拟子类题）· 场景改写',
     breakdown: `<code>register()</code> 只在 ABCMeta 的注册表里登记，<strong>isinstance/issubclass 返回 True，但完全不检查实现</strong>——Weird() 没有 save()，调用即 AttributeError。真实继承 + @abstractmethod 会在<strong>实例化时</strong>通过 __abstractmethods__ 检查拦下未实现者。风险：register 绕过全部契约检查，只应在「第三方类无法改继承关系」时谨慎使用，且调用前自己兜底。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `什么时候选 Protocol 而不是 ABC？两者的本质区别是什么？`,
     source: '考点来源：Maxiom「Python Developer Interview Questions（2026）」（ABC vs Protocol 题）· 场景改写',
     breakdown: `<strong>ABC</strong>：运行时契约——强制继承关系，实例化时检查抽象方法，适合「你的体系里必须显式注册」；<strong>Protocol</strong>：<strong>静态（类型检查器）契约</strong>——结构化子类型，任何「长得像」的类自动兼容，零运行时开销，适合给第三方代码、鸭子类型场景补类型检查。口诀：要运行时拦截选 ABC，要静态检查且不打扰运行时选 Protocol。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `用 ABC 定义一个存储接口（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -339,20 +221,8 @@ print(isinstance(Weird(), Storage))   # True！</code></pre>`,
     },
     source: '任务基于《19.ABC》课程知识点 · 来源层级：一手（Python 官方文档 abc 章节）场景化',
     breakdown: `思路：<code>class Storage(ABC): @abstractmethod def save...</code>；子类继承并全部实现。坑：抽象方法装饰器别漏（漏了实例化不拦截）；register 虚拟子类不检查实现（审查题同款）；ABC 与 @dataclass 混用时注意 ABC 的 __init__ 约束。`,
-  }, {
-    type: 'mechanism',
-    level: '高级岗常问',
-    prompt: `除了 register()，官方还提供什么机制来定制 isinstance/issubclass 的判定？官方例子（MyIterable）是怎么写的？`,
-    source: '来源：Python 官方文档 abc「abc.ABCMeta.__subclasshook__」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `<code>__subclasshook__(cls, C)</code>：类方法——返回 True 判为子类、False 判不是、<strong>NotImplemented 交给默认规则</strong>。官方例子：MyIterable 里检查 <code>any('__iter__' in B.__dict__ for B in C.__mro__)</code>——<strong>按结构</strong>（有没有实现 __iter__）而不是按继承判定，配合 register 补第三方类。这是「结构化判定」的官方实现方式，面试官问虚拟子类机制时这才是完整答案。`,
-  },
-  {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `AI 写 ABC 时同时用了 register() 和 __subclasshook__。审查：两者语义有什么本质区别？什么场景必须用后者？`,
-    source: '来源：Python 官方文档 abc「ABCMeta.register」与「__subclasshook__」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
-    breakdown: `<strong>register</strong>：无条件<strong>点名登记</strong>——不看类长什么样，isinstance 恒 True（不检查实现，审查题同款风险）；<strong>__subclasshook__</strong>：<strong>按结构判定</strong>——逐个候选类检查是否真的实现了协议方法，没实现的照旧 False。规则：第三方类无法改继承 → register；需要「像鸭子才算鸭子」的严格语义 → subclasshook（官方 MyIterable 就是它）。AI 只知 register 不知 subclasshook，是 ABC 认知盲区。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -418,7 +288,7 @@ print(isinstance(Weird(), Storage))   # True！</code></pre>`,
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/ABC/">回到《19.ABC》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。完成测验与面试实战即达成本课目标。
     </footer>
 
   </main>

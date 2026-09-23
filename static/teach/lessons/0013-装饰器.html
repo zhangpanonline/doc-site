@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="配合《13.装饰器》的互动教学课程：知识讲解 + 初/中/高级分级测验 + 源课程作业最终考核（timer/wraps）+ 真实面试题">
-  <title>装饰器 · 互动教学课程（第 13 节）</title>
-  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <meta name="description" content="配合《13.装饰器》的互动教学课程：9 道分级测验 + 面试实战（第 13 节）"icon" href="../../img/avatar.png" type="image/png">
   <link rel="stylesheet" href="../assets/course.css">
   <link rel="stylesheet" href="../assets/forest.css">
 </head>
@@ -15,7 +13,7 @@
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 11 课</p>
       <h1>装饰器</h1>
-      <p class="lesson-sub">配合《<a href="/agents/python/装饰器/">11.装饰器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 4 道最终考核 + 面试实战</p>
+      <p class="lesson-sub">配合《<a href="/agents/python/装饰器">13-装饰器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
@@ -24,7 +22,7 @@
       <ol>
         <li>说清装饰器的本质：<strong>接收函数、返回新函数的高阶函数</strong></li>
         <li>预测<strong>多个装饰器叠加</strong>的执行顺序</li>
-        <li>亲手写出 <code>timer</code> 计时装饰器与 <code>wraps</code> 元信息保留装饰器——<strong>最终考核的两道实现题</strong></li>
+        <li>亲手写出 <code>timer</code> 计时装饰器与 <code>wraps</code> 元信息保留装饰器——<strong>作业的两道实现题</strong></li>
       </ol>
     </section>
 
@@ -165,124 +163,7 @@
       </div>
     </section>
 
-    <section>
-      <h2>最终考核</h2>
-      <p>下面是《13.装饰器》源课程作业的两道实现题改编——<strong>这就是本课的最终考核</strong>。规则：不查资料、不运行代码，先在心里选出正确实现，再点击核对。</p>
-
-      <div class="quiz">
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核一（作业一·timer 装饰器）：实现 <code>@timer</code>——调用函数后打印 <code>函数名 执行时间: X.XXXX 秒</code>，且调用结果必须保留（<code>slow_function()</code> 返回 "Done"）。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">wrapper 只打印耗时，不 return func 的结果</button>
-            <button class="quiz-option">直接在装饰器外层打印耗时，不定义 wrapper</button>
-            <button class="quiz-option">wrapper 在 func 调用前就打印耗时</button>
-            <button class="quiz-option">wrapper 先记 start，调用 func 存 result，打印耗时后 return result</button>
-          </div>
-          <div class="quiz-explain" hidden>正确结构：<code>wrapper</code> 里 <code>start = time.time()</code> → <code>result = func(*args, **kwargs)</code> → 计算耗时并打印 → <code>return result</code>。第二个丢失返回值 ✗；第三个在<strong>定义时</strong>（import 阶段）就打印，且不返回新函数 ✗；第四个计的不是函数执行耗时 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业一）</summary>
-<pre><code>import time
-
-def timer(func):
-    def wrapper(*args, **kwargs):
-        start = time.time()
-        result = func(*args, **kwargs)
-        elapsed = time.time() - start
-        print(f"{func.__name__} 执行时间: {elapsed:.4f} 秒")
-        return result
-    return wrapper
-
-@timer
-def slow_function():
-    time.sleep(1)
-    return "Done"
-
-slow_function()
-# 输出：slow_function 执行时间: 1.0012 秒</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="0">
-          <div class="quiz-prompt">考核二（作业二·wraps 装饰器）：手写 <code>wraps(func)</code>，让被装饰函数保持原来的 <code>__name__</code> 和 <code>__doc__</code>。下列实现中<strong>正确</strong>的是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">返回的装饰器把 func.__name__ 和 func.__doc__ 复制给 wrapper 后返回 wrapper</button>
-            <button class="quiz-option">只复制 __name__，不管 __doc__</button>
-            <button class="quiz-option">直接返回原函数，不返回 wrapper</button>
-            <button class="quiz-option">把 wrapper 的元信息复制给原函数</button>
-          </div>
-          <div class="quiz-explain" hidden>正确结构：<code>wraps(func)</code> 返回装饰器 <code>decorator(wrapper)</code>，其中把 <code>wrapper.__name__ = func.__name__</code>、<code>wrapper.__doc__ = func.__doc__</code>，再返回 wrapper。第二个只保留了一半 ✗；第三个方向反了 ✗；第四个等于没装饰 ✗。</div>
-          <details class="quiz-explain" style="border-left-color:var(--accent)">
-            <summary>查看源课程参考答案（作业二）</summary>
-<pre><code>def wraps(func):
-    def decorator(wrapper):
-        wrapper.__name__ = func.__name__
-        wrapper.__doc__ = func.__doc__
-        return wrapper
-    return decorator
-
-def my_decorator(func):
-    @wraps(func)
-    def wrapper():
-        print("函数执行前")
-        func()
-        print("函数执行后")
-    return wrapper
-
-@my_decorator
-def say_hello():
-    """打招呼"""
-    print("Hello!")
-
-say_hello.__name__  # 'say_hello'（不包裹则是 'wrapper'）
-say_hello.__doc__   # '打招呼'</code></pre>
-          </details>
-        </div>
-
-        <div class="quiz-q" data-correct="2">
-          <div class="quiz-prompt">考核三（叠加顺序预测）：以下代码的输出顺序是？
-<pre><code>def a(func):
-    def wrapper():
-        print("A 前")
-        func()
-        print("A 后")
-    return wrapper
-
-def b(func):
-    def wrapper():
-        print("B 前")
-        func()
-        print("B 后")
-    return wrapper
-
-@a
-@b
-def hello():
-    print("执行")
-
-hello()</code></pre></div>
-          <div class="quiz-options">
-            <button class="quiz-option">A 前 → 执行 → A 后 → B 前 → 执行 → B 后</button>
-            <button class="quiz-option">B 前 → A 前 → 执行 → A 后 → B 后</button>
-            <button class="quiz-option">A 前 → B 前 → 执行 → B 后 → A 后</button>
-            <button class="quiz-option">B 前 → 执行 → B 后 → A 前 → 执行 → A 后</button>
-          </div>
-          <div class="quiz-explain" hidden><code>@a @b</code> 即 <code>hello = a(b(hello))</code>：调用时先进入 a 的 wrapper（打印 A 前）→ 调用 b 的 wrapper（打印 B 前）→ 原函数（执行）→ 返回 b 的 wrapper（B 后）→ 返回 a 的 wrapper（A 后）。顺序：<strong>A 前 → B 前 → 执行 → B 后 → A 后</strong>。</div>
-        </div>
-
-        <div class="quiz-q" data-correct="3">
-          <div class="quiz-prompt">考核四（返回值保留）：用正确的 timer 装饰 <code>slow_function</code>（内部 <code>time.sleep(1); return "Done"</code>），调用后程序的输出<strong>最后一行</strong>是？</div>
-          <div class="quiz-options">
-            <button class="quiz-option">None</button>
-            <button class="quiz-option">"slow_function 执行时间: 1.XXXX 秒"</button>
-            <button class="quiz-option">没有输出</button>
-            <button class="quiz-option">"Done"（调用方 print 了返回值）</button>
-          </div>
-          <div class="quiz-explain" hidden>wrapper 内先打印耗时行，然后 <code>return result</code>；调用方 <code>print(slow_function())</code> 再打印返回值。所以最后一行是 <strong>"Done"</strong>——这验证了「返回值必须保留」。</div>
-        </div>
-      </div>
-
-      <p style="margin-top:1.2rem">四道考核全部答对，说明你已经掌握装饰器——可以继续学习《<a href="/agents/python/魔术方法/">12.魔术方法</a>》了。</p>
-    </section>
+    
 
                                                                                                         <section>
       <h2>💼 面试实战</h2>
@@ -291,21 +172,22 @@ hello()</code></pre></div>
         window.__interview = {
           lesson: '0013-装饰器',
           questions: [
-  {
+
+{
     type: 'trap',
     level: '中级岗常问',
     prompt: `<code>@deco</code> 放在函数头上，等价于什么？装饰器的原理与作用一句话讲清楚。`,
     source: '考点来源：博客园「Python 面试基础」（装饰器原理题）· 场景改写',
     breakdown: `等价式：<code>@deco\ndef f(): ...</code> == <code>f = deco(f)</code>——装饰器就是<strong>接收函数、返回新函数</strong>的高阶函数，作用是把横切关注点（日志/计时/权限/重试/缓存）从业务逻辑里剥离。AI 时代的新问法：Agent 工具注册、限流、埋点全用它，是「函数一等公民」最直接的应用。`,
   },
-  {
+{
     type: 'mechanism',
     level: '中级岗常问',
     prompt: `装饰器什么时候执行？两个装饰器叠加 <code>@d1\n@d2\ndef f()</code>，执行顺序是怎样的？`,
     source: '考点来源：博客园「Python 面试基础」（装饰器时机题）· 场景改写',
     breakdown: `装饰<strong>发生在函数定义时</strong>（模块导入/类体执行时跑一次），之后每次调用跑的是 wrapper。叠加顺序：<strong>自下而上</strong>执行装饰（f = d1(d2(f))），所以离函数近的 @d2 先包、@d1 再包外层——调用时则先过 d1 的 wrapper。理解顺序是写多层装饰器（先鉴权后限流再日志）的前提。`,
   },
-  {
+{
     type: 'review',
     level: '高级岗常问',
     prompt: `AI 写了一个「生产级」装饰器，审查问题并给出修复版：
@@ -323,14 +205,14 @@ def fetch(url):
     source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（通用装饰器题）· 场景改写',
     breakdown: `三个问题：① <strong>返回值丢失</strong>——fn 的结果没 return，被装饰的 fetch 变 None；② 没加 <code>@functools.wraps(fn)</code>，元信息（__name__/__doc__）丢失；③ 异常照样计时但行为没说明（可选择记录后 re-raise）。修复版：wrapper 里 <code>result = fn(*args, **kwargs); return result</code> + wraps + try/finally 计时。`,
   },
-  {
+{
     type: 'design',
     level: '中级岗常问',
     prompt: `面试官问缓存装饰器：<code>functools.lru_cache</code> 的机制是什么？哪些函数不能用它缓存？`,
     source: '考点来源：老男孩 IT 教育「Python 基础教程之最常见的面试题」（缓存装饰器题）· 场景改写',
     breakdown: `机制：<strong>参数作 key</strong>（LRU 淘汰）缓存返回值，命中直接返回。不能用的情况：① 参数<strong>不可哈希</strong>（list/dict 传参会直接 TypeError）；② 函数有<strong>副作用</strong>或返回可变对象被外部修改（缓存会被污染）；③ 依赖外部状态（时间、DB 实时数据）的函数——缓存会让结果过期。AI 给代码随手加缓存是线上事故高发区。`,
   },
-  {
+{
     type: 'scenario',
     level: '初级岗常问',
     prompt: `实现一个生产级通用装饰器 <code>@log_calls</code>（建议用 Claude Code 完成），任务与验收点见任务卡。`,
@@ -341,20 +223,8 @@ def fetch(url):
     },
     source: '任务基于《13.装饰器》课程知识点 · 来源层级：一手（Python 官方文档 functools 章节）场景化',
     breakdown: `思路：外层工厂接配置，内层 wrapper 用 *args/**kwargs 透传并 return 原结果；计数放闭包或函数属性。坑：审查题的三件套（返回值 / wraps / 异常）一个都不能漏；多个被装饰函数要各自独立计数（计数挂函数属性而非全局变量）。`,
-  }, {
-    type: 'mechanism',
-    level: '中级岗常问',
-    prompt: `官方文档给 <code>functools.wraps</code> 的准确定义是什么？assigned 与 updated 两个参数分别控制什么？`,
-    source: '来源：Python 官方文档 functools「functools.wraps」条目 · 检索 2026-09-09 · 层级：一手',
-    breakdown: `原文：wraps 是「定义 wrapper 时把 update_wrapper 当装饰器用的<strong>便捷函数</strong>」，<strong>等价于 partial(update_wrapper, wrapped=wrapped, assigned=..., updated=...)</strong>。<code>assigned</code>（默认 WRAPPER_ASSIGNMENTS）把 __module__/__name__/__qualname__/__doc__/__annotations__ 从原函数<strong>赋给</strong> wrapper；<code>updated</code>（默认 WRAPPER_UPDATES）把原函数 __dict__ <strong>合并进</strong> wrapper 的 __dict__。`,
-  },
-  {
-    type: 'trap',
-    level: '高级岗常问',
-    prompt: `AI 写的装饰器用了 @wraps(f)，却抱怨「函数上的自定义属性丢了」。审查：wraps 到底复制什么、不复制什么？`,
-    source: '来源：Python 官方文档 functools「functools.wraps」条目 · 检索 2026-09-09 · 层级：一手（场景化改写）',
-    breakdown: `wraps 只复制 <strong>assigned 名单里的元信息</strong>（__name__/__doc__ 等五个）+ updated 把 __dict__ <strong>浅合并</strong>——若 wrapper 自己定义了同名属性会<strong>覆盖</strong>合并来的；原函数属性里指向可变对象的仍是<strong>共享引用</strong>（改一处两处变）。「复制所有东西」的期望不成立：闭包状态、非名单属性一律不碰。要完整保留自定义属性：手动 update_wrapper 传自定义 assigned/updated，或把状态挂到装饰器外部容器。`,
-  },],
+  }
+
         };
       </script>
     </section>
@@ -420,7 +290,7 @@ def fetch(url):
     </section>
 
     <footer class="lesson-footer">
-      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。做完考核也欢迎<a href="/agents/python/装饰器/">回到《13.装饰器》</a>复读对应小节。
+      💬 有任何不理解的地方，回到对话里问你的 AI 老师——每个概念、每道错题都可以展开讲。作业见课程文档末尾（0 题）。
     </footer>
 
   </main>

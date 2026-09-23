@@ -221,6 +221,146 @@ def calculate_bmi(weight, height):
 print(calculate_bmi.__doc__)
 ```
 
+
+## 作业
+
+### 作业一：函数参数与列表操作综合
+
+阅读以下代码，预测每行 `print` 的输出结果，并在注释中写出你的答案。
+
+```python
+def add_items(base, items=None, *tags):
+    if items is None:
+        items = []
+    items.append(base)
+    for tag in tags:
+        items.append(tag)
+    return items
+
+result1 = add_items(10)
+print(result1)
+
+result2 = add_items(20, [1, 2], 30, 40)
+print(result2)
+
+print(result1)
+```
+
+### 作业二：关键字参数与字典操作综合
+
+阅读以下代码，预测每行 `print` 的输出结果，并在注释中写出你的答案。
+
+```python
+def merge_data(base, **extra):
+    result = base.copy() # 浅拷贝
+    for key, value in extra.items():
+        if key in result:
+            result[key] += value
+        else:
+            result[key] = value
+    return result
+
+data = {"a": 10, "b": [1, 2]}
+merged = merge_data(data, a=5, b=[3], c="hello")
+print(merged)
+
+print(len(merged))
+print(merged.get("d", "not found"))
+```
+
+### 作业三：多返回值与容器遍历综合
+
+阅读以下代码，预测每行 `print` 的输出结果，并在注释中写出你的答案。
+
+```python
+def split_data(data):
+    mid = len(data) // 2
+    return data[:mid], data[mid:]
+
+nums = [1, 2, 3, 4, 5, 6]
+first, second = split_data(nums)
+print(first, second)
+
+def find_indices(items, target):
+    indices = []
+    for i, item in enumerate(items):
+        if item == target:
+            indices.append(i)
+    return indices
+
+scores = [85, 92, 85, 78, 85]
+positions = find_indices(scores, 85)
+print(positions)
+
+result = second + [len(positions)]
+print(result)
+```
+
+### 作业四：函数综合编程
+
+请按照要求实现以下三个函数，并编写测试代码手动调用每个函数，验证功能是否正确。
+
+**任务 1：列表扁平化**
+
+实现函数 `flatten`，接收一个可能包含嵌套列表的列表（如 `[1, [2, 3], [[4], 5]]`），返回一个将所有元素展开后的一维列表（如 `[1, 2, 3, 4, 5]`）。
+
+```python
+nested1 = [1, [2, 3], [[4], 5]]
+print(flatten(nested1))  # [1, 2, 3, 4, 5]
+
+nested2 = [[[1]], 2, [3, [4, [5]]]]
+print(flatten(nested2))  # [1, 2, 3, 4, 5]
+
+print(flatten([]))       # []
+print(flatten([1, 2, 3]))  # [1, 2, 3]
+```
+
+
+
+
+
+**任务 2：列表/元组转链表**
+
+实现函数 `to_linked_list`，接收一个列表或元组，将其转换为一个链表结构并返回。
+
+```python
+linked1 = to_linked_list((1, 2, 3))
+print(linked1)
+# {'value': 1, 'next': {'value': 2, 'next': {'value': 3, 'next': None}}}
+
+linked2 = to_linked_list([10, 20])
+print(linked2)
+# {'value': 10, 'next': {'value': 20, 'next': None}}
+
+print(to_linked_list([]))  # None
+```
+
+
+
+
+
+**任务 3：字典合并**
+
+实现函数 `merge_dicts`，接收不定数量的字典参数，将它们合并为一个大字典。
+
+合并规则：求并集，如果有相同的键，后传入的字典中的值覆盖先传入的字典中的值（浅合并即可）
+
+```python
+d1 = {"a": 1, "b": [1, 2]}
+d2 = {"b": [3], "c": "hello"}
+d3 = {"a": 10, "d": True}
+
+merged = merge_dicts(d1, d2, d3)
+print(merged)
+# {'a': 10, 'b': [3], 'c': 'hello', 'd': True}
+
+print(merge_dicts(d1))
+# {'a': 1, 'b': [1, 2]}
+
+print(merge_dicts())
+# {}
+```
+
 ---
 
 ## 🎓 互动教学课程
@@ -229,6 +369,6 @@ print(calculate_bmi.__doc__)
 
 <a href="/teach/lessons/0005-函数.html"><strong>👉 点击进入《函数互动教学课程》</strong></a>
 
-- ⏱️ 预计 10–15 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战 + 4 道源课程作业改编的最终考核
+- ⏱️ 预计 15–20 分钟：知识速览 + 9 道分级测验（初/中/高级各 3 道）+ 面试实战
 - 📋 配套<a href="/teach/reference/函数速查表.html">《函数速查表》</a>，可打印
 - 💬 有不理解的地方，随时可以问你的 AI 老师
