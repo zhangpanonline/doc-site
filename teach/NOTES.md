@@ -56,3 +56,40 @@
 
 - `assets/course.css`：共享样式（中文字体栈、卡片、图表、测验、打印样式）
 - `assets/quiz.js`：可复用测验组件，纯 vanilla，无依赖；用法见 lessons/0001-python-coroutines.html
+
+## Python 框架课程（2026-09-22 完成，24 章；源 gitee dev-edu/python-framework）
+
+渡一框架课（跳 16 长事务和短事务、19 AI导购——源仓库无课件，编号保留跳号）。**结构与 30 章语言核心课不同**，新课程以此为模板：
+
+### 每章交付物（每章 5 件套 + 收尾）
+
+1. 文档 `docs/agents/python-framework/0X.章名.mdx`——源课件**全量保留**（章节/代码/作业一字不少，仅格式层适配，明显笔误顺带修）+ 该章 duyi-service 代码子目录的**新增代码全文**（薄课件章的真实内容在代码里）；frontmatter：sidebar_position/title/description/displayed_sidebar:agentsFramework；末尾两条原生 `<a>` 入口（互动课 + 速查表）
+2. 互动课 `teach/lessons/fw-000X-章名.html`——结构：**本课目标（4 条）→ 知识速览（2-3 张 card）→ 分级测验 9 题（🌱🌿🎯 各 3）→ 💼 面试实战（固定 5 题，五类题型各一，顺序=模板）→ 巩固延伸（源课程/深读推荐/速查表/回看课程）→ lesson-footer**。**无最终考核**（框架课作业只在文档纯展示，不交互化）；lesson-sub 文案固定「配合《<a>0X.章名</a>》使用 · 预计 15–20 分钟 · 9 道分级测验 + 面试实战」；meta description 以「Python 框架课程 · 章名：…」开头
+3. 速查表 `teach/reference/章名速查表.html`——沿用 sheet-kicker/term-grid/cmp-table 样式，末尾 print-badge
+4. 洗牌（shuffle_options.py，BASE 已改主检出区）+ 复制同步 `static/teach/`
+5. `data/courses.ts` 的 FRAMEWORK_NAMES 追加章名 → `pnpm typecheck` + `pnpm build` 全绿 → 本地 commit
+
+### 格式层坑（已踩，勿重蹈）
+
+- 课件 `<img ... style="zoom:50%">` 会让 MDX 报「style prop 期望映射」——**统一转 markdown 图片语法** `![alt](url)`（远程 resource.duyiedu.com 图片直接保留 URL，不下载）
+- 正文里 `<你的域名>` 这类尖括号占位符会被 MDX 当 JSX 标签——用反引号包起来；代码围栏内无需处理
+- mermaid 围栏可用（docusaurus.config `markdown.mermaid: true`）；课件 `> [!NOTE]` 引用块原样保留
+- 章节名路由自动去数字前缀（Docusaurus 内置），FRAMEWORK_NAMES 用**去前缀章名**
+
+### 面试题源执行口径（B 路线落地形态）
+
+- source 字段格式：`来源：<官方文档名>（"<原文引用>…"）<URL> · 检索 <日期> · 层级：一手（官方文档）+ 渡一源课程《0X.章名》课件（<锚点>）`
+- 抓取方式：WebFetch 对部分域名（docs.sqlalchemy.org 等）被域名验证挡——**用 curl 抓 HTML + Python 提取正文原文**，引用必须来自实际抓到的文字
+- 场景题（任务卡）source 例外：`任务基于《0X.章名》课件 · 来源层级：一手（源课程）场景化`
+- 实测政策（2026-09-22 用户指示）：框架课**跳过题内代码 pg16 实测**，每章提交信息注明「按用户指示跳过实测」
+
+### 源码获取（gitee API 会 403 限流）
+
+- **全仓归档一把梭**：`https://gitee.com/dev-edu/python-framework/repository/archive/main.zip`（免限流，含 26 章目录 + 每章 duyi-service 代码 + 14 章的完整代码.zip）
+- 解压**必须用 Python zipfile**（macOS unzip 中文名报 Illegal byte sequence）——逐名探测 `cp437→utf-8→gbk`
+- 薄课件章（07/09/11/13/14/15/22/25 等）真实内容在 `该章目录/duyi-service/`（「复制覆盖 apps/web-service」）；mdx 编排 = 课件全文 + 与上一章 diff 出的新增代码文件全文
+- 推送政策：框架课期间会话不推送，全部完成后用户手动 push（2026-09-22 用户指示）
+
+### 章节-作业对照（纯展示章）
+
+作业仅 01/03/04/05/06/09/25 有；lesson-footer 只在这些章提「作业见课程文档末尾」，其余章写完成标志句。
