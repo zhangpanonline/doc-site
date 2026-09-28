@@ -4,6 +4,12 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "build",
   "installCommand": "pnpm install --ignore-scripts",
+  "functions": {
+    "api/ai-search.ts": {
+      "regions": ["hkg1"],
+      "maxDuration": 30
+    }
+  },
   "routes": [
     {
       "src": "/(.*)",

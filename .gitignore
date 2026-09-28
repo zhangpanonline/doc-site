@@ -27,3 +27,6 @@ yarn-error.log*
 .scratch/
 .vercel
 .env*
+
+# AI 搜索索引（scripts/build-search-index.mjs 构建期生成）
+/api/_index/

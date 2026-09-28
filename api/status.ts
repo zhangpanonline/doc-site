@@ -43,6 +43,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // AI 搜索 token 用量（ai_search_stats() 未建/查询失败时优雅降级为 null，
+    // 前端隐藏该面板——旧部署或迁移未执行不影响统计页其余部分）
+    try {
+      const {data: aiData, error: aiErr} = await getSupabaseAdmin().rpc('ai_search_stats');
+      if (!aiErr) {
+        data.ai_search = aiData;
+      }
+    } catch {
+      // 无此函数（迁移 010 未执行）等场景：静默跳过
+    }
+
     // 浏览器/系统分布：拉取全量 UA 在 API 层解析聚合（不改表结构；
     // 本站量级下每次全量扫描可接受，量大后可改为写入时落列）
     const {data: uas, error: uaErr} = await getSupabaseAdmin().from('visits').select('user_agent');
