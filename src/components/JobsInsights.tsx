@@ -157,8 +157,13 @@ function CityOverview({cat}: {cat: string}): ReactNode {
 
 /* ===== 核心图 2：经验分层（柱高 = P50，标注 n） ===== */
 
+/** 按分桶自然顺序排序（groupByDim 默认按 n 降序） */
+const orderOf = (labels: readonly string[], l: string) => (labels as readonly string[]).indexOf(l);
+
 function ExpLayers({cat}: {cat: string}): ReactNode {
-  const groups = groupByDim(filterRows({cat}), DIM.exp, insightExpBuckets);
+  const groups = groupByDim(filterRows({cat}), DIM.exp, insightExpBuckets).sort(
+    (a, b) => orderOf(insightExpBuckets, a.label) - orderOf(insightExpBuckets, b.label),
+  );
   const maxP50 = Math.max(...groups.map(g => g.stat?.p50 ?? 0), 1);
   const scaleMax = Math.max(Math.ceil(maxP50 / 5) * 5, 5);
   return (
@@ -460,9 +465,15 @@ function Explorer(): ReactNode {
   const low = stat !== null && stat.n < MIN_CELL_N;
 
   const cityDist = groupByDim(rows, DIM.city, insightCities).slice(0, 10);
-  const expDist = groupByDim(rows, DIM.exp, insightExpBuckets);
-  const degDist = groupByDim(rows, DIM.deg, insightDegBuckets);
-  const domDist = groupByDim(rows, DIM.dom, insightDomains);
+  const expDist = groupByDim(rows, DIM.exp, insightExpBuckets).sort(
+    (a, b) => orderOf(insightExpBuckets, a.label) - orderOf(insightExpBuckets, b.label),
+  );
+  const degDist = groupByDim(rows, DIM.deg, insightDegBuckets).sort(
+    (a, b) => orderOf(insightDegBuckets, a.label) - orderOf(insightDegBuckets, b.label),
+  );
+  const domDist = groupByDim(rows, DIM.dom, insightDomains).sort(
+    (a, b) => orderOf(insightDomains, a.label) - orderOf(insightDomains, b.label),
+  );
   const maxCityN = Math.max(...cityDist.map(g => g.n), 1);
   const maxExpN = Math.max(...expDist.map(g => g.n), 1);
   const maxDegN = Math.max(...degDist.map(g => g.n), 1);
