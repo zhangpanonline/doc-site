@@ -264,6 +264,12 @@
   padding: 8px 0 0;
 }
 
+/* 地区分布与「最近访问路径」卡片等高：max-height 与 .table-wrap 保持一致，超出滚动 */
+.country-list--scroll {
+  max-height: 440px;
+  overflow-y: auto;
+}
+
 .country-row {
   display: flex;
   align-items: center;

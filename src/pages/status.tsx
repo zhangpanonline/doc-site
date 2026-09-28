@@ -395,10 +395,13 @@ function BarList({
   title,
   items,
   weakNames,
+  scroll,
 }: {
   title: string;
   items: {name: string; count: number}[];
   weakNames?: string[];
+  /** 列表限高滚动（与最近访问路径卡片的 .table-wrap 等高） */
+  scroll?: boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...items.map(r => r.count));
@@ -411,7 +414,7 @@ function BarList({
       {ordered.length === 0 ? (
         <p className="empty">暂无数据</p>
       ) : (
-        <ul className="country-list">
+        <ul className={scroll ? 'country-list country-list--scroll' : 'country-list'}>
           {ordered.map((r, i) => (
             <li
               key={r.name}
@@ -980,6 +983,7 @@ export default function StatusPage(): React.JSX.Element {
                   count: r.count,
                 }))}
                 weakNames={['未知']}
+                scroll
               />
               <Paths paths={stats.paths} />
             </div>
