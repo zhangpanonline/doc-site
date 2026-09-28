@@ -1,7 +1,7 @@
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {randomUUID} from 'node:crypto';
 import {getSupabaseAdmin} from '../lib/supabase-admin';
-import {retrieve} from '../lib/search-retrieval.mjs';
+import {retrieve} from '../lib/search-retrieval';
 import {INDEX} from './_index/search-index';
 
 /**
