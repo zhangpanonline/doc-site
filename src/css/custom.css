@@ -799,3 +799,128 @@ html.immersive .theme-doc-sidebar-container {
 
 /* Forest 主题（仅 Python 框架课程文档页作用域），见 src/css/forest.css */
 @import url('./forest.css');
+
+/* ===== 岗位市场情报 /jobs/insights（多维 cube 视图） ===== */
+.ji-root {
+  /* 序列色：A 合并快照（朱砂，站点品牌）；B 51job 月度（dataviz 参考色板 slot1 蓝，CVD/色度验证通过） */
+  --ji-series-a: #9d3b2c;
+  --ji-series-b: #2a78d6;
+  margin: 24px 0;
+}
+[data-theme='dark'] .ji-root {
+  /* 深色步进遵循站点品牌（#e8855f）；亮度带略超验证器上限但区分度/CVD 全过，另有线型+形状+直标三重次编码 */
+  --ji-series-a: #e8855f;
+  --ji-series-b: #3987e5;
+}
+.js-tab-n {
+  color: var(--course-muted);
+  font-size: 11px;
+  margin-left: 5px;
+  font-weight: 400;
+}
+.ji-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--course-accent);
+  color: var(--course-accent-ink);
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+/* 城市薪资总览 */
+.ji-citychart { margin: 10px 0 14px; }
+.ji-city-scale { text-align: right; color: var(--course-muted); font-size: 11.5px; margin-bottom: 6px; }
+.ji-city-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.ji-city-label { flex: none; width: 78px; font-size: 12.5px; font-weight: 700; color: var(--course-accent-ink); }
+.ji-city-items { flex: 1; min-width: 0; }
+.ji-city-item { display: flex; align-items: center; height: 30px; }
+.ji-city-name { flex: none; width: 72px; padding-right: 8px; text-align: right; font-size: 12.5px; color: var(--course-fg); font-weight: 600; }
+.ji-city-track { position: relative; flex: 1; height: 100%; border-bottom: 1px solid var(--course-border); }
+.ji-bar { position: absolute; top: 8px; bottom: 8px; min-width: 6px; background: color-mix(in srgb, var(--course-accent) 16%, transparent); border-radius: 3px; }
+.ji-bar-body { position: absolute; top: 3px; bottom: 3px; background: color-mix(in srgb, var(--course-accent) 46%, transparent); border-radius: 2px; }
+.ji-bar-median { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--course-accent); }
+.ji-bar-empty { position: absolute; top: 6px; bottom: 6px; left: 2%; right: 2%; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--course-border); border-radius: 3px; color: var(--course-muted); font-size: 11px; }
+.ji-city-meta { flex: none; width: 132px; padding-left: 8px; font-size: 11.5px; color: var(--course-muted); }
+.ji-tip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 6px 9px;
+  background: var(--course-card);
+  border: 1px solid var(--course-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(45, 41, 38, 0.14);
+  color: var(--course-fg);
+  font-size: 11.5px;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+.ji-bar:hover .ji-tip { display: block; }
+
+/* 经验分层柱状图 */
+.ji-vchart { position: relative; display: flex; gap: 12px; align-items: stretch; height: 200px; padding: 8px 4px 0; }
+.ji-vcol { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.ji-vbar { width: 62%; max-width: 52px; background: color-mix(in srgb, var(--course-accent) 55%, transparent); border-radius: 4px 4px 0 0; min-height: 3px; }
+.ji-vbar-muted { background: var(--course-border); }
+.ji-vval { font-size: 11.5px; color: var(--course-fg); margin-bottom: 4px; }
+.ji-vval-muted { color: var(--course-muted); }
+.ji-vn { font-size: 11px; color: var(--course-muted); margin-top: 4px; }
+.ji-vname { font-size: 12px; color: var(--course-fg); margin-top: 6px; }
+.ji-vscale { position: absolute; top: 0; right: 0; color: var(--course-muted); font-size: 11px; }
+
+/* 时间趋势 */
+.ji-trend { margin: 10px 0; }
+.ji-legend { display: flex; flex-wrap: wrap; gap: 18px; margin: 8px 0 10px; font-size: 12.5px; color: var(--course-fg); }
+.ji-swatch { display: inline-block; width: 20px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+.ji-swatch-a { background: var(--ji-series-a); }
+.ji-swatch-b { background: var(--ji-series-b); }
+.ji-trend-svg { width: 100%; height: auto; }
+.ji-grid { stroke: var(--course-border); stroke-width: 1; }
+.ji-axis { fill: var(--course-muted); font-size: 10.5px; }
+.ji-line-a { stroke: var(--ji-series-a); stroke-width: 2; }
+.ji-line-b { stroke: var(--ji-series-b); stroke-width: 2; }
+.ji-pt-a { fill: var(--ji-series-a); }
+.ji-pt-b { fill: var(--ji-series-b); }
+.ji-pt-dim { opacity: 0.45; }
+.ji-pt-label { fill: var(--course-accent-ink); font-size: 10.5px; }
+[data-theme='dark'] .ji-pt-label { fill: var(--course-accent); }
+
+/* 技能热度 */
+.ji-heat { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; padding: 10px 0 4px; }
+.ji-heat-tag { color: var(--course-accent-ink); font-weight: 600; }
+.ji-heat-tag:hover { color: var(--course-accent); text-decoration: none; }
+.ji-heat-plain { color: var(--course-fg); font-weight: 500; }
+.ji-heat-n { color: var(--course-muted); font-size: 10.5px; margin-left: 3px; font-weight: 400; }
+
+/* 课程对照参考 */
+.ji-course-ref { margin: 26px 0; padding: 14px 16px; background: var(--course-code-bg); border: 1px solid var(--course-border); border-radius: 10px; }
+.ji-course-ref .js-sec-title { margin-top: 0; }
+.ji-ref-table td { padding: 4px 14px 4px 0; font-size: 13px; vertical-align: top; }
+
+/* 探索器 */
+.ji-filters { display: flex; flex-direction: column; gap: 9px; margin: 12px 0 4px; }
+.ji-filter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ji-filter-label { flex: none; width: 44px; color: var(--course-muted); font-size: 12.5px; }
+.ji-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ji-fchip { border: 1px solid var(--course-border); background: var(--course-card); color: var(--course-fg); border-radius: 999px; padding: 3px 11px; font-size: 12.5px; cursor: pointer; }
+.ji-fchip:hover { border-color: var(--course-accent); }
+.ji-fchip-active { background: var(--course-accent); border-color: var(--course-accent); color: #fffdf9; }
+[data-theme='dark'] .ji-fchip-active { color: #2d2926; }
+.ji-select { border: 1px solid var(--course-border); background: var(--course-card); color: var(--course-fg); border-radius: 8px; padding: 4px 8px; font-size: 12.5px; }
+.ji-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0 10px; }
+.ji-tile { background: var(--course-card); border: 1px solid var(--course-border); border-radius: 10px; padding: 12px 14px; }
+.ji-tile-label { color: var(--course-muted); font-size: 12px; }
+.ji-tile-value { font-size: 22px; font-weight: 700; margin: 4px 0 2px; color: var(--course-fg); }
+.ji-tile-sub { color: var(--course-muted); font-size: 11.5px; }
+.ji-tile-warn .ji-tile-value { color: var(--course-muted); font-size: 14px; font-weight: 400; }
+.ji-dist-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 6px 28px; margin: 12px 0; }
+.ji-dist-title { font-size: 13px; margin: 6px 0 4px; color: var(--course-fg); }
+.ji-dist-row { display: flex; align-items: center; height: 24px; }
+.ji-dist-label { flex: none; width: 96px; font-size: 12px; color: var(--course-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ji-dist-track { position: relative; flex: 1; height: 100%; border-bottom: 1px solid var(--course-border); }
+.ji-dist-bar { position: absolute; top: 6px; bottom: 6px; left: 0; background: color-mix(in srgb, var(--course-accent) 42%, transparent); border-radius: 2px; }
+.ji-dist-meta { flex: none; width: 118px; padding-left: 8px; font-size: 11px; color: var(--course-muted); }
