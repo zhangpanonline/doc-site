@@ -264,9 +264,9 @@
   padding: 8px 0 0;
 }
 
-/* 地区分布与「最近访问路径」卡片等高：max-height 与 .table-wrap 保持一致，超出滚动 */
+/* 列表/表格统一限高：与「近 30 天访问趋势」内容区等高（--scroll-max 由页面 JS 实测设置），超出滚动 */
 .country-list--scroll {
-  max-height: 440px;
+  max-height: var(--scroll-max, 440px);
   overflow-y: auto;
 }
 
@@ -380,7 +380,7 @@
 }
 
 .table-wrap {
-  max-height: 440px;
+  max-height: var(--scroll-max, 440px);
   overflow: auto;
 }
 

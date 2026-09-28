@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import Layout from '@theme/Layout';
 import {regionZh} from '../../lib/regions';
 import {CHINA_PROVINCES, CHINA_VIEWBOX} from '../components/chinaMap';
@@ -32,15 +32,25 @@ type ProvinceStat = {region: string; count: number; ips: number; visitors: numbe
 type AiSearchStats = {
   total_tokens: number;
   month_tokens: number;
+  /** 费用（分）。迁移 011 未执行时缺失，token 后不显示金额 */
+  total_cost_cents?: number | null;
+  month_cost_cents?: number | null;
   total_requests: number;
   month_requests: number;
   visitors_total: number;
   visitors_month: number;
   visitors: {
     visitor: string; // 已截断 8 位匿名化
+    ip?: string | null;
+    region?: string | null;
+    city?: string | null;
+    browser?: string | null;
+    os?: string | null;
     requests: number;
     total_tokens: number;
     month_tokens: number;
+    total_cost_cents?: number | null;
+    month_cost_cents?: number | null;
     last: string;
   }[];
   updated_at: string;
@@ -109,6 +119,11 @@ function fmtClockWithSec(iso: string): string {
     second: '2-digit',
     hour12: false,
   });
+}
+
+/** token 数 + 费用（分），如 8888(8.00)；费用缺失时只显示 token */
+function fmtTokensCost(tokens: number, cents?: number | null): string {
+  return cents == null ? fmt(tokens) : `${fmt(tokens)}(${(cents / 100).toFixed(2)})`;
 }
 
 /** 向上取整到 1/2/2.5/5×10^k 的"整洁"数 */
@@ -763,10 +778,10 @@ function IpTable({ips}: {ips: IpRow[]}) {
 /** AI 搜索 token 用量面板：总/月用量 + 按独立访客的总/月用量明细 */
 function AiSearchPanel({ai}: {ai: AiSearchStats}) {
   const tiles: {label: string; value: string; delta?: {text: string; up: boolean}}[] = [
-    {label: 'Token 总用量', value: fmt(ai.total_tokens)},
+    {label: 'Token 总用量', value: fmtTokensCost(ai.total_tokens, ai.total_cost_cents)},
     {
       label: 'Token 本月用量',
-      value: fmt(ai.month_tokens),
+      value: fmtTokensCost(ai.month_tokens, ai.month_cost_cents),
       delta: ai.total_tokens > 0
         ? {text: `占总量 ${((ai.month_tokens / ai.total_tokens) * 100).toFixed(1)}%`, up: true}
         : undefined,
@@ -787,7 +802,9 @@ function AiSearchPanel({ai}: {ai: AiSearchStats}) {
     <section className="card" aria-label="AI 搜索 token 用量">
       <div className="card-head">
         <h2>AI 搜索 · Token 用量</h2>
-        <span className="card-note">每 IP 每日限额 20 次 · 访客 ID 截断显示</span>
+        <span className="card-note">
+          每 IP 每日限额 20 次 · 金额按 DeepSeek 官方价目估算（缓存命中/未命中 + 峰谷时段）
+        </span>
       </div>
       <div className="kpi-row" style={{marginTop: 0}}>
         {tiles.map(t => (
@@ -805,7 +822,10 @@ function AiSearchPanel({ai}: {ai: AiSearchStats}) {
           <table>
             <thead>
               <tr>
-                <th>访客</th>
+                <th>IP</th>
+                <th>地区</th>
+                <th>浏览器</th>
+                <th>系统</th>
                 <th className="num">次数</th>
                 <th className="num">总 Token</th>
                 <th className="num">本月 Token</th>
@@ -815,10 +835,15 @@ function AiSearchPanel({ai}: {ai: AiSearchStats}) {
             <tbody>
               {ai.visitors.map(v => (
                 <tr key={v.visitor}>
-                  <td className="mono">{v.visitor}</td>
+                  <td className="mono">{v.ip ?? v.visitor}</td>
+                  <td>
+                    {[regionZh(v.region), v.city].filter(Boolean).join(' / ') || '—'}
+                  </td>
+                  <td>{v.browser || '—'}</td>
+                  <td>{v.os || '—'}</td>
                   <td className="num">{fmt(v.requests)}</td>
-                  <td className="num">{fmt(v.total_tokens)}</td>
-                  <td className="num">{fmt(v.month_tokens)}</td>
+                  <td className="num">{fmtTokensCost(v.total_tokens, v.total_cost_cents)}</td>
+                  <td className="num">{fmtTokensCost(v.month_tokens, v.month_cost_cents)}</td>
                   <td className="num">{fmtClock(v.last)}</td>
                 </tr>
               ))}
@@ -834,6 +859,7 @@ export default function StatusPage(): React.JSX.Element {
   const {stats, stale, error, token, setToken, load} = useStats();
   const [tokenInput, setTokenInput] = useState('');
   const [whoami, setWhoami] = useState<WhoAmI | null>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch('/api/whoami')
@@ -847,6 +873,24 @@ export default function StatusPage(): React.JSX.Element {
         // 自述接口不可用时静默隐藏卡片
       });
   }, []);
+
+  // 列表/表格限高：与「近 30 天访问趋势」内容区等高（趋势图高度随容器宽度缩放，实测为准）
+  useEffect(() => {
+    if (!stats) return;
+    const wrap = bodyRef.current?.querySelector('.trend-wrap') as HTMLElement | null;
+    const svg = wrap?.querySelector('svg');
+    if (!wrap || !svg) return;
+    const apply = () => {
+      const h = svg.getBoundingClientRect().height;
+      if (h > 0) {
+        bodyRef.current?.style.setProperty('--scroll-max', `${Math.round(h)}px`);
+      }
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [stats]);
 
   const saveToken = () => {
     try {
@@ -954,7 +998,7 @@ export default function StatusPage(): React.JSX.Element {
             error !== 'unauthorized' && <p className="empty">加载中…</p>
           )
         ) : (
-          <div className={stale ? 'status-body stale' : 'status-body'}>
+          <div className={stale ? 'status-body stale' : 'status-body'} ref={bodyRef}>
             {error && error !== 'unauthorized' && (
               <div className="status-banner">
                 <span>自动刷新失败：{error}（显示的是最近一次成功的数据）</span>

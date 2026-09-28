@@ -2,6 +2,7 @@ import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {randomUUID} from 'node:crypto';
 import {getSupabaseAdmin} from '../lib/supabase-admin';
 import {retrieve} from '../lib/search-retrieval';
+import {parseUA} from '../lib/ua';
 import {INDEX} from './_index/search-index';
 
 /**
@@ -80,6 +81,34 @@ async function consumeQuota(ip: string): Promise<{ok: boolean; reason?: 'daily' 
   }
 }
 
+// ---------------------------------------------------------------- 计费（估算）
+
+// DeepSeek 官方价目（元 / 百万 tokens，2026-09-10 起执行峰谷定价），可用环境变量覆盖：
+// 缓存命中 0.02 / 未命中 1 / 输出 4；北京时间工作日 9-12、14-18 为高峰，价格 ×2。
+// 调价或切换模型（如 deepseek-v4-pro）时改环境变量即可，无需发版。
+const PRICE_HIT = Number(process.env.DEEPSEEK_PRICE_HIT ?? 0.02);
+const PRICE_MISS = Number(process.env.DEEPSEEK_PRICE_MISS ?? 1);
+const PRICE_OUTPUT = Number(process.env.DEEPSEEK_PRICE_OUTPUT ?? 4);
+const PEAK_MULT = Number(process.env.DEEPSEEK_PEAK_MULT ?? 2);
+
+/** 请求时刻是否处于高峰计费时段（北京时间工作日 9:00-12:00 / 14:00-18:00） */
+function isPeakHour(): boolean {
+  const d = new Date(Date.now() + 8 * 3600_000);
+  const day = d.getUTCDay();
+  const h = d.getUTCHours();
+  return day >= 1 && day <= 5 && ((h >= 9 && h < 12) || (h >= 14 && h < 18));
+}
+
+/**
+ * 费用（分）：按缓存命中/未命中拆分 + 输出 token 精确计算。
+ * 老数据或 API 未返回拆分字段时按「未命中价」保守估算（金额略偏高）。
+ */
+function computeCostCents(hit: number, miss: number, output: number): number {
+  const mult = isPeakHour() ? PEAK_MULT : 1;
+  const yuan = ((hit * PRICE_HIT + miss * PRICE_MISS + output * PRICE_OUTPUT) / 1_000_000) * mult;
+  return Math.round(yuan * 100);
+}
+
 // ---------------------------------------------------------------- DeepSeek 调用
 
 async function callDeepSeek(q: string, hits: {u: string; t: string; b: string; h: string; x: string}[]) {
@@ -117,7 +146,13 @@ async function callDeepSeek(q: string, hits: {u: string; t: string; b: string; h
   }
   const data = (await res.json()) as {
     choices?: {message?: {content?: string}}[];
-    usage?: {prompt_tokens?: number; completion_tokens?: number; total_tokens?: number};
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+      prompt_cache_hit_tokens?: number;
+      prompt_cache_miss_tokens?: number;
+    };
   };
   const answer = data.choices?.[0]?.message?.content?.trim();
   if (!answer) throw new Error('deepseek empty answer');
@@ -127,6 +162,8 @@ async function callDeepSeek(q: string, hits: {u: string; t: string; b: string; h
       prompt_tokens: data.usage?.prompt_tokens ?? 0,
       completion_tokens: data.usage?.completion_tokens ?? 0,
       total_tokens: data.usage?.total_tokens ?? 0,
+      cache_hit_tokens: data.usage?.prompt_cache_hit_tokens ?? 0,
+      cache_miss_tokens: data.usage?.prompt_cache_miss_tokens ?? 0,
     },
   };
 }
@@ -173,7 +210,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   let answer: string;
-  let usage = {prompt_tokens: 0, completion_tokens: 0, total_tokens: 0};
+  let usage = {
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    total_tokens: 0,
+    cache_hit_tokens: 0,
+    cache_miss_tokens: 0,
+  };
   try {
     const r = await callDeepSeek(q, hits);
     answer = r.answer;
@@ -204,7 +247,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Set-Cookie', `visitor_id=${visitorId}; Max-Age=31536000; Path=/; SameSite=Lax`);
   }
 
-  // token 埋点：失败不影响响应
+  // token 埋点：失败不影响响应（迁移 011 未执行时新列 insert 会失败，静默跳过）
+  const uaInfo = parseUA(firstHeader(req.headers['user-agent']));
   try {
     await getSupabaseAdmin().from('ai_search_usage').insert({
       ip,
@@ -214,6 +258,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       prompt_tokens: usage.prompt_tokens,
       completion_tokens: usage.completion_tokens,
       total_tokens: usage.total_tokens,
+      prompt_cache_hit_tokens: usage.cache_hit_tokens,
+      prompt_cache_miss_tokens: usage.cache_miss_tokens,
+      cost_cents: computeCostCents(usage.cache_hit_tokens, usage.cache_miss_tokens, usage.completion_tokens),
+      region: firstHeader(req.headers['x-vercel-ip-country-region']) || null,
+      city: firstHeader(req.headers['x-vercel-ip-city']) || null,
+      browser: uaInfo.browser,
+      os: uaInfo.os,
     });
   } catch (err) {
     console.error('[ai-search] usage insert failed:', err);
