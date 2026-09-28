@@ -28,6 +28,23 @@ type IpRow = {
 };
 type PathRow = {path: string; count: number; last?: string};
 type ProvinceStat = {region: string; count: number; ips: number; visitors: number};
+/** AI 搜索 token 用量（api/ai-search.ts 埋点 → ai_search_stats() 聚合） */
+type AiSearchStats = {
+  total_tokens: number;
+  month_tokens: number;
+  total_requests: number;
+  month_requests: number;
+  visitors_total: number;
+  visitors_month: number;
+  visitors: {
+    visitor: string; // 已截断 8 位匿名化
+    requests: number;
+    total_tokens: number;
+    month_tokens: number;
+    last: string;
+  }[];
+  updated_at: string;
+};
 type Stats = {
   total: number;
   unique_ips: number;
@@ -45,6 +62,8 @@ type Stats = {
   countries?: {country: string; count: number; regions: {region: string; count: number}[]}[];
   ips: IpRow[];
   paths: PathRow[];
+  /** AI 搜索 token 用量；迁移未执行/查询失败时为 null（面板隐藏） */
+  ai_search?: AiSearchStats | null;
   updated_at: string;
 };
 
@@ -738,6 +757,76 @@ function IpTable({ips}: {ips: IpRow[]}) {
   );
 }
 
+/** AI 搜索 token 用量面板：总/月用量 + 按独立访客的总/月用量明细 */
+function AiSearchPanel({ai}: {ai: AiSearchStats}) {
+  const tiles: {label: string; value: string; delta?: {text: string; up: boolean}}[] = [
+    {label: 'Token 总用量', value: fmt(ai.total_tokens)},
+    {
+      label: 'Token 本月用量',
+      value: fmt(ai.month_tokens),
+      delta: ai.total_tokens > 0
+        ? {text: `占总量 ${((ai.month_tokens / ai.total_tokens) * 100).toFixed(1)}%`, up: true}
+        : undefined,
+    },
+    {
+      label: '搜索次数',
+      value: fmt(ai.total_requests),
+      delta: ai.month_requests > 0 ? {text: `本月 ${fmt(ai.month_requests)} 次`, up: true} : undefined,
+    },
+    {
+      label: '使用访客',
+      value: fmt(ai.visitors_total),
+      delta: ai.visitors_month > 0 ? {text: `本月 ${fmt(ai.visitors_month)} 人`, up: true} : undefined,
+    },
+  ];
+
+  return (
+    <section className="card" aria-label="AI 搜索 token 用量">
+      <div className="card-head">
+        <h2>AI 搜索 · Token 用量</h2>
+        <span className="card-note">每 IP 每日限额 20 次 · 访客 ID 截断显示</span>
+      </div>
+      <div className="kpi-row" style={{marginTop: 0}}>
+        {tiles.map(t => (
+          <div className="kpi" key={t.label}>
+            <span className="kpi-label">{t.label}</span>
+            <span className="kpi-value">{t.value}</span>
+            {t.delta && <span className={`kpi-delta ${t.delta.up ? 'up' : 'down'}`}>{t.delta.text}</span>}
+          </div>
+        ))}
+      </div>
+      {ai.visitors.length === 0 ? (
+        <p className="empty">还没有人用过 AI 搜索</p>
+      ) : (
+        <div className="table-wrap" style={{marginTop: 14}}>
+          <table>
+            <thead>
+              <tr>
+                <th>访客</th>
+                <th className="num">次数</th>
+                <th className="num">总 Token</th>
+                <th className="num">本月 Token</th>
+                <th className="num">最近使用</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ai.visitors.map(v => (
+                <tr key={v.visitor}>
+                  <td className="mono">{v.visitor}</td>
+                  <td className="num">{fmt(v.requests)}</td>
+                  <td className="num">{fmt(v.total_tokens)}</td>
+                  <td className="num">{fmt(v.month_tokens)}</td>
+                  <td className="num">{fmtClock(v.last)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function StatusPage(): React.JSX.Element {
   const {stats, stale, error, token, setToken, load} = useStats();
   const [tokenInput, setTokenInput] = useState('');
@@ -895,6 +984,7 @@ export default function StatusPage(): React.JSX.Element {
               <Paths paths={stats.paths} />
             </div>
             <IpTable ips={stats.ips} />
+            {stats.ai_search && <AiSearchPanel ai={stats.ai_search} />}
             <ChinaMap provinceStats={stats.province_stats ?? []} total={stats.total} />
           </div>
         )}

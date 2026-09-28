@@ -62,7 +62,9 @@ const config: Config = {
       admonitions: true,
     },
   },
-  themes: ['@docusaurus/theme-mermaid', '@easyops-cn/docusaurus-search-local'],
+  // 站内搜索由自研 AI 搜索取代（导航栏 custom-ai-search 入口 → /api/ai-search →
+  // 构建期索引 + DeepSeek 生成回答）；旧 @easyops-cn/docusaurus-search-local 已移除
+  themes: ['@docusaurus/theme-mermaid'],
   plugins: ['./src/plugins/seo-jsonld'],
   i18n: {
     defaultLocale: 'zh',
@@ -118,7 +120,8 @@ const config: Config = {
       },
     },
     {
-      // 结构化数据：WebSite + 站内搜索，帮助搜索引擎理解站点、争取富摘要
+      // 结构化数据：WebSite（原 SearchAction 指向的 /search 路由已随旧搜索插件移除，
+      // 现为 AI 搜索模态框，无独立 URL，故不再声明 potentialAction）
       tagName: 'script',
       attributes: { type: 'application/ld+json' },
       innerHTML: JSON.stringify({
@@ -130,11 +133,6 @@ const config: Config = {
         description:
           'AI 大全栈学习路线配套交互课程站：Agents 应用开发 / 后端 / 运维云 / 高效 AI 编程 / 企业级全栈项目 / 就业指导六大单元，每课配套文档、互动测验与实战作业。',
         inLanguage: 'zh-CN',
-        potentialAction: {
-          '@type': 'SearchAction',
-          target: 'https://doc.zhangpan.online/search?q={search_term_string}',
-          'query-input': 'required name=search_term_string',
-        },
       }),
     },
     {
@@ -221,6 +219,11 @@ var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[
           to: '/jobs/',
           label: '岗位地图',
           position: 'left',
+        },
+        {
+          // AI 搜索（组件在 src/components/AiSearch，类型注册于 src/theme/NavbarItem/ComponentTypes.js）
+          type: 'custom-ai-search',
+          position: 'right',
         },
       ],
     },

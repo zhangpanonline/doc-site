@@ -102,3 +102,15 @@
 ### 章节-作业对照（纯展示章）
 
 作业仅 01/03/04/05/06/09/25 有；lesson-footer 只在这些章提「作业见课程文档末尾」，其余章写完成标志句。
+
+## AI 搜索替代本地插件（2026-09-28 定，站点级）
+
+- **移除** `@easyops-cn/docusaurus-search-local`：其索引一直为空（docs 的 routeBasePath 为 `/`，与插件默认 `docsRouteBasePath:['docs']` 不匹配，132 篇文档全被过滤；中文分词也未配置），右上角搜索框形同虚设
+- **新方案**（全部零新增 npm 依赖）：
+  - 构建期索引：`scripts/build-search-index.mjs` → `api/_index/search-index.ts`（gitignore；docs 132 篇 MDX + static/teach/lessons 77 个 HTML 课页，按 ##/h2-h3 分块，slug 推导 URL，约 1400 块 / 540 KB）
+  - 检索：`lib/search-retrieval.mjs`（中文 bigram + 英文单词 TF-IDF，标题命中 ×3，每文档至多 2 块、正文预算 6000 字符；单字中文查询无结果——与旧插件相同限制）
+  - 生成：`api/ai-search.ts`（每 IP 日 20 / 分钟 3 限额，Supabase `ai_search_quota` 表；系统提示词严格限定只依据文档片段回答；DeepSeek chat/completions，模型默认 `deepseek-chat`）
+  - 入口：导航栏 `custom-ai-search` 模态框（Ctrl/Cmd+K 唤起），答案 + 来源链接
+  - 埋点：每次调用写 `ai_search_usage`（ip/visitor_id/token 数），/status 新增「AI 搜索」面板（总/月 token、按独立访客总/月）
+- **上线前待办**：① Supabase SQL Editor 执行 `supabase/migrations/010_ai_search.sql`（幂等，表缺失时配额降级内存限流、埋点静默跳过，不挡上线）② Vercel 环境变量 `DEEPSEEK_API_KEY`（可选：`DEEPSEEK_MODEL`、`AI_SEARCH_DAILY_LIMIT`、`AI_SEARCH_MINUTE_LIMIT`）
+- 防滥用要点：Key 只在服务端；middleware 对 `/api/` 放行，因此配额内建于 API 函数（占位 upsert 后读回计数，无竞态）；存储故障时降级为单实例内存限流
