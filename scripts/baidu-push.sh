@@ -15,16 +15,19 @@ if [ ! -f "$SITEMAP" ]; then
   exit 1
 fi
 
-# 提取全部 <loc> URL
-grep -o '<loc>[^<]*</loc>' "$SITEMAP" | sed 's/<[^>]*>//g' > /tmp_baidu_urls.txt
-COUNT=$(wc -l < /tmp_baidu_urls.txt | tr -d ' ')
+# 提取全部 <loc> URL（临时文件放当前目录：沙箱/受限环境 /tmp 可能只读）
+URLSF=$(mktemp ./baidu_urls.XXXXXX)
+BATCH_PREFIX=$(mktemp -d ./baidu_batch.XXXXXX)
+grep -o '<loc>[^<]*</loc>' "$SITEMAP" | sed 's/<[^>]*>//g' > "$URLSF"
+COUNT=$(wc -l < "$URLSF" | tr -d ' ')
 echo "共 $COUNT 个 URL，开始推送…"
 
 # 分批（每批 500 条，接口上限 2000）
-split -l 500 /tmp_baidu_urls.txt /tmp_baidu_batch_
-for batch in /tmp_baidu_batch_*; do
+split -l 500 "$URLSF" "$BATCH_PREFIX/part_"
+for batch in "$BATCH_PREFIX"/part_*; do
   RESP=$(curl -s --max-time 60 -H 'Content-Type: text/plain' --data-binary @"$batch" "$ENDPOINT")
   echo "批次 $(basename "$batch"): $RESP"
 done
-rm -f /tmp_baidu_urls.txt /tmp_baidu_batch_*
+rm -f "$URLSF"
+rm -rf "$BATCH_PREFIX"
 echo "（success=成功条数，remain=今日剩余配额，not_same_site=站点不匹配需检查 token 归属）"
