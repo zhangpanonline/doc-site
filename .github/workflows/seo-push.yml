@@ -25,11 +25,14 @@ jobs:
         run: bash scripts/indexnow-ping.sh
 
       - name: 百度主动推送（未配置 Secret 则跳过）
-        if: ${{ secrets.BAIDU_PUSH_TOKEN != '' }}
         continue-on-error: true
         env:
           BAIDU_PUSH_TOKEN: ${{ secrets.BAIDU_PUSH_TOKEN }}
         run: |
+          if [ -z "$BAIDU_PUSH_TOKEN" ]; then
+            echo "未配置 BAIDU_PUSH_TOKEN Secret，跳过百度推送"
+            exit 0
+          fi
           npm install -g pnpm@11
           pnpm install --ignore-scripts
           pnpm build
