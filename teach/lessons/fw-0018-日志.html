@@ -173,28 +173,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的日志：logger.info(f"用户 {username} 密码 {password} 登录失败")——把明文密码打进了日志。按本课标准，哪里错了？`,
-              source: '来源：loguru 官方文档 Overview（"Ready to use out of the box without boilerplate ... Pretty logging with colors"）https://loguru.readthedocs.io/en/stable/overview.html · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《18.日志》课件',
+              source: '来源：loguru 官方文档 Overview（"Ready to use out of the box without boilerplate ... Pretty logging with colors"）https://loguru.readthedocs.io/en/stable/overview.html · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《18.日志》课件',
               breakdown: `两个问题：<strong>① 敏感信息进日志</strong>——密码（以及 token、身份证号、AccessKey）绝不能进日志：日志会被采集到云服务、被值班同学截图、被排查时贴进工单，泄露面远大于数据库；ch17 的原则延续——password_hash 连响应都不出，何况日志。 <strong>② f-string 拼消息</strong>——消息里的变量不进结构化字段，云日志系统无法按「用户」维度检索；课件姿势是用类结构约定字段（dataclass + extra 绑定，如 BusinessLog 的 action/entity/entity_id），消息留给人读、字段留给机器查。改法：log "登录失败" + extra 里放 user_id（不是密码），检索和脱敏两全。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `生产日志为什么统一 JSON 到 stdout，而不是彩色文本到文件？request_id 是怎么贯穿一条请求的所有日志的？`,
-              source: '来源：loguru 官方文档 Overview（serialize 参数与结构化输出）https://loguru.readthedocs.io/en/stable/overview.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《18.日志》课件（双模式配置 + ContextVar 注入）',
+              source: '来源：loguru 官方文档 Overview（serialize 参数与结构化输出）https://loguru.readthedocs.io/en/stable/overview.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《18.日志》课件（双模式配置 + ContextVar 注入）',
               breakdown: `<strong>① JSON + stdout</strong>：容器/K8s 时代的日志约定——进程只往 stdout 写，采集器（Fluentd/Loki 等）统一收集；JSON 让采集器直接解析出字段做检索告警（按 level=ERROR、按 path、按 duration_ms 聚合），彩色文本是给人眼看的，机器解析是浪费。课件生产分支 serialize=True 就干这个；开发分支保留彩色文本 + errors.log 落盘（rotation 10MB/retention 7 天）。 <strong>② request_id 链路</strong>：请求中间件到达时生成 id 放进 ContextVar（ch17 并发隔离机制）——之后该请求链路上所有日志（请求日志、数据库事件日志、业务装饰器日志）在 _emit 时 request_id_var.get() 自动注入 extra；线上排错按 request_id 一捞，同一条请求的三类日志全出来。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的日志中间件：每个请求 try/except 包住，except 里 logger.error(str(e)) 然后 return JSONResponse(500)；且日志里没有耗时字段。按本课标准审查。`,
-              source: '来源：loguru 官方文档 Overview（exceptions catching / rotation 等特性）https://loguru.readthedocs.io/en/stable/overview.html · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《18.日志》课件（请求日志流程）',
+              source: '来源：loguru 官方文档 Overview（exceptions catching / rotation 等特性）https://loguru.readthedocs.io/en/stable/overview.html · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《18.日志》课件（请求日志流程）',
               breakdown: `三个问题：<strong>① 中间件吞异常</strong>——本课架构里异常处理归 ch09 全局处理器（统一 code/message），AI 的中间件截胡了异常链：全局处理器收不到异常、异常处理逻辑被拆成两处（违反 ch09 最佳实践第 1 条「收拢到统一位置」）；课件的请求日志只是<strong>旁路观察者</strong>——请求失败时进 handler 写 message，由 handler 决定级别，日志不接管响应。 <strong>② str(e) 丢栈</strong>——异常栈是定位 bug 的命脉，loguru 姿势是 opt(exception=exc)（本课 BusinessLog 的 error(exc=e) 就这么干），日志里带完整 traceback。 <strong>③ 无 duration_ms</strong>——耗时是慢接口排查的第一指标，课件 LogRecord 自动计时，且数据库层还按阈值单独 warning 慢查询——AI 的日志缺了可观测性最值钱的维度。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：业务日志要不要全量记录？你们是怎么控制业务日志的量的？`,
-              source: '来源：渡一源课程《18.日志》课件（「业务日志通常不会全量的记录，既可以统一处理，也可以灵活处理」）· loguru 官方文档 https://loguru.readthedocs.io/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《18.日志》课件（「业务日志通常不会全量的记录，既可以统一处理，也可以灵活处理」）· loguru 官方文档 https://loguru.readthedocs.io/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `课件的立场：<strong>不全量</strong>。三层控制：<strong>① 分层取舍</strong>——请求日志和数据库日志天然全量（框架级自动埋点，覆盖所有流量）；业务日志挑「值得记录的变更」记（创建/更新/删除这类写操作），读操作通常不记（不然日志量 = 请求量 × 2，且无排查价值）。 <strong>② 统一处理</strong>——service_logger 装饰器收口关键服务方法：action（做什么）、entity（对哪个实体）、entity_id（id_extractor 从结果/参数里抽，失败时也尽量抽）、成败分支自动定级（成功 success、业务异常 warning、未知异常 error）——写服务方法时声明式加一行，行为全局一致。 <strong>③ 灵活处理</strong>——装饰器覆盖不到的散点，直接 new 日志对象手工打。设计上还留了一手：BusinessException 是 warning 不是 error——把告警预算留给真正的 5xx。`,
             },
             {
@@ -217,7 +217,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（18.日志）</li>
         <li><strong>深读推荐</strong>：<a href="https://loguru.readthedocs.io/en/stable/overview.html">loguru 官方文档</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/日志速查表.html">日志速查表</a>——双模式配置、三类日志字段、装饰器分支一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/用户系统">17.用户系统</a> · 下一课 <a href="/agents/python-framework/流式响应">20.流式响应</a></li>

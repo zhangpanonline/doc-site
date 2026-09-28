@@ -173,28 +173,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的 Dockerfile：RUN 里打印了启动命令，CMD 里写 pip install——结果构建成功、容器一启动就退出了。按本课知识，错在哪？`,
-              source: '来源：Docker 官方文档 Dockerfile reference（RUN 在构建期执行、CMD 定义容器启动命令）https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《21.部署-认识Docker》课件',
+              source: '来源：Docker 官方文档 Dockerfile reference（RUN 在构建期执行、CMD 定义容器启动命令）https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《21.部署-认识Docker》课件',
               breakdown: `<strong>RUN 和 CMD 焊反了</strong>：RUN 在镜像构建过程中执行（装依赖、构建产物——课件的 pip install uv 和 uv sync 就是 RUN）；CMD 是容器启动时执行的命令（课件的 uvicorn 启动）。AI 的写法把 pip install 放进 CMD——容器一启动先装依赖，装完进程退出（CMD 的进程结束 = 容器退出），服务根本没起来。审查 Dockerfile 口诀：<strong>「一次性」的工作归 RUN（构建期），「常驻」的进程归 CMD（运行期）</strong>；CMD 必须是前台进程，后台化（& 或 nohup）会让容器秒退。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `多阶段构建（multi-stage）是怎么让镜像变小的？builder 阶段的 uv/pip 去哪了？`,
-              source: '来源：Docker 官方文档 Dockerfile reference（multi-stage build：COPY --from 跨阶段引用）https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《21.部署-认识Docker》课件（builder 阶段 + COPY --from）',
+              source: '来源：Docker 官方文档 Dockerfile reference（multi-stage build：COPY --from 跨阶段引用）https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《21.部署-认识Docker》课件（builder 阶段 + COPY --from）',
               breakdown: `机制拆两步：<strong>① builder 阶段</strong>——完整构建环境（uv、pip、源码、缓存）都在这里，跑 uv sync --frozen --no-dev --no-editable 产出 .venv；<strong>② 最终阶段</strong>——重新 FROM python:3.14-slim（一个干净的小镜像），只 <code>COPY --from=builder /app/.venv /app/.venv</code> 并 ENV PATH 把 .venv 挂进 PATH。builder 里的一切（uv 本体、pip、缓存、源码）都留在 builder 镜像里，最终镜像只有运行时需要的 .venv——这就是「小 90%」的来源。官方 reference 还点了一条坑：只被 COPY --from 引用的阶段，其 metadata（如 LABEL）不会带进最终镜像——阶段之间只有显式复制的文件有传递关系。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的 docker run：没有 --restart、没有 --memory/--cpus、-p 8080:8080 把宿主机 8080 直接占掉、数据库密码直接写进 Dockerfile 的 ENV。逐条审查。`,
-              source: '来源：Docker 官方文档 Dockerfile reference（ENV 指令与镜像内容）https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《21.部署-认识Docker》课件（docker run 参数表）',
+              source: '来源：Docker 官方文档 Dockerfile reference（ENV 指令与镜像内容）https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《21.部署-认识Docker》课件（docker run 参数表）',
               breakdown: `逐条：<strong>① 无 --restart unless-stopped</strong>——服务半夜 OOM 或宿主机重启后没人拉起，业务直接躺到天亮（课件把它列为生产默认）；<strong>② 无资源限制</strong>——一个失控容器（内存泄漏、死循环）可以吃掉整台宿主机，同机其他服务全陪葬；课件 --memory=512m --cpus=1 是标配；<strong>③ 端口直接占 8080</strong>——课件用 -p 80:8080 把对外端口（80）与容器内端口（8080）解耦，宿主机端口资源可以规划，容器内部端口不冲突；<strong>④ 密码写进 Dockerfile ENV</strong>——镜像会被 push 到仓库、被多台机器 pull，密码跟着镜像到处走；课件姿势：docker run -e 运行时注入（密码只在启动命令/密钥系统里）。审查口诀：<strong>镜像负责「不变的东西」，环境负责「变的东西」，密钥只走运行时注入</strong>。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：一台服务器跑你们的产品，多个 Python 服务版本不同（一个 3.10 一个 3.14），怎么做到互不干扰？更新一个服务怎么做到秒级？`,
-              source: '来源：渡一源课程《21.部署-认识Docker》课件（运行时的问题/Docker 三问）· Docker 官方文档 Dockerfile reference https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《21.部署-认识Docker》课件（运行时的问题/Docker 三问）· Docker 官方文档 Dockerfile reference https://docs.docker.com/reference/dockerfile/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `课件的三个问题正好对应答案：<strong>① 互不干扰</strong>——每个服务一个镜像，Python 版本、依赖版本全部冻结在镜像里（uv sync --frozen），容器之间进程/文件/网络命名空间隔离——宿主机只跑 Docker 守护进程，服务之间「看不见」彼此的 Python；<strong>② 准备快捷</strong>——环境准备从「六步手工操作」（课件参考答案：装 Python、装 uv、配镜像源、装依赖、删文件、启动）变成一次 docker build；<strong>③ 更新快速</strong>——改代码 → 重新构建镜像 → docker run 新容器替换旧容器（秒级），而不是在服务器上手工改环境。设计上再补两条：镜像不可变（更新=换新镜像，永不进容器改）；镜像分层缓存（依赖没变时构建只重建最后一层）。`,
             },
             {
@@ -217,7 +217,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（21.部署-认识Docker）</li>
         <li><strong>深读推荐</strong>：<a href="https://docs.docker.com/reference/dockerfile/">Docker 官方：Dockerfile reference（多阶段构建）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/部署-认识Docker速查表.html">部署-认识Docker速查表</a>——三件套、多阶段骨架、run 参数一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/流式响应">20.流式响应</a> · 下一课 <a href="/agents/python-framework/部署-云资产">22.部署-云资产</a></li>

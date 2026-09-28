@@ -174,28 +174,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的登录测试：没打 @pytest.mark.smoke 标记，且 CI 配置里把「跑测试」这一步设成了「失败仅警告」。结果登录接口改坏了照样合并上线。按本课冒烟红线的逻辑，问题在哪？`,
-              source: '来源：pytest 官方文档 How-to guides（markers 标记测试函数）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《12.测试方案》课件（冒烟测试章节）',
+              source: '来源：pytest 官方文档 How-to guides（markers 标记测试函数）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《12.测试方案》课件（冒烟测试章节）',
               breakdown: `两条都踩红线：<strong>① 登录该冒烟但没标记</strong>——课件红线第一条：登录挂了用户立刻无法完成核心任务（第三条也中：Token 是所有接口的前置依赖），必须打 @pytest.mark.smoke；<strong>② 失败仅警告 = 没有红线</strong>——冒烟测试的意义就是「未通过可视为灾难性事故」，流水线里必须硬失败阻断合并（Makefile test-smoke 目标独立可跑）。开发日常第 3 步「确保冒烟测试通过」排在提交之前——AI 把底线功能当普通测试对待，等于拆掉了安全网。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `Stub 和 Mock 到底差在哪？为什么课件说「绝大部分情况下 Mock 可以平替 Stub」？`,
-              source: '来源：Python 官方文档 unittest.mock（patch/assert_called_once_with 等验证能力）https://docs.python.org/3/library/unittest.mock.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《12.测试方案》课件（Stub/Mock 章节与七大能力表）',
+              source: '来源：Python 官方文档 unittest.mock（patch/assert_called_once_with 等验证能力）https://docs.python.org/3/library/unittest.mock.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《12.测试方案》课件（Stub/Mock 章节与七大能力表）',
               breakdown: `<strong>Stub = 只会固定返回的替身</strong>：SmsServiceStub 永远返回 {"code": 999999}，测试关心的只是「不真发短信」——替身没有记忆，无法回答「被调用了吗」。 <strong>Mock = 有记忆的替身</strong>：课件七大能力——assert_called_once（次数）、assert_called_with（参数）、assert_called_before（顺序）、side_effect=[...]（每次不同值）、side_effect=异常（模拟失败）、call_args_list（历史记录）、reset_mock（清空重来）。平替逻辑：Mock 设好 return_value 就是 Stub，还额外自带验证——所以没有独立理由选 Stub；Stub 的教科书价值在概念（测试替身的两大职责：隔离 + 验证）。官方文档的 patch 上下文管理器对应课件的 monkeypatch/mocker.patch 两种写法。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的测试方案：① 所有用例都放在 integration/ 一个目录；② 覆盖率目标是 100%，达不到的代码用 # pragma: no cover 注释掉；③ 把「修改收货地址」这类低频功能都打上了 smoke。逐条按本课标准审查。`,
-              source: '来源：pytest 官方文档（markers 与覆盖率插件用法）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《12.测试方案》课件（测试选型/覆盖率/冒烟红线）',
+              source: '来源：pytest 官方文档（markers 与覆盖率插件用法）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《12.测试方案》课件（测试选型/覆盖率/冒烟红线）',
               breakdown: `逐条：<strong>① 层级混乱</strong>——课件五层各有目录与适用场景：复杂纯函数进 unit/、模块交互进 integration/、真实启动走 system、功能链走 e2e；全塞 integration 意味着纯函数也要起服务器，慢且排错面大。 <strong>② 覆盖率 100% 是伪指标</strong>——课件定义覆盖率 = 执行到的代码/全量代码，它测的是「被执行」不是「被验证」；# pragma: no cover 注释是自欺（把没测的代码从分母里划掉）；课件姿势是团队定硬指标（如 80% 门禁 --cov-fail-under=80），达不成是信号不是罪证。 <strong>③ 冒烟贬值</strong>——红线五条是「满足任意一条必须冒烟」，不代表其它都要冒烟；低频功能全打 smoke 会让冒烟集膨胀，真正的红线信号被噪声淹没（冒烟往往针对已上线稳定的旧功能）。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：你们公司测试怎么分层？什么功能你会设成冒烟测试？说一个你见过或设想的具体例子。`,
-              source: '来源：渡一源课程《12.测试方案》课件（测试选型五层 + 冒烟五条红线）· pytest 官方文档 https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《12.测试方案》课件（测试选型五层 + 冒烟五条红线）· pytest 官方文档 https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `答题框架（课件）：<strong>分层</strong>——unit/ 复杂纯函数（如价格计算、DTO 转换）；integration/ 多模块交互（本课的 test_api_* 与 test_*_service，覆盖主力）；system/ 真实启动 happy path；e2e/ 业务功能链（本课 test/e2e）；smoke 不限目录，按红线打标。 <strong>冒烟例子</strong>（用课件五条逐条套）：本课电商场景的「创建商品→建SKU→下单扣库存」链路——① 挂了用户买不了东西（核心任务）；② 90% 用户每天用；③ 下单依赖商品/SKU/库存接口（前置依赖）；④ 扣库存多扣少扣是资损；⑤ 历史上库存并发扣减常出问题（痛点回归）——五条全中，教科书级冒烟。反过来「修改收货地址」低频无资损，普通集成测试即可。`,
             },
             {
@@ -218,7 +218,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（12.测试方案）</li>
         <li><strong>深读推荐</strong>：<a href="https://docs.python.org/3/library/unittest.mock.html">Python 官方：unittest.mock</a> · <a href="https://docs.pytest.org/en/stable/">pytest 官方文档（markers）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/测试方案速查表.html">测试方案速查表</a>——五层选型、冒烟红线、Mock 七大能力一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/测试框架">11.测试框架</a> · 下一课 <a href="/agents/python-framework/三层架构">13.三层架构</a></li>

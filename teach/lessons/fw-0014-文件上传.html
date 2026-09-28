@@ -172,28 +172,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的上传接口：用 oss2 直接在服务端 put_object——结果 100MB 的视频上传把服务带宽打满、内存飙升、其他接口全卡。按本课的直传模式，正确的架构是什么？`,
-              source: '来源：阿里云官方文档 PostObject（"Call the PostObject operation to upload an object to a bucket by using an HTML form ... Objects uploaded by PostObject cannot exceed 5 GB"）https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《14.文件上传》课件（上传模式图）',
+              source: '来源：阿里云官方文档 PostObject（"Call the PostObject operation to upload an object to a bucket by using an HTML form ... Objects uploaded by PostObject cannot exceed 5 GB"）https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《14.文件上传》课件（上传模式图）',
               breakdown: `课件上传模式图的标准答案：<strong>客户端直传</strong>——服务端只做一件事：签发凭证（generate_upload_credentials），浏览器拿到 host/policy/signature 后直接把文件 POST 到 OSS。收益：① 文件字节流完全不经过应用服务器（带宽、内存、连接全部省下）；② 上传进度由浏览器直连 OSS 呈现，体验好；③ 服务端无状态、可水平扩。官方文档背书：PostObject 就是「通过 HTML 表单直传」的标准接口（单文件上限 5GB，超了走分片上传）。AI 的服务端代理上传在小文件场景能用，大文件就是事故——选型先画数据流图（课件第一张图），看文件流经过谁。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `PostObject 直传时，客户端完全可以绕过服务端自己拼表单——服务端签发的 policy + signature 是怎么管住上传行为的？`,
-              source: '来源：阿里云官方文档 PostObject（"OSS authenticates the signature in the request"；content-length-range 指定允许的字节范围）https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《14.文件上传》课件（policy conditions + HMAC 签名）',
+              source: '来源：阿里云官方文档 PostObject（"OSS authenticates the signature in the request"；content-length-range 指定允许的字节范围）https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《14.文件上传》课件（policy conditions + HMAC 签名）',
               breakdown: `<strong>policy = 服务端单方面开出的约束清单</strong>，三条 conditions 锁死行为：① eq $key——对象路径只能等于服务端预定的 key（dir_strategy + uuid，客户端无权改路径）；② eq $Content-Type——只能传服务端批准的类型；③ content-length-range 0..file_size——大小按「申请时声明的文件大小」封顶（申请 1MB 就只能传 1MB）。 <strong>signature = 防篡改封印</strong>：HMAC-SHA1(secret, policy) 再 Base64——客户端改了 policy 里任何一个字节，OSS 用同一 secret 重算就对不上，拒绝请求（官方文档：OSS authenticates the signature）。客户端能绕的只有「不申请凭证直接传」——那没有权限（IAM 只给 PutObject 且需要签名），或者换桶传——没权限。一句话：<strong>凭证把「自由上传」变成「按服务端批准的剧本上传」</strong>。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的凭证生成：① 后缀白名单里放行了 .html/.svg；② policy 没有 content-length-range；③ signature 用 access_key_id 而不是 secret 算。逐条审查。`,
-              source: '来源：阿里云官方文档 PostObject（签名与 content-length-range 用法）https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《14.文件上传》课件（mime.py/aliyun.py）',
+              source: '来源：阿里云官方文档 PostObject（签名与 content-length-range 用法）https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《14.文件上传》课件（mime.py/aliyun.py）',
               breakdown: `逐条：<strong>① .html/.svg 放行 = 存储型 XSS</strong>——用户传个带脚本的 SVG/HTML，OSS 域直接访问就被浏览器执行（课件 MIME 表里 .svg 在列是「类型识别」，不代表上传白名单要放行它——生产环境对可在浏览器执行的类型要么禁要么强制下载 Content-Disposition）；<strong>② 没有 content-length-range</strong>——用户申请 1KB 凭证传 100GB，服务端没设上限就只能事后补救（官方 FAQ：超限报错就是这条条件在起作用）；<strong>③ 用 id 签名</strong>——签名密钥必须是 AccessKeySecret，id 是身份标识可以暴露（表单里就有），用 id 签名等于把「验证器」交给攻击者。审查要点：<strong>白名单看「执行面」、大小看「声明面」、签名看「密钥面」</strong>。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：上传凭证的有效期设多长？为什么课件默认 3600 秒？目录用日期分桶还是平铺，你怎么选？`,
-              source: '来源：渡一源课程《14.文件上传》课件（AliyunOSSConfig.expire_seconds=3600 / dir_strategy 两策略）· 阿里云官方文档 PostObject https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《14.文件上传》课件（AliyunOSSConfig.expire_seconds=3600 / dir_strategy 两策略）· 阿里云官方文档 PostObject https://www.alibabacloud.com/help/en/oss/developer-reference/postobject · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `<strong>有效期</strong>：课件默认 3600 秒（1 小时）——本质是「凭证泄露的暴露窗口」与「用户上传耗时」的平衡：太短用户传一半过期（大文件重传）；太长凭证一旦泄露（前端日志、代理缓存），攻击者可在有效期内用同一 key 覆盖上传（policy 锁 key 不锁次数）。实践：正常用户 15 分钟足够，1 小时是宽松默认；高安全场景按文件大小动态设。 <strong>目录策略</strong>：按量选——海量小文件（用户头像、订单截图）用 date_uuid 按天分桶：目录列表可控、按天清理/统计方便、单目录文件数不会爆炸；文件少或需要全局唯一路径的（商品图与商品 ID 绑定），flat 平铺简单直接。课件把策略做成 Callable 注入（dir_strategy 字段），换策略只改配置——<strong>选型是可配置的决策，不是写死的代码</strong>。`,
             },
             {
@@ -216,7 +216,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（14.文件上传）</li>
         <li><strong>深读推荐</strong>：<a href="https://www.alibabacloud.com/help/en/oss/developer-reference/postobject">阿里云官方：PostObject（表单直传）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/文件上传速查表.html">文件上传速查表</a>——直传流程、凭证六字段、安全三件套一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/三层架构">13.三层架构</a> · 下一课 <a href="/agents/python-framework/系统设置">15.系统设置</a></li>

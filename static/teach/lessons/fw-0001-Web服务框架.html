@@ -188,21 +188,21 @@
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `ASGI 服务器与 ASGI 应用程序是怎么对接的？app 的调用签名是什么？三个参数各自干什么？`,
-              source: '来源：ASGI 官方规范 Introduction（"ASGI is structured as a single, asynchronous callable. It takes a scope ... send ... and receive ..."）https://asgi.readthedocs.io/en/latest/introduction.html · 检索 2026-09-22 · 层级：一手（官方规范）+ 渡一源课程《01.Web服务框架》课件',
+              source: '来源：ASGI 官方规范 Introduction（"ASGI is structured as a single, asynchronous callable. It takes a scope ... send ... and receive ..."）https://asgi.readthedocs.io/en/latest/introduction.html · 检索 2026-09-22 · 层级：一手（官方规范）+ 源课程《01.Web服务框架》课件',
               breakdown: `<code>app(scope, receive, send)</code>：<strong>scope</strong> 是连接上下文字典（type/path/method/headers…）；<strong>receive</strong> 是异步函数，await 它接收消息（请求体/客户端消息）；<strong>send</strong> 是异步函数，await 它发送消息（响应头体/服务端消息）。服务器负责通信与协议解析、构建 scope 后调用 app；应用内部走路由与业务逻辑，期间来回调用 receive/send。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 生成的部署配置把 FastAPI 的 docs_url / openapi_url 全部置 None 禁用，结果联调时前端拿不到接口文档。审查：正确的按环境开关姿势是什么？`,
-              source: '来源：FastAPI 官方 How To - Conditional OpenAPI（"you could use settings and environment variables to configure OpenAPI conditionally depending on the environment, and even disable it entirely"）https://fastapi.tiangolo.com/how-to/conditional-openapi/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《01.Web服务框架》课件',
+              source: '来源：FastAPI 官方 How To - Conditional OpenAPI（"you could use settings and environment variables to configure OpenAPI conditionally depending on the environment, and even disable it entirely"）https://fastapi.tiangolo.com/how-to/conditional-openapi/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《01.Web服务框架》课件',
               breakdown: `课件给出的标准姿势：<code>is_production = os.getenv("ENVIRONMENT") == "production"</code> 后按环境赋值——<strong>开发保留 /docs 与 /openapi.json，生产才禁用</strong>。AI 一刀切禁用的问题是：文档能力是 FastAPI 的核心卖点（Swagger UI 交互测试 + openapi.json 可生成客户端 SDK），禁用要在「生产安全」与「协作效率」间按环境取舍，而不是默认关掉。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `团队要做一个「AI 大模型服务化」项目：把模型封装成 HTTP API 对外提供。Django / Flask / FastAPI 选哪个？依据是什么？`,
-              source: '来源：FastAPI 官方 Features（高并发 async/await、自动校验、自动 OpenAPI 文档、依赖注入、纯 Python 类型）https://fastapi.tiangolo.com/features/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《01.Web服务框架》课件框架对比表',
+              source: '来源：FastAPI 官方 Features（高并发 async/await、自动校验、自动 OpenAPI 文档、依赖注入、纯 Python 类型）https://fastapi.tiangolo.com/features/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《01.Web服务框架》课件框架对比表',
               breakdown: `选 <strong>FastAPI</strong>：课件对比表原文——FastAPI 最适合「高性能 API 服务、微服务、把 AI/机器学习模型封装成 API」。理由链：① 类型注解 + Pydantic 天然做请求校验（模型输入校验是 AI 服务刚需）；② 异步特性匹配模型推理的并发等待；③ 自动 openapi.json 让下游生成客户端零成本。Django 的重后台管理、Flask 的微内核在这里都不是刚需。`,
             },
             {
@@ -225,7 +225,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（01.Web服务框架）</li>
         <li><strong>深读推荐</strong>：FastAPI 官方文档 <a href="https://fastapi.tiangolo.com/async/">Concurrency and async / await</a> · <a href="https://docs.pydantic.dev/">Pydantic 官方文档</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Web服务框架速查表.html">Web服务框架速查表</a>——三大框架与 ASGI 一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/Web服务框架">01.Web服务框架</a> · 下一课 <a href="/agents/python-framework/优化包结构">02.优化包结构</a></li>

@@ -173,28 +173,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的用户接口直接返回 ORM 对象，响应里出现了 password_hash 和 is_deleted 字段。按本课模型分化的原则，哪个环节漏了？`,
-              source: '来源：pydantic 官方文档 Models（from_attributes 从 ORM 对象构建 DTO、响应模型裁剪字段）https://docs.pydantic.dev/latest/concepts/models/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《13.三层架构》课件模型分化',
+              source: '来源：pydantic 官方文档 Models（from_attributes 从 ORM 对象构建 DTO、响应模型裁剪字段）https://docs.pydantic.dev/latest/concepts/models/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《13.三层架构》课件模型分化',
               breakdown: `漏了 <strong>model → DTO 的转换与裁剪</strong>。课件三模型各司其职：model 管持久化（password_hash、is_deleted 是数据库语义）；DTO 只带客户端需要的字段（id/username/email）。AI 直接把 ORM 对象序列化 = 数据层形状穿透三层直达响应——两个后果：<strong>① 泄露</strong>（password_hash 泄露出服务端边界，is_deleted 暴露内部删除策略）；<strong>② 耦合</strong>（前端契约与表结构焊死，加列就破接口）。正解（本课 ch07 已实现）：ProductResponse.model_validate(product) 在 service 出口转 DTO，pydantic 按 DTO 字段裁剪。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `BO 为什么要把扁平的 model.User 拆成 UserIdentity 和 UserInfo 两个嵌套对象？这层转换值不值得？`,
-              source: '来源：渡一源课程《13.三层架构》课件（BO 示例：UserIdentity/UserInfo 分组）· FastAPI 官方教程 Bigger Applications - Multiple Files（按职责分层）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《13.三层架构》课件（BO 示例：UserIdentity/UserInfo 分组）· FastAPI 官方教程 Bigger Applications - Multiple Files（按职责分层）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `BO 的拆分逻辑是<strong>按用例聚合</strong>：登录用例只关心 username+password_hash（UserIdentity）；改资料用例只关心 email+phone（UserInfo）。拆开后：① 业务函数签名变成 login(identity) 而不是 login(user)——传什么一目了然，也不会误把整个 user 带进只有一项职责的函数；② 敏感字段被收进 identity 语义里，业务代码里「密码哈希」的访问点集中；③ model 里加个统计字段不会波及所有业务函数（BO 不变）。代价是转换代码——所以课件把它放在「模型分化」图里讲清楚转换发生在层边界。值不值看复杂度：用户模型这种多用例聚合的实体值得；只有一两个字段的表直接 DTO 就够。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的服务：api 层直接 import model 做查询、service 层直接 return dict、model 层 import 了 FastAPI 的 Request 拿请求上下文。审查这段代码的层次问题。`,
-              source: '来源：FastAPI 官方教程 Bigger Applications - Multiple Files（分层与依赖方向）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《13.三层架构》课件',
+              source: '来源：FastAPI 官方教程 Bigger Applications - Multiple Files（分层与依赖方向）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《13.三层架构》课件',
               breakdown: `三个违规：<strong>① 跳层</strong>——api 直接查 model，跨过 service：业务规则失去唯一入口（改权限校验要翻遍所有接口文件）；<strong>② 无形状</strong>——service 返回 dict 等于没有 DTO 契约，前端拿到的字段随时间漂移；<strong>③ 反向依赖</strong>——model 层 import FastAPI 的 Request 是教科书级的方向倒置：数据层依赖了接口层，换掉 HTTP 框架（或加消息队列入口）时持久化代码全要重写。课件的依赖方向只有一条：接口 → 业务 → 数据。审查口诀：<strong>看 import 方向就知道架构崩没崩</strong>。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：依赖倒置原则（DIP）在你们的项目里是怎么落地的？举一个具体例子。`,
-              source: '来源：渡一源课程《13.三层架构》课件（依赖倒置图）· FastAPI 官方文档 Dependencies（Depends 声明依赖、容器交付实现）https://fastapi.tiangolo.com/tutorial/dependencies/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《13.三层架构》课件（依赖倒置图）· FastAPI 官方文档 Dependencies（Depends 声明依赖、容器交付实现）https://fastapi.tiangolo.com/tutorial/dependencies/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `用本课两个实例回答：<strong>① get_db 依赖注入</strong>——api 层声明 db: Annotated[AsyncSession, Depends(get_db)]，接口层只依赖「给我一个会话」这个抽象；实现（async_sessionmaker 配置、连接池参数）藏在 core/database，测试时 dependency_overrides 换假实现（ch08/ch11 都这么干）——上层定义需要什么，下层交付实现。 <strong>② BusinessException 体系</strong>——service 抛业务异常（抽象），HTTP 翻译由 ch09 全局处理器（实现）完成；service 不 import HTTPException，将来从 REST 换 WebSocket，业务代码零改动。一句话总结：<strong>依赖指向抽象（接口/协议），具体实现（数据库/框架/HTTP 语义）通过配置或容器注入</strong>。`,
             },
             {
@@ -217,7 +217,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（13.三层架构）</li>
         <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/bigger-applications/">FastAPI 官方：Bigger Applications（分层实践）</a> · <a href="https://docs.pydantic.dev/latest/concepts/models/">Pydantic 官方：Models</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/三层架构速查表.html">三层架构速查表</a>——三层职责、三模型分化、依赖方向一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/测试方案">12.测试方案</a> · 下一课 <a href="/agents/python-framework/文件上传">14.文件上传</a></li>

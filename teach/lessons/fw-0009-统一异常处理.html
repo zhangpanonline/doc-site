@@ -174,28 +174,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的全局异常处理器：except Exception as e: return {"detail": str(e)}——上线后 500 错误直接把 SQL 语句、表名、连接串片段吐给了前端。按本课最佳实践，踩了哪一条？`,
-              source: '来源：FastAPI 官方文档 Handling Errors（Override the default exception handlers / 自定义异常处理器）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《09.统一异常处理》课件最佳实践',
+              source: '来源：FastAPI 官方文档 Handling Errors（Override the default exception handlers / 自定义异常处理器）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《09.统一异常处理》课件最佳实践',
               breakdown: `踩的是最佳实践第 3 条：<strong>服务端的敏感信息不能暴露给响应</strong>。str(e) 会把数据库驱动报错（含 SQL、schema 名、连接信息）原样给客户端——既是信息泄露，也帮攻击者踩点。课件标准做法：未知异常走 ERROR_MAP 兜底 <code>Exception: ("500001", 500, "服务器内部错误")</code>——客户端只拿到统一业务码与中性文案，真实细节（detail / original_exception）留给服务端日志排查（这正是 ch07 BusinessException 分 message/detail 两层的用意）。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `课件全局处理器怎么做到「一个函数处理全站所有异常」？三类异常的分支逻辑各是什么？`,
-              source: '来源：FastAPI 官方文档 Handling Errors（"Override the default exception handlers"、"Override request validation exceptions"、"Override the HTTPException error handler"）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《09.统一异常处理》课件完成代码',
+              source: '来源：FastAPI 官方文档 Handling Errors（"Override the default exception handlers"、"Override request validation exceptions"、"Override the HTTPException error handler"）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《09.统一异常处理》课件完成代码',
               breakdown: `机制 = <strong>三个 add_exception_handler 注册同一个 exception_handler</strong>：RequestValidationError（校验类）、HTTPException（协议类）、Exception（兜底一切）。处理器内两路：<strong>HTTPException</strong> → code=状态码字符串，body 查 PROTOCOL_ERROR_MAP（404→「路径不存在」等），查不到用 exc.detail；<strong>其余异常</strong> → _lookup 按 MRO 查 ERROR_MAP 拿 (业务码, HTTP状态码, 默认消息)，再细分——RequestValidationError 拼「字段路径: 错误信息」多行消息；BusinessException 用 message；其他未知异常用默认消息（500001）。最后统一 JSONResponse(status_code, {"code", "message"})。官方文档把这三类「override」作为标准扩展点，课件是它的业务化落地。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的错误处理：每个接口函数里 try/except 包一遍，返回格式还各不相同（有的 {"error": ...}、有的 {"detail": ...}、有的直接字符串）。按本课标准审查并给出整改方案。`,
-              source: '来源：FastAPI 官方文档 Handling Errors（自定义异常处理器统一响应格式）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《09.统一异常处理》课件最佳实践第 1 条',
+              source: '来源：FastAPI 官方文档 Handling Errors（自定义异常处理器统一响应格式）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《09.统一异常处理》课件最佳实践第 1 条',
               breakdown: `违反最佳实践第 1 条：<strong>异常的自定义处理要收拢到统一代码位置</strong>。散落的 try/except 三个问题：① 响应格式漂移——前端要写多套错误解析；② 漏网——某接口忘了 catch，异常直接穿到框架默认处理器，行为不一致；③ 重复——每个接口都写一遍三件套。整改（课件方案）：接口层只抛业务异常（NotFoundException/ DatabaseException），全局 exception_handler 一处负责查 ERROR_MAP、拼 {"code", "message"}；错误码字典同时驱动接口文档异常表（generate_error_docs），单一数据源。审查口诀：<strong>接口函数里出现 try/except 就是在问——这个异常为什么不交给全局处理器？</strong>`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：为什么错误码设计成 422001 这种「HTTP码+序号」而不是纯业务编号？ERROR_MAP 为什么用硬编码字典而不是数据库配置？`,
-              source: '来源：渡一源课程《09.统一异常处理》课件（errors.py ERROR_MAP 硬编码字典）· FastAPI 官方文档 Handling Errors（异常处理器的注册机制）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《09.统一异常处理》课件（errors.py ERROR_MAP 硬编码字典）· FastAPI 官方文档 Handling Errors（异常处理器的注册机制）https://fastapi.tiangolo.com/tutorial/handling-errors/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `<strong>① 编码设计</strong>：422001 的前三位与 HTTP 状态码对齐——客户端拿到 code 就能立刻知道协议层的归类（4xx 还是 5xx），后三位在同类下细分业务场景（同是 422，001 数据验证 / 002 可以是库存不足）。纯业务编号（如 10001）还得再查表才知道 HTTP 层怎么表现。 <strong>② 硬编码字典</strong>：错误码是<strong>接口契约</strong>——契约要随代码版本走（code review、迁移可见），放数据库反而引入「运行时改契约」的风险，且启动时多一个外部依赖。字典同时是 docs.py 的单一数据源，改字典 = 改实现 + 改文档，不会漂移。`,
             },
             {
@@ -218,7 +218,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（09.统一异常处理）</li>
         <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/handling-errors/">FastAPI 官方：Handling Errors（三类处理器 override）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/统一异常处理速查表.html">统一异常处理速查表</a>——五条实践、ERROR_MAP、分支逻辑一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/依赖注入">08.依赖注入</a> · 下一课 <a href="/agents/python-framework/中间件">10.中间件</a></li>

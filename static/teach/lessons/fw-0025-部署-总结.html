@@ -172,28 +172,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `面试官问「你们部署流程是什么」时，AI 助手帮你写的回答把 K8s 的每个组件（etcd、kube-scheduler、CNI 插件）背了一遍，但问「你负责哪部分」时卡住了。按课件的面试要点，问题在哪？`,
-              source: '来源：Kubernetes 官方文档 Overview（组件与架构）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《25.部署-总结》课件（面试要点）',
+              source: '来源：Kubernetes 官方文档 Overview（组件与架构）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《25.部署-总结》课件（面试要点）',
               breakdown: `问题在<strong>背过了自己的真实层级</strong>。课件的框架第一层是坦诚定位——「未亲自参与服务器部署，了解流程，对细节不太了解」；然后才是有边界的清单：微服务架构、ACK 管 Pod、ALB 路由、配合写 Dockerfile、ACR 仓库、流水线两节点（PR/tag）。背 etcd/scheduler 反而危险：面试官一追问「你们集群的 etcd 几个节点」就穿帮。正确姿势：<strong>按课件清单讲到自己真实参与的深度，然后主动划边界</strong>——「基础设施细节我了解概念、实操归运维团队，应用侧（Dockerfile、依赖、健康检查）是我写的」——最后兜底：短时间学习可自建流水线（ch21-24 实操过）。诚实 + 有料 &gt; 术语堆砌。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `为什么流水线用「PR 和 tag 两个节点」而不是 push 一次触发全流程？PR 节点和 tag 节点各自卡在链路的什么位置？`,
-              source: '来源：GitHub 官方文档 Understanding GitHub Actions（workflow 触发与部署保护）https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《25.部署-总结》课件（云效两节点）',
+              source: '来源：GitHub 官方文档 Understanding GitHub Actions（workflow 触发与部署保护）https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《25.部署-总结》课件（云效两节点）',
               breakdown: `两个节点 = 两个语义不同的闸门：<strong>① PR 节点（合入前）</strong>——代码还在「候选」状态，CI 跑测试回答「这个变更安不安全」（ch24 的 uv sync + test-unit；ch12 的防回归在流水线强制执行）；测试红 = 合不进去。 <strong>② tag 节点（发布时）</strong>——合入主干后，打 tag 是显式的「我要发布」信号，CD 才构建镜像、部署集群（ch24 的 TAG=${CI_COMMIT_REF_NAME} 把 tag 变成镜像版本）。为什么不用 push 一把梭：push 的频率远高于「该发布」的频率——每次 push 都部署等于没代码评审、没发布节奏，且测试与部署的失败域混在一起难定位。一句话：<strong>PR 问「能不能合」，tag 说「现在发」</strong>。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的部署流程复盘文档：① 没有版本回滚段落；② 没提健康检查与监控；③ 密钥管理一句「放环境变量」带过。按 ch21-25 的完整部署观审查这份文档缺了什么。`,
-              source: '来源：Kubernetes 官方文档 Overview（自愈与滚动更新）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《25.部署-总结》课件（部署全景）',
+              source: '来源：Kubernetes 官方文档 Overview（自愈与滚动更新）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《25.部署-总结》课件（部署全景）',
               breakdown: `缺三块：<strong>① 回滚路径</strong>——ch22/23 反复强调版本 tag 的最终目的就是回滚：出问题要能「kubectl rollout undo / helm rollback 到上一个 tag」；没有版本纪律的部署流程等于没有刹车。 <strong>② 可观测性</strong>——ch18 的日志体系（JSON→stdout→云日志）与健康检查（探针）是部署闭环的「眼睛」：Pod 起来 ≠ 服务健康，没有存活/就绪探针与日志采集，故障只能靠用户报。 <strong>③ 密钥全生命周期</strong>——「放环境变量」漏了一半：来源（流水线密钥区，ch24 六变量）、注入（helm --set/secret，ch23）、轮换（JWT 密钥、DB 密码要能换，ch17 的 secret 配置点）、不落盘（不进 git/镜像）。复盘文档按「发布→运行→回滚→观察→密钥」五段写才完整。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问（作业题）：你在之前的企业中写好的 AI 服务是如何部署的？请讲一讲你们的部署流程。`,
-              source: '来源：渡一源课程《25.部署-总结》课件（面试要点 + 作业）· Kubernetes 官方文档 Overview https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《25.部署-总结》课件（面试要点 + 作业）· Kubernetes 官方文档 Overview https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `课件标准答法（四段）：<strong>① 架构定位</strong>——「我们是微服务架构，AI 服务不直接对外，由业务后端调用」；<strong>② 链路顺讲</strong>——「代码合入主干前 PR 触发 CI 跑测试；发布时打 tag 触发 CD：构建 Dockerfile 推 ACR → ACK 部署 Pod → ALB 路由流量 → 域名走 HTTPS」；<strong>③ 划清职责</strong>——「我负责应用侧：Dockerfile、依赖清单、健康检查，和运维对齐基础镜像与端口规范；集群与网络由运维团队维护」；<strong>④ 兜底</strong>——「流水线细节我了解概念、实操不多，但这套流程我自己搭过一遍（ch21-24），短时间上手没有问题」。诚实层级 + 完整链路 + 明确职责 + 学习能力——面试官要的是「能协作、能上手、不吹牛」的信号。`,
             },
             {
@@ -216,7 +216,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（25.部署-总结）</li>
         <li><strong>深读推荐</strong>：<a href="https://kubernetes.io/docs/concepts/overview/">Kubernetes 官方：Overview</a> · <a href="https://docs.github.com/en/actions/about-github-actions/understanding-github-actions">GitHub Actions 官方文档</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/部署-总结速查表.html">部署-总结速查表</a>——全景链路、面试框架一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/部署-CICD">24.部署-CICD</a> · 下一课 <a href="/agents/python-framework/python收官检验">26.python收官检验</a></li>

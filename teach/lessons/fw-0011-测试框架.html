@@ -173,28 +173,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的测试：直接连开发数据库跑，测试里 TRUNCATE 了 product 表——把开发库的数据清空了。按本课 conftest 的做法，怎么防？`,
-              source: '来源：pytest 官方文档 How-to guides（fixtures 与 setup/teardown 组织测试）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《11.测试框架》课件 conftest.py',
+              source: '来源：pytest 官方文档 How-to guides（fixtures 与 setup/teardown 组织测试）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《11.测试框架》课件 conftest.py',
               breakdown: `课件答案：<strong>独立测试库 + session 级生命周期管理</strong>。conftest 的 pytest_sessionstart 连 postgres 库 DROP/CREATE 一个专用 duyi_test_db（DB_NAME 环境变量在 import app 之前 setdefault 切过去），再跑 alembic upgrade head；session 结束连库一起 DROP。测试随便 TRUNCATE 也碰不到开发数据。三条防线：① <strong>环境变量先行</strong>（任何 app 导入前设 DB_NAME）；② 专用库不是专用表——连「库」这个层级都隔离；③ 测试数据清理用 reversed(sorted_tables) + CASCADE，自增序列 RESTART IDENTITY 一起归位。审查 AI 的测试代码先看连接串指向哪。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `课件为什么选择「真服务器 + httpx」的集成测试，而不是 FastAPI 的 TestClient？conftest 是怎么把这个流程自动化的？`,
-              source: '来源：FastAPI 官方文档 Testing（"Using TestClient" / "Separating tests" / "Testing: extended example"）https://fastapi.tiangolo.com/tutorial/testing/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《11.测试框架》课件 conftest.py',
+              source: '来源：FastAPI 官方文档 Testing（"Using TestClient" / "Separating tests" / "Testing: extended example"）https://fastapi.tiangolo.com/tutorial/testing/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《11.测试框架》课件 conftest.py',
               breakdown: `<strong>选择理由</strong>：TestClient 是进程内模拟（ASGI 直接调 app），而课件要测的是<strong>真实部署形态</strong>——uvicorn 进程、真实端口、真实 HTTP、中间件/异常处理器/信封响应全部生效（ch09/ch10 的成果在测试里是被验证对象）。TestClient 测不到「中间件与异常处理器的真实协作」。 <strong>自动化流程</strong>：sessionstart 建库跑迁移 → subprocess.Popen 起服务器 → 轮询 /docs 直到就绪（50 次 × 0.1s）→ fixture async_client 发请求 → 每测试后 autouse cleanup 清库 → sessionfinish 停服务器删库。失败时看 tmp/test_server.log 定位。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的测试套件审查：① 每个测试都自己建 engine、清表，没有复用 fixture；② 断言只查 status_code 不查业务码；③ 删除了 422 校验场景说「测过了创建成功就够了」。逐条按本课标准评判。`,
-              source: '来源：pytest 官方文档 How-to guides（fixtures 复用、断言写法）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《11.测试框架》课件（fixtures 与断言模式）',
+              source: '来源：pytest 官方文档 How-to guides（fixtures 复用、断言写法）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《11.测试框架》课件（fixtures 与断言模式）',
               breakdown: `逐条：<strong>① fixture 复用</strong>——建 engine/清表是 session 级公共行为，应像课件收进 conftest 的 autouse fixture；散落在每个测试里 = 重复、顺序脆弱（谁先清库谁踩谁）。 <strong>② 两层断言</strong>——status_code 是协议层，code 是业务层；课件断言 422 + code=422001/422002 区分「字段校验失败」与「关联分类不存在」——只查状态码的测试在业务码回归时全绿，失去「保契约」价值。 <strong>③ 负面场景</strong>——「创建成功就够了」直接违反课件的场景清单：missing_name(422)、nonexistent_category(422002)、not_found(404001)、duplicate_sku(422002)、negative_stock(422)——负面场景正是 ch09 异常体系的契约，删掉它们等于把错误处理代码变裸奔。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：为什么用「类组织测试」而不是「函数组织」？TestCreateCategory 里每个方法是一条用例，这和 pytest 的纯函数风格有什么区别？`,
-              source: '来源：pytest 官方文档（test 组织与类分组）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《11.测试框架》课件（Test* 类组织）',
+              source: '来源：pytest 官方文档（test 组织与类分组）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《11.测试框架》课件（Test* 类组织）',
               breakdown: `课件的选择：<strong>按「接口 + 操作」分组</strong>——TestCreateCategory / TestListCategories / TestGetCategory / TestUpdateCategory / TestDeleteCategory 五个类，每个类下一个操作的全部场景（成功/缺字段/不存在/分页/过滤）。好处：① <strong>可发现性</strong>——新场景往对应类里加方法，跑单个类 = 回归一个操作（pytest test_categories.py::TestListCategories）；② <strong>语义分组</strong>——类名即操作名，读测试清单等于读接口契约；③ 与 API 层结构同构（api/categories.py 的操作 → Test 类）。函数风格适合纯函数测试，接口集成测试用类分组信息密度更高。设计上还有一个细节：辅助函数 _create 收敛造数逻辑——Arrange 与 Assert 分离。`,
             },
             {
@@ -217,7 +217,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（11.测试框架）</li>
         <li><strong>深读推荐</strong>：<a href="https://docs.pytest.org/en/stable/">pytest 官方文档</a> · <a href="https://fastapi.tiangolo.com/tutorial/testing/">FastAPI 官方：Testing</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/测试框架速查表.html">测试框架速查表</a>——三件套、conftest 生命周期、测试模式一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/中间件">10.中间件</a> · 下一课 <a href="/agents/python-framework/测试方案">12.测试方案</a></li>

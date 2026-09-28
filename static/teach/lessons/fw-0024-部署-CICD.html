@@ -171,28 +171,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的流水线：CI 通过的标志是「echo 构建成功」，且把 ACR 密码和 kubeconfig 直接写进流水线 yaml 提交到 git。审查：哪里违背了本课的流水线纪律？`,
-              source: '来源：GitHub 官方文档 Understanding GitHub Actions（workflow 触发与 secret 管理）https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《24.部署-CICD》课件',
+              source: '来源：GitHub 官方文档 Understanding GitHub Actions（workflow 触发与 secret 管理）https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《24.部署-CICD》课件',
               breakdown: `两个硬伤：<strong>① CI 没有真验证</strong>——课件 CI 的核心是 uv sync --frozen --all-packages + make test-unit：装依赖验证锁文件一致性、跑测试验证行为（ch11/12 的防回归在流水线里强制执行）；「echo 构建成功」等于没 CI，坏的提交照样进主分支。 <strong>② 密钥进 git</strong>——课件 6 个环境变量（KUBECONFIG_BASE64/ACR_PASSWORD/DB_PASSWORD/JWT_SECRET_KEY...）全部进流水线的<strong>密钥区</strong>（运行时可注入、日志自动脱敏），yaml 里只引用变量名；写进 git = 集群控制权+生产库密码对所有读仓库者公开，且永不消失（历史记录）。CI/CD 的底线：<strong>流水线定义可进代码库，流水线的钥匙只能进密钥系统</strong>。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `CD 流水线怎么用「一坨纯文本」把 kubectl 操作打进集群？KUBECONFIG 的 base64 编码是加密吗？`,
-              source: '来源：Kubernetes 官方文档（kubeconfig 与访问凭证）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《24.部署-CICD》课件（KUBECONFIG_BASE64 + CD 命令）',
+              source: '来源：Kubernetes 官方文档（kubeconfig 与访问凭证）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《24.部署-CICD》课件（KUBECONFIG_BASE64 + CD 命令）',
               breakdown: `机制：<strong>① 编码不是加密</strong>——kubeconfig 是多行 YAML，流水线变量只收单行文本，base64 只是「打包进一行」的运输方式（任何人拿到都能解码，所以它仍按密钥保管）；<strong>② 还原与使用</strong>——CD 里 echo "$KUBECONFIG_BASE64" | base64 -d > /tmp/kubeconfig，后续每条 kubectl/helm 命令带 --kubeconfig /tmp/kubeconfig，操作跑在流水线容器里但作用在云端集群；<strong>③ 幂等套路</strong>——secret 创建用 --dry-run=client -o yaml | kubectl apply -f -：生成而不执行，交给声明式的 apply——流水线重跑不报「已存在」。整个 CD 的三步（还原 config → 凭证 secret → helm 部署）把 ch23 手工 11 步压缩成无人值守。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的 CD：① 部署命令里 helm --set image.tag=latest；② CI 和 CD 共用同一个镜像仓库；③ 流水线没有失败通知。逐条按本课标准审查。`,
-              source: '来源：GitHub 官方文档 Understanding GitHub Actions（workflow 与通知集成）https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《24.部署-CICD》课件',
+              source: '来源：GitHub 官方文档 Understanding GitHub Actions（workflow 与通知集成）https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《24.部署-CICD》课件',
               breakdown: `逐条：<strong>① latest</strong>——课件用 TAG=${CI_COMMIT_REF_NAME}（分支名做镜像 tag）：每次部署绑定一个明确版本，出问题能对照、能回滚（ch22/23 的版本纪律，流水线是它的执行者）；latest 让「线上跑的是什么」变成不可回答的问题。 <strong>② 共用仓库</strong>——课件分三个仓库（ci/cd/python）：CI 镜像带测试工具链（uv/pytest/调试器），CD 镜像面向构建，python 存 3.14-slim 基础镜像——共用一个仓库会互相覆盖 tag、依赖串味（CI 里装的调试工具被 CD 构建带进产物）。 <strong>③ 无通知</strong>——课件 CI 有「通知插件」环节：流水线的产出不是「跑完了」而是「结果到达人」——失败没人知道 = 最危险的静默事故。审查口诀：<strong>版本可追溯、环境相隔离、结果必送达</strong>。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：你们团队 CI 和 CD 是怎么分工的？CD 什么时候触发、什么时候需要人工卡点？`,
-              source: '来源：渡一源课程《24.部署-CICD》课件（CI/CD 流水线结构）· GitHub 官方文档 Understanding GitHub Actions https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《24.部署-CICD》课件（CI/CD 流水线结构）· GitHub 官方文档 Understanding GitHub Actions https://docs.github.com/en/actions/about-github-actions/understanding-github-actions · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `按课件结构答：<strong>CI（每次代码提交触发）</strong>——装依赖 + 跑单元测试（e2e/冒烟按阶段开启），产出「这个提交能不能合」的结论；<strong>CD（合并后触发）</strong>——构建镜像推 ACR、还原 kubeconfig、重建拉取凭证、helm 带版本部署。 <strong>人工卡点的位置</strong>：① 合并前——CI 是硬门禁（测试红 = 合不了，ch12 冒烟红线同理）；② 生产环境——课件的 CD 直连集群是「持续交付」形态（自动到部署前一步）；更保守的「持续部署」要加审批：生产发布前人工点确认按钮、分环境升级（先测试集群后生产）。设计原则：<strong>验证类的活给机器（CI），决策类的活留人（发布时机）</strong>——机器不会累，人会拍板。`,
             },
             {
@@ -215,7 +215,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（24.部署-CICD）</li>
         <li><strong>深读推荐</strong>：<a href="https://docs.github.com/en/actions/about-github-actions/understanding-github-actions">GitHub 官方：Understanding GitHub Actions</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/部署-CICD速查表.html">部署-CICD速查表</a>——CI/CD 职责、三仓库、六变量一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/部署-k8s">23.部署-k8s</a> · 下一课 <a href="/agents/python-framework/部署-总结">25.部署-总结</a></li>

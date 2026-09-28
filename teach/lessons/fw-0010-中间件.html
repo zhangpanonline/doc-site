@@ -173,28 +173,28 @@
               type: 'trap',
               level: '中级岗常问',
               prompt: `AI 写的统一响应中间件：不管什么路径都包信封——结果 Swagger 文档页打不开、favicon 404、前端下载接口返回 JSON 的 code/data/message。按本课做法，哪里漏了？`,
-              source: '来源：FastAPI 官方文档 Middleware（"there's a simpler way ... you use app.add_middleware() ... makes sure that the internal middlewares handle server errors and custom exception handlers work properly"）https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《10.中间件》课件 unified_response',
+              source: '来源：FastAPI 官方文档 Middleware（"there's a simpler way ... you use app.add_middleware() ... makes sure that the internal middlewares handle server errors and custom exception handlers work properly"）https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《10.中间件》课件 unified_response',
               breakdown: `漏了课件的<strong>路径守卫</strong>：<code>if not request.url.path.startswith("/api/"): return response</code>。信封只属于业务 API 契约——/docs、/openapi.json、静态资源、文件下载（非 JSON 响应）都不该被包。更隐蔽的第二坑：<strong>自定义函数中间件与内置异常处理器的顺序</strong>——官方文档明确建议用 add_middleware 保证「内置中间件处理服务端错误、自定义异常处理器正常工作」；AI 用 app.middleware("http") 手动注册时若不注意注册顺序，ch09 的全局异常处理器可能收不到异常（中间件先把它吞成 500 信封）。审查点：① 有没有路径守卫；② 中间件与异常处理器的兼容性。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `unified_response 里为什么要手动重拼 body_iterator？直接改 response.body 不行吗？`,
-              source: '来源：FastAPI 官方文档 Middleware（BaseHTTPMiddleware 风格的 call_next 流程与响应处理）https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《10.中间件》课件（body_iterator 重拼 + 弹 content-length）',
+              source: '来源：FastAPI 官方文档 Middleware（BaseHTTPMiddleware 风格的 call_next 流程与响应处理）https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《10.中间件》课件（body_iterator 重拼 + 弹 content-length）',
               breakdown: `FastAPI 中间件里 <code>await call_next(request)</code> 返回的 Response 多数是 <strong>StreamingResponse 实现</strong>——body 不在内存里，而是按需从 body_iterator 逐块产出。所以「读原 body → 包信封 → 重建 JSONResponse」的标准姿势就是课件那三行：<code>async for chunk in response.body_iterator: body += chunk</code>。配套两个细节：① <strong>弹掉 content-length</strong>——包了信封 body 变长，旧头会让客户端按错误长度截断（JSONResponse 会自己重算）；② 复制 headers 再弹，<strong>不要修改原响应对象</strong>（可能被后续中间件复用）。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的中间件注册：三个中间件直接堆在 main.py 里，顺序是 cors → response → process_time，其中 cors 用 app.add_middleware 其余用 app.middleware("http") 手动加。审查这段代码的问题。`,
-              source: '来源：FastAPI 官方文档 Middleware（add_middleware 保证内部中间件与异常处理器正常工作；"the order of the middlewares matters"）https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《10.中间件》课件 register_middleware',
+              source: '来源：FastAPI 官方文档 Middleware（add_middleware 保证内部中间件与异常处理器正常工作；"the order of the middlewares matters"）https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《10.中间件》课件 register_middleware',
               breakdown: `三个问题：<strong>① 注册方式不统一</strong>——课件把两种形态收进 MIDDLEWARES 注册表，register_middleware 按 isclass 分派（类走 add_middleware、函数走 app.middleware），main.py 只调一行；AI 的写法让注册顺序散落在三个调用点，读代码要数顺序。 <strong>② 顺序语义</strong>——最后 add_middleware 的中间件在最外层：AI 的 cors 在 response 之前注册，意味着 cors 是外层、response 是内层，响应从内到外先包信封再做 CORS 头——通常是对的，但要意识到这是「最后注册=最外层」的约定，排错时别想反。 <strong>③ 官方建议</strong>——自定义中间件也走 add_middleware（包成类），保证与内置错误处理中间件、异常处理器的协作顺序；AI 混用手动装饰注册是踩官方警告的写法。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：团队想把所有接口的响应统一成 {"code","data","message"}，你会怎么落地？中间件改了响应，API 文档怎么办？`,
-              source: '来源：渡一源课程《10.中间件》课件（unified_response + setup_openapi 信封 schema 改造）· FastAPI 官方文档 Middleware https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《10.中间件》课件（unified_response + setup_openapi 信封 schema 改造）· FastAPI 官方文档 Middleware https://fastapi.tiangolo.com/advanced/middleware/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `落地三步（课件方案）：<strong>① 运行时</strong>——unified_response 中间件统一包信封：成功 code="0"、失败从 ch09 异常处理器的 {"code","message"} 里取（err.get 回退），只补 data 字段；<strong>② 契约文档</strong>——setup_openapi monkeypatch app.openapi，遍历 /api/ 的 200/201 响应把原 schema 包成 ApiResponse_{Name}（$ref 去重、数组包 List 变体）——运行时与文档必须同步，否则前端按文档生成的客户端解不出 data；<strong>③ 配置化</strong>——路径守卫 /api/ 前缀保证文档页与静态资源不受影响。设计要点：<strong>信封是接口契约的一部分，中间件只是它的运行时执行者，OpenAPI 是它的文档投影——单一事实、两处同步</strong>。`,
             },
             {
@@ -217,7 +217,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（10.中间件）</li>
         <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/advanced/middleware/">FastAPI 官方：Middleware（含 CORS）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/中间件速查表.html">中间件速查表</a>——骨架、三中间件、注册分派一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/统一异常处理">09.统一异常处理</a> · 下一课 <a href="/agents/python-framework/测试框架">11.测试框架</a></li>

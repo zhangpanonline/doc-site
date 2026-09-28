@@ -174,28 +174,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `面试官问「你做过的一个完整后端功能」时，AI 助手帮你准备的回答只有「用 FastAPI 写了个接口」。按本课 27 道检验题的完整度，这个回答丢掉了哪些维度？`,
-              source: '来源：渡一源课程《26.python收官检验》课件（27 道能力检验 + 就业市场画像）· FastAPI 官方文档 Tutorial https://fastapi.tiangolo.com/tutorial/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《26.python收官检验》课件（27 道能力检验 + 就业市场画像）· FastAPI 官方文档 Tutorial https://fastapi.tiangolo.com/tutorial/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `「写了个接口」只覆盖了检验题的 1/27。完整的项目叙事至少六维（对照课件检验题）：<strong>① 数据</strong>——模型建表+迁移（ch04/06）；<strong>② 分层</strong>——DTO→service→API（ch07/08）；<strong>③ 横切</strong>——异常统一、信封中间件、日志（ch09/10/18）；<strong>④ 安全</strong>——参数化防注入、密码 hash 加盐、JWT 认证（ch05/17）；<strong>⑤ 质量</strong>——pytest 三层测试+冒烟（ch11/12）；<strong>⑥ 交付</strong>——容器化+流水线（ch21/24）。面试里挑 2-3 个「你亲手做过且能答追问」的维度展开讲（比如：异常统一怎么设计的、注入怎么防的），比一句「写了接口」的信息密度高一个量级——这就是检验题的意义：<strong>会做 ≠ 能讲，能讲需要完整度</strong>。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `AI 岗位和全栈岗位的需求清单有四个词重叠（API、日志、测试、异常）。为什么两个方向都绕不开这四样？`,
-              source: '来源：渡一源课程《26.python收官检验》课件（Python 的就业市场两清单）· Kubernetes 官方文档 Overview（可观测性与交付共性）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《26.python收官检验》课件（Python 的就业市场两清单）· Kubernetes 官方文档 Overview（可观测性与交付共性）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `因为这四样是<strong>「把能力交付成服务」的共性契约</strong>：<strong>① API</strong>——AI 能力再强也要「暴露」（AI 岗清单第二条），业务再简单也要「提供」（全栈 CRUD）——接口是服务的存在形式；<strong>② 日志</strong>——AI 岗要追踪模型调用链（token/耗时/错误），全栈要关键业务留痕（ch18 的三类日志两个方向都在用）；<strong>③ 异常</strong>——AI 服务失败模式多（超时/限流/模型错误），业务失败模式杂（校验/约束/权限）——统一异常是「服务对外可预期」的前提（ch09 五条实践）；<strong>④ 测试</strong>——AI 岗保「模型改版不破接口」，全栈保「重构不破功能」（ch11 三价值原话）。方向不同、底座同构——这也是课程把 24 章编成一条线的原因。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的「能力自检脚本」：把 27 道题做成 27 个 checkbox，勾完就算通过；没通过的不回补章节，直接看答案。审查这个自检方案。`,
-              source: '来源：渡一源课程《26.python收官检验》课件（能力检验题设计）· pytest 官方文档（测试设计原则）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《26.python收官检验》课件（能力检验题设计）· pytest 官方文档（测试设计原则）https://docs.pytest.org/en/stable/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `两个缺陷：<strong>① 勾选无证据</strong>——检验题的前提是「能借助 AI、课件、视频<strong>可控地完成</strong>事项」，不是「觉得会」——正确姿势是每道题做一个最小可运行验证（如第 8 题：亲手写一遍注入 demo 跑出全表泄露，再写参数化修复；第 23 题：把一个异步生成器包成 SSE 用 curl -N 看到流）。 <strong>② 不回补=假通过</strong>——课件给的是「22/27 即达标」的台阶，但否定的 5 道必须回补对应章节（检验题的章节地图：数据→ch04-06、架构→ch07-18……）——能力缺口不会自己愈合。自检的产出不是 checkbox 计数，是<strong>「薄弱项清单 + 回补计划」</strong>。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：学完这门课，你给自己定位 AI 岗位还是全栈岗位？你的技能树和岗位画像怎么对齐？`,
-              source: '来源：渡一源课程《26.python收官检验》课件（AI 岗位/全栈岗位需求清单）· FastAPI 官方文档 https://fastapi.tiangolo.com/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《26.python收官检验》课件（AI 岗位/全栈岗位需求清单）· FastAPI 官方文档 https://fastapi.tiangolo.com/ · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `用课件两份清单做对齐：<strong>AI 岗</strong>的核心差异项是「专注 AI 能力 + 流式响应（SSE/WebSocket）」——如果自己的强项是模型调用、Agent 编排、提示工程，那么简历和面试火力集中在：AI 服务化（ch20 流式）、模型结果落库（ch04-06）、可观测（ch18 日志）；Web 部分讲「够用的交付底座」即可。 <strong>全栈岗</strong>的差异项是「CRUD + 存量系统协作」——火力集中在：三层架构（ch13）、异常与中间件约定（ch09/10）、增量测试（ch11/12）、安全常识（ch05/17）。共同底座（API/日志/异常/测试）两边都打满。选型公式：<strong>看自己「最想深挖的部分」落在哪份清单的差异项上，共同项保持热手即可</strong>——两份清单都在课件里，对一遍就有答案。`,
             },
             {
@@ -218,7 +218,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（26.python收官检验）</li>
         <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/">FastAPI 官方教程（全书索引）</a> · <a href="https://docs.pytest.org/en/stable/">pytest 官方文档</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/python收官检验速查表.html">python收官检验速查表</a>——27 题章节地图、两岗位画像一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/部署-总结">25.部署-总结</a> · 本课为框架课程收官章</li>

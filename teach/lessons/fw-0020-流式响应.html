@@ -173,28 +173,28 @@
               type: 'trap',
               level: '中级岗常问',
               prompt: `AI 写的流式接口：用 SSE 推答案，但模型生成到一半抛异常时，AI 在异常里 raise HTTPException(500)——结果前端收到的流直接断开，连错误消息都没有。按本课知识，为什么？正确姿势是什么？`,
-              source: '来源：MDN Server-sent events（"EventSource: Defines all the features that handle connecting to a server, receiving events/data, errors, closing a connection"）https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《20.流式响应》课件（异常处理行）',
+              source: '来源：MDN Server-sent events（"EventSource: Defines all the features that handle connecting to a server, receiving events/data, errors, closing a connection"）https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《20.流式响应》课件（异常处理行）',
               breakdown: `课件 FastAPI 结合表写明了：<strong>响应过程中的异常会经过异常处理函数，后续流式内容中的不经过</strong>。响应头已经发出去了，HTTP 状态码改不了——中间抛 HTTPException 只会让连接崩掉。正确姿势是课件的时序图里就画着的：<strong>带内错误事件</strong>——<code>event: error\ndata: 错误消息\n\n</code>，前端 EventSource 对 error 事件做专门监听（MDN：EventSource 接口本身就定义了 errors 处理）；或者约定 data 里的 JSON 结构带错误码（{"type":"error","message":...}）。流式协议里「错误」是一种消息，不是一个 HTTP 状态码。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `WebSocket 在 HTTP 握手升级之后，为什么 ch09 的全局异常处理器和 ch10 的中间件都管不到它了？这带来什么后果？`,
-              source: '来源：FastAPI 官方文档 WebSockets（双向通信与连接生命周期）https://fastapi.tiangolo.com/advanced/websockets/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《20.流式响应》课件（WebSocket FastAPI 结合表）',
+              source: '来源：FastAPI 官方文档 WebSockets（双向通信与连接生命周期）https://fastapi.tiangolo.com/advanced/websockets/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《20.流式响应》课件（WebSocket FastAPI 结合表）',
               breakdown: `<strong>为什么管不到</strong>：WebSocket 只有「握手」阶段是 HTTP——101 切换之后，连接升级为独立的 WebSocket 协议，Starlette 的 HTTP 中间件栈和异常处理层都在 HTTP 语义里工作，管不到协议升级后的帧。课件表格的结论：请求/响应都不经过 HTTP 中间件，异常不经过异常处理函数。 <strong>后果与对策</strong>：① 统一信封、耗时统计、CORS 头这些 ch10 的福利在 WS 上全部失效——WebSocket 端点里要自己处理（或抽 WS 专用中间件）；② WS 内的异常必须自己 try/except 转成 WS 关闭帧或错误消息（close code 是 WS 的错误语义）；③ 依赖注入的 get_db 直到连接断开才迭代结束——长连接期间一直占着一个 session，注意连接池消耗（ch03 的 pool_size 知识）。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的 SSE 实现：① 把 token 放进请求头然后前端用 fetch 消费（没验证是否支持）；② 没有心跳消息，网关 60 秒空闲超时直接断流；③ 生成完后不关闭连接。逐条审查。`,
-              source: '来源：MDN Server-sent events（EventSource 的能力边界与事件模型）https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《20.流式响应》课件（token 携带行）',
+              source: '来源：MDN Server-sent events（EventSource 的能力边界与事件模型）https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《20.流式响应》课件（token 携带行）',
               breakdown: `逐条：<strong>① token 放请求头</strong>——课件明说「原生 EventSource 只能将 token 放到 query」：它不支持自定义头（浏览器 API 限制）。fetch 虽然能发头，但 fetch 不提供 EventSource 的自动重连/事件模型，要自己实现流式解析——除非你确定用自定义客户端（第三方库）才可任意携带。 <strong>② 没有心跳</strong>——长连接经过网关/NAT，空闲超时会静默断开；标准做法是定时发心跳注释行（SSE 的 <code>: keep-alive\n\n</code> 注释消息，前端不可见）。 <strong>③ 不关连接</strong>——服务端完成推送后应主动关闭（或约定 end 事件），否则连接挂着占资源，且依赖注入的清理（get_db 等）要等连接断开才发生。审查口诀：<strong>流式接口的生命周期管理（心跳/结束/清理）比普通接口多一层责任</strong>。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：AI 对话产品里，什么时候用 SSE、什么时候用 WebSocket？举一个必须 WebSocket 的场景。`,
-              source: '来源：渡一源课程《20.流式响应》课件（SSE vs WebSocket 对比表：适用 AI 场景行）· MDN Server-sent events https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《20.流式响应》课件（SSE vs WebSocket 对比表：适用 AI 场景行）· MDN Server-sent events https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `按课件对比表答：<strong>SSE</strong>——简单的问答模式：用户发一次问题，模型逐 token 推答案流。单向正好、HTTP 基础设施全复用（ch09/ch10 的异常与中间件大部分生效）、原生自动重连、部署零特殊要求（普通 HTTP 网关即可）。 <strong>WebSocket</strong>——必须双向交互的场景：课件给了两个——<strong>Agent 工作流</strong>（用户要能在模型执行中途插话、打断、改指令——停止生成就是最常见的反向消息）和<strong>多人在线 AI 协作</strong>（每个人的发言要广播给所有成员）。判断口诀：<strong>用户只需要「听」→ SSE；用户需要「边说边听」→ WebSocket</strong>。打断生成是硬需求，SSE 做不了。`,
             },
             {
@@ -217,7 +217,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（20.流式响应）</li>
         <li><strong>深读推荐</strong>：<a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events">MDN：Server-sent events</a> · <a href="https://fastapi.tiangolo.com/advanced/websockets/">FastAPI 官方：WebSockets</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/流式响应速查表.html">流式响应速查表</a>——两协议时序、FastAPI 结合表、选型对比一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/日志">18.日志</a> · 下一课 <a href="/agents/python-framework/部署-认识Docker">21.部署-认识Docker</a></li>

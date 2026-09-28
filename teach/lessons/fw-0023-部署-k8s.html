@@ -173,28 +173,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的部署清单：镜像 tag 用 latest 直接部署到集群；数据库密码明文写进 k8s 的 yaml 文件提交到 git。按本课纪律，两个问题各是什么？`,
-              source: '来源：Kubernetes 官方文档 Overview（容器编排与 Secret 管理）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《23.部署-k8s》课件',
+              source: '来源：Kubernetes 官方文档 Overview（容器编排与 Secret 管理）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《23.部署-k8s》课件',
               breakdown: `<strong>① latest 漂移</strong>——课件在等集群创建的间隙专门安排「删掉 ACR 的 latest 镜像，改用带版本号 tag」：latest 是可变指针，集群里「跑的是哪个提交」无法回答，出了问题既不知道差在哪、也回滚不了（kubectl rollout undo 需要确定的镜像版本）。 <strong>② 密码进 yaml 进 git</strong>——课件姿势：kubectl create secret docker-registry + helm --set secret.dbPassword="$DB_PASSWORD"（会话环境变量注入）；yaml 进 git = 密码进版本历史 = 每个能读仓库的人都能拿到生产库密码。k8s 原生有 Secret 资源，配合 helm 的值注入，敏感信息走部署时参数，不走源码。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `k8s 里 Pod 重启后 IP 会变，那外部流量是怎么稳定到达应用的？讲清 ALB → Ingress → Service 每一跳的作用。`,
-              source: '来源：Kubernetes 官方文档 Overview（Service 与 Ingress 抽象）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《23.部署-k8s》课件（步骤 11）',
+              source: '来源：Kubernetes 官方文档 Overview（Service 与 Ingress 抽象）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《23.部署-k8s》课件（步骤 11）',
               breakdown: `三个抽象各解决一层问题：<strong>① Service</strong>——Pod 是短命资源（扩缩/重启 IP 漂移），Service 提供稳定的集群内入口 + 负载均衡（按标签选后端 Pod）；课件 Ingress 指向服务 duyi-service（名字稳定，IP 无所谓）。 <strong>② Ingress</strong>——七层路由规则：把「域名/路径」映射到 Service（端口 8080）；ALB Ingress Controller 监听 Ingress 资源并同步到云负载均衡。 <strong>③ ALB</strong>——公网入口：域名 CNAME 到 ALB DNS，443 证书终结 TLS，80 重定向 443。流量链：浏览器 → 域名(CNAME) → ALB(443) → Ingress 规则 → Service → Pod:8080。Pod 随便重启，前三跳全都不动——<strong>入口锚在名字上，不在 IP 上</strong>。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的集群配置：① 集群选「新建 VPC」而不是用已有；② 4 个交换机全选进集群；③ helm 部署后不跑 kubectl get pods 直接宣布上线。逐条审查。`,
-              source: '来源：Kubernetes 官方文档 Overview · 渡一源课程《23.部署-k8s》课件（集群创建参数与部署步骤）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档 + 源课程）',
+              source: '来源：Kubernetes 官方文档 Overview · 源课程《23.部署-k8s》课件（集群创建参数与部署步骤）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档 + 源课程）',
               breakdown: `逐条：<strong>① 新建 VPC</strong>——课件明确「使用已有，选两个带 pod 的交换机」：ch22 的 RDS/OSS 都挂在那张 VPC 里，新建 VPC 等于把数据库和应用放进两个不互通的网络，内网地址直接失联（除非再打通 peering，徒增复杂度）。 <strong>② 4 个交换机全选</strong>——课件特意只选 2 个（带 pod 的），留 2 个（不带 pod 的）给 ALB——网络资源按角色分工，避免单点争抢。 <strong>③ 不验证 pod</strong>——helm upgrade --install 成功 ≠ 应用跑起来（镜像拉取失败、探针不过都会「部署成功但不可用」）；课件步骤 10 是 kubectl get pods 看状态，之后还有 ALB 链路验证——发布流程必须有健康确认环节。审查口诀：<strong>网络规划看归属、发布动作看验证</strong>。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：什么时候上 k8s？你们的服务才一个 API，值得吗？ALB Ingress Controller 是干嘛的？`,
-              source: '来源：Kubernetes 官方文档 Overview（容器编排的适用性）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《23.部署-k8s》课件（ACS/ALB 流程）',
+              source: '来源：Kubernetes 官方文档 Overview（容器编排的适用性）https://kubernetes.io/docs/concepts/overview/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《23.部署-k8s》课件（ACS/ALB 流程）',
               breakdown: `诚实的分层回答：<strong>① 值不值</strong>——单服务低流量时 k8s 的复杂度（cluster/helm/ingress 一堆概念）确实高于收益，ch21 的 docker run 就够；上 k8s 的信号是：服务数量多（互相调用要服务发现）、要自动扩缩（流量波峰）、要滚动发布零停机（deployment 原生支持）、要自愈（Pod 挂了自动拉起）。课件的定位是「掌握流程」——ACI/ACS 这类托管集群把 k8s 的门槛降了不少（控制面托管、按 Pod 计费）。 <strong>② ALB Ingress Controller</strong>——桥：你只写 Ingress 资源（声明式：什么域名→什么服务），controller 监听到变更后自动在云端创建/更新 ALB 的监听与转发规则——把「云负载均衡配置」从控制台手工点，变成 git 里的 yaml（基础设施即代码）。`,
             },
             {
@@ -217,7 +217,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（23.部署-k8s）</li>
         <li><strong>深读推荐</strong>：<a href="https://kubernetes.io/docs/concepts/overview/">Kubernetes 官方：Overview</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/部署-k8s速查表.html">部署-k8s速查表</a>——工具链、secret、流量链路一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/部署-云资产">22.部署-云资产</a> · 下一课 <a href="/agents/python-framework/部署-CICD">24.部署-CICD</a></li>

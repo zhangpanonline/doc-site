@@ -173,7 +173,7 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 改了模型（给 product 表加了一个列），然后直接把代码部署上线，没有生成迁移。本地开发环境看着一切正常，生产数据库一查报错：column "xxx" does not exist。按本课知识，问题出在哪一步？`,
-              source: '来源：Alembic 官方教程（"Alembic provides for the creation, management, and invocation of change management scripts for a relational database, using SQLAlchemy as the underlying engine"）https://alembic.sqlalchemy.org/en/latest/tutorial.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《06.数据迁移》课件禁区',
+              source: '来源：Alembic 官方教程（"Alembic provides for the creation, management, and invocation of change management scripts for a relational database, using SQLAlchemy as the underlying engine"）https://alembic.sqlalchemy.org/en/latest/tutorial.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《06.数据迁移》课件禁区',
               breakdown: `模型改了 ≠ 数据库变了。表结构的唯一推进方式是<strong>迁移脚本</strong>：改模型 → 生成迁移 → 审查 → 执行（课件日常开发四步）。AI 跳过的是第 2/4 步。课件两条禁区第一条就是「手动修改数据库」——直接把代码部署上去等于让 ORM 期望的结构和数据库实际结构脱节。记住课件等式：<strong>迁移脚本执行完 == 本地数据库最新状态 == 生产数据库最新状态</strong>。`,
             },
             {
@@ -187,14 +187,14 @@
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 生成了一段迁移：把 sku.stock 列的类型从 int 改成 varchar，并删掉了另一个旧列。审查这段迁移，按课件标准应该检查什么？`,
-              source: '来源：Alembic 官方文档 Auto Generating Migrations（"We review and modify these by hand as needed"）https://alembic.sqlalchemy.org/en/latest/autogenerate.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《06.数据迁移》课件日常开发第 3 步',
+              source: '来源：Alembic 官方文档 Auto Generating Migrations（"We review and modify these by hand as needed"）https://alembic.sqlalchemy.org/en/latest/autogenerate.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《06.数据迁移》课件日常开发第 3 步',
               breakdown: `课件两条审查标准：<strong>① 是否会导致数据丢失；② 回滚和迁移是否互逆</strong>。 逐个看：删列会丢数据——生产已有数据时要么先归档再删、要么评估该列是否真的可弃；int→varchar 在 PG 里是 <code>USING</code> 类型转换，本身不丢值，但 varchar 存数字意味着后续算术查询要显式转换，属于<strong>语义变更</strong>，要确认产品意图。回滚互逆：downgrade() 要把删掉的列加回来、类型改回去——AI 常漏写 downgrade，课件审查清单就是抓这个的。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：你们已经执行过的迁移，后来发现写错了，怎么处理？为什么不能直接改？`,
-              source: '来源：渡一源课程《06.数据迁移》课件常见问题（迁移脚本是常量、执行后永远不可变更）· Alembic 官方教程 Downgrading 章节 https://alembic.sqlalchemy.org/en/latest/tutorial.html#downgrading · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《06.数据迁移》课件常见问题（迁移脚本是常量、执行后永远不可变更）· Alembic 官方教程 Downgrading 章节 https://alembic.sqlalchemy.org/en/latest/tutorial.html#downgrading · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `课件标准答案：<strong>生成新迁移适配现在的模型结构，审核后执行；不修改、不删除历史迁移</strong>。 为什么不能直接改：迁移已经执行过，本地/测试/生产的 alembic_version 都记着它的 revision id——改掉它等于改写历史，各环境「相同脚本、不同结果」，最终谁和模型一致都说不清。把迁移脚本当<strong>常量</strong>：一旦执行，永远不可变更。课件还警告回滚哲学：downgrade 官方支持，但课件建议<strong>尽量不回滚</strong>——回滚后表结构与模型不一致（可能解决一个 Bug、带来更多 Bug），不一致最多允许暂时存在，绝不能是长期状态。`,
             },
             {
@@ -217,7 +217,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（06.数据迁移）</li>
         <li><strong>深读推荐</strong>：<a href="https://alembic.sqlalchemy.org/en/latest/tutorial.html">Alembic 官方教程</a> · <a href="https://alembic.sqlalchemy.org/en/latest/autogenerate.html">Auto Generating Migrations（探测边界专节）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/数据迁移速查表.html">数据迁移速查表</a>——三命令、env.py 配置、红线流程一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/数据操作">05.数据操作</a> · 下一课 <a href="/agents/python-framework/业务逻辑">07.业务逻辑</a></li>

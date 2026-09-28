@@ -172,28 +172,28 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的接口：db: AsyncSession = Depends(get_db) 但 get_db 是普通函数返回一个 session 实例，接口函数里用完不关闭。按本课知识，哪两个隐患？`,
-              source: '来源：FastAPI 官方文档 Dependencies（"What is Dependency Injection" 章节：dependable 被 FastAPI 自动调用并注入结果）https://fastapi.tiangolo.com/tutorial/dependencies/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《08.依赖注入》课件 get_db',
+              source: '来源：FastAPI 官方文档 Dependencies（"What is Dependency Injection" 章节：dependable 被 FastAPI 自动调用并注入结果）https://fastapi.tiangolo.com/tutorial/dependencies/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《08.依赖注入》课件 get_db',
               breakdown: `课件 get_db 的最终形态是 <strong>async def 生成器</strong>：<code>async with get_session_factory().begin() as session: yield session</code>——依赖生成器被 FastAPI 管理生命周期：请求进来取 session，响应结束后执行 yield 之后的清理（上下文退出 = 自动提交/回滚并归还连接）。AI 的写法绕过了这套机制：① 接口异常时 session 不 commit 也不 close，连接泄漏回连接池；② 每个请求手工管理 session 生命周期，忘了就是事故。Dependency 的另一个作用：get_db 是「选择权的移交」——将来换成从连接池拿/加日志，改 dependable 一处，所有接口无感。`,
             },
             {
               type: 'mechanism',
               level: '中级岗常问',
               prompt: `课件手写了一个 Depends 容器（_overrides 字典 + __call__ 查表）。讲清它的运行机制，以及 FastAPI 里对应的是什么机制？`,
-              source: '来源：FastAPI 官方文档 Testing Dependencies with Overrides（dependency_overrides 替换依赖用于测试）https://fastapi.tiangolo.com/advanced/testing-dependencies/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《08.依赖注入》课件 Depends.py',
+              source: '来源：FastAPI 官方文档 Testing Dependencies with Overrides（dependency_overrides 替换依赖用于测试）https://fastapi.tiangolo.com/advanced/testing-dependencies/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《08.依赖注入》课件 Depends.py',
               breakdown: `课件容器机制：<strong>① 注册</strong>——Depends(func) 把 func 存进 self.func；<strong>② 查表</strong>——__call__ 时 _overrides.get(self.func, self.func)，命中替换就执行替代实现，否则执行原函数；<strong>③ override/clear_override</strong> 写入与清空映射。演示里 override(ali_oss_upload, tencent_oss_upload) 后，所有「声明依赖 ali_oss_upload」的调用点自动切换——调用点零改动，这就是 IoC「把选择权移交出去」。 FastAPI 的对应物是 <strong>app.dependency_overrides[get_db] = fake_get_db</strong>：官方文档的标准测试手段，测试里替换真实依赖，机制与课件容器同构。`,
             },
             {
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的接口层：一个 router 里 12 个路径操作全堆在 main.py，且部分接口里还写着创建商品的具体业务逻辑（拼 SQL、算价格）。按 ch07+ch08 的标准审查并给出整改方向。`,
-              source: '来源：FastAPI 官方教程 Bigger Applications - Multiple Files（APIRouter 拆分路径操作、main 只做组装）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 渡一源课程《08.依赖注入》课件完成代码',
+              source: '来源：FastAPI 官方教程 Bigger Applications - Multiple Files（APIRouter 拆分路径操作、main 只做组装）https://fastapi.tiangolo.com/tutorial/bigger-applications/ · 检索 2026-09-22 · 层级：一手（官方文档，场景化改写）+ 源课程《08.依赖注入》课件完成代码',
               breakdown: `两个问题的整改：<strong>① 路由组织</strong>——按资源拆 router：products.py（prefix="/api/products", tags=["商品"]）、categories.py、skus.py，main.py 只 include_router 组装（课件完成代码就是标准答案）；<strong>② 分层边界</strong>——接口函数只做三件事：接 DTO → 调 service（ProductService(db).xxx()）→ 翻译 HTTP 语义（None → 404 / 成功 → response_model），业务逻辑回 service 层。审查口诀（ch07 课件）：入参和返回的是什么？是否耦合了接口层的东西？——接口里拼 SQL 就是越界，未来多入口复用（WebSocket/任务队列）时业务逻辑不可用。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：既然 FastAPI 已经内置了 Depends，课件为什么还要先手写一个 Depends 容器？两者什么关系？`,
-              source: '来源：FastAPI 官方文档 Dependencies（First Steps：Depends 声明依赖并自动注入）https://fastapi.tiangolo.com/tutorial/dependencies/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《08.依赖注入》课件（概念 → 手写容器 → 原生 DI 的教学顺序）',
+              source: '来源：FastAPI 官方文档 Dependencies（First Steps：Depends 声明依赖并自动注入）https://fastapi.tiangolo.com/tutorial/dependencies/ · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《08.依赖注入》课件（概念 → 手写容器 → 原生 DI 的教学顺序）',
               breakdown: `课件先讲概念再讲工具：手写 Depends 容器是为了让 IoC/DI 的机制<strong>可见</strong>——_overrides 字典和 __call__ 查表就是所有 IoC 容器的内核（工厂表 + 查找替换），30 行代码把「控制反转」从名词变成可运行的东西。理解了它，FastAPI 的 Depends 就只是「框架替你维护这张表，并增加了解析函数签名、缓存、生成器生命周期管理」的工业版。反过来，如果一上来就用框架，遇到「为什么测试里能换掉依赖」这类问题只能背 API 行为。设计上的收获：<strong>选择权移交 = 调用点不写死具体实现，容器负责交付</strong>——换 OSS 厂商、换鉴权实现、测试注入假对象，改的是注册表而不是业务代码。`,
             },
             {
@@ -216,7 +216,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（08.依赖注入）</li>
         <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/dependencies/">FastAPI 官方：Dependencies</a> · <a href="https://fastapi.tiangolo.com/advanced/testing-dependencies/">Testing Dependencies with Overrides</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/依赖注入速查表.html">依赖注入速查表</a>——三概念、容器机制、API 三件套一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/业务逻辑">07.业务逻辑</a> · 下一课 <a href="/agents/python-framework/统一异常处理">09.统一异常处理</a></li>

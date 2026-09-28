@@ -173,7 +173,7 @@
               type: 'trap',
               level: '初级岗常问',
               prompt: `AI 写的搜索接口：keyword 直接 f-string 拼进 LIKE 条件——\n\n<code>sql = f"SELECT * FROM product WHERE name LIKE '%{keyword}%'"</code>\n\n用户输入 %' OR 1=1 -- 会发生什么？如何修复？`,
-              source: '来源：SQLAlchemy 官方教程 Working with Transactions and the DBAPI（"a Python literal value ... should never be stringified into SQL string directly; a parameter should always be used. This is most famously known as how to avoid SQL injection attacks"）https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《05.数据操作》课件注入演示',
+              source: '来源：SQLAlchemy 官方教程 Working with Transactions and the DBAPI（"a Python literal value ... should never be stringified into SQL string directly; a parameter should always be used. This is most famously known as how to avoid SQL injection attacks"）https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《05.数据操作》课件注入演示',
               breakdown: `拼接结果是 <code>SELECT * FROM product WHERE name LIKE '%%' OR 1=1 -- %'</code>——OR 1=1 永远为真，-- 注释掉剩余内容，<strong>全表数据暴露</strong>。换到删除接口，<code>DELETE FROM product WHERE id = 1 OR 1=1</code> 直接清空整张表。修复=参数化绑定：<code>text("SELECT * FROM product WHERE name LIKE :keyword")</code> 配 <code>{"keyword": f"%{keyword}%"}</code>。SQL 模板与参数值分开发送：数据库先解析结构，再把值作为<strong>纯数据</strong>填入——输入永远不会变成 SQL 指令。官方教程原话：连整数、日期等字面量都不该直接字符串化进 SQL，一律走参数。`,
             },
             {
@@ -187,14 +187,14 @@
               type: 'review',
               level: '高级岗常问',
               prompt: `AI 写的会话封装：每个函数里手写 session_factory() → try → commit → except 裸捕获 → rollback → finally close，且没配 expire_on_commit。审查这段代码，按课件标准该怎么改？`,
-              source: '来源：SQLAlchemy 官方文档 Session Basics（expire_on_commit 段落："all objects associated with the Session are expired ... unless the Session.expire_on_commit parameter is used to disable this behavior"）https://docs.sqlalchemy.org/en/20/orm/session_basics.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 渡一源课程《05.数据操作》课件「优化代码结构」',
+              source: '来源：SQLAlchemy 官方文档 Session Basics（expire_on_commit 段落："all objects associated with the Session are expired ... unless the Session.expire_on_commit parameter is used to disable this behavior"）https://docs.sqlalchemy.org/en/20/orm/session_basics.html · 检索 2026-09-22 · 层级：一手（官方文档）+ 源课程《05.数据操作》课件「优化代码结构」',
               breakdown: `课件标准解法：把 session 配置收进 <strong>session_factory 单例</strong>——async_sessionmaker(get_engine(), class_=AsyncSession, <strong>expire_on_commit=False</strong>)，全局只配一次；函数内用 <code>async with session_factory.begin() as session</code> 自动提交替代 try/except/finally 三件套（裸 except 会吞掉 KeyboardInterrupt/SystemExit，且容易漏 close）。 为什么关 expire_on_commit：官方文档说提交后 session 会把所有关联对象标记过期（expire），下次读字段时<strong>隐式触发重新查询</strong>——AI 的代码没关它，提交后循环打印对象属性就是 N+1 查询现场；且异步场景里过期属性再访问时可能踩 lazy load 报错。`,
             },
             {
               type: 'design',
               level: '中级岗常问',
               prompt: `面试官问：SQLAlchemy 里 ORM、Core 表达式、Raw SQL 三种方式，你什么时候选哪个？`,
-              source: '来源：渡一源课程《05.数据操作》课件总结（三层选型）· SQLAlchemy 官方教程 Working with Transactions and the DBAPI（"SQLAlchemy's Core Expression API otherwise ensures that Python literal values are passed as bound parameters where appropriate"）https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
+              source: '来源：源课程《05.数据操作》课件总结（三层选型）· SQLAlchemy 官方教程 Working with Transactions and the DBAPI（"SQLAlchemy's Core Expression API otherwise ensures that Python literal values are passed as bound parameters where appropriate"）https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html · 检索 2026-09-22 · 层级：一手（源课程 + 官方文档）',
               breakdown: `课件总结的选型阶梯：<strong>简单 CRUD 用 ORM</strong>——操作 Python 对象、IDE 补全、自动同步；<strong>复杂查询（聚合、批量更新）混用 Core 表达式</strong>——类型化、Python 表达式构建条件、底层自动参数化（官方教程：Core 表达式保证字面量走绑定参数）、可适配方言；<strong>前两者都难以处理时才用 Raw SQL</strong>——换取高性能与极致灵活性，但必须参数化绑定防注入（官方教程：永远不要把字面量直接字符串化进 SQL）。 另外一条课件红线：耗时操作（如 I/O）尽量别放进一次连接里——连接被长任务占着，连接池压力骤增。`,
             },
             {
@@ -217,7 +217,6 @@
     <section>
       <h2>巩固与延伸</h2>
       <ul class="pitfall-list">
-        <li><strong>源课程</strong>：<a href="https://gitee.com/dev-edu/python-framework">gitee.com/dev-edu/python-framework</a>（05.数据操作）</li>
         <li><strong>深读推荐</strong>：<a href="https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html">官方教程：事务与 DBAPI（含参数绑定）</a> · <a href="https://docs.sqlalchemy.org/en/20/orm/session_basics.html">Session Basics</a> · <a href="https://docs.sqlalchemy.org/en/20/orm/session_state_management.html">Session State Management</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/数据操作速查表.html">数据操作速查表</a>——三种方式、会话与执行时机一页装下，建议打印。</li>
         <li><strong>回看课程</strong>：<a href="/agents/python-framework/ORM">04.ORM</a> · 下一课 <a href="/agents/python-framework/数据迁移">06.数据迁移</a></li>
