@@ -4,6 +4,10 @@ name: SEO 主动推送（必应 IndexNow + 百度）
 # 百度推送需要仓库 Secret：Settings → Secrets and variables → Actions
 #   → New repository secret → 名称 BAIDU_PUSH_TOKEN，值 = 百度站长「推送接口」的准入密钥。
 #   未配置时百度步骤自动跳过，只跑必应 IndexNow。
+#
+# 鲁棒性设计：不依赖 pnpm/setup-node action 与缓存；百度步骤内自行安装
+# pnpm 并构建（未配 Secret 时连依赖都不装）；两个推送步骤均 continue-on-error，
+# 通知类任务不因端点抖动而报红。
 
 on:
   push:
@@ -16,27 +20,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: 安装依赖（百度推送需要本地 build 生成 sitemap）
-        run: pnpm install --ignore-scripts --frozen-lockfile
-
       - name: 必应 IndexNow 通知
         continue-on-error: true
         run: bash scripts/indexnow-ping.sh
 
       - name: 百度主动推送（未配置 Secret 则跳过）
-        if: env.BAIDU_PUSH_TOKEN != ''
+        if: ${{ secrets.BAIDU_PUSH_TOKEN != '' }}
         continue-on-error: true
         env:
           BAIDU_PUSH_TOKEN: ${{ secrets.BAIDU_PUSH_TOKEN }}
         run: |
+          npm install -g pnpm@11
+          pnpm install --ignore-scripts
           pnpm build
           bash scripts/baidu-push.sh
