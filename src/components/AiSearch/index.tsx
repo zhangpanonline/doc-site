@@ -149,7 +149,7 @@ export default function AiSearchButton(): React.JSX.Element {
                 <p className="ai-search-hint">
                   基于全站课程文档回答，答案仅来自文档内容。
                   <br />
-                  每 IP 每日限 20 次。
+                  每访客每日限 50 次。
                 </p>
               )}
             </div>
