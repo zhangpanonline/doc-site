@@ -91,7 +91,7 @@ function cleanMarkdownText(md) {
 /** 解析 frontmatter 的 title / slug / description（值是裸词、单双引号均可） */
 function parseFrontmatter(raw) {
   const m = /^---\s*\n([\s\S]*?)\n---\s*\n/.exec(raw);
-  const out = {title: undefined, slug: undefined, description: undefined};
+  const out = {title: undefined, slug: undefined, description: undefined, url: undefined};
   if (!m) return out;
   for (const line of m[1].split('\n')) {
     const kv = /^([A-Za-z_][\w-]*)\s*:\s*([\s\S]*)$/.exec(line.trim());
@@ -188,6 +188,82 @@ function docsChunks() {
   return chunks;
 }
 
+// ---------------------------------------------------------------- 站点补充资料解析
+
+/**
+ * 非课程文档的站点补充资料（scripts/search-extra.md）：React 页面里无法被
+ * 构建索引抓到的口径/术语说明（如岗位市场情报的 P50 分位数口径）。
+ * frontmatter：title（来源标题）、url（页面地址）；正文按 ## 分块，与 docs 同构。
+ */
+const EXTRA_FILE = path.join(ROOT, 'scripts', 'search-extra.md');
+
+function extraChunks() {
+  if (!fs.existsSync(EXTRA_FILE)) return [];
+  const raw = fs.readFileSync(EXTRA_FILE, 'utf8');
+  const fm = parseFrontmatter(raw);
+  const body = raw.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '');
+  const url = typeof fm.url === 'string' ? fm.url.replace(/^\/+/, '/') : '/';
+  const title = fm.title ?? '站点说明';
+  const cleaned = cleanMarkdownText(body);
+  const sections = [];
+  let curHead = '';
+  for (const line of cleaned.split('\n')) {
+    if (/^##\s+/.test(line)) {
+      curHead = line.replace(/^##\s+/, '').trim();
+      sections.push({h: curHead, x: ''});
+    } else if (sections.length === 0) {
+      sections.push({h: '', x: line});
+    } else {
+      sections[sections.length - 1].x += `\n${line}`;
+    }
+  }
+  const chunks = [];
+  for (const sec of sections) {
+    const text = sec.x.trim();
+    if (!text) continue;
+    const anchor = sec.h ? `#${anchorId(sec.h)}` : '';
+    for (const piece of splitLong(text, MAX_CHUNK)) {
+      chunks.push({u: url + anchor, t: title, b: '岗位地图 / 市场情报', h: sec.h, x: piece});
+    }
+  }
+  return chunks;
+}
+
+// ---------------------------------------------------------------- 官方术语表解析
+
+/**
+ * 官方术语表（scripts/search-glossary.md）：通用术语解释只从官方文档获取，
+ * 每个 ## 术语 条目内以「来源：URL」行标注出处；chunk 的 u 直接指向该官方文档。
+ */
+const GLOSSARY_FILE = path.join(ROOT, 'scripts', 'search-glossary.md');
+
+function glossaryChunks() {
+  if (!fs.existsSync(GLOSSARY_FILE)) return [];
+  const raw = fs.readFileSync(GLOSSARY_FILE, 'utf8');
+  const body = raw.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '');
+  const cleaned = cleanMarkdownText(body);
+  const entries = [];
+  let cur = null;
+  for (const line of cleaned.split('\n')) {
+    if (/^##\s+/.test(line)) {
+      cur = {h: line.replace(/^##\s+/, '').trim(), x: ''};
+      entries.push(cur);
+    } else if (cur) {
+      cur.x += `\n${line}`;
+    }
+  }
+  const chunks = [];
+  for (const e of entries) {
+    const src = /来源[:：]\s*(https?:\/\/\S+)/.exec(e.x);
+    const x = e.x.replace(/来源[:：]\s*https?:\/\/\S+\s*/, '').trim();
+    if (!x) continue;
+    for (const piece of splitLong(x, MAX_CHUNK)) {
+      chunks.push({u: src ? src[1] : '/', t: e.h, b: '官方术语表', h: e.h, x: piece});
+    }
+  }
+  return chunks;
+}
+
 // ---------------------------------------------------------------- 静态课页解析
 
 function stripTags(html) {
@@ -252,9 +328,14 @@ function lessonChunks() {
 
 // ---------------------------------------------------------------- 主流程
 
-const chunks = [...docsChunks(), ...lessonChunks()];
-const stats = {docs: 0, lessons: 0};
-for (const c of chunks) stats[c.u.startsWith('/teach/lessons/') ? 'lessons' : 'docs']++;
+const chunks = [...docsChunks(), ...lessonChunks(), ...extraChunks(), ...glossaryChunks()];
+const stats = {docs: 0, lessons: 0, extra: 0, glossary: 0};
+for (const c of chunks) {
+  if (c.u.startsWith('/teach/lessons/')) stats.lessons++;
+  else if (c.b === '岗位地图 / 市场情报') stats.extra++;
+  else if (c.b === '官方术语表') stats.glossary++;
+  else stats.docs++;
+}
 
 fs.mkdirSync(path.dirname(OUT_FILE), {recursive: true});
 const out = `// 自动生成（scripts/build-search-index.mjs）——勿手改。
@@ -272,6 +353,6 @@ fs.writeFileSync(OUT_FILE, out);
 
 const chars = chunks.reduce((n, c) => n + c.x.length, 0);
 console.log(
-  `[search-index] ${chunks.length} 块（文档 ${stats.docs} / 课页 ${stats.lessons}），` +
+  `[search-index] ${chunks.length} 块（文档 ${stats.docs} / 课页 ${stats.lessons} / 补充 ${stats.extra} / 术语 ${stats.glossary}），` +
     `正文 ${Math.round(chars / 1024)} KB → ${path.relative(ROOT, OUT_FILE)}`,
 );
