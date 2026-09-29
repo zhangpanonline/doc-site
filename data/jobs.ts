@@ -1,6 +1,6 @@
 /** 单个招聘平台的分口径统计 */
 export type PlatformStat = {
-  platform: 'boss' | 'job51' | 'kanzhun';
+  platform: 'boss' | 'job51' | 'liepin';
   /** 展示名 */
   label: string;
   sampleSize: number;
@@ -34,6 +34,7 @@ export type UnitJobs = {
  * 数据来源：各招聘平台公开岗位信息的聚合统计，不含公司信息与岗位原文。
  * - BOSS 直聘：逐城轮换口径（11 组岗位关键词 × 49 城；2026-09-28 起 49 批 = 每批 1 城防封控，已完成批次 1-3 北京/上海/广州）
  * - 前程无忧：10 城口径（北上广深杭蓉汉宁西渝，12 组岗位关键词），2026-09-28 全量扩采
+ * - 猎聘：免登录 SPA 搜索口径（11 组岗位关键词，与 BOSS 批次同城对齐；卡片无发布时间，行业/规模按 cube_rules 归并）
  * 已过滤已失效/代招/实习及非本路线岗位（硬件、销售、现场运维、培训、数据标注等）。
  * 薪资区间为样本 P10–P90，中位数为各岗位薪资中点值的中位数。
  * platforms 为按招聘平台分口径的统计；顶层 salaryRange/salaryMedian/sampleSize 为各平台合并口径。
@@ -49,8 +50,8 @@ export const jobs: Record<string, UnitJobs> = {
     positions: ['Python 开发工程师', 'AI Agent 开发工程师', '大模型应用开发工程师'],
     skills: ['Python', 'PostgreSQL', 'LangChain', 'FastAPI', 'asyncio'],
     salaryRange: [8, 50],
-    salaryMedian: 18,
-    sampleSize: 1087,
+    salaryMedian: 19,
+    sampleSize: 1199,
     updatedAt: '2026-09-29',
     platforms: [
       {
@@ -69,6 +70,14 @@ export const jobs: Record<string, UnitJobs> = {
         salaryMedian: 18,
         updatedAt: '2026-09-29',
       },
+      {
+        platform: 'liepin',
+        label: '猎聘',
+        sampleSize: 112,
+        salaryRange: [12, 70],
+        salaryMedian: 28,
+        updatedAt: '2026-09-29',
+      },
     ],
   },
   backend: {
@@ -79,7 +88,7 @@ export const jobs: Record<string, UnitJobs> = {
     skills: ['Java', 'Spring Boot', 'Spring Cloud', 'Redis'],
     salaryRange: [9, 35],
     salaryMedian: 16,
-    sampleSize: 790,
+    sampleSize: 871,
     updatedAt: '2026-09-29',
     platforms: [
       {
@@ -98,6 +107,14 @@ export const jobs: Record<string, UnitJobs> = {
         salaryMedian: 15,
         updatedAt: '2026-09-29',
       },
+      {
+        platform: 'liepin',
+        label: '猎聘',
+        sampleSize: 81,
+        salaryRange: [11, 60],
+        salaryMedian: 22,
+        updatedAt: '2026-09-29',
+      },
     ],
   },
   devops: {
@@ -107,8 +124,8 @@ export const jobs: Record<string, UnitJobs> = {
     positions: ['运维工程师', 'SRE 工程师', '云平台工程师'],
     skills: ['Linux', 'Docker', 'Kubernetes', 'CI/CD'],
     salaryRange: [6, 40],
-    salaryMedian: 15,
-    sampleSize: 492,
+    salaryMedian: 16,
+    sampleSize: 563,
     updatedAt: '2026-09-29',
     platforms: [
       {
@@ -127,6 +144,14 @@ export const jobs: Record<string, UnitJobs> = {
         salaryMedian: 12,
         updatedAt: '2026-09-29',
       },
+      {
+        platform: 'liepin',
+        label: '猎聘',
+        sampleSize: 71,
+        salaryRange: [8, 45],
+        salaryMedian: 19,
+        updatedAt: '2026-09-29',
+      },
     ],
   },
   'ai-coding': {
@@ -135,9 +160,9 @@ export const jobs: Record<string, UnitJobs> = {
     stage: 4,
     positions: ['AI 辅助开发工程师', '研发效能工程师'],
     skills: ['Claude Code', '提示工程', 'AI 工作流'],
-    salaryRange: [10, 99],
+    salaryRange: [10, 100],
     salaryMedian: 38,
-    sampleSize: 73,
+    sampleSize: 79,
     updatedAt: '2026-09-29',
     platforms: [
       {
@@ -156,6 +181,14 @@ export const jobs: Record<string, UnitJobs> = {
         salaryMedian: 22,
         updatedAt: '2026-09-29',
       },
+      {
+        platform: 'liepin',
+        label: '猎聘',
+        sampleSize: 6,
+        salaryRange: [11, 120],
+        salaryMedian: 29,
+        updatedAt: '2026-09-29',
+      },
     ],
   },
   fullstack: {
@@ -164,9 +197,9 @@ export const jobs: Record<string, UnitJobs> = {
     stage: 5,
     positions: ['全栈工程师', '技术负责人'],
     skills: ['前后端全栈', '架构设计', '项目管理'],
-    salaryRange: [9, 35],
-    salaryMedian: 18,
-    sampleSize: 333,
+    salaryRange: [9, 40],
+    salaryMedian: 19,
+    sampleSize: 380,
     updatedAt: '2026-09-29',
     platforms: [
       {
@@ -183,6 +216,14 @@ export const jobs: Record<string, UnitJobs> = {
         sampleSize: 167,
         salaryRange: [8, 35],
         salaryMedian: 16,
+        updatedAt: '2026-09-29',
+      },
+      {
+        platform: 'liepin',
+        label: '猎聘',
+        sampleSize: 47,
+        salaryRange: [11, 57],
+        salaryMedian: 23,
         updatedAt: '2026-09-29',
       },
     ],

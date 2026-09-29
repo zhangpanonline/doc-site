@@ -381,6 +381,7 @@ export function JobStatsBoard(): ReactNode {
   const [cat, setCat] = useState('AI 应用');
   const bossRow = toRow(cityStatsOf(cat, 'boss'));
   const j51Row = toRow(cityStatsOf(cat, 'job51'));
+  const lpRow = toRow(cityStatsOf(cat, 'liepin'));
   return (
     <div className="js-stats">
       <h2 className="js-title">📊 岗位薪资与技能统计</h2>
@@ -408,6 +409,7 @@ export function JobStatsBoard(): ReactNode {
       <h3 className="js-sec-title">职类 × 城市 · 薪资分布（{cat}）</h3>
       <BoxPlotRow label="BOSS 直聘" row={bossRow} cities={insightCities} />
       <BoxPlotRow label="前程无忧" row={j51Row} cities={insightCities} />
+      <BoxPlotRow label="猎聘" row={lpRow} cities={insightCities} />
 
       <h3 className="js-sec-title">技术栈 · BOSS 技能标签真实词频（{cat}）</h3>
       <div className="js-chips">
@@ -455,6 +457,7 @@ export function JobStageStats({unit}: {unit: string}): ReactNode {
   const allRows = rowsOfCats(cats);
   const bossRow = toRow(cityStatsOfRows(allRows.filter(r => r[DIM.plat] === 0)));
   const j51Row = toRow(cityStatsOfRows(allRows.filter(r => r[DIM.plat] === 1)));
+  const lpRow = toRow(cityStatsOfRows(allRows.filter(r => r[DIM.plat] === 2)));
   const mergedTags = (() => {
     const m = new Map<string, number>();
     for (const c of cats) {
@@ -475,6 +478,7 @@ export function JobStageStats({unit}: {unit: string}): ReactNode {
       <h3 className="js-sec-title">城市 × 薪资分布</h3>
       <BoxPlotRow label="BOSS 直聘" row={bossRow} cities={insightCities} />
       <BoxPlotRow label="前程无忧" row={j51Row} cities={insightCities} />
+      <BoxPlotRow label="猎聘" row={lpRow} cities={insightCities} />
 
       <h3 className="js-sec-title">BOSS 技能标签 Top（真实词频）</h3>
       <div className="js-chips">

@@ -29,6 +29,13 @@ import type {CubeCityStat, RowFilter, SalaryStat} from './jobsInsightsUtils';
 /** 全池样本总量（模块级计算一次） */
 const TOTAL_ROWS = filterRows({}).length;
 
+/** 平台展示名（筛选与图例共用） */
+const PLAT_LABELS: Record<string, string> = {
+  boss: 'BOSS 直聘',
+  job51: '前程无忧',
+  liepin: '猎聘',
+};
+
 /* ===== 公共小件 ===== */
 
 /** 职类选择器（带合并样本数） */
@@ -125,16 +132,19 @@ function CityOverview({cat}: {cat: string}): ReactNode {
   const merged = mergedCityStats(cat);
   const boss = cityStatsOf(cat, 'boss');
   const j51 = cityStatsOf(cat, 'job51');
+  const lp = cityStatsOf(cat, 'liepin');
   if (merged.length === 0) {
-    return <p className="js-note-plain">该职类暂无城市样本（BOSS 逐城采集推进中，前程无忧为 10 城口径）。</p>;
+    return <p className="js-note-plain">该职类暂无城市样本（BOSS 逐城采集推进中，前程无忧为 10 城口径，猎聘随批次对齐采集）。</p>;
   }
   const scaleMax = Math.max(Math.ceil(Math.max(...merged.map(c => c.p90)) / 5) * 5, 5);
   const bossMap = new Map(boss.map(s => [s.city, s]));
   const j51Map = new Map(j51.map(s => [s.city, s]));
+  const lpMap = new Map(lp.map(s => [s.city, s]));
   const cities = merged.map(c => c.city);
   const rows: {label: string; map: Map<string, CubeCityStat>}[] = [
     {label: 'BOSS 直聘', map: bossMap},
     {label: '前程无忧', map: j51Map},
+    {label: '猎聘', map: lpMap},
   ];
   return (
     <div className="ji-citychart">
@@ -502,9 +512,9 @@ function Explorer(): ReactNode {
         <ChipFilter label="行业" options={insightDomains} value={dom} onChange={setDom} />
         <ChipFilter
           label="平台"
-          options={['BOSS 直聘', '前程无忧']}
-          value={plat ? (plat === 'boss' ? 'BOSS 直聘' : '前程无忧') : undefined}
-          onChange={v => setPlat(v ? (v === 'BOSS 直聘' ? 'boss' : 'job51') : undefined)}
+          options={['BOSS 直聘', '前程无忧', '猎聘']}
+          value={plat ? PLAT_LABELS[plat] : undefined}
+          onChange={v => setPlat(v ? (v === 'BOSS 直聘' ? 'boss' : v === '前程无忧' ? 'job51' : 'liepin') : undefined)}
         />
       </div>
 
@@ -564,7 +574,7 @@ export function JobsInsights(): ReactNode {
     <div className="ji-root">
       <h2 className="js-title">📈 多维市场情报</h2>
       <p className="js-sub">
-        按职类 / 城市 / 经验 / 学历 / 行业切分岗位市场。当前池 {TOTAL_ROWS} 份样本（BOSS 直聘 + 前程无忧）· 趋势快照自{' '}
+        按职类 / 城市 / 经验 / 学历 / 行业切分岗位市场。当前池 {TOTAL_ROWS} 份样本（BOSS 直聘 + 前程无忧 + 猎聘）· 趋势快照自{' '}
         {lastSnap ?? '—'} 起存档 · 单格样本不足 {MIN_CELL_N} 份显示「样本积累中」。
       </p>
 
@@ -590,9 +600,9 @@ export function JobsInsights(): ReactNode {
 
       <p className="js-note-plain">
         口径说明：薪资区间为样本 P10–P90、中位数为各岗位薪资中点值的中位数；已过滤已失效 / 代招 / 实习及非本路线岗位（硬件、销售、
-        现场运维、培训、数据标注等）。BOSS 直聘为逐城轮换口径（49 城，已完成北京 / 上海），前程无忧为 10 城口径；
-        城市轴覆盖 49 城清单，未采集城市显示「待采集」。职类与行业由人工规则表归并（随采集迭代），课程单元与职类对照见上表。
-        趋势数据自 2026-09-28 起每批存档，错过不可补；前程无忧侧按发布时间逐月回填。
+        现场运维、培训、数据标注等）。BOSS 直聘为逐城轮换口径（49 城，已完成北京 / 上海 / 广州），前程无忧为 10 城口径，
+        猎聘与 BOSS 批次同城对齐（当前广州）；城市轴覆盖 49 城清单，未采集城市显示「待采集」。职类与行业由人工规则表归并
+        （随采集迭代），课程单元与职类对照见上表。趋势数据自 2026-09-28 起每批存档，错过不可补；前程无忧侧按发布时间逐月回填。
       </p>
     </div>
   );
