@@ -803,7 +803,7 @@ function AiSearchPanel({ai}: {ai: AiSearchStats}) {
       <div className="card-head">
         <h2>AI 搜索 · Token 用量</h2>
         <span className="card-note">
-          每 IP 每日限额 20 次 · 金额按 DeepSeek 官方价目估算（缓存命中/未命中 + 峰谷时段）
+          每访客每日限额 50 次 · 金额按 DeepSeek 官方价目估算（缓存命中/未命中 + 峰谷时段）
         </span>
       </div>
       <div className="kpi-row" style={{marginTop: 0}}>

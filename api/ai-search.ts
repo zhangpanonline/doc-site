@@ -7,7 +7,7 @@ import {INDEX} from './_index/search-index';
 
 /**
  * AI 搜索（RAG 问答）：
- *   1. 配额：每 IP 每日 / 每分钟限额（Supabase ai_search_quota；表故障时降级为
+ *   1. 配额：每访客每日 / 每 IP 每分钟限额（Supabase ai_search_quota；表故障时降级为
  *      单实例内存限流，宁可放松也不把搜索打挂）
  *   2. 检索：构建期索引（api/_index/search-index.ts，pnpm build 时生成）关键词粗筛 top 块
  *   3. 生成：DeepSeek chat/completions，系统提示词严格限定「只依据文档片段回答」
@@ -18,7 +18,7 @@ import {INDEX} from './_index/search-index';
  * （middleware 对 /api/ 放行），因此配额必须内建于此函数。
  */
 
-const DAILY_LIMIT = Number(process.env.AI_SEARCH_DAILY_LIMIT ?? 20);
+const DAILY_LIMIT = Number(process.env.AI_SEARCH_DAILY_LIMIT ?? 50);
 const MINUTE_LIMIT = Number(process.env.AI_SEARCH_MINUTE_LIMIT ?? 3);
 const MODEL = process.env.DEEPSEEK_MODEL ?? 'deepseek-chat';
 const BASE_URL = (process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com').replace(/\/+$/, '');
@@ -49,34 +49,41 @@ const memoryQuota = new Map<string, number>();
 /**
  * 消耗一次配额：先插入占位行再读回计数（upsert ignoreDuplicates + select），
  * 无读-改-写竞态，并发下也不会被绕过。
+ * 维度：日限额按独立访客（visitor_id cookie，NAT 下多人共享 IP 互不影响）；
+ * 分钟防刷仍按 IP（cookie 可伪造，IP 是最难绕过的维度）。
+ * 访客桶以 'v:' 前缀存于 ip 列（表主键是 (ip,bucket)，免迁移）。
  */
-async function consumeQuota(ip: string): Promise<{ok: boolean; reason?: 'daily' | 'minute'}> {
+async function consumeQuota(
+  ip: string,
+  visitorId: string,
+): Promise<{ok: boolean; reason?: 'daily' | 'minute'}> {
   const {dayKey, minKey} = bucketKeys();
   const admin = getSupabaseAdmin();
+  const checks = [
+    {key: ip, bucket: minKey, limit: MINUTE_LIMIT, reason: 'minute' as const},
+    {key: `v:${visitorId}`, bucket: `vday:${dayKey}`, limit: DAILY_LIMIT, reason: 'daily' as const},
+  ];
   try {
-    for (const bucket of [minKey, dayKey]) {
+    for (const c of checks) {
       await admin
         .from('ai_search_quota')
-        .upsert({ip, bucket, count: 1}, {onConflict: 'ip,bucket', ignoreDuplicates: true});
+        .upsert({ip: c.key, bucket: c.bucket, count: 1}, {onConflict: 'ip,bucket', ignoreDuplicates: true});
+      const {data, error} = await admin
+        .from('ai_search_quota')
+        .select('count')
+        .eq('ip', c.key)
+        .eq('bucket', c.bucket);
+      if (error) throw error;
+      const count = Number(Array.isArray(data) && data[0] ? data[0].count : 0);
+      if (count > c.limit) return {ok: false, reason: c.reason};
     }
-    const {data, error} = await admin
-      .from('ai_search_quota')
-      .select('bucket,count')
-      .eq('ip', ip)
-      .in('bucket', [minKey, dayKey]);
-    if (error) throw error;
-    const rows = Array.isArray(data) ? data : [];
-    const countOf = (b: string) => Number(rows.find((r) => r.bucket === b)?.count ?? 0);
-    if (countOf(minKey) > MINUTE_LIMIT) return {ok: false, reason: 'minute'};
-    if (countOf(dayKey) > DAILY_LIMIT) return {ok: false, reason: 'daily'};
     return {ok: true};
   } catch (err) {
     console.error('[ai-search] quota store failed, falling back to memory:', err);
-    const key = `${ip}|${dayKey}`;
+    const key = `${ip}|${minKey}`;
     const n = (memoryQuota.get(key) ?? 0) + 1;
     memoryQuota.set(key, n);
     if (n > MINUTE_LIMIT) return {ok: false, reason: 'minute'};
-    if (n > 10) return {ok: false, reason: 'daily'};
     return {ok: true};
   }
 }
@@ -191,12 +198,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     firstHeader(req.headers['x-real-ip']) ||
     firstHeader(req.headers['x-forwarded-for']).split(',')[0].trim();
 
-  const quota = await consumeQuota(ip);
+  // 访客去重：与 /api/track 同一 visitor_id cookie 口径。
+  // 日限额按访客判断，须在配额检查前确定；无 cookie 时立即签发（匿名 ID，不收集隐私）。
+  let visitorId = req.cookies?.visitor_id as string | undefined;
+  if (!visitorId) {
+    visitorId = randomUUID();
+    res.setHeader('Set-Cookie', `visitor_id=${visitorId}; Max-Age=31536000; Path=/; SameSite=Lax`);
+  }
+
+  const quota = await consumeQuota(ip, visitorId);
   if (!quota.ok) {
     const msg =
       quota.reason === 'minute'
         ? '搜索太频繁了，请稍等一分钟再试'
-        : `今日 AI 搜索次数已达上限（每 IP 每日 ${DAILY_LIMIT} 次），明天再来`;
+        : `今日 AI 搜索次数已达上限（每访客每日 ${DAILY_LIMIT} 次），明天再来`;
     return res.status(429).json({error: msg});
   }
 
@@ -238,13 +253,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     seen.add(url);
     sources.push({title: c.t, url, h: c.h});
     if (sources.length >= 5) break;
-  }
-
-  // 访客去重：与 /api/track 同一 visitor_id cookie 口径
-  let visitorId = req.cookies?.visitor_id as string | undefined;
-  if (!visitorId) {
-    visitorId = randomUUID();
-    res.setHeader('Set-Cookie', `visitor_id=${visitorId}; Max-Age=31536000; Path=/; SameSite=Lax`);
   }
 
   // token 埋点：失败不影响响应（迁移 011 未执行时新列 insert 会失败，静默跳过）
