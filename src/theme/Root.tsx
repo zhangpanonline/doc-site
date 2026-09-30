@@ -159,6 +159,14 @@ function VisitTracker(): null {
       return; // 统计页自身不计入访问统计
     }
     try {
+      // 已通过 /status 口令验证的浏览器（localStorage 保留凭据）视为站主本人，不计入统计
+      if (localStorage.getItem('status-token')) {
+        return;
+      }
+    } catch {
+      // localStorage 不可用时继续正常埋点
+    }
+    try {
       fetch('/api/track', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
