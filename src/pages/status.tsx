@@ -92,7 +92,8 @@ type WhoAmI = {
 };
 
 function fmt(n: number): string {
-  return n.toLocaleString('zh-CN');
+  // 服务端聚合在跨月/跨天边界可能返回 null（如 sum(...) filter 当月零记录），按 0 显示
+  return (n ?? 0).toLocaleString('zh-CN');
 }
 
 /**
