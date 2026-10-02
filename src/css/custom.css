@@ -957,7 +957,7 @@ html.immersive .theme-doc-sidebar-container {
 html[data-theme='light'] .bamboo-grove {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0; /* 显示在文档内容区背景之上；低透明度 + pointer-events:none 不遮挡阅读，navbar 自带高 z-index 不受影响 */
   pointer-events: none;
   overflow: hidden;
 }
@@ -975,7 +975,7 @@ html[data-theme='light'] .bamboo-img {
 /* 层 1：左下远景，最淡 + 模糊 */
 html[data-theme='light'] .bamboo-pos-1 {
   left: -6%;
-  bottom: -28%;
+  bottom: -10%;
   width: clamp(360px, 34vw, 620px);
 }
 html[data-theme='light'] .bamboo-pos-1 .bamboo-img {
@@ -987,7 +987,7 @@ html[data-theme='light'] .bamboo-pos-1 .bamboo-img {
 /* 层 2：右下远景，镜像 + 模糊 */
 html[data-theme='light'] .bamboo-pos-2 {
   right: -9%;
-  bottom: -14%;
+  bottom: -5%;
   width: clamp(360px, 38vw, 650px);
   transform: scaleX(-1);
 }
@@ -1000,7 +1000,7 @@ html[data-theme='light'] .bamboo-pos-2 .bamboo-img {
 /* 层 3：左下近景 */
 html[data-theme='light'] .bamboo-pos-3 {
   left: -170px;
-  bottom: -5%;
+  bottom: 0;
   width: 260px;
 }
 html[data-theme='light'] .bamboo-pos-3 .bamboo-img {
@@ -1026,13 +1026,13 @@ html[data-theme='light'] .bamboo-pos-4 .bamboo-img {
   html[data-theme='light'] .bamboo-pos-2 .bamboo-img { opacity: 0.1; }
   html[data-theme='light'] .bamboo-pos-3 {
     left: -185px;
-    bottom: -20%;
+    bottom: 0;
     width: 330px;
   }
   html[data-theme='light'] .bamboo-pos-3 .bamboo-img { opacity: 0.16; }
   html[data-theme='light'] .bamboo-pos-4 {
     right: -185px;
-    top: -24%;
+    top: 6%;
     width: 330px;
   }
   html[data-theme='light'] .bamboo-pos-4 .bamboo-img { opacity: 0.16; }
