@@ -112,6 +112,25 @@
   background: transparent;
   font-weight: 400;
 }
+
+/* 代码块标题栏（2026-10-02 修）：Docusaurus 的 codeBlockTitle 只设内边距/边框，
+   不设 background/color —— 于是标题栏露出容器底色（下面那条 #003444），文字却是继承来的深色，
+   形成「深底深字」看不清。这里显式给两种代码块各自的标题底色与字色。 */
+
+/* ① 普通代码块（非 python/sql，未进 CodeRunner）：与深绿容器同色系的标题条 + 浅字 */
+.docs-wrapper .theme-code-block > [class*='codeBlockTitle'] {
+  background: rgba(255, 255, 255, 0.07);
+  color: #EEFFFF;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* ② CodeRunner 包裹的 python/sql 代码块是纸面主题（--cr-bg / --cr-fg 随亮暗切换）：
+   标题栏跟随纸面，避免露出容器的深绿。权重高于上一条，故 CodeRunner 块以本条为准。 */
+.docs-wrapper .cr .theme-code-block > [class*='codeBlockTitle'] {
+  background: var(--cr-bg);
+  color: var(--cr-fg);
+  border-bottom: 1px solid var(--course-border);
+}
 .docs-wrapper .token.keyword {
   color: #C792EA;
 }

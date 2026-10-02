@@ -186,6 +186,16 @@
   box-shadow: none; /* 深夜蓝墨：保持平面感 */
 }
 
+/* 代码块标题栏：Docusaurus 只给内边距与边框，不设 background/color，
+   标题于是露出容器底色、文字却继承页面色，出现「深底深字」。
+   这里统一让标题与代码块同底同字（颜色由各主题的 prism 变量自动适配）。
+   注：docs 页另有 forest.css 的更高权重规则，分别处理深绿普通块与 CodeRunner 纸面块。 */
+.theme-code-block > [class*='codeBlockTitle'] {
+  background-color: var(--prism-background-color);
+  color: var(--prism-color);
+  border-bottom: 1px solid var(--course-border);
+}
+
 /* 页面纸纹：html 与 body 同时铺同款纸纹（仅亮色），滚动全程画布与盒子都有纹理；
    基色保持 --course-bg 不变 */
 html,
