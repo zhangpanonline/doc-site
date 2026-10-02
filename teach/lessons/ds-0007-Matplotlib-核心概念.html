@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · Matplotlib 核心概念：Figure/Axes/Artist 三层架构、一个 Figure 多个 Axes、主题样式与 rcParams、脊线与注解——互动教学课程">
+  <title>Matplotlib - 核心概念 · 互动教学课程（数据科学工具包 ds-07）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>Matplotlib - 核心概念</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Matplotlib-核心概念">07.Matplotlib - 核心概念</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 Figure / Axes / Artist 三层架构各自的职责与包含关系</li>
+        <li>用 <code>plt.subplots(m, n)</code> 一次拿到画布与多个绘图区，并正确索引每一个 Axes</li>
+        <li>区分 <code>plt.plot</code> 的隐式全局状态与 <code>fig, ax</code> 显式接口，知道什么场景该用哪个</li>
+        <li>配置样式（<code>style.use</code> / <code>rcParams</code>）、脊线（spines）、注解（annotate）与图例（legend）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先把这三层对象的关系和常用开关过一遍——细节都在《07.Matplotlib - 核心概念》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三层架构：Figure → Axes → Artist</h3>
+        <ul class="pitfall-list">
+          <li><strong>Figure（画布）</strong>：最顶层容器，管整体大小、样式、布局；一个 Figure 可以装一个或多个 Axes。官方文档原话是 Figure "is like a canvas"，Axes "is a part of that canvas on which we will make a particular visualization"</li>
+          <li><strong>Axes（绘图区）</strong>：数据真正被画上去的地方，有自己的坐标空间、坐标轴（Axis）、刻度、标签、图例。配置图形的主体 API 都在 Axes 上——"The Axes methods are the primary interface for configuring most parts of your plot"</li>
+          <li><strong>Artist（绘制元素）</strong>：一切可见之物。官方定义：<strong>连 Figure、Axes、Axis 本身都是 Artist</strong>；还包括 Line2D（折线）、Patch / Rectangle（柱体）、Text（文字）、Legend（图例）等</li>
+          <li><strong>别混淆 Axes 与 Axis</strong>：一个 Axes 通常带 <strong>2 个 Axis</strong>（x 轴、y 轴；3D 是 3 个）。Axis 只管刻度和刻度标签</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>一个 Figure 多个 Axes：<code>plt.subplots(m, n)</code></h3>
+        <ul class="pitfall-list">
+          <li><code>fig, ax = plt.subplots()</code>：一张画布 + <strong>一个</strong> Axes，此时 <code>ax</code> 是单个对象，直接 <code>ax.plot(...)</code></li>
+          <li><code>fig, axes = plt.subplots(2, 2)</code>：返回一个 <strong>2×2 的 Axes 数组</strong>，用 <code>axes[0, 0]</code>、<code>axes[1, 1]</code> 这种「先行后列」的二维下标取用</li>
+          <li><code>plt.subplots(2)</code> 这类<strong>一维</strong>写法返回一维数组，用 <code>axes[0]</code>、<code>axes[1]</code>；<code>fig, (ax1, ax2) = plt.subplots(1, 2)</code> 还能直接解包</li>
+          <li>每个 Axes 是独立对象：<code>axes[0, 1].bar(...)</code> 与 <code>axes[1, 0].scatter(...)</code> 互不影响；画布级的大标题用 <code>fig.suptitle(...)</code>，单个绘图区的标题用 <code>ax.set_title(...)</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>样式、脊线与注解：三处最容易踩坑的开关</h3>
+        <ul class="pitfall-list">
+          <li><strong>样式</strong>：<code>plt.style.available</code> 看可选风格，<code>plt.style.use('ggplot')</code> 切换（影响配色、网格、字体），<code>plt.style.use('default')</code> 恢复默认。<code>rcParams</code> 是全局运行配置（<code>plt.rcParams.update({...})</code>），本章用它设中文字体 <code>font.sans-serif</code>、<code>axes.unicode_minus</code>、<code>figure.dpi</code></li>
+          <li><strong>Spines（脊线）</strong>：一个 Axes 有 top / right / left / bottom 四条脊线，是 Axes 边界的那条线。「干净风格」就是隐藏上、右两条：<code>ax.spines['top'].set_visible(False)</code>；也可以直接 <code>ax.spines[['top','right']].set_visible(False)</code> 一次设两条。<strong>spines 属于 Axes 层，不是 Figure 层</strong></li>
+          <li><strong>注解</strong>：<code>ax.annotate(text, xy=(x,y), xytext=(x2,y2), arrowprops={...})</code>——<code>xy</code> 是<strong>被标注的点（箭头指向）</strong>，<code>xytext</code> 是<strong>文字摆放的位置</strong>；两者默认都用 data 坐标系（<code>xycoords='data'</code>、<code>textcoords</code> 默认跟随 <code>xycoords</code>）。<code>ax.text(x, y, s)</code> 则只放文字、不画箭头</li>
+          <li><strong>图例</strong>：<code>ax.legend()</code> 的条目来自各 Artist 的 <code>label=</code>（<code>ax.plot(..., label='sin')</code>），<strong>没写 label 就没有图例条目</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《07.Matplotlib - 核心概念》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 在 Matplotlib 的三层架构里，「画布」指的是哪个对象？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Axis</button>
+            <button class="quiz-option">Figure</button>
+            <button class="quiz-option">Axes</button>
+            <button class="quiz-option">Artist</button>
+          </div>
+          <div class="quiz-explain" hidden>对应文档「1. Figure — 画布」：Figure 是最顶层的容器，相当于一张画布，一个 Figure 可以包含一个或多个 Axes。Axes 是绘图区、Artist 是绘制元素、Axis 是坐标轴——都不是画布。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 执行 <code>fig, axes = plt.subplots(2, 2, figsize=(8, 6))</code> 之后，<code>axes</code> 是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一个 Axes 对象，只能整体操作</button>
+            <button class="quiz-option">一个 2×2 的 Axes 数组，用 <code>axes[0, 0]</code>、<code>axes[1, 1]</code> 这样取用</button>
+            <button class="quiz-option">一个长度为 2 的列表，表示两行</button>
+            <button class="quiz-option">一个 Figure 对象，代表 2×2 的画布</button>
+          </div>
+          <div class="quiz-explain" hidden>对应文档「多个 Axes 的 Figure」：<code>plt.subplots(2, 2)</code> 返回 2×2 的 Axes 数组（先行后列），课件里就是 <code>axes[0, 0].plot(...)</code>、<code>axes[0, 1].bar(...)</code>、<code>axes[1, 0].scatter(...)</code>、<code>axes[1, 1].hist(...)</code> 这么用的。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 一个普通的二维 Axes，有几条 spines（脊线），分别是哪几条？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">2 条：x 轴脊线与 y 轴脊线</button>
+            <button class="quiz-option">4 条：top、right、left、bottom</button>
+            <button class="quiz-option">1 条：Axes 的外边框</button>
+            <button class="quiz-option">3 条：top、left、bottom（右边默认没有）</button>
+          </div>
+          <div class="quiz-explain" hidden>对应文档「Spines（脊线）」：Axes 的四条边框线称为 spines，常见的「干净风格」就是隐藏 top 与 right 这两条。所以默认是 4 条，不是 2 条（2 条指的是 Axis 对象）。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. AI 给出两种写法：甲是 <code>plt.plot([1,2,3],[1,4,9]); plt.title('t')</code>，乙是 <code>fig, ax = plt.subplots(); ax.plot([1,2,3],[1,4,9]); ax.set_title('t')</code>。关于两者取舍，下面哪种说法最准确？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">甲更好，因为代码更短，且性能更高</button>
+            <button class="quiz-option">甲更好，因为面向对象 API 无法设置标题</button>
+            <button class="quiz-option">两者完全等价，随便选；选项位置无所谓</button>
+            <button class="quiz-option">乙更好：对象被显式引用，能对指定 Axes 反复定制；一个有多个 Axes 的图只能用乙</button>
+          </div>
+          <div class="quiz-explain" hidden>对应文档「1. Figure — 画布」与「2. Axes — 绘图区」的写法对比：<code>plt.*</code> 靠 pyplot 隐式管理「当前 Figure / 当前 Axes」，简单脚本很方便；而 <code>fig, ax</code> 把对象显式拿到手里，才能准确地对某一个 Axes 反复改标题、范围、脊线、注解。多个 Axes 时甲几乎无法表达，乙是唯一直接的做法。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 下面代码想给 2×2 布局<strong>右上角</strong>那个绘图区画柱状图，写法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>axes[0, 1].bar([1,2,3], [3,5,2])</code></button>
+            <button class="quiz-option"><code>axes.bar([1,2,3], [3,5,2])</code></button>
+            <button class="quiz-option"><code>axes[1, 0].bar([1,2,3], [3,5,2])</code></button>
+            <button class="quiz-option"><code>axes[2, 2].bar([1,2,3], [3,5,2])</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应文档「多个 Axes 的 Figure」：下标是「行, 列」且从 0 开始。2×2 的右上角是第 0 行第 1 列 → <code>axes[0, 1]</code>。课件原文正是 <code>axes[0, 1].bar([1, 2, 3], [3, 5, 2])</code>；<code>axes[2, 2]</code> 越界，<code>axes.bar</code> 只有在返回值是单个 Axes 时才成立（<code>plt.subplots()</code>，不传 2, 2）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. <code>ax.annotate('最大值', xy=(5, 25), xytext=(4, 23), arrowprops={'arrowstyle': '->'})</code> 中，<code>xy</code> 与 <code>xytext</code> 的语义分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>xy</code> 是文字位置，<code>xytext</code> 是文字字号</button>
+            <button class="quiz-option"><code>xy</code> 与 <code>xytext</code> 都是文字位置，箭头自动指向原点</button>
+            <button class="quiz-option"><code>xy</code> 是坐标轴范围，<code>xytext</code> 是文字内容</button>
+            <button class="quiz-option"><code>xy</code> 是被标注的点（箭头指向它），<code>xytext</code> 是文字摆放的位置</button>
+          </div>
+          <div class="quiz-explain" hidden>对应文档「注解与图例」：<code>xy=(5, 25)</code> 指向二次函数的最大值点，<code>xytext=(4, 23)</code> 是把「最大值」这四个字放在那里，<code>arrowprops</code> 负责从文字指向 <code>xy</code> 画箭头。两者默认都在 data 坐标系里取值。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 审查这段代码：<code>plt.plot([1,2,3],[1,4,9]); plt.figure(); plt.plot([1,2,3],[3,2,1]); plt.show()</code>。运行图上为什么只看得到一条线？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 <code>plt.show()</code> 只能显示最后一条折线</button>
+            <button class="quiz-option">第二条 <code>plot</code> 前调用了 <code>plt.figure()</code>，新建了一张画布并让它成为「当前 Figure」，第一条线留在了旧画布上、没被 show 出来</button>
+            <button class="quiz-option">因为两次数据不同，Matplotlib 自动丢弃了第一条线</button>
+            <button class="quiz-option">因为 <code>plt.plot</code> 只能调用一次，第二次会被静默忽略</button>
+          </div>
+          <div class="quiz-explain" hidden>对应文档「1. Figure — 画布」与「3. Artist — 绘制元素」：pyplot 隐式接口维护「当前 Figure / 当前 Axes」的全局状态，<code>plt.figure()</code> 会新建一张画布并把它设为当前，后续 <code>plt.plot</code> 就画到新画布上了。两条线分布在两张图上，屏幕上自然只看到（当前/最后的）一张。这正是显式 <code>fig, ax</code> 更能避免的坑：想要同一个 Axes 上两条线，应该复用同一个 <code>ax</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 要实现课件的「干净风格」——同时隐藏 ax 的上、右两条脊线，下面哪种写法<strong>不可行</strong>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>fig.spines['top'].set_visible(False); fig.spines['right'].set_visible(False)</code></button>
+            <button class="quiz-option"><code>for s in ('top','right'): ax.spines[s].set_visible(False)</code></button>
+            <button class="quiz-option"><code>ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)</code></button>
+            <button class="quiz-option"><code>ax.spines[['top','right']].set_visible(False)</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应文档「Spines（脊线）」：spines 归属 <strong>Axes</strong>，所以 <code>ax.spines[...]</code> 是对的；<code>ax.spines[['top','right']]</code> 这种列表索引会返回广播代理、同样可用。而 <strong>Figure 没有 spines 属性</strong>（脊线是绘图区边界，不是画布边界），<code>fig.spines</code> 会直接报 AttributeError——这也是「该查 Figure 的 API 还是 Axes 的 API」这一核心理念的典型考法。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 需求是「给某个已有图表把上、右脊线去掉，并把 y 轴标签改成中文」。按三层架构，最该去查哪一层的 API？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">rcParams：全局修改即代表改这一张图</button>
+            <button class="quiz-option">Artist 层：直接改 Line2D 的颜色与线宽</button>
+            <button class="quiz-option">Axes 层：<code>ax.spines</code> 与 <code>ax.set_ylabel</code>（Axes 负责坐标与标签）</button>
+            <button class="quiz-option">Figure 层：<code>fig.spines</code> 与 <code>fig.set_ylabel</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应文档「总结：三层架构」：Figure 管容器与全局配置，<strong>Axes 管数据与坐标</strong>（画什么、坐标范围、标签、图例），Artist 管视觉表现（颜色、线型、透明度、大小）。脊线与轴标签都属于 Axes 的职责；用 <code>rcParams</code> 改是全局生效，会波及所有图，不是「改这一张」的正确手段。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0007-Matplotlib-核心概念',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事让 AI 写「一张画布里画 4 个子图」的代码，AI 给出的是：<code>plt.subplot(2, 2, 1)</code> … 依次调用四次 <code>plt.subplot</code> 再分别 <code>plt.plot</code>。你把它改成了 <code>fig, axes = plt.subplots(2, 2)</code>。请说明：AI 那版在什么情况下会静默出错，而 <code>subplots</code> 版为什么更稳？`,
+              source: '来源：Matplotlib 官方文档 Matplotlib Application Interfaces (APIs)（"An implicit \"pyplot\" interface that keeps track of the last Figure and Axes created, and adds Artists to the object it thinks the user wants.\"）https://matplotlib.org/stable/users/explain/figure/api_interfaces.html · 检索 2026-10-02 · 层级：一手（官方文档，场景化改写）',
+              breakdown: `官方对 pyplot 隐式接口的定义是：它<strong>记住「最后创建的 Figure 和 Axes」，把 Artist 加到它认为用户想要的那个对象上</strong>。这带来两个静默风险：① 中间任何一句 <code>plt.figure()</code> / <code>plt.subplot()</code> 都会切换「当前 Axes」，后面所有 <code>plt.plot</code> 就画到别处去了——图能出来，但内容错位，不报错；② 想回头改第 1 个子图（加标题、改范围）时，只能再 <code>plt.subplot(2,2,1)</code> 切回去，非常脆弱。<code>fig, axes = plt.subplots(2, 2)</code> 一次把 4 个 Axes 句柄全拿到手，<code>axes[i, j]</code> 指哪打哪，与调用顺序无关。判据：只要图里超过一个 Axes，或代码要复用/重跑，就该用显式接口。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `解释 <code>fig, ax = plt.subplots()</code>、<code>fig, axes = plt.subplots(2, 2)</code>、<code>fig, (ax1, ax2) = plt.subplots(1, 2)</code> 三种写法返回值形态的差别，以及各自该怎么取用 Axes。`,
+              source: '来源：Matplotlib 官方文档 Quick start guide（"subplots() and subplot_mosaic are convenience functions that additionally create Axes objects inside the Figure"；"fig, axs = plt.subplots(2, 2) # a figure with a 2x2 grid of Axes"）https://matplotlib.org/stable/users/explain/quick_start.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《07.Matplotlib - 核心概念》课件（多个 Axes 的 Figure）',
+              breakdown: `官方把 <code>subplots()</code> 定位为「创建 Figure 的同时在里面建 Axes 的便捷函数」。返回值规律：<strong>网格维度决定 Axes 的容器形态</strong>。① <code>subplots()</code> → 单个 Axes，直接 <code>ax.plot()</code>，没有下标；② <code>subplots(2, 2)</code> → 2D ndarray，用 <code>axes[0, 0]</code> 这种「行, 列」下标；③ <code>subplots(1, 2)</code> → 一维数组，既可以 <code>axes[0]</code>，也可以像官方示例那样直接解包 <code>fig, (ax1, ax2)</code>。坑点：把单 Axes 当数组用（<code>ax[0]</code> 会报错）或反过来对 2D 结果直接 <code>axes.plot</code>（报 list/ndarray 没有 plot）。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查 AI 生成的绘图函数：<code>def draw(ax): ...</code> 里面用 <code>plt.style.use('ggplot')</code> 切了风格，并且用 <code>plt.rcParams['font.sans-serif'] = ['PingFang SC']</code> 设了中文字体。这个函数被一个 Agent 在同一个进程里连续调用（同一进程里还有其他绘图任务）。指出隐患与正确写法。`,
+              source: '来源：Matplotlib 官方文档 Customizing Matplotlib with style sheets and rcParams（"All rc settings are stored in a dictionary-like variable called matplotlib.rcParams, which is global to the matplotlib package."；"Setting rcParams at runtime takes precedence over style sheets"）https://matplotlib.org/stable/users/explain/customizing.html · 检索 2026-10-02 · 层级：一手（官方文档，场景化改写）',
+              breakdown: `隐患是<strong>全局副作用</strong>：官方明确说 <code>rcParams</code> 是<strong>对整个 matplotlib 包全局生效</strong>的字典，<code>style.use()</code> 改的也是同一批全局 rc 设置，而且<strong>运行时 rc 设置的优先级高于样式表</strong>。于是这个函数一跑，后面所有图（包括其他任务的图）都被染成 ggplot 风格、字体也一起变，且没有恢复动作。正确写法有两种：① 字体这类工程级设置放到<strong>程序入口统一设置一次</strong>，不要塞进每个绘图函数；② 确需局部生效就用上下文管理器 <code>with plt.rc_context({...}):</code>（官方给的临时 rc 设置手段），退出即还原。另外函数签名收 <code>ax</code> 是对的——绘图函数应该接收 Axes 而不是自己建全局状态。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `Agent 服务端要产出配图：一条路径是「用 pandas <code>df.plot()</code> 一行出图」，另一条是「<code>fig, ax = plt.subplots()</code> 后手动画，再 <code>ax.annotate</code> 加标注」。从可维护性与可控性出发，说明你的选型判据，并给出混合使用的边界。`,
+              source: '来源：Matplotlib 官方文档 Matplotlib Application Interfaces (APIs)（"The \"Axes\" interface is how Matplotlib is implemented, and many customizations and fine-tuning end up being done at this level.\"；"Keeping references to the objects is very flexible, and allows us to customize the objects after they are created, but before they are displayed."）https://matplotlib.org/stable/users/explain/figure/api_interfaces.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《07.Matplotlib - 核心概念》课件（三层架构核心理念）',
+              breakdown: `选型判据是<strong>看要不要「细调」</strong>：官方说 Axes 接口才是 Matplotlib 的实现层，<strong>很多定制与微调最终都会落到这一层</strong>；而保留对象引用（<code>fig</code>/<code>ax</code>）的灵活性在于「创建之后、显示之前还能继续定制」。因此：① 探索期/一次性快图、只需要一张默认统计图 → 用 <code>df.plot()</code> 或 pyplot 单行，先看形状；② 交付给人看、需要指定标题/坐标范围/脊线/注解/图例位置 → 显式 <code>fig, ax</code>，因为脊线（<code>ax.spines</code>）和 <code>ax.annotate</code> 这类 API 本来就在 Axes 层。混合边界：pandas 的 <code>df.plot(ax=ax)</code> 可以把下游库的画法画到你自己的 Axes 上，等于「用 pandas 出基础图形 + 用 Matplotlib 做细调」——这是两者最实用的接缝，而不是二选一。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `让 AI 助手照《07.Matplotlib - 核心概念》的 demo 复刻一张「1 张画布 + 4 个子图 + 至少 1 处箭头注解 + 干净脊线」的图，任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '用 <code>plt.subplots(2, 2, figsize=(10, 8))</code> 建 2×2 布局，四个绘图区分别放折线、正弦线、柱状图、散点图；用 <code>fig.suptitle</code> 给整张画布加标题、各子图用 <code>ax.set_title</code>；用 <code>ax.annotate</code> 给折线上的某点加带箭头的文字；最后对指定 Axes 隐藏 top / right 脊线并 <code>ax.legend()</code>。',
+                accept: ['一张 Figure 里确实有 4 个 Axes，通过 axes[行, 列] 分别取用', 'annotate 的箭头指向 xy 指定的数据点，文字在 xytext 位置', '至少一个 Axes 的 top、right 脊线不可见（ax.spines 设置生效），其余脊线仍可见', '有 label 的 Artist 通过 ax.legend() 正确出现在图例里'],
+              },
+              source: '任务基于《07.Matplotlib - 核心概念》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：先 <code>fig, axes = plt.subplots(2, 2, figsize=(10, 8))</code> 一次拿全对象，再逐个 <code>axes[0, 0].plot(...)</code>；注解写成 <code>axes[0, 0].annotate('峰值', xy=(x_peak, y_peak), xytext=(...), arrowprops={'arrowstyle': '->'})</code>——<strong>xy 是箭头指向的数据点、xytext 是文字落点</strong>，写反了箭头就指错。脊线一定要落在 <code>ax.spines['top'].set_visible(False)</code>（Axes 层），写成 <code>fig.spines</code> 会 AttributeError。图例不出来的头号原因：<code>plot/bar/scatter</code> 时忘了 <code>label='...'</code>——legend 的条目来源就是 Artist 的 label。常见追问：为什么 <code>fig.suptitle</code> 和 <code>ax.set_title</code> 要分开？因为一个是画布级 Artist、一个是 Axes 级 Artist。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://matplotlib.org/stable/users/explain/quick_start.html">Quick start guide</a> · <a href="https://matplotlib.org/stable/tutorials/lifecycle.html">The Lifecycle of a Plot</a> · <a href="https://matplotlib.org/stable/users/explain/figure/api_interfaces.html">Matplotlib Application Interfaces (APIs)</a> · <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.annotate.html">Axes.annotate</a> · <a href="https://matplotlib.org/stable/api/spines_api.html">matplotlib.spines</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Matplotlib-核心概念速查表.html">Matplotlib-核心概念速查表</a>——三层架构、subplots 索引、spines/legend/annotate 与两种 API 对照一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/Matplotlib-核心概念">07.Matplotlib - 核心概念</a> · 下一课 <a href="/agents/数据科学工具包/Matplotlib-动画">08.Matplotlib - 动画</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

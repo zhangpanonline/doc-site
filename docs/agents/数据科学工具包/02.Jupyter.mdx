@@ -1,0 +1,46 @@
+---
+sidebar_position: 2
+title: '02. Jupyter'
+description: "数据科学工具包 · Jupyter：uv 初始化工程、安装 Jupyter 插件，选择虚拟环境解释器跑通第一个 ipynb。"
+displayed_sidebar: agentsDataScience
+---
+
+# Jupyter
+
+## 安装 VS Code 插件
+
+安装 `VSCode` 插件：`Jupyter`
+
+## 初始化工程并安装 Jupyter
+
+```shell
+# 初始化一个 uv 工程
+uv init .
+
+# 安装 jupyter
+uv add --dev jupyter
+```
+
+新建 `ipynb` 文件，选择虚拟环境中的 `python`，试试效果。
+
+## 为什么数据科学课程用 Notebook
+
+Notebook 把「代码 + 运行结果 + 说明文字」放在同一个文件里，一次运行就能看到表格、图表的输出。数据科学与 AI Agents 场景中，最常见的交互就是：
+
+1. 读入一份数据（CSV / 数据库 / 接口）
+2. 逐段试探性地转换、清洗、观察中间结果
+
+Notebook 的「分段执行 + 立即看到结果」正好匹配这种探索式工作方式——这也是后续每一章课件都是 `.ipynb` 的原因。
+
+## 环境要点
+
+- **解释器必须选本工程的虚拟环境**（`.venv`），不要用系统 Python：否则 `numpy` / `pandas` 装到了别处，Notebook 里会 `ModuleNotFoundError`
+- 依赖统一用 UV 追加：`uv add <package>`（开发期的工具库用 `uv add --dev <package>`，例如 Jupyter 本身）
+- VS Code 右上角的解释器选择器里，选带 `.venv` 路径的那一项
+
+---
+
+## 互动教学课程
+
+- <a href="/teach/lessons/ds-0002-Jupyter.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/Jupyter速查表.html">📋 Jupyter 速查表（可打印）</a>

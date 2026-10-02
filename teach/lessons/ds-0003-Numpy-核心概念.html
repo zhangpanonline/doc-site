@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · Numpy 核心概念：ndarray 同质化与连续内存、shape/dtype/strides/axis 四大概念及其内存与运算含义——互动教学课程">
+  <title>Numpy - 核心概念 · 互动教学课程（数据科学工具包 ds-03）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>Numpy - 核心概念</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Numpy-核心概念">03.Numpy - 核心概念</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 ndarray 与 Python 列表的三点区别：同质化、连续内存、向量化运算</li>
+        <li>用 shape / ndim / size 三个属性准确描述任意维度的数组，并会用「各维长度相乘」验算 size</li>
+        <li>按内存账本选 dtype：Embedding 用 float32、Token ID 用 int64、Mask 用 bool，并能手算 MB</li>
+        <li>读懂 strides 与 axis：解释转置为什么零拷贝与视图为何会互相改写，判断 axis=0/1 各自沿哪个维度算</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把 ndarray 这个数据结构本身过一遍——细节都在《03.Numpy - 核心概念》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>ndarray 与 Python 列表：三点区别</h3>
+        <ul class="pitfall-list">
+          <li><strong>同质化</strong>：所有元素必须是相同类型（同一个 dtype）——列表可以混杂字符串、整数、对象，ndarray 不行</li>
+          <li><strong>连续内存</strong>：数据存在一整块连续内存里，所以创建后<strong>总大小固定</strong>，不能像列表那样原地追加</li>
+          <li><strong>向量化运算</strong>：不用循环就能对整个数组做运算，循环被交给底层 C 去跑</li>
+          <li>形状三件套：<code>shape</code> 是每个维度长度的元组，<code>ndim</code> 是维度个数（等于 shape 元组长度），<code>size</code> 是元素总数（等于 shape 各元素之积）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>dtype：把 C 的类型系统暴露给 Python</h3>
+        <ul class="pitfall-list">
+          <li>dtype 就是 C 的类型：<code>int64</code>↔<code>int64_t</code>（8 字节）、<code>int32</code>↔<code>int32_t</code>（4 字节）、<code>float64</code>↔<code>double</code>（8 字节）、<code>float32</code>↔<code>float</code>（4 字节）、<code>bool</code> 1 字节</li>
+          <li>Python 的 <code>int</code> 是不定长对象（光对象头就 28+ 字节），ndarray 用 C 的定长类型才换来了连续存储与向量化</li>
+          <li>内存账本：<code>itemsize</code> 是单个元素的字节数，总字节数 = size × itemsize；100 万个 float64 ≈ 7.63 MB，换成 float32 立刻降到 ≈ 3.81 MB</li>
+          <li><strong>Agent 场景选型</strong>：Embedding 向量用 <code>float32</code>（省一半内存）、Token ID 用 <code>int64</code>、Mask 用 <code>bool</code>；<code>object</code> 要尽量避免，会丢掉向量化优势</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>strides 与 axis：内存怎么走，运算沿哪走</h3>
+        <ul class="pitfall-list">
+          <li><code>strides</code> 是「在每个维度上前进一个元素要跳过的字节数」：int64 的 (2, 3) 数组步幅是 (24, 8) = (3×8, 1×8)</li>
+          <li><strong>转置是零拷贝的</strong>：<code>arr.T</code> 只是把步幅交换成 (8, 24)、shape 换成 (3, 2)，数据一个字节都没搬</li>
+          <li>代价是它是<strong>视图</strong>：<code>t[0, 0] = 99</code> 会把原数组的 <code>arr[0, 0]</code> 一起改掉；要独立副本就用 <code>arr.T.copy()</code></li>
+          <li><code>axis</code> 是要被「压掉」的那一维：2D 数组 <code>axis=0</code> 按列（每列求和，结果长度=列数），<code>axis=1</code> 按行（每行求和，结果长度=行数）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《03.Numpy - 核心概念》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. ndarray 与 Python 原生列表的关键区别，主要是下面哪一组？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">同质化（所有元素同一个 dtype）、连续内存、向量化运算</button>
+            <button class="quiz-option">ndarray 能存放任意类型的元素，列表不行</button>
+            <button class="quiz-option">列表不能存放数字，ndarray 可以</button>
+            <button class="quiz-option">ndarray 支持嵌套，列表不支持</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「ndarray」小节列出的正是这三点。官方文档的说法是：NumPy 只在处理「大量同类型（homogeneous）数据」时才真正发光——把 ndarray 当列表用（逐元素循环、混类型）就等于丢掉了它全部优势。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. <code>arr = np.array([[1, 2, 3], [4, 5, 6]])</code>，那么 <code>arr.shape</code>、<code>arr.ndim</code>、<code>arr.size</code> 分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">(2, 3)、3、6</button>
+            <button class="quiz-option">(2, 3)、2、6</button>
+            <button class="quiz-option">(6,)、1、6</button>
+            <button class="quiz-option">(3, 2)、2、6</button>
+          </div>
+          <div class="quiz-explain" hidden>shape 是「每个维度上的长度」元组：2 行 3 列 → <code>(2, 3)</code>；ndim 是维度个数 → 2；size 是元素总数 → 6，正好等于 shape 各元素之积（官方文档的等式 <code>a.size == math.prod(a.shape)</code>）。对应「shape（形状）」小节。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. Agent 场景里，Embedding 向量、Token ID、Mask 通常分别用什么 dtype？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">float64、int32、int8</button>
+            <button class="quiz-option">int64、float32、object</button>
+            <button class="quiz-option">float32、int64、bool</button>
+            <button class="quiz-option">float32、bool、int64</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「Agent 场景」原文：Embedding 向量通常用 <code>float32</code>（比 float64 省一半内存）、Token ID 用 <code>int64</code>、Mask 用 <code>bool</code>（每元素只要 1 字节）。对应「dtype（数据类型）」小节。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 一个 ndarray 的 <code>shape</code> 是 <code>(2, 3, 4)</code>，它的 <code>ndim</code> 与 <code>size</code> 分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">ndim = 4，size = 24</button>
+            <button class="quiz-option">ndim = 3，size = 12</button>
+            <button class="quiz-option">ndim = 3，size = 24</button>
+            <button class="quiz-option">ndim = 2，size = 12</button>
+          </div>
+          <div class="quiz-explain" hidden>ndim 是 shape 元组的长度——这里有 3 个维度，所以是 3（不是 2、也不是 4）。size 是各维度长度之积：2 × 3 × 4 = 24，与 <code>math.prod(shape)</code> 一致。注意 shape 不会「自动压缩」：即使某一维是 1（如课件的 <code>(2, 3, 1)</code>），它仍然算一个维度。对应「shape（形状）」小节。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. <code>arr = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int64)</code>，步幅 <code>strides</code> 是 <code>(24, 8)</code>。执行 <code>t = arr.T</code> 之后，<code>t.shape</code> 与 <code>t.strides</code> 是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">(2, 3) 与 (8, 24)——shape 不变，只是步幅变了</button>
+            <button class="quiz-option">(3, 2) 与 (24, 8)——数据被复制到新内存，不再共享</button>
+            <button class="quiz-option">(3, 2) 与 (8, 24)——只交换了步幅，t 与 arr 共享同一块内存</button>
+            <button class="quiz-option">(3, 2) 与 (24, 8)——转置会重新排布内存</button>
+          </div>
+          <div class="quiz-explain" hidden>转置只做两件事：shape 由 (2, 3) 变成 (3, 2)，strides 由 (24, 8) 交换成 (8, 24)。数据缓冲区一个字节都没动，所以 <code>t</code> 是 <code>arr</code> 的视图——<code>t[0, 0] = 99</code> 会把 <code>arr[0, 0]</code> 也改成 99。对应「strides（步幅）」小节，官方定义见 <code>numpy.ndarray.transpose</code>：Returns a view of the array with axes transposed。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. <code>arr</code> 的形状是 <code>(4, 5)</code>。<code>arr.sum(axis=1)</code> 的结果形状是什么？它到底算的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">(4, 5)；逐元素相加、形状保持不变</button>
+            <button class="quiz-option">(4,)；把每一列内部的 4 个元素相加</button>
+            <button class="quiz-option">(5,)；把每一列内部的 4 个元素相加</button>
+            <button class="quiz-option">(4,)；把每一行内部的 5 个元素相加</button>
+          </div>
+          <div class="quiz-explain" hidden>axis 是要被「压掉」的那一维：<code>axis=1</code> 表示沿第二个维度走完整条行再把它们加起来，长度 5 的那一维消失，结果长度等于 axis=0 的长度 4，所以是 <code>(4,)</code>。课件例子：<code>[[1, 2, 3], [4, 5, 6]]</code> 的 <code>sum(axis=1)</code> → <code>[6, 15]</code>（每行），<code>sum(axis=0)</code> → <code>[5, 7, 9]</code>（每列）。对应「轴（axis）」小节。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 100 万个 float64 与 100 万个 float32，内存占用分别约为多少？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">约 7.63 MB 与约 3.81 MB —— 每元素 8 字节 vs 4 字节，相差约 3.82 MB</button>
+            <button class="quiz-option">两者都约 7.63 MB —— dtype 不影响内存占用</button>
+            <button class="quiz-option">两者都约 1 MB —— NumPy 会自动压缩存储</button>
+            <button class="quiz-option">约 3.81 MB 与约 7.63 MB —— float32 反而更占内存</button>
+          </div>
+          <div class="quiz-explain" hidden>先看 <code>itemsize</code>：float64 对应 C 的 <code>double</code>（8 字节），float32 对应 C 的 <code>float</code>（4 字节）。100 万 × 8 B = 8,000,000 B ≈ 7.63 MB；100 万 × 4 B = 4,000,000 B ≈ 3.81 MB。NumPy 不做任何压缩——这正是 Embedding 选 float32 的动机。对应「dtype（数据类型）」小节。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 执行 <code>np.array([1, 2, "a"], dtype=np.int64)</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">报 ValueError：<code>invalid literal for int() with base 10: 'a'</code></button>
+            <button class="quiz-option">不报错，dtype 被静默放宽成 object，输出 <code>[1 2 'a']</code></button>
+            <button class="quiz-option">报 TypeError，提示不允许混合 dtype</button>
+            <button class="quiz-option">不报错，NumPy 自动把 "a" 转成 0，输出 <code>[1 2 0]</code></button>
+          </div>
+          <div class="quiz-explain" hidden>ndarray 是同质的：一旦显式指定 <code>dtype=np.int64</code>，每个元素都必须能转成 C 的 8 字节整数，<code>"a"</code> 转不了就直接报错（课件输出原文：<code>invalid literal for int() with base 10: 'a'</code>）。dtype 不会被悄悄放宽成 object——静默放宽只在你不指定 dtype、由 NumPy 自己推断时才可能发生。这条「禁止在同一数组里混类型」正是课件给出的最佳实践。对应「dtype（数据类型）」小节。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 一个 Agent 把 1000 条文本的 Embedding 存进 <code>emb = np.zeros((1000, 768), dtype=np.float32)</code>。这块缓冲占多少内存？想得到「每条文本的 768 维平均向量」，该用哪个 axis、结果形状是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">约 0.77 MB（1000×768×1 字节）；用 <code>emb.mean(axis=1)</code>，结果形状 (768,)</button>
+            <button class="quiz-option">约 5.86 MB（1000×768×8 字节）；用 <code>emb.mean(axis=1)</code>，结果形状 (1000,)</button>
+            <button class="quiz-option">约 2.93 MB（1000×768×4 字节）；用 <code>emb.mean(axis=0)</code>，结果形状 (768,)</button>
+            <button class="quiz-option">约 2.93 MB（1000×768×4 字节）；用 <code>emb.mean(axis=1)</code>，结果形状 (1000,)</button>
+          </div>
+          <div class="quiz-explain" hidden>三笔账一起算：<strong>dtype</strong> float32 → itemsize 4，总字节 = size × itemsize = 1000×768×4 = 3,072,000 B ≈ 2.93 MB（若误用 float64 就会翻倍到约 5.86 MB）。<strong>axis</strong> 要把「每条文本」压成一个数，就要压掉 768 那一维，也就是 <code>axis=1</code>：结果形状 (1000,)；<code>mean(axis=0)</code> 得到的是「每个维度上的平均向量」，形状 (768,)，语义完全不同。对应「shape（形状）」「dtype（数据类型）」「轴（axis）」三节。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0003-Numpy-核心概念',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事让 AI 写一段「往 Embedding 矩阵末尾追加一行向量」的代码，AI 给出的是 <code>emb.append(row)</code>，一运行就报 <code>AttributeError: 'numpy.ndarray' object has no attribute 'append'</code>。请说明这个报错背后的 ndarray 设计，以及为什么改成 <code>np.append(emb, row)</code> 之后仍然要多想一步。`,
+              source: `来源：NumPy 官方文档 Absolute beginners（"Once created, the total size of the array can't change."；"NumPy shines when there are large quantities of 'homogeneous' (same-type) data to be processed on the CPU."）https://numpy.org/doc/stable/user/absolute_beginners.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `报错不是 bug，而是设计：ndarray 的数据存在<strong>一整块连续内存</strong>里、且创建后<strong>总大小固定</strong>（官方原文：Once created, the total size of the array can't change），所以它没有列表那种原地扩容的方法——<code>append</code> 这类 API 属于 list，不属于 ndarray。第二层坑在于 <code>np.append</code>：它确实能用，但它不是原地追加，而是<strong>把原数据和新数据复制进一个全新数组</strong>（可以用 <code>np.shares_memory(emb, np.append(emb, row))</code> 验证为 False）。在 Agent 数据管道里逐行 append 就是 N 次全量拷贝，复杂度 O(n²)。正确姿势：预分配 <code>np.zeros((n, d), dtype=np.float32)</code> 后按行写入，或先把行收集成 Python 列表、最后一次性 <code>np.array(rows)</code> 建数组。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `请讲清 <code>arr.T</code> 为什么能做到「零拷贝」：转置前后 shape 与 strides 各发生了什么变化？「视图」这个身份对写操作意味着什么，你用什么判据确认它？`,
+              source: `来源：NumPy 官方文档 numpy.ndarray.strides（"Tuple of bytes to step in each dimension when traversing an array."）https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html + numpy.ndarray.transpose（"Returns a view of the array with axes transposed."）https://numpy.org/doc/stable/reference/generated/numpy.ndarray.transpose.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `strides 的定义是「在每个维度上前进一个元素要跳过的字节数」。对 int64 的 (2, 3) 数组 arr，strides = <code>(24, 8)</code>：列方向走一步跳 8 字节（1 个 int64），行方向走一步跳 24 字节（3 个 int64，整行宽度）。转置做的事只有两件——shape 换成 (3, 2)、strides 交换成 <code>(8, 24)</code>，数据缓冲区一个字节都没动，这正是官方对 transpose 的定义：Returns a view of the array with axes transposed。代价是写操作会穿透：<code>t[0, 0] = 99</code> 改的就是 <code>arr[0, 0]</code>。判据：<code>np.shares_memory(arr, arr.T)</code> 为 True、<code>arr.T.base is arr</code> 为 True；要独立副本就显式 <code>arr.T.copy()</code>。面试时把「交换步幅」这四个字说出来，基本就到位了。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查这段 AI 写的预处理代码，指出输出为什么会「反直觉」，并给出确认它与修复它的办法：<pre><code>emb = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float64)
+t = emb.T
+t[0, 0] = 9.9
+print(emb[0, 0])   # AI 的注释写的是 0.1
+</code></pre>`,
+              source: `来源：NumPy 官方文档 Copies and views（"The data buffer remains the same, so any changes made to a view reflects in the original copy."）https://numpy.org/doc/stable/user/basics.copies.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `实际打印出来是 <code>9.9</code>，不是 0.1：<code>emb.T</code> 是视图，<code>t[0, 0]</code> 与 <code>emb[0, 0]</code> 指向同一块内存，写入会穿透原数组——官方原文说得很直白：数据缓冲区不变，所以对视图的任何修改都会反映到原数组上。确认办法两条：<code>np.shares_memory(emb, t)</code> 与 <code>t.base is emb</code>；顺便看步幅——float64 的 2×2 数组 strides 是 <code>(16, 8)</code>，转置后是 <code>(8, 16)</code>，只换了步幅，这也解释了为什么没拷贝。修复办法：要独立数据就写 <code>t = emb.T.copy()</code>；如果确实需要视图，就把变量名和注释写清楚（如 <code>emb_T_view</code>），别让下游代码误以为可以随便改。这类错误在 AI 生成的数据预处理代码里高发，因为「转置＝重新排列」是数学直觉，不是内存事实。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `要给一个 Agent 设计 Embedding 缓存：100 万条文本、每条 768 维向量需要常驻内存，另外还要按 Token 序列存 Mask。请给出 Embedding / Token ID / Mask 三者的 dtype 选型、内存量级估算与理由，并说明什么情况下会考虑降级到 float16 或 int8。`,
+              source: `来源：NumPy 官方文档 Data types（"NumPy provides both bit sized type names and names based on the names of C types."；"Platform-defined single precision float: typically sign bit, 8 bits exponent, 23 bits mantissa."）https://numpy.org/doc/stable/user/basics.types.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《03.Numpy - 核心概念》课件（Agent 场景：Embedding 用 float32、Token ID 用 int64、Mask 用 bool）`,
+              breakdown: `分三笔账算。Embedding：<code>float32</code>，itemsize 4，官方对它的描述就是 C 的 <code>float</code>（单精度）——100 万 × 768 × 4 B ≈ 2.93 GB；若用 <code>float64</code>（C 的 double）直接翻倍到 ≈ 5.86 GB，而向量检索的精度收益通常不值这个价。Token ID：<code>int64</code>（8 字节），与框架默认对齐、也避免词表规模逼近 int32 上限的隐患；一条 4096 token 的序列就是 32 KB。Mask：<code>bool</code>（1 字节），只存 0/1，若图省事用 int64 就是白烧 8 倍内存。降级条件要讲清判据：内存/显存吃紧且只做推理时，可降到 <code>float16</code>（2 字节）；量化到 <code>int8</code> 不是换个 dtype 就完事——它需要额外的 scale/zero-point 与反量化步骤，属于「用工程复杂度换内存」，只有在检索召回率实测不掉点时才值得。核心判据始终是 size × itemsize，先算账再选型。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `让 AI 助手帮你写一个「ndarray 体检」脚本：输入若干个数组，打印 shape / ndim / size / dtype / itemsize / strides 与总字节数，并判断某个数组是不是另一个数组的视图。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 15 分钟',
+                goal: '写一个 check(a) 函数，打印 shape / ndim / size / dtype / itemsize / strides 与总字节数（nbytes = size × itemsize）；再用它对比一个 int64 的 (2, 3) 数组、它的 .T、以及 .T.copy()，输出「谁和谁共享内存」的结论。',
+                accept: ['check() 正确打印 shape / ndim / size / dtype / itemsize / strides 与总字节数，且总字节数等于 size × itemsize', '对 int64 的 (2, 3) 数组，输出 strides 为 (24, 8)，其 .T 的 strides 为 (8, 24)、shape 为 (3, 2)', '用 np.shares_memory（或 .base）判定 .T 是视图、.T.copy() 不是，并在输出里给出结论文字'],
+              },
+              source: `任务基于《03.Numpy - 核心概念》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：函数体直接读属性——<code>a.shape</code>、<code>a.ndim</code>、<code>a.size</code>、<code>a.dtype</code>、<code>a.itemsize</code>、<code>a.strides</code>、<code>a.nbytes</code>，千万不要手写循环去数元素（那既慢又容易错）。三个常见坑：一是 <code>itemsize</code> 与 <code>nbytes</code> 别搞混，前者是单个元素字节数、后者是总字节数；二是 <code>a.T</code> 的 strides 是交换后的元组，直接断言 (24, 8) 会失败；三是判定视图不要用 <code>id()</code> 或看数据是否相等，要用 <code>np.shares_memory</code>——官方 glossary 专门提醒过，<code>base</code> 只说明「这块内存不属于自己」，不足以判定视图。另外记得把 (1000, 768) float32 的缓冲也喂给 check()，手算一遍 3,072,000 字节 ≈ 2.93 MB，和脚本输出对上，你就真的掌握了 dtype 的内存账本。收尾时让 AI 把两次运行的输出贴出来，而不是只贴代码。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://numpy.org/doc/stable/user/absolute_beginners.html">NumPy: the absolute basics for beginners</a>（ndim / shape / size / dtype 官方定义）· <a href="https://numpy.org/doc/stable/user/basics.copies.html">Copies and views</a>（视图与拷贝的判据）· <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html">numpy.ndarray.strides</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Numpy-核心概念速查表.html">Numpy-核心概念速查表</a>——四要素、dtype 内存对照与视图要点一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/Numpy-核心概念">03.Numpy - 核心概念</a> · 下一课 <a href="/agents/数据科学工具包/Numpy-数据操作">04.Numpy - 数据操作</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

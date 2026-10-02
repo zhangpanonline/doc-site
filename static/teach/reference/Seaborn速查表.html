@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seaborn速查表 · 参考手册</title>
+  <meta name="description" content="Seaborn速查表 · 可打印参考手册：配合《Seaborn互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · 数据科学工具包</p>
+      <h1>Seaborn速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ds-0010-Seaborn.html">《Seaborn互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>三类分析任务 → 函数对照</h2>
+      <table class="cmp-table">
+        <tr><th>任务</th><th>Axes 级（可传 ax=）</th><th>Figure 级（自带分面）</th><th>回答什么问题</th></tr>
+        <tr><td>单变量分布</td><td>histplot / kdeplot / ecdfplot / rugplot</td><td>displot</td><td>数据集中在哪、偏态、有无双峰</td></tr>
+        <tr><td>分类对比</td><td>boxplot / violinplot / barplot / countplot / stripplot</td><td>catplot</td><td>不同类别的水平与离散程度差异</td></tr>
+        <tr><td>回归分析</td><td>regplot / residplot</td><td>lmplot</td><td>两个连续变量的趋势与不确定性</td></tr>
+        <tr><td>关系矩阵</td><td>heatmap</td><td>clustermap / pairplot / jointplot</td><td>多变量相关性、聚类结构</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>常用函数与关键参数</h2>
+      <pre>sns.histplot(data=df, x='salary', bins=30, kde=True)
+sns.boxplot(data=df, x='education', y='salary', hue='city', ax=ax1)
+sns.violinplot(data=df, x='education', y='salary', inner='quart')
+sns.barplot(data=df, x='city', y='salary', estimator='mean', errorbar='ci')
+sns.regplot(data=df, x='experience', y='salary', ci=95, ax=ax2)
+sns.heatmap(df.corr(numeric_only=True), annot=True, cmap='vlag')</pre>
+      <dl class="term-grid">
+        <dt>ax=</dt>
+        <dd>Axes 级函数专用：把图画进指定子图，布局交给 Matplotlib 管。</dd>
+        <dt>hue= / style= / size=</dt>
+        <dd>按额外变量分组着色 / 区分线型 / 区分点大小（分组而非分面）。</dd>
+        <dt>whis=</dt>
+        <dd>箱线图须线长度：标量表示「距最近 hinge 的 whis × IQR 内最远的点」，也可传百分位元组。</dd>
+        <dt>estimator= / errorbar=</dt>
+        <dd>barplot 等分类聚合图的统计量与误差表示（默认均值 + 置信区间）。</dd>
+        <dt>ci=</dt>
+        <dd>regplot / lmplot 的置信区间；样本越少区间越宽。</dd>
+        <dt>set_theme()</dt>
+        <dd>一次设定全局主题样式；reset_orig() 回到 Matplotlib 默认。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>与 Matplotlib 的分工</h2>
+      <table class="cmp-table">
+        <tr><th>层</th><th>谁负责</th><th>典型动作</th></tr>
+        <tr><td>布局与画布</td><td>Matplotlib</td><td><code>fig, axes = plt.subplots(1, 3)</code>、tight_layout、savefig</td></tr>
+        <tr><td>统计图层与样式</td><td>Seaborn</td><td>分布/分类/回归图层、调色板、分组语义、默认主题</td></tr>
+        <tr><td>渲染</td><td>Matplotlib</td><td>最终绘制与导出（Seaborn 建在它之上）</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>读图避坑三条</h2>
+      <dl class="term-grid">
+        <dt>离群点 ≠ 脏数据</dt>
+        <dd>须线外只是「按 IQR 规则偏离主体」，删掉会系统性低估上限；要稳健统计就用中位数/分位数。</dd>
+        <dt>barplot 画的是聚合值</dt>
+        <dd>默认均值 + 误差棒，会掩盖分布形态与样本量差异；要看分布用箱线图/小提琴图。</dd>
+        <dt>相关 ≠ 因果</dt>
+        <dd>回归线只说明趋势与不确定性（置信带宽度反映样本量）；结论要检查组间可比性与混杂因素。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 数据科学工具包课程</p>
+
+  </main>
+</body>
+</html>

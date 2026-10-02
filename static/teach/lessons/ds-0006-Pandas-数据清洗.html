@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · Pandas 数据清洗：679 行真实招聘数据逐列清洗，应届提取、学历归类、城市统一、经验与薪资转数值——互动教学课程">
+  <title>Pandas - 数据清洗 · 互动教学课程（数据科学工具包 ds-06）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>Pandas - 数据清洗</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Pandas-数据清洗">06.Pandas - 数据清洗</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>用 <code>info()</code> / <code>head()</code> / <code>dtypes</code> / <code>isna().sum()</code> / <code>value_counts()</code> 在一分钟内说清一份数据「脏在哪」</li>
+        <li>把「26应届」这类混入的错误信息识别出来，提取成独立的「毕业年份」列</li>
+        <li>用 <code>map()</code> 归类学历、用 <code>str</code> 系列方法统一城市口径</li>
+        <li>用自定义函数 + <code>apply()</code> 把「3个月」「10+年」「15-30K·13薪」解析成可统计的数值</li>
+        <li>清洗完做前后对比与口径校验，说得清每一处 NaN 是「本来没有」还是「解析失败」</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把清洗的骨架过一遍——细节都在《06.Pandas - 数据清洗》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>先观察，再动手：四个探针</h3>
+        <ul class="pitfall-list">
+          <li><code>df.info()</code>：一次看全<strong>数据量、列名、非空计数、dtype</strong>——本课数据 679 行 6 列，备注列只有 222 个非空，一眼就知道它大半是空的</li>
+          <li><code>df.isna().sum()</code>：按列数缺失。本课：昵称 3 / 学历 2 / 城市 21 / 经验 17 / 薪资 101 / 备注 457</li>
+          <li><code>df.dtypes</code> 与 <code>df.describe()</code>：前者暴露<strong>类型错位</strong>（数值字段被读成字符串），后者给出数值列的 mean / std / 四分位，是发现异常值的入口</li>
+          <li><code>df[col].value_counts(dropna=False)</code>：<strong>分类列清洗前的必做动作</strong>——不加 <code>dropna=False</code> 会丢掉 NaN 这一类的计数，看不到「缺了多少」</li>
+          <li>核心判断：本课 6 列全是 object / str——<strong>经验和薪资这两个数值字段被读成了字符串</strong>，这就是整节课要解决的主问题</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>逐列清洗：五条主线</h3>
+        <ul class="pitfall-list">
+          <li><strong>应届信息提取</strong>：<code>26应届</code> 不是经验、也不是城市，而是<strong>毕业年份</strong>。用 <code>str.contains(r'应届', na=False)</code> 造掩码 → <code>str.extract(r'(\d+)\s*应届')</code> 取数字 → 加 2000 写进新列「毕业年份」；经验列置 0，城市等错位列置空</li>
+          <li><strong>学历归类</strong>：「本 / 本科 / 本211 / 985本」都是本科，「专 / 专科 / 大专」都是大专。用 <code>map(edu_map)</code> 做字典映射，<strong>映射表里没有的值自动变 NaN</strong>——「招人」「留美」这类异常值正是靠这一条被清掉；清洗后可 <code>astype('category')</code> 明确它是分类数据</li>
+          <li><strong>城市统一</strong>：先 <code>str.strip()</code> 去空格，再 <code>str.split('/').str[-1]</code> 把「湖南/株洲」统一成「株洲」，最后用 <code>isin(not_cities)</code> 剔掉「焦虑型人格」「在读」「-」，「广西柳州」归一成「柳州」</li>
+          <li><strong>经验转数值</strong>：区间文本规则多，「3个月」要 ÷12、「&lt;1年」取下限减 0.5、「10+年」取下限、「3年前端\n2年转行」两段相加——<strong>逐条 if 的规则用自定义函数 + <code>apply()</code></strong> 最好读；解析不出来的（「转行」「读研」「上海」）返回 NaN</li>
+          <li><strong>薪资转数值</strong>：先做文本消歧（多行取最后一行、<code>-&gt;</code> 取最新值、去掉括号里的地点说明），再换算口径：<code>w/年</code> 先 ×10 得千元/年、再 ÷12 得千元/月；<code>k*15</code> 取基本月薪；<code>50k~60k</code> 这类区间只取第一个数。<strong>清洗后的单位必须写进列名（薪资(k) / 经验(年)）</strong>，否则下游必踩单位坑</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>清洗完必须验证的三件事</h3>
+        <ul class="pitfall-list">
+          <li><strong>前后对比</strong>：再跑一次 <code>df.info()</code>——行数应保持不变（679），变的应该是 dtype（薪资/经验变成 float64）与非空计数。行数变了，说明某一步把行吃掉或造出来了</li>
+          <li><strong>口径检查</strong>：<code>df.describe()</code> 看量级是否合理。薪资 max 166.7 来自「200w/年」的换算（200×10÷12），是<strong>正确换算出的极端值</strong>，处理它属于业务判断（后续单独裁剪），不属于解析错误</li>
+          <li><strong>缺失与异常分流</strong>：清洗后的 NaN 要能逐个说清来源——「备注」457 个是<strong>本来就没有</strong>，「转行/读研」变成的 NaN 是<strong>无法解析</strong>，两者不能混为一谈。这也决定了 <code>dropna()</code> 不能无脑用：薪资只缺 101 个，但备注缺 457 个，按行 dropna 会把 679 行砍到只剩两百多行</li>
+          <li><strong>落盘前收尾</strong>：用列表选择固定列顺序、<code>astype('Int32')</code> 把毕业年份转成可空整数、CSV 用 <code>encoding='utf-8-sig'</code> 写出（Excel 打开不乱码）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《06.Pandas - 数据清洗》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 拿到一份陌生的表格数据，课件要求的第一件事是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先「观察」：用 <code>info()</code> / <code>head()</code> / <code>dtypes</code> / <code>isna().sum()</code> 摸清数据量与脏在哪</button>
+            <button class="quiz-option">先用 <code>dropna()</code> 把所有缺失行删掉，拿到干净数据再说</button>
+            <button class="quiz-option">先把所有列都 <code>astype(float)</code> 转成数值</button>
+            <button class="quiz-option">先 <code>to_excel()</code> 另存一份备份，再开始清洗</button>
+          </div>
+          <div class="quiz-explain" hidden>对应《06.Pandas - 数据清洗》第 1 节「数据初探」：拿到一份新数据，先别急着动手——先「观察」。直接 dropna 会先丢掉信息（本课备注列只有 222 个非空），后面想验证都没得验。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 本课数据 679 行，想快速知道每一列「缺了多少个值」，最直接的一句是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>df.duplicated().sum()</code></button>
+            <button class="quiz-option"><code>df.describe()</code></button>
+            <button class="quiz-option"><code>df.count()</code></button>
+            <button class="quiz-option"><code>df.isna().sum()</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应第 1 节：<code>df.isna().sum()</code> 按列统计缺失个数（昵称 3 / 学历 2 / 城市 21 / 经验 17 / 薪资 101 / 备注 457）。<code>count()</code> 给的是非空个数，<code>describe()</code> 只看数值列，<code>duplicated()</code> 是重复行。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 本课 <code>df.info()</code> 输出显示 6 列全部是 object / str，课件由此得出的核心结论是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">缺失值太多，这份数据不可用</button>
+            <button class="quiz-option">经验和薪资这两个数值字段被读成了字符串，需要清洗成数值类型</button>
+            <button class="quiz-option">数据量太小，应该换一份更大的数据</button>
+            <button class="quiz-option">列名有问题，应该先把中文列名改成英文</button>
+          </div>
+          <div class="quiz-explain" hidden>对应第 1 节原文：类型全是 object/str——数值型的字段（经验、薪资）被读成了字符串，这是我们今天要解决的核心问题。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 想把列名「薪资」「经验」改成带单位的「薪资(k)」「经验(年)」，正确写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>df.rename(columns={'薪资(k)': '薪资'})</code></button>
+            <button class="quiz-option"><code>df.columns = ['薪资(k)', '经验(年)']</code></button>
+            <button class="quiz-option"><code>df['薪资(k)'] = df['薪资'].astype(float)</code></button>
+            <button class="quiz-option"><code>df = df.rename(columns={'薪资': '薪资(k)', '经验': '经验(年)'})</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应第 6 节结尾：<code>df = df.rename(columns={'薪资': '薪资(k)', '经验': '经验(年)'})</code>。选项 2 会把 7 列的名字整体覆盖成 2 个，列名个数与列数不匹配会直接报错；选项 4 是新建列，旧列还在。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. 要取出「城市」列为北京的全部行，课件示范的写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>df['城市'].loc['北京']</code></button>
+            <button class="quiz-option"><code>df.iloc[df['城市'] == '北京']</code></button>
+            <button class="quiz-option"><code>df.loc[df['城市'] == '北京']</code></button>
+            <button class="quiz-option"><code>df.loc['北京', '城市']</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应课件开头的 loc / iloc 说明：<code>loc</code> 按索引标签名定位，配合布尔条件筛选所有列写 <code>df.loc[df["城市"] == "北京"]</code>；<code>iloc</code> 只接受整数位置，所以传布尔 Series 是错的。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 学历列里有「本」「本科」「本211」「985本」「专」「专科」等写法，课件用什么方式归类，不认识的写法会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">用 <code>map(edu_map)</code> 做字典映射；映射表里没有的值自动变成 NaN</button>
+            <button class="quiz-option">用 <code>str.replace()</code> 把「本211」「985本」替换成「本科」即可，无需映射表</button>
+            <button class="quiz-option">用 <code>apply()</code> 逐值判断；写错的值原样保留</button>
+            <button class="quiz-option">用 <code>astype('category')</code>；pandas 会自动按语义合并同义类别</button>
+          </div>
+          <div class="quiz-explain" hidden>对应第 3 节：用 <code>map()</code> 做分类映射，不认识的统一设为 NaN——「招人」「留美」就是这样被清掉的。pandas 官方文档也写明：当参数是字典时，Series 中不在字典键里的值会被转换成 NaN。选项 3 是错的：<code>category</code> 只压缩存储，「本」和「本科」仍是两个类别。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 经验列里混进了「26应届」。课件为什么要把这列值提取成独立的「毕业年份」列，而不是直接删掉或当成 0 年经验？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为毕业年份是数值，放在经验列里会让 <code>describe()</code> 报错</button>
+            <button class="quiz-option">因为应届生的毕业年份比经验更有价值，且不需要保留经验信息</button>
+            <button class="quiz-option">因为 <code>str.extract()</code> 只能新建列，无法原地修改原列</button>
+            <button class="quiz-option">因为「X应届」描述的是毕业年份、不是该列语义（经验/城市），属于错位信息；提取成新列可保留信息，同时让原列口径统一</button>
+          </div>
+          <div class="quiz-explain" hidden>对应第 2 节：它其实是「毕业年份」信息，不是该列的正常数据。统一做法是把「X应届」提取为独立的一列「毕业年份」，原列留空（经验列写 0）。清洗的原则是区分「这一列口径内的值」和「放错列的值」——放错的要搬家，不是删除；经验列写 0 也是业务约定（应届即 0 年工作经验）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 薪资列出现「15-30K·13薪」时，直接套用课件里那段 <code>parse_salary</code>（先找 <code>w</code>、再找 <code>k/k</code>、最后找第一个 <code>k</code>）会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">正则取到第一个数字 15，返回 15.0——区间下界被当成唯一值，上界 30 与 13 薪信息全部丢失</button>
+            <button class="quiz-option">因为含 <code>-</code> 被判定为异常值，落入 <code>['实习', '-', '？？', '']</code> 分支返回 NaN</button>
+            <button class="quiz-option">正则匹配失败，返回 NaN，安全地留空</button>
+            <button class="quiz-option">返回区间中点 22.5，与「50k~60k」的处理逻辑一致</button>
+          </div>
+          <div class="quiz-explain" hidden>对应第 6 节的薪资规则清单：`50k~60k` → 薪资范围，函数最终只取第一个 k 值。所以「15-30K」会被解析成 15.0（下界），「15-30K·13薪」同理——<strong>清洗口径必须先定再写代码</strong>：是取中值、取上界，还是拆成「薪资下限/薪资上限」两列外加一列「13 薪」。取第一个数是最省事的默认，但会让薪资系统性偏低，且丢掉年终奖信息。注意 <code>parse_salary</code> 开头的异常值判断是<strong>整串精确匹配</strong>，所以「15-30K·13薪」不会命中 <code>'-'</code> 分支。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 同事让 AI 写「把备注列里的「前端」替换成「FE」」，AI 给出的方案是在薪资清洗函数后面追加一行：<code>df['备注'] = df['备注'].str.replace('前端', 'FE')</code>。这次替换能跑通吗？要注意什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">能；但结果会把整列变成 category 类型，需要手动转回 object</button>
+            <button class="quiz-option">不能；<code>str.replace</code> 不支持中文模式串，只能替换 ASCII 字符</button>
+            <button class="quiz-option">不能；<code>.str</code> 访问器遇到 NaN 会整体报错，必须先 <code>fillna('')</code></button>
+            <button class="quiz-option">能；<code>.str</code> 方法会自动跳过缺失值、保留 NaN，但用正则时需注意模式语义，要字面替换应显式写 <code>regex=False</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应第 4 / 6 节的文本处理，以及 pandas 官方「Working with text data」：字符串方法「exclude missing/NA values automatically」，所以 457 个 NaN 会原样保留、不会报错；同时官方提示「Single character pattern with <code>regex=True</code> will also be treated as regular expressions」，所以「.」「*」这类字符做字面替换时要写 <code>regex=False</code>。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0006-Pandas-数据清洗',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同学把本课的薪资清洗函数原样搬到新一批招聘数据上，新数据里出现了「15-30K·13薪」这种写法。函数跑完薪资列的均值反而比上一批低了一截。请指出这个解析口径的坑，并说明怎么改才不留隐患。`,
+              source: '来源：pandas 官方文档 Working with text data（"The extract method accepts a regular expression with at least one capture group."；"Elements that do not match return a row filled with NaN."）https://pandas.pydata.org/docs/user_guide/text.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《06.Pandas - 数据清洗》课件（第 6 节薪资清洗规则：50k~60k → 薪资范围）',
+              breakdown: `坑在「一个格子多个数字」：<code>15-30K·13薪</code> 里其实有三个信息（下限 15、上限 30、13 薪），而课件那版函数最后一步是 <code>re.search(r'(\\d+(?:\\.\\d+)?)\\s*\\+?\\s*k', s)</code>，<strong>只取第一个匹配</strong>，于是整列区间薪资被系统性压到下限，均值自然偏低。判据是「清洗口径先于代码」：先决定区间取中值 / 上界，还是拆成「薪资下限(k)」「薪资上限(k)」「薪资月数」三列，再写代码。另外要留意异常值判断是<strong>整串精确匹配</strong>（<code>s in ['实习', '-', '？？', '']</code>），所以它不会误伤区间串；但如果新数据里出现「实习/日薪 200」，就会原样落到 NaN。审计动作：改完必须跑 <code>df['薪资(k)'].describe()</code> 与 <code>value_counts()</code> 复看量级，别只看代码读没读懂。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `本课的备注列只有 222 个非空（共 679 行）。如果同学直接写 <code>df = df.dropna()</code> 会得到什么结果？请从 pandas 的默认行为出发说明，并给出本课更合理的缺失值处理策略。`,
+              source: '来源：pandas 官方文档 Working with missing data（"Missing values propagate through arithmetic operations between pandas objects."；"When summing data, NA values or empty data will be treated as zero."）https://pandas.pydata.org/docs/user_guide/missing_data.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《06.Pandas - 数据清洗》课件（第 1 节缺失计数、第 7 节缺失与异常分流）',
+              breakdown: `<code>dropna()</code> 的默认语义是「只要一行里有任意一个 NA，就丢掉这一行」（本课数据里薪资缺 101、城市缺 21、经验缺 17、备注缺 457），所以 <code>df.dropna()</code> 会以最缺的备注列为准，把 679 行砍到两百多行——等于把大半份数据扔了。本课的策略是<strong>按列分流</strong>：备注缺就缺着（它是自由文本，本来就没有），经验/薪资缺的用 NaN 保留、统计时由 pandas 自动跳过（官方原文：求和时 NA 视为零），真正要删的只有「整行关键字段全空」这种 <code>dropna(how='all', subset=[...])</code>。判据一句话：先问「这个缺失是<strong>本来没有</strong>还是<strong>解析失败</strong>」，前者保留、后者要回到解析函数修，两者都不该用无脑 dropna 掩盖。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 为城市列写了这样一段清洗代码，请你审查：<code>df['城市'] = df['城市'].str.strip()</code> → <code>df['城市'] = df['城市'].str.split('/').str[-1].str.strip()</code> → <code>df.loc[df['城市'].isin(['焦虑型人格', '在读', '-']), '城市'] = None</code>。它可以跑通，但请指出至少两处「口径会悄悄改坏结果」的地方，并说明怎么验证没改坏。`,
+              source: '来源：pandas 官方文档 pandas.Series.map（"When arg is a dictionary, values in Series that are not in the dictionary (as keys) are converted to NaN."）https://pandas.pydata.org/docs/reference/api/pandas.Series.map.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《06.Pandas - 数据清洗》课件（第 4 节城市清洗、第 7 节清洗结果验证）',
+              breakdown: `三处要点：① <code>str.split('/').str[-1]</code> 对「湖南/株洲」是对的，但遇到「杭州/北京」这种多意愿填法会<strong>只留最后一个</strong>，语义从「意向城市」变成「备选城市」，属于口径漂移——需要先抽查含有 <code>/</code> 的所有唯一值再决定；② 异常值清单是<strong>硬编码白名单</strong>，「上海 浦东」这种带空格的、或新出现的「在家」不会命中，会留成假城市，建议改成「不在已知城市集合里」的判据（<code>~df['城市'].isin(known_cities)</code>）或至少过一遍 <code>value_counts()</code>；③ 把 3 个异常值写成 None/NaN 会让城市列缺失数继续上涨（本课从 21 → 41：15 个「X应届」已先被提走、3 个异常值被清掉，其余来自拆分与空格归并），<strong>这是预期行为，但必须记账</strong>，否则第 7 节验证时对不上。验证方式：行数必须仍是 679；<code>df['城市'].value_counts(dropna=False)</code> 前后对比，非空类别数从 73 降到 64，且「广西柳州」应变成「柳州」；再抽 <code>df.loc[df['城市'].isna()]</code> 看被清掉的是不是都是非城市值。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `现在的数据里既有「26应届」这种放错列的信息，也有「本/本科/本211」「3个月/<1年/10+年」这种同义异构写法。请设计一套可复用、可交接的清洗方案：原始列怎么保、映射/解析规则放哪、怎么让下一批数据进来时不会静默出错。`,
+              source: '来源：pandas 官方文档 pandas.Series.map（"For categorical data, the function is only applied to the categories"；"Values that are not found in the dict are converted to NaN, unless the dict has a default value（e.g. defaultdict）."）https://pandas.pydata.org/docs/reference/api/pandas.Series.map.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《06.Pandas - 数据清洗》课件（第 2–6 节逐列清洗口径）',
+              breakdown: `方案的骨架：① <strong>原始列不覆盖</strong>——用 <code>raw_</code> 前缀或先 <code>df.copy()</code> 留底，清洗列另起名字（学历_clean、经验(年)），这样任何时候都能回溯「这个 NaN 是被清掉还是原本就没有」；② <strong>规则外置</strong>——学历映射表写成模块级字典（或 YAML / 常量文件），经验和薪资解析写成纯函数 <code>parse_experience(val)</code> / <code>parse_salary(val)</code>，便于单测与评审；③ <strong>未知值必须显性</strong>——<code>map()</code> 的默认行为是未命中转 NaN，会静默吞掉新写法，所以每批数据都要先 <code>value_counts()</code> 看一遍没进映射表的键，或者用 <code>defaultdict</code> 承接默认值；④ <strong>分类语义落到实处</strong>——学历清洗完 <code>astype('category')</code>，既省内存也把「它只有有限几个合法值」写进 dtype；⑤ <strong>加断言式验证</strong>——行数不变、目标列 dtype 是 float64、<code>describe()</code> 的 min/max 在业务合理区间、清洗后某个已知样本（如前 5 行）与人工核对一致。这样交接给同事时，对方拿到的是「口径 + 规则 + 验证」三件套，而不是一段跑得通的黑箱。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `让 AI 助手按本课口径完成一次完整清洗，并用前后对比证明口径没被改坏（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '读入 linking.csv（679 行 · 昵称/学历/城市/经验/薪资/备注）→ 从「城市」「经验」两列里提取「X应届」到新列「毕业年份」（+2000，经验列记 0）→ 学历按映射表归类为本科/大专/硕士/高中/初中/中专/小学，未收录值置 NaN → 城市去空格、拆分「省/市」、剔除「焦虑型人格/在读/-」、把「广西柳州」归一为「柳州」→ 经验与薪资各写一个解析函数转成数值，薪资单位统一为千元/月并把单位写进列名 → 打印清洗前后的 info / dtypes / describe 对比。',
+                accept: ['行数自始至终是 679，没有被 dropna 或过滤悄悄改掉', '经验(年) 与 薪资(k) 的 dtype 为 float64，薪资 25%/50%/75% 分别约为 10 / 15 / 20，min 为 2', '毕业年份只出现 2025–2029，且毕业年份非空的行其经验(年) 为 0 或正数', '学历列只剩 7 个合法类别（可 astype(\'category\')），且能列出被置为 NaN 的原始写法（如「招人」「留美」）', '用 3–5 个原始脏值（如「3个月」「10+年」「200w/年」「湖南/株洲」「焦虑型人格」）逐条展示清洗后的结果，说明每个 NaN 属于「本来没有」还是「解析失败」'],
+              },
+              source: '任务基于《06.Pandas - 数据清洗》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路顺序照课件走：先 <code>df.info()</code> / <code>isna().sum()</code> 存一份「清洗前」快照，再按 2→6 节逐列做，最后拿前后快照对比。几个最容易翻车的点：① 应届提取用 <code>mask = df[col].astype(str).str.contains('应届', na=False)</code>，<strong>一定要带 <code>na=False</code></strong>，否则 NaN 参与匹配会产生 NA 传播问题；② <code>str.extract</code> 返回的是 DataFrame（一列），取值要写 <code>year[0]</code>，并注意只对掩码命中的行赋值（<code>df.loc[mask, ...]</code>）；③ 经验里的「3年前端\\n2年转行」按课件是两段相加得 5，而「23年毕业」「读研」这类要返回 NaN 或 0，规则顺序会改变结果，先写清优先级再落代码；④ 薪资的「200w/年」会算出约 166.7（200×10÷12），这是正确换算而不是 bug，验收时别把它当异常值删掉；⑤ 落盘用 <code>encoding='utf-8-sig'</code>，不然 Excel 打开中文会乱码。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://pandas.pydata.org/docs/user_guide/missing_data.html">pandas 官方 Working with missing data</a> · <a href="https://pandas.pydata.org/docs/user_guide/text.html">pandas 官方 Working with text data</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Pandas-数据清洗速查表.html">Pandas-数据清洗速查表</a>——六步流程、脏数据形态对照、常用 API 速记一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/Pandas-数据清洗">06.Pandas - 数据清洗</a> · 下一课 <a href="/agents/数据科学工具包/Matplotlib-核心概念">07.Matplotlib - 核心概念</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · Pandas 数据类型：Series 与 DataFrame、从文件与数据库读取、index/columns/values/dtypes 结构——互动教学课程">
+  <title>Pandas - 数据类型 · 互动教学课程（数据科学工具包 ds-05）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>Pandas - 数据类型</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Pandas-数据类型">05.Pandas - 数据类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 Series 是「带标签的一维数组」，并解释 <code>values</code> / <code>index</code> / <code>dtype</code> / <code>shape</code> 各是什么</li>
+        <li>用字典、嵌套列表、NumPy 数组三种方式创建 DataFrame，并说明三者的对应关系</li>
+        <li>用 <code>read_csv</code> / <code>read_excel</code> / <code>read_sql</code> 读入数据，并知道 <code>dtype</code>、<code>index_col</code> 该在什么时候用</li>
+        <li>拆开一个 DataFrame 的组成结构（index / columns / values / dtypes），并预判读取后被推断错的类型</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先把本章的三块骨架过一遍——细节都在《05.Pandas - 数据类型》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>Series：带标签的一维数组</h3>
+        <ul class="pitfall-list">
+          <li>Pandas 两种核心结构：<strong>Series</strong>（一列带标签的数据）与 <strong>DataFrame</strong>（带标签的二维表格）</li>
+          <li>Series 由两部分组成：<code>values</code>（数据本身，类型是 <code>numpy.ndarray</code>）与 <code>index</code>（每个数据点的标签）</li>
+          <li>不传 index 时自动生成 <code>RangeIndex</code>（0, 1, 2, …）；从字典创建时 <strong>key 自动成为索引</strong>；索引长度必须与数据长度一致</li>
+          <li>取值方式不同：<code>s['a']</code> 按标签、<code>s.iloc[0]</code> 按位置——同一份数据两套寻址，别混</li>
+          <li><strong>对齐（alignment）是 Pandas 的底层行为</strong>：两个索引不完全相同的 Series 相加，结果是索引的并集，两边对不上的标签填 <code>NaN</code>——不是按位置逐元素相加</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>DataFrame：创建与组成结构</h3>
+        <ul class="pitfall-list">
+          <li>三种常见创建方式：<strong>字典</strong>（key 是列名、value 是列数据）、<strong>嵌套列表</strong>（用 <code>columns=</code> 补列名，否则是 0/1/2）、<strong>NumPy 二维数组</strong>（同样要 <code>columns=</code> 才有列名）</li>
+          <li>组成结构四件套：<code>index</code>（行标签，默认 <code>RangeIndex</code>）、<code>columns</code>（列名，类型是 <code>pandas.Index</code>）、<code>values</code> / <code>to_numpy()</code>（核心数据，<code>numpy.ndarray</code>）、<code>dtypes</code>（<strong>每列</strong>一个类型）</li>
+          <li><code>values</code> 一旦混合类型就退化成 <code>dtype=object</code> 的 ndarray：<code>name → str</code>、<code>age → int64</code> 到了数组里没有列的概念，统一是 object</li>
+          <li>形状与规模：<code>shape</code> 是 (行数, 列数)、<code>size</code> 是元素总数、<code>ndim</code> 恒为 2</li>
+          <li><code>dtypes</code> 是<strong>属性</strong>不是方法，写 <code>df.dtypes</code>，不要加括号</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>读数据：dtype 与索引列是两个高频雷区</h3>
+        <ul class="pitfall-list">
+          <li><code>pd.read_csv</code> 常用参数：<code>encoding</code>（编码）、<code>header=None</code>（无表头）、<code>index_col</code>（指定索引列）、<code>usecols</code>（只读指定列）、<code>nrows</code>（只读前 N 行）、<code>dtype</code>（指定列类型）</li>
+          <li><code>pd.read_excel(..., sheet_name='Sheet1')</code> 要指明工作表；<code>pd.read_sql('SELECT ...', conn)</code> 直接把查询结果变成 DataFrame</li>
+          <li><code>read_sql</code> 是 <code>read_sql_table</code> / <code>read_sql_query</code> 的便捷封装；没装 SQLAlchemy 时，可以直接传 Python 内置的 <code>sqlite3.Connection</code></li>
+          <li>不指定 <code>dtype</code> 时 pandas 会<strong>自己推断</strong>：订单号、邮编、手机号这类「数字长得像数字」的标识列会被转成数值，<strong>前导零直接丢掉</strong>（<code>007</code> → <code>7</code>），ID 列还可能被当成可参与算术的度量</li>
+          <li>修法是在<strong>读入那一刻</strong>就把列类型钉死：<code>pd.read_csv(path, dtype={'订单号': str})</code>；等读完再 <code>astype</code> 补救，前导零已经丢了，救不回来</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《05.Pandas - 数据类型》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. 课件把 Series 描述为「带标签的一维数组」，它由哪两个核心部分组成？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">index 与 columns</button>
+            <button class="quiz-option">columns 与 dtypes</button>
+            <button class="quiz-option">values 与 shape</button>
+            <button class="quiz-option">values 与 index</button>
+          </div>
+          <div class="quiz-explain" hidden>对应《05.Pandas - 数据类型》的「Series」小节：<code>values</code> 是数据本身（类似 NumPy 数组），<code>index</code> 是每个数据点的标签。<code>columns</code> 是 DataFrame 才有的列标签。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 用嵌套列表创建 DataFrame 时，如果不传 <code>columns</code> 参数，列名会是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">自动生成为 0、1、2……这样的整数列名</button>
+            <button class="quiz-option">列名默认为 col_1、col_2……</button>
+            <button class="quiz-option">列表第一行会被当成列名</button>
+            <button class="quiz-option">报错：DataFrame 的列表构造必须传 columns</button>
+          </div>
+          <div class="quiz-explain" hidden>对应「DataFrame 创建」小节：课件给的列表构造示例都显式写了 <code>columns=['姓名','年龄','城市','薪资']</code>；不传时 pandas 用 0、1、2 这样的整数当列名（「从 NumPy 数组创建」那个例子也一样，<code>columns=</code> 只负责给列贴名字）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. <code>pd.read_excel('../linking.xlsx', sheet_name='Sheet1')</code> 里 <code>sheet_name</code> 的作用是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">指定文件的编码格式</button>
+            <button class="quiz-option">过滤出名为 Sheet1 的列</button>
+            <button class="quiz-option">指定要读取的工作表</button>
+            <button class="quiz-option">指定读进来之后 DataFrame 的名字</button>
+          </div>
+          <div class="quiz-explain" hidden>对应「从文件读取」小节：Excel 文件可以有多张工作表，<code>sheet_name</code> 决定解析哪一张。它不是编码、不是列过滤，也不会改变 DataFrame 的变量名。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 一份 CSV 里 <code>订单号</code> 列的值形如 <code>007</code>、<code>012</code>，直接 <code>pd.read_csv('orders.csv')</code> 之后这一列变成了 <code>7</code>、<code>12</code>。<strong>正确</strong>的处理方式是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">读入时就用 <code>dtype={'订单号': str}</code> 指定为字符串列</button>
+            <button class="quiz-option">加 <code>nrows=100</code> 限制行数即可</button>
+            <button class="quiz-option">读完之后 <code>df['订单号'].astype(str).str.zfill(3)</code> 补回来</button>
+            <button class="quiz-option">加 <code>header=None</code> 让 pandas 不要推断表头</button>
+          </div>
+          <div class="quiz-explain" hidden>对应「从文件读取」小节的 <code>dtype</code> 参数与课件里 ID 类列的处理：前导零是在<strong>读入被推断成数值类型</strong>的那一刻丢掉的，事后 <code>astype(str)</code> 只能拿到 <code>'7'</code>，位数信息已经不存在，<code>zfill</code> 出来的值也不再是原始值。确定性做法是在读入时钉死类型：<code>pd.read_csv('orders.csv', dtype={'订单号': str})</code>。<code>header</code> 与 <code>nrows</code> 跟类型推断无关。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. <code>s1 = pd.Series([10, 20, 30, 40], index=['a','b','c','d'])</code>，<code>s2 = pd.Series([10, 20, 30, 40], index=['b','c','d','e'])</code>。执行 <code>s1 + s2</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只保留两边都有的标签，结果是 b/c/d 三行的 30、50、70</button>
+            <button class="quiz-option">索引取并集 a/b/c/d/e，对不上的 <code>a</code> 和 <code>e</code> 填 NaN，中间三行是 30、50、70</button>
+            <button class="quiz-option">4 个位置逐元素相加，得到 20、40、60、80</button>
+            <button class="quiz-option">长度不等，直接抛 ValueError</button>
+          </div>
+          <div class="quiz-explain" hidden>对应「Series」小节里的对齐行为：两个索引不同的 Series 做运算，结果索引是并集，某一边缺失的标签记 <code>NaN</code>。（注意默认的 <code>RangeIndex</code> 也是标签——两边都是 0,1,2,3 时看起来像按位置相加，换一套索引就露馅。）</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 要检查 DataFrame 每一列的数据类型，用哪个写法？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>df.type()</code></button>
+            <button class="quiz-option"><code>df.dtype</code></button>
+            <button class="quiz-option"><code>df.dtypes()</code></button>
+            <button class="quiz-option"><code>df.dtypes</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应「DataFrame 的组成结构」小节：<code>dtypes</code> 是<strong>属性</strong>，报告每列的类型（<code>name → str</code>、<code>age → int64</code>……），加括号就成了错误的调用。<code>df.dtype</code> 是 Series 才有的单列类型属性，DataFrame 没有它。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 同事让 AI 写「把两个部门各自汇总出来的 Series 相加，得到公司总销售额」。两个 Series 的索引是各自部门里出现过的员工工号，且集合不完全相同（有的员工两边都在，有的只在一侧）。审查这段代码，最大的隐患是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Pandas 会按位置相加，工号对不上就会把两个不同人的业绩加在一起</button>
+            <button class="quiz-option">同名标签会正常相加，但只在一侧出现的员工，结果里是 NaN——不处理就当作 0 参与后续统计（比如求总和、算平均），数字会静默错掉</button>
+            <button class="quiz-option">Pandas 会自动把缺失的那一侧补成 0，所以结果完全正确，不用管</button>
+            <button class="quiz-option">索引不同，Pandas 一定会抛异常，所以这段代码根本跑不起来</button>
+          </div>
+          <div class="quiz-explain" hidden>对应「Series」小节的对齐语义：只在一侧出现的标签，结果记 <code>NaN</code>——不是报错、不是按位置相加、更不会自动补 0。求和/求平均默认会跳过 NaN，看起来「有结果」，但基数已经从「全部员工」变成「两边都有的员工」，业务含义变了。正确做法是先用 <code>add(other, fill_value=0)</code> 或显式 <code>fillna(0)</code> 明确口径，再决定怎么算。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. AI 写了这段代码给「订单表」做前置处理：<br><code>df = pd.read_csv('orders.csv')</code><br><code>df['下单时间'] = pd.to_datetime(df['下单时间'])</code><br>但订单表里的 <code>订单号</code>、<code>收货邮编</code> 两列是带前导零的编号。上线后发现按订单号查单查不到、按邮编分组少了几个区。问题出在哪、怎么改？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">读入时对<strong>标识列</strong>没有钉住类型：<code>订单号</code> 被推断成 int64，前导零丢失、并且被当成了可运算的度量；应该在读入时写 <code>dtype={'订单号': str, '收货邮编': str}</code>，而数值度量列保留推断</button>
+            <button class="quiz-option">应该把整表都读成字符串：<code>pd.read_csv('orders.csv', dtype=str)</code>，最省事</button>
+            <button class="quiz-option">CSV 不适合存订单数据，必须换成 Excel 或数据库读取</button>
+            <button class="quiz-option"><code>to_datetime</code> 用错了，它会把整表的类型都改成字符串，应该用 <code>astype('datetime64[ns]')</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应「从文件读取」与「DataFrame 的组成结构」两节：<code>dtypes</code> 是<strong>逐列</strong>确定的，所以修法也是逐列——标识列用 <code>dtype={...: str}</code> 保住前导零与「不可运算」的语义，金额、数量这类度量列继续让 pandas 推断成数值。整表 <code>dtype=str</code> 属于另一个极端：后续所有数值计算都要重新转型，代价更大；问题不在文件格式，也不在 <code>to_datetime</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 给定 <code>df = pd.DataFrame({'姓名': ['张三','李四'], '年龄': [25, 30]})</code>，下面哪组结论<strong>完全正确</strong>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>df.dtypes</code> 逐列给出 <code>姓名 → str</code>、<code>年龄 → int64</code>；而 <code>df.values</code> 因为混了字符串与整数，退化成 <code>dtype=object</code> 的 ndarray</button>
+            <button class="quiz-option"><code>df.ndim</code> 是 2、<code>df.size</code> 是 2；<code>df.values</code> 是形如 (2, 2) 的 ndarray</button>
+            <button class="quiz-option"><code>df.index</code> 类型是 <code>pandas.Index</code>；<code>df.columns</code> 类型是 <code>pandas.RangeIndex</code></button>
+            <button class="quiz-option"><code>df.dtypes</code> 是 <code>str</code>（整表一个类型）；<code>df.values.dtype</code> 也是 <code>str</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对应「DataFrame 的组成结构」小节：整表没有「一个」dtype，<code>dtypes</code> 逐列报告；而 <code>values</code> / <code>to_numpy()</code> 是一个 NumPy 数组，一列字符串一列整数混在一起，只能退化成 <code>dtype=object</code>。<code>size</code> 是元素总数 4（不是 2），<code>index</code> 是 <code>RangeIndex</code>、<code>columns</code> 是 <code>pandas.Index</code>——选项里的类型正好互换反了。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0005-Pandas-数据类型',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `同一个部门两个月的业绩分别汇总成了两个 Series，索引都是从 0 开始的默认 RangeIndex，长度也一样。同事让 AI 直接 <code>a + b</code> 求合计。和「两份 Series 索引是工号、且工号集合不完全相同」的情况相比，这里的 <code>a + b</code> 为什么看起来是对的？又在什么情况下会突然变成 NaN？`,
+              source: '来源：pandas 官方文档 Intro to data structures（"The result of an operation between unaligned Series will have the union of the indexes involved. If a label is not found in one Series or the other, the result will be marked as missing NaN."）https://pandas.pydata.org/docs/user_guide/dsintro.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `关键点：<strong>RangeIndex 也是索引标签</strong>，不是「没有索引」。两个都是 0,1,2,… 的 Series，标签天然对齐，于是 <code>a + b</code> 恰好等价于按位置相加——看起来「Pandas 就是按位置算的」，这是最容易形成的错误直觉。官方语义是：运算结果的索引是<strong>两边索引的并集</strong>，某一侧没有的标签记 <code>NaN</code>。所以只要有一环打破了标签一致（比如其中一个 Series 是 <code>df.groupby(...).sum()</code> 出来的、索引是分组键），或者中间做过 <code>iloc</code> 切片、<code>sort_values</code> 重排、去重，标签对不上就会大面积出 NaN。判据：拿到 Series 先看 <code>.index</code>，涉及两组数据的算术一律先问「标签是什么、是不是同一套」。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `一个 DataFrame 里同时有姓名（字符串）、年龄（整数）、入职日期三类列。请说明：<code>df.dtypes</code> 和 <code>df.values.dtype</code> 各回答什么问题？为什么后者常常是 <code>object</code>？这对下游把 DataFrame 交给 numpy 函数处理意味着什么？`,
+              source: '来源：pandas 官方文档 10 minutes to pandas（"NumPy arrays have one dtype for the entire array while pandas DataFrames have one dtype per column. When you call DataFrame.to_numpy(), pandas will find the NumPy dtype that can hold all of the dtypes in the DataFrame. If the common data type is object, DataFrame.to_numpy() will require copying data."）https://pandas.pydata.org/docs/user_guide/10min.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `两个问题层次不同：<code>df.dtypes</code> 是<strong>逐列</strong>的类型清单（姓名 str、年龄 int64、日期 datetime64…），是「表语义」层面的信息；<code>df.values</code>/<code>to_numpy()</code> 返回的是一个真正的一维同质数组容器，只能有<strong>一个</strong> dtype——pandas 会去找能同时装下所有列类型的最小公共类型，装不下就退化成 <code>object</code>。后果有三条：① 数值运算会走 Python 对象路径，慢且占内存；② 丢掉列名与逐列类型，下游 numpy 代码只能靠位置索引，列顺序一变就错；③ 官方明确提示共同类型是 object 时 <code>to_numpy()</code> 需要复制数据。所以「把表交给 numpy 处理」通常不是好主意，真要给数值，就<strong>先选列</strong>再取数组（如 <code>df[['年龄','薪资']].to_numpy()</code>）。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 给出这段「读订单表并做前置检查」的代码：<code>df = pd.read_csv('orders.csv')</code> → <code>print(df.dtypes)</code> → <code>df['金额'] = df['金额'] * 1.06</code>。CSV 里 <code>订单号</code> 形如 <code>007123</code>，<code>收货邮编</code> 形如 <code>012345</code>，<code>金额</code> 是普通数值。请指出这段代码的问题、它会造成什么后果，以及你会改成什么样。`,
+              source: '来源：pandas 官方文档 IO tools（"Specify converters for columns. This is useful for numerical text data that has leading zeros. By default columns that are numerical are cast to numeric types and the leading zeros are lost. To avoid this, we can convert these columns to strings."）https://pandas.pydata.org/docs/user_guide/io.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `问题在读入这一步：不指定 <code>dtype</code> 时 pandas 会推断类型，<strong>看起来是数字的文本列会被 cast 成数值类型，前导零随之丢失</strong>（官方原文：<em>By default columns that are numerical are cast to numeric types and the leading zeros are lost</em>）。后果不止「少个 0」：<code>订单号</code> 变成 int64 后，去和字符串 ID 做 join/查询会对不上；<code>收货邮编</code> 变成整数后，按邮编分组会把 <code>012345</code> 与 <code>12345</code> 合并；更糟的是这类 ID 被当成度量列参与算术（乘 1.06、求和、求平均）时不会报错，只会静默产出无意义的数字。改法：<code>pd.read_csv('orders.csv', dtype={'订单号': str, '收货邮编': str})</code>——在<strong>读入那一刻</strong>把标识列钉成字符串，度量列（金额）继续让 pandas 推断成数值以便计算；事后 <code>astype(str)</code> 只能得到 <code>'7123'</code>，原始位数已经不可恢复。检查环节也应固定在 <code>dtypes</code> 上，而不是等到结果对不上再回头找。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `要给一个「数据问答 Agent」设计统一的数据加载入口：数据来源有 CSV、Excel、MySQL/PostgreSQL 三类。请给出 <code>read_csv</code> / <code>read_excel</code> / <code>read_sql</code> 的选型与关键参数约定，重点说明标识列（订单号、邮编、工号）的类型策略，以及为什么这个策略必须固定在「加载层」而不是交给下游各段代码各自处理。`,
+              source: '来源：pandas 官方文档 IO tools（"The function read_sql() is a convenience wrapper around read_sql_table() and read_sql_query() (and for backward compatibility) and will delegate to specific function depending on the provided input (database table name or sql query)."；"If SQLAlchemy is not installed, you can use a sqlite3.Connection in place of a SQLAlchemy engine, connection, or URI string."）https://pandas.pydata.org/docs/user_guide/io.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `选型按「数据在哪」分派，全部收敛到同一个加载层：① 文件 → <code>read_csv(path, encoding=..., dtype={标识列: str}, usecols=..., nrows=...)</code>；② 多工作表 → <code>read_excel(path, sheet_name=...)</code>，同样显式给 <code>dtype</code>；③ 数据库 → <code>read_sql(sql, con)</code>，官方定义它是 <code>read_sql_table</code> / <code>read_sql_query</code> 的便捷封装，按传入的是表名还是 SQL 决定委托给谁；连接侧优先 SQLAlchemy engine，只有 SQLite 这类场景才直接用内置 <code>sqlite3.Connection</code>（官方原文允许这种替代），生产环境要显式管连接生命周期，别让每次调用都新建连接。类型策略：<strong>只对标识列钉 <code>str</code>，度量列保持推断</strong>——理由是 <code>dtypes</code> 逐列生效，一刀切 <code>dtype=str</code> 会把所有数值计算推迟到下游且每次都要重转。放加载层的理由是口径单一：三条入口都经过同一处 <code>dtype</code> 映射，Agent 后续生成的代码无论怎么改写，拿到的都是同一套类型，从根上避免「同一列在 CSV 分支是 str、在 SQL 分支是 int」这种只在联调时才暴露的分裂。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 编程工具（如 Claude Code）在 10 分钟内把这个任务做出来，任务与验收点见任务卡。`,
+              scene: {
+                time: '约 10 分钟',
+                goal: '从一份 CSV 读入数据得到 DataFrame，并输出一份「组成结构报告」：形状、每列类型、行索引类型、底层 ndarray 的类型。同时确保其中的 ID 列读完仍是字符串、前导零未丢失。',
+                accept: ['脚本里用 <code>pd.read_csv(..., dtype={...})</code> 显式指定 ID 列，打印出的 ID 值仍带前导零（如 007123）', '报告用 <code>df.dtypes</code> 逐列列出类型，且区分「标识列 → str」与「数值列 → int64/float64」', '报告给出 <code>df.shape</code>、<code>type(df.index)</code>、<code>df.values.dtype</code> 三行，并说明 <code>values.dtype</code> 为什么是 object'],
+              },
+              source: '任务基于《05.Pandas - 数据类型》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：先写最少的一步——<code>df = pd.read_csv(path, dtype={'订单号': str, '收货邮编': str})</code>，立刻 <code>print(df.head())</code> 确认 ID 列还是 <code>007123</code> 而不是 <code>7123</code>；再补结构报告：<code>df.shape</code>、<code>df.dtypes</code>、<code>type(df.index)</code>、<code>df.values.dtype</code>。判据三条：① 前导零还在，说明 <code>dtype</code> 写对了列名（列名写错 pandas 不报错，只是静默不生效——这是最常见的失败方式，要打印 dtypes 复核）；② <code>dtypes</code> 是两个类型并存，说明没有一刀切；③ <code>values.dtype</code> 是 object，能解释「整表一个数组时只能取公共类型」这件事，而不是把它当成 bug 去「修」。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://pandas.pydata.org/docs/user_guide/10min.html">10 minutes to pandas</a> · <a href="https://pandas.pydata.org/docs/user_guide/dsintro.html">Intro to data structures</a> · <a href="https://pandas.pydata.org/docs/user_guide/io.html">IO tools（read_csv / read_excel / read_sql 参数总表）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Pandas-数据类型速查表.html">Pandas-数据类型速查表</a>——Series vs DataFrame、组成结构四件套、常用读取参数一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/Pandas-数据类型">05.Pandas - 数据类型</a> · 下一课 <a href="/agents/数据科学工具包/Pandas-数据清洗">06.Pandas - 数据清洗</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

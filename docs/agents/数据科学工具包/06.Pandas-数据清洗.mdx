@@ -1,0 +1,760 @@
+---
+sidebar_position: 6
+title: '06. Pandas - 数据清洗'
+description: "数据科学工具包 · Pandas 数据清洗：真实招聘数据初探，应届/学历/城市/经验/薪资逐列清洗与结果验证。"
+displayed_sidebar: agentsDataScience
+---
+
+# Pandas - 数据清洗
+
+```python
+import pandas as pd
+import numpy as np
+import re
+
+df = pd.read_excel('../linking.xlsx')
+```
+
+```python
+# loc: 按索引标签名定位（行名、列名）
+# 语法: df.loc[行, 列]
+# df.loc[0:5]  # 索引0到5的所有行
+# df.loc[0:5, "城市"]  # 取前5行的城市列
+# df["城市"] == "北京"
+# df.loc[df["城市"] == "北京"]  # 条件筛选所有列
+
+# # iloc: 按整数位置定位
+# # 语法: df.iloc[行位置, 列位置]
+# df.iloc[0:5]  # 前5行
+# df.iloc[0:5, 0:3]  # 前5行、前3列
+# df.iloc[0, 0]  # 第一行第一列的值
+```
+
+```text
+0    北京
+1    杭州
+2    长沙
+3    北京
+4    济南
+Name: 城市, dtype: str
+```
+
+## 1. 数据初探
+
+拿到一份新数据，先别急着动手——先「观察」。
+
+`df.info()` 可以快速了解：数据量、各列类型、缺失情况。
+
+```python
+df.info()
+```
+
+```text
+<class 'pandas.DataFrame'>
+RangeIndex: 679 entries, 0 to 678
+Data columns (total 6 columns):
+ #   Column  Non-Null Count  Dtype 
+---  ------  --------------  ----- 
+ 0   昵称      676 non-null    object
+ 1   学历      677 non-null    str   
+ 2   城市      658 non-null    str   
+ 3   经验      662 non-null    object
+ 4   薪资      578 non-null    str   
+ 5   备注      222 non-null    object
+dtypes: object(3), str(3)
+memory usage: 32.0+ KB
+```
+
+`df.head()` 看一下前几行，对数据内容有个直观感受。
+
+```python
+df.head()
+```
+
+|  | 昵称 | 学历 | 城市 | 经验 | 薪资 | 备注 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 | Map | 本 | 北京 | 26应届 | 实习 | NaN |
+| 1 | yanni* | 本 | 杭州 | 6年前端\n2年转行 | 前端：20k\n转行：28k | 新能源企业前端-->产品-->销售-->售前 |
+| 2 | 边牧* | 本 | 长沙 | 5年 | 9k | 离职，空窗期2年，北京17k，React，Flutter |
+| 3 | 决堤* | 本科 | 北京 | 25应届 | 9k | 被辞退 |
+| 4 | 月亮* | 专 | 济南 | 3年 | 9k | NaN |
+
+再单独看看每列的类型和缺失值数量。
+
+这里我们发现：虽然有 679 行，但很多列都有缺失值；而且**类型全是 object/str**——
+数值型的字段（经验、薪资）被读成了字符串，这是我们今天要解决的核心问题。
+
+```python
+df.dtypes
+```
+
+```text
+昵称    object
+学历       str
+城市       str
+经验    object
+薪资       str
+备注    object
+dtype: object
+```
+
+```python
+df.isna().sum()
+```
+
+```text
+昵称      3
+学历      2
+城市     21
+经验     17
+薪资    101
+备注    457
+dtype: int64
+```
+
+## 2. 应届信息提取
+
+很多列都混入了「26应届」「25应届」这类值——它其实是「毕业年份」信息，不是该列的正常数据。
+统一做法：把「X应届」提取为独立的一列「毕业年份」，原列留空（经验列写 0）。
+
+先看看「应届」值分布在哪些列：
+
+```python
+col_name = '学历'
+temp_mask = df[col_name].astype(str).str.contains('应届', na=False)
+# temp_mask
+df.loc[temp_mask, col_name].head(10)
+# df[temp_mask][['城市','经验','薪资','学历']].head(10)
+```
+
+```text
+Series([], Name: 学历, dtype: str)
+```
+
+用 `str.extract()` 可以从字符串中提取正则匹配的部分。先试试一列：
+
+```python
+df.loc[temp_mask, '城市'].astype(str).str.extract(r'(\d+)\s*应届')
+```
+
+|  | 0 |
+| --- | --- |
+| 51 | 26 |
+| 171 | 26 |
+| 191 | 29 |
+| 197 | 26 |
+| 198 | 26 |
+| 199 | 27 |
+| 202 | 27 |
+| 203 | 25 |
+| 207 | 27 |
+| 263 | 26 |
+| 377 | 27 |
+| 381 | 26 |
+| 382 | 27 |
+| 416 | 26 |
+| 658 | 26 |
+
+拿到数字后加上 2000 就是真实的毕业年份。现在统一处理所有列：
+
+```python
+df['毕业年份'] = np.nan
+
+for col in ['城市', '经验']:
+    mask = df[col].astype(str).str.contains(r'应届', na=False)
+    year = df.loc[mask, col].astype(str).str.extract(r'(\d+)\s*应届')
+    if not year.empty:
+        df.loc[mask, '毕业年份'] = 2000 + year[0].dropna().astype(int)
+    if col == '经验':
+        df.loc[mask, col] = 0.0
+    else:
+        df.loc[mask, col] = None
+```
+
+```python
+df['毕业年份'].value_counts(dropna=False)
+```
+
+```text
+毕业年份
+NaN       570
+2026.0     62
+2027.0     34
+2025.0      8
+2028.0      4
+2029.0      1
+Name: count, dtype: int64
+```
+
+```python
+df['城市'].value_counts(dropna=False)
+```
+
+```text
+城市
+北京      128
+深圳       77
+上海       68
+成都       62
+杭州       60
+       ... 
+广西柳州      1
+河北        1
+鄂州        1
+江西        1
+保定        1
+Name: count, Length: 70, dtype: int64
+```
+
+```python
+df['经验'].value_counts(dropna=False)
+```
+
+```text
+经验
+0.0           99
+3年            77
+4年            68
+5年            65
+6年            39
+7年            35
+2年            32
+1年            31
+3.5年          30
+1.5年          25
+2.5年          23
+0.5年          23
+8年            18
+4.5年          17
+NaN           17
+10年           16
+9年            15
+5.5年           8
+11年            6
+0年             5
+7.5年           3
+9.5年           2
+13年            2
+12年            2
+-              2
+<1年            2
+6年前端\n2年转行     1
+4个月            1
+上海             1
+14年            1
+15年+           1
+<3年            1
+17年            1
+大一             1
+大三             1
+23年毕业          1
+10+年           1
+8年+            1
+3个月            1
+创业9年           1
+转行             1
+读研             1
+6.5年           1
+Name: count, dtype: int64
+```
+
+```python
+df
+```
+
+|  | 昵称 | 学历 | 城市 | 经验 | 薪资 | 备注 | 毕业年份 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | Map | 本 | 北京 | 0.0 | 实习 | NaN | 2026.0 |
+| 1 | yanni* | 本 | 杭州 | 6年前端\n2年转行 | 前端：20k\n转行：28k | 新能源企业前端-->产品-->销售-->售前 | NaN |
+| 2 | 边牧* | 本 | 长沙 | 5年 | 9k | 离职，空窗期2年，北京17k，React，Flutter | NaN |
+| 3 | 决堤* | 本科 | 北京 | 0.0 | 9k | 被辞退 | 2025.0 |
+| 4 | 月亮* | 专 | 济南 | 3年 | 9k | NaN | NaN |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+| 674 | lh* | 初中 | 上海 | 8年 | 18k | 前端 | NaN |
+| 675 | 微斯* | 本 | 北京 | 3.5年 | 17k | NaN | NaN |
+| 676 | 海盐* | 专 | 北京 | 6.5年 | 25k->22k->18k | 前端 | NaN |
+| 677 | wah* | 专 | 上海 | 7年 | 20k | 前端 | NaN |
+| 678 | 渔* | 本 | 武汉 | 2年 | 6k | 前端 | NaN |
+
+## 3. 学历清洗
+
+先看「学历」列——它是分类数据，但写法很不统一。
+
+```python
+df['学历'].value_counts()
+```
+
+```text
+学历
+本        374
+专        207
+硕         28
+高中        14
+本科         8
+高          8
+初          7
+硕士         6
+初中         5
+本211       4
+中专         4
+中          2
+985硕士      2
+大专         2
+小学         1
+招人         1
+高二         1
+专科         1
+留美         1
+985本       1
+Name: count, dtype: int64
+```
+
+问题很明显：
+- 「本」「本科」「本211」「985本」本质都是「本科」
+- 「专」「专科」「大专」本质都是「大专」
+- 「硕」「硕士」「985硕士」本质都是「硕士」
+- 「招人」「留美」等是异常值
+
+我们用 `map()` 做**分类映射**，不认识的统一设为 `NaN`。
+
+```python
+edu_map = {
+    '本': '本科', 
+    '本科': '本科', 
+    '本211': '本科', 
+    '985本': '本科',
+    '专': '大专', 
+    '专科': '大专', 
+    '大专': '大专',
+    '硕': '硕士', 
+    '硕士': '硕士', 
+    '985硕士': '硕士',
+    '高中': '高中', 
+    '高': '高中', 
+    '高二': '高中',
+    '初': '初中', 
+    '初中': '初中',
+    '中专': '中专',
+    '小学': '小学',
+}
+df['学历'] = df['学历'].map(edu_map)
+```
+
+```python
+df['学历'].value_counts(dropna=False)
+```
+
+```text
+学历
+本科     387
+大专     210
+硕士      36
+高中      23
+初中      12
+NaN      6
+中专       4
+小学       1
+Name: count, dtype: int64
+```
+
+清洗后类别清晰多了。还可以进一步把 `object` 转为 `category` 类型——
+既节省内存，也明确这是分类数据。
+
+```python
+df['学历'] = df['学历'].astype('category')
+df['学历'].dtype
+```
+
+```text
+CategoricalDtype(categories=['中专', '初中', '大专', '小学', '本科', '硕士', '高中'], ordered=False, categories_dtype=str)
+```
+
+## 4. 城市清洗
+
+城市列的主要问题是**混入了不属于城市的数据**。
+
+```python
+df['城市'].value_counts()
+```
+
+```text
+城市
+北京      128
+深圳       77
+上海       68
+成都       62
+杭州       60
+       ... 
+广西柳州      1
+河北        1
+鄂州        1
+江西        1
+保定        1
+Name: count, Length: 69, dtype: int64
+```
+
+可以看到「焦虑型人格」「在读」「-」等明显不是城市名。
+
+处理方法：先 `str.strip()` 去空格，再用布尔索引剔除非城市值。
+（「应届」相关值已在上述预处理中提走，不会再出现在这里。）
+
+```python
+# 去空格
+df['城市'] = df['城市'].str.strip()
+
+# 省/市格式，保留斜杠后的城市名
+# 如「湖南/株洲」→「株洲」
+df['城市'] = df['城市'].str.split('/').str[-1].str.strip()
+
+# 剔除异常值
+not_cities = ['焦虑型人格', '在读', '-']
+df.loc[df['城市'].isin(not_cities), '城市'] = None
+df.loc[df['城市'] == '广西柳州', '城市'] = '柳州'
+df['城市'].value_counts()
+```
+
+```text
+城市
+北京    129
+深圳     77
+上海     68
+成都     62
+杭州     60
+     ... 
+柳州      1
+河北      1
+鄂州      1
+江西      1
+保定      1
+Name: count, Length: 64, dtype: int64
+```
+
+## 5. 经验清洗
+
+经验列的目标是转为**数值（年）**。但现有的值五花八门——
+
+```python
+df['经验'].value_counts()
+```
+
+```text
+经验
+0.0           99
+3年            77
+4年            68
+5年            65
+6年            39
+7年            35
+2年            32
+1年            31
+3.5年          30
+1.5年          25
+2.5年          23
+0.5年          23
+8年            18
+4.5年          17
+10年           16
+9年            15
+5.5年           8
+11年            6
+0年             5
+7.5年           3
+9.5年           2
+13年            2
+12年            2
+-              2
+<1年            2
+6年前端\n2年转行     1
+4个月            1
+上海             1
+14年            1
+15年+           1
+<3年            1
+17年            1
+大一             1
+大三             1
+23年毕业          1
+10+年           1
+8年+            1
+3个月            1
+创业9年           1
+转行             1
+读研             1
+6.5年           1
+Name: count, dtype: int64
+```
+
+我们需要处理的情况：
+- `「3年」「2.5年」` → 提取数字
+- `「3个月」「4个月」` → 转为年
+- （应届已在预处理中统一处理为 0）
+- `「<1年」「<3年」` → 取中间值
+- `「10+年」` → 取下限
+- `「转行」「读研」「上海」` → 无法解析为经验值，设为 NaN
+
+这些规则适合用 **自定义函数 + `apply()`** 来实现。
+
+```python
+def parse_experience(val):
+    if pd.isna(val):
+        return np.nan
+    if isinstance(val, (int, float)):
+        return float(val)
+    s = str(val).strip()
+    if s in ['-', '']:
+        return np.nan
+    if s in ['转行', '读研', '上海']:
+        return np.nan
+    if '应届' in s or '毕业' in s:
+        return 0.0
+    if s in ['大一', '大三']:
+        return 0.0
+    plus_match = re.search(r'(\d+(?:\.\d+)?)\s*\+\s*年', s)
+    if plus_match:
+        return float(plus_match.group(1))
+    lt_match = re.search(r'<(\d+(?:\.\d+)?)\s*年', s)
+    if lt_match:
+        v = float(lt_match.group(1))
+        return max(v - 0.5, 0)
+    years = re.findall(r'(\d+(?:\.\d+)?)\s*年', s)
+    if years:
+        return sum(float(y) for y in years)
+    months = re.findall(r'(\d+)\s*个月', s)
+    if months:
+        return round(sum(float(m) for m in months) / 12, 1)
+    return np.nan
+
+df['经验'] = df['经验'].apply(parse_experience)
+```
+
+```python
+df['经验'].describe()
+```
+
+```text
+count    657.000000
+mean       3.686454
+std        2.935093
+min        0.000000
+25%        1.000000
+50%        3.500000
+75%        5.000000
+max       17.000000
+Name: 经验, dtype: float64
+```
+
+```python
+df['经验'].value_counts(dropna=False)
+```
+
+```text
+经验
+0.0     107
+3.0      77
+4.0      68
+5.0      65
+6.0      39
+7.0      35
+2.0      32
+1.0      31
+3.5      30
+0.5      25
+1.5      25
+2.5      24
+NaN      22
+8.0      20
+4.5      17
+10.0     17
+9.0      16
+5.5       8
+11.0      6
+7.5       3
+9.5       2
+13.0      2
+12.0      2
+0.3       1
+14.0      1
+15.0      1
+17.0      1
+0.2       1
+6.5       1
+Name: count, dtype: int64
+```
+
+经验被成功转为了 `float64` 类型。
+
+## 6. 薪资清洗
+
+薪资是最复杂的一列——来看看它有多少种写法。
+
+```python
+df['薪资'].value_counts()
+```
+
+```text
+薪资
+15k              52
+12k              38
+10k              37
+14k              32
+13k              30
+                 ..
+12.5k             1
+3.5k              1
+13k*15            1
+49w/年             1
+25k->22k->18k     1
+Name: count, Length: 97, dtype: int64
+```
+
+薪资列的情况：
+- `9k`、`10k` → 标准千元月薪
+- `20w/年` → 年薪，需转月薪
+- `13k*15` → 带月数，取基本月薪
+- `30k+`、`25+k` → 带加号
+- `前端：20k\n转行：28k` → 多行，取最后一行
+- `25k->22k->18k` → 变动历史，取最新值
+- `16k（广州）` → 带地点说明
+- `50k~60k` → 薪资范围
+- `实习`、`？？` → 异常值
+
+还是用 **自定义函数 + `apply()`** 处理。
+
+```python
+def parse_salary(val):
+    if pd.isna(val):
+        return np.nan
+    s = str(val).strip()
+    if s in ['实习', '-', '？？', '']:
+        return np.nan
+    if '\n' in s:
+        s = s.split('\n')[-1].strip()
+    if '->' in s:
+        s = s.split('->')[-1].strip()
+    s = re.sub(r'[（(][^)）]*[)）]', '', s).strip()
+    w_match = re.search(r'(\d+(?:\.\d+)?)\s*w', s, re.IGNORECASE)
+    if w_match:
+        return round(float(w_match.group(1)) * 10 / 12, 1)
+    slash_match = re.search(r'(\d+(?:\.\d+)?)\s*k\s*/\s*(\d+(?:\.\d+)?)\s*k', s, re.IGNORECASE)
+    if slash_match:
+        return float(slash_match.group(2))
+    k_match = re.search(r'(\d+(?:\.\d+)?)\s*\+?\s*k', s, re.IGNORECASE)
+    if k_match:
+        return float(k_match.group(1))
+    return np.nan
+
+df['薪资'] = df['薪资'].apply(parse_salary)
+```
+
+```python
+df['薪资'].value_counts(dropna=False)
+```
+
+```text
+薪资
+NaN     106
+15.0     52
+12.0     38
+10.0     37
+14.0     32
+       ... 
+18.3      1
+4.5       1
+12.5      1
+3.5       1
+40.8      1
+Name: count, Length: 72, dtype: int64
+```
+
+```python
+df['薪资'].describe()
+```
+
+```text
+count    573.000000
+mean      16.479756
+std       11.007336
+min        2.000000
+25%       10.000000
+50%       15.000000
+75%       20.000000
+max      166.700000
+Name: 薪资, dtype: float64
+```
+
+清洗后薪资变为 `float64`，单位统一为**千元/月**，可以正常做统计分析了。
+
+（注：`200w/年` 等个例被正确转为月薪约 166.7k。个别极端值可根据业务需要后续处理。）
+
+```python
+df = df.rename(columns={'薪资': '薪资(k)', '经验': '经验(年)'})
+```
+
+## 7. 清洗结果验证
+
+最后整体检查一遍清洗成果。
+
+```python
+df.info()
+```
+
+```text
+<class 'pandas.DataFrame'>
+RangeIndex: 679 entries, 0 to 678
+Data columns (total 7 columns):
+ #   Column  Non-Null Count  Dtype   
+---  ------  --------------  -----   
+ 0   昵称      676 non-null    object  
+ 1   学历      673 non-null    category
+ 2   城市      638 non-null    object  
+ 3   经验(年)   657 non-null    float64 
+ 4   薪资(k)   573 non-null    float64 
+ 5   备注      222 non-null    object  
+ 6   毕业年份    109 non-null    float64 
+dtypes: category(1), float64(3), object(3)
+memory usage: 32.7+ KB
+```
+
+```python
+df.dtypes
+```
+
+```text
+昵称         object
+学历       category
+城市         object
+经验(年)     float64
+薪资(k)     float64
+备注         object
+毕业年份      float64
+dtype: object
+```
+
+```python
+df.head()
+```
+
+|  | 昵称 | 学历 | 城市 | 经验(年) | 薪资(k) | 备注 | 毕业年份 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | Map | 本科 | 北京 | 0.0 | NaN | NaN | 2026.0 |
+| 1 | yanni* | 本科 | 杭州 | 8.0 | 28.0 | 新能源企业前端-->产品-->销售-->售前 | NaN |
+| 2 | 边牧* | 本科 | 长沙 | 5.0 | 9.0 | 离职，空窗期2年，北京17k，React，Flutter | NaN |
+| 3 | 决堤* | 本科 | 北京 | 0.0 | 9.0 | 被辞退 | 2025.0 |
+| 4 | 月亮* | 大专 | 济南 | 3.0 | 9.0 | NaN | NaN |
+
+```python
+df = df[['昵称', '学历', '城市', '经验(年)', '薪资(k)', '毕业年份', '备注']]
+df['毕业年份'] = df['毕业年份'].astype('Int32')
+# 保存到 Excel
+df.to_excel('../linking_clean.xlsx', index=False)
+
+# 保存到 CSV
+df.to_csv('../linking_clean.csv', index=False, encoding='utf-8-sig')
+```
+
+---
+
+## 互动教学课程
+
+- <a href="/teach/lessons/ds-0006-Pandas-数据清洗.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/Pandas-数据清洗速查表.html">📋 Pandas-数据清洗速查表（可打印）</a>

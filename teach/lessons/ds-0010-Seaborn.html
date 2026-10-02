@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · Seaborn：薪资分布单变量分析、学历与薪资分类对比、经验与薪资回归分析——互动教学课程">
+  <title>Seaborn · 互动教学课程（数据科学工具包 ds-10）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>Seaborn</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Seaborn">10.Seaborn</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>用 histplot / kdeplot 做单变量分布分析，并读出偏态与异常</li>
+        <li>用 boxplot / violinplot / barplot 做分类对比，说清三者传达的信息差异</li>
+        <li>用 regplot / lmplot 做回归分析，理解趋势线与置信区间的含义</li>
+        <li>把 Seaborn 图嵌入已有 Matplotlib 子图，并说清两者的分工</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把三条分析主线过一遍——细节都在《10.Seaborn》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三类任务，三组函数</h3>
+        <ul class="pitfall-list">
+          <li><strong>单变量分布</strong>：<code>histplot</code>（直方图）、<code>kdeplot</code>（核密度曲线）、<code>displot</code>（Figure 级）</li>
+          <li><strong>分类对比</strong>：<code>boxplot</code>（四分位与离群点）、<code>violinplot</code>（分布形状 + 密度）、<code>barplot</code>（默认聚合<strong>均值</strong> + 误差棒）、<code>countplot</code>（计数）</li>
+          <li><strong>回归分析</strong>：<code>regplot</code>（Axes 级）、<code>lmplot</code>（Figure 级，可分面）——画散点 + 拟合线 + 置信区间</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Seaborn 与 Matplotlib 的关系</h3>
+        <ul class="pitfall-list">
+          <li><strong>Seaborn 建在 Matplotlib 之上</strong>：它负责统计语义与默认样式，最终仍然由 Matplotlib 渲染</li>
+          <li><strong>Axes 级 vs Figure 级</strong>：<code>boxplot</code>/<code>regplot</code> 返回 <code>Axes</code>，可用 <code>ax=</code> 画进已有子图；<code>displot</code>/<code>catplot</code>/<code>lmplot</code> 自带 Figure（分面能力）</li>
+          <li><strong>主题</strong>：<code>sns.set_theme()</code> 一次设定全局样式；想回到 Matplotlib 默认用 <code>reset_orig</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>读图时的两个易错点</h3>
+        <ul class="pitfall-list">
+          <li><strong>离群点不等于错误数据</strong>：箱线图的须默认延伸到最近 hinge <code>1.5 × IQR</code> 内最远的点，超出者只是「按 IQR 规则被标为离群」</li>
+          <li><strong>barplot 画的是聚合值不是原始点</strong>：默认画均值，样本少或分布偏斜时，均值条会掩盖真实分布——这种情况该用箱线图或小提琴图</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《10.Seaborn》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 想看一列薪资数据的整体分布形态（是否偏斜、有没有双峰），首选的函数是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">heatmap</button>
+            <button class="quiz-option">regplot</button>
+            <button class="quiz-option">histplot / kdeplot</button>
+            <button class="quiz-option">barplot</button>
+          </div>
+          <div class="quiz-explain" hidden>单变量分布分析用直方图 histplot 或核密度曲线 kdeplot；regplot 做回归、barplot 做分类聚合，都不适合看分布形态。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 对比「不同学历的薪资水平」，下面哪一组函数最合适？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">kdeplot 与 ecdfplot</button>
+            <button class="quiz-option">boxplot 与 violinplot</button>
+            <button class="quiz-option">regplot 与 residplot</button>
+            <button class="quiz-option">heatmap 与 clustermap</button>
+          </div>
+          <div class="quiz-explain" hidden>学历是分类变量、薪资是连续变量，属于「分类对比」任务：boxplot 看四分位与离群点，violinplot 额外显示分布密度形状。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 研究「工作经验年限」与「薪资」的关系，应该用？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">regplot / lmplot</button>
+            <button class="quiz-option">countplot</button>
+            <button class="quiz-option">rugplot</button>
+            <button class="quiz-option">histplot</button>
+          </div>
+          <div class="quiz-explain" hidden>两个连续变量的关系属于回归分析：regplot / lmplot 会画散点并拟合趋势线，lmplot 还支持按额外变量分面。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 关于箱线图的「离群点」（flier），下面说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">离群点是样本量不足导致的</button>
+            <button class="quiz-option">离群点表示该样本的薪资计算错误</button>
+            <button class="quiz-option">离群点一定是脏数据，必须删除</button>
+            <button class="quiz-option">离群点是按 IQR 规则（超出须线范围）判定的，只说明它偏离主体分布，不代表数据错误</button>
+          </div>
+          <div class="quiz-explain" hidden>箱线图的须默认延伸到最近 hinge 1.5×IQR 内最远的点，超出者被标为离群——这是统计规则判定，不是数据质量判定。高薪岗位真实存在，删掉会低估上限。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. barplot 画「各城市平均薪资」时，最容易产生的误读是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">条形高度是聚合值（默认均值），会掩盖样本内的真实分布与样本量差异</button>
+            <button class="quiz-option">颜色不够多，看不清城市</button>
+            <button class="quiz-option">barplot 会自动剔除离群点，所以偏高</button>
+            <button class="quiz-option">barplot 不能画分类变量</button>
+          </div>
+          <div class="quiz-explain" hidden>barplot 画的是聚合统计量（默认均值）而非原始观测点：一个城市两个极端高薪就能把均值拉高，样本量差异也不体现在条高上。要看分布应改用 boxplot / violinplot。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 想在一张已经用 Matplotlib 建好的 2×2 子图里，把第 3 个 Axes 画成 Seaborn 箱线图，正确做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把 boxplot 换成 catplot，因为只有 Figure 级函数才能放进子图</button>
+            <button class="quiz-option">调用 <code>sns.boxplot(...)</code> 后再 <code>plt.subplot(2,2,3)</code> 切回去</button>
+            <button class="quiz-option">Seaborn 无法与 Matplotlib 子图混用</button>
+            <button class="quiz-option">用 <code>ax=axes[1][0]</code> 参数把目标 Axes 传给 <code>sns.boxplot</code></button>
+          </div>
+          <div class="quiz-explain" hidden>boxplot 是 Axes 级函数，官方签名里有 <code>ax</code> 参数：「Axes object to draw the plot onto, otherwise uses the current Axes」。传 ax 就画进指定子图；catplot/displot 这类 Figure 级函数才会自建画布。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 一份数据里「经验 1 年」样本只有 3 条却恰好都是高薪。用 regplot 画经验-薪资回归线时，需要注意什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">回归线与置信区间受样本量影响，小样本区间会很宽、线在该处不稳定——应结合散点密度与样本量一起解读，必要时分箱后看</button>
+            <button class="quiz-option">regplot 画的是因果推断，样本少不影响结论</button>
+            <button class="quiz-option">只要 R² 高就说明结论可靠</button>
+            <button class="quiz-option">regplot 会自动识别小样本并跳过该点，无需关心</button>
+          </div>
+          <div class="quiz-explain" hidden>回归图给的是「拟合趋势 + 不确定性」：置信带宽度直接反映样本量与离散程度，稀疏区间上的趋势不可当结论；相关也不等于因果。看图的正确姿势是「趋势线 + 散点密度 + 置信带」三件套一起读。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 一个 Agent 需要把「三张分析图」拼进同一张 Figure 输出给用户，下面哪种组合最合理？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Seaborn 不支持把不同类型的图放进同一 Figure</button>
+            <button class="quiz-option">用 Matplotlib 建 fig, axes = plt.subplots(1,3)，再分别用 <code>ax=</code> 传入 sns.histplot / sns.boxplot / sns.regplot</button>
+            <button class="quiz-option">分别调用 sns.displot / sns.catplot / sns.lmplot 三次，它们会自动拼成一张图</button>
+            <button class="quiz-option">用三个独立窗口显示，再截图拼接</button>
+          </div>
+          <div class="quiz-explain" hidden>混排的正确姿势是「Matplotlib 管布局、Seaborn 管统计图层」：先用 subplots 定好网格，再把每个 Axes 通过 ax= 交给 Axes 级 Seaborn 函数。Figure 级函数（displot/catplot/lmplot）各自建画布，不会自动拼进别人的 Figure。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 分析「学历与薪资」时，箱线图显示本科中位数高于硕士。最稳妥的下一步是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先查两组的样本量与构成（岗位类型、城市、经验分布是否可比），必要时分组后再比较——中位数差异可能来自混杂因素</button>
+            <button class="quiz-option">直接下结论：硕士学历在这个市场不吃香</button>
+            <button class="quiz-option">删掉硕士组的低薪样本，让结论更符合直觉</button>
+            <button class="quiz-option">改用 barplot 再画一遍，如果结论一致就可以发布</button>
+          </div>
+          <div class="quiz-explain" hidden>分类对比出现反直觉结果时，第一反应应该是检查可比性：样本量、组内构成（岗位/城市/经验）是否均衡。学位与薪资的关系很容易被「硕士更多进入低薪行业/初级岗位」之类的混杂因素扭曲；删样本以迎合直觉是数据造假。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0010-Seaborn',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 生成的分析报告里写：「箱线图显示 8 个薪资样本是离群点，已全部剔除后重算平均值」。审查：这个处理有什么问题？`,
+              source: '来源：seaborn 官方文档 seaborn.boxplot（"The box shows the quartiles of the dataset while the whiskers extend to show the rest of the distribution, except for points that are determined to be \\"outliers\\" using a method that is a function of the inter-quartile range."）https://seaborn.pydata.org/generated/seaborn.boxplot.html · 检索 2026-10-02 · 层级：一手（官方文档，场景化改写）',
+              breakdown: `官方定义里「outlier」是<strong>由 IQR 规则判定</strong>的——它描述的是「偏离主体分布」，不是「数据错误」。薪资场景里高薪离群点往往正是最有价值的信息（资深/稀缺岗位）。直接剔除会造成两个后果：① 平均值被系统性低估；② 结论与真实市场区间脱节。<strong>正确做法是保留并单独解释</strong>，若确实要稳健统计，改用中位数/分位数而不是删数据。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `Seaborn 的 boxplot 与 Hist 直方图要画在同一张 Figure 的两个子图上。为什么 <code>sns.boxplot(..., ax=ax1)</code> 能画进指定子图，而 <code>sns.displot(...)</code> 不行？背后的机制差异是什么？`,
+              source: '来源：seaborn 官方文档 seaborn.boxplot 参数 ax（"ax: matplotlib Axes — Axes object to draw the plot onto, otherwise uses the current Axes."）https://seaborn.pydata.org/generated/seaborn.boxplot.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `差别在<strong>函数级别</strong>：Axes 级函数（boxplot / histplot / scatterplot / regplot…）接受 <code>ax</code> 参数，只往给定 Axes 上画图层，布局由你自己用 Matplotlib 管；Figure 级函数（displot / catplot / lmplot / relplot…）自带 Figure 并管理分面（facet），所以没有 ax 参数——官方文档在返回值一节明确 Axes 级返回「the Axes object with the plot drawn onto it」。混排时选 Axes 级函数。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `同事用 <code>sns.boxplot(..., whis=3)</code> 让「须线更长、离群点更少」，然后汇报说数据质量变好了。审查：这个操作在统计上站得住吗？<code>whis</code> 到底控制什么？`,
+              source: '来源：seaborn 官方文档 seaborn.boxplot 参数 whis（"If scalar, whiskers are drawn to the farthest datapoint within whis * IQR from the nearest hinge."）https://seaborn.pydata.org/generated/seaborn.boxplot.html · 检索 2026-10-02 · 层级：一手（官方文档，场景化改写）',
+              breakdown: `<code>whis</code> 只是<strong>画图参数</strong>：它决定须线延伸到「距最近 hinge 的 whis × IQR 内最远的点」，调大只是让更多的点被画进须线范围，<strong>数据本身一个都没变</strong>。把「图上离群点变少」当成「数据质量变好」是典型的把可视化当清洗的错误——真实的数据质量问题（重复、缺失、口径不一致）要靠第 06 章那套清洗流程处理。反过来说，<code>whis</code> 可以用来对齐口径（例如箱线图须覆盖全量时用 <code>whis=(0, 100)</code>），但必须在图注里写明。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `要让 AI Agent 自动输出一份「薪资市场分析图」，业务方只给一列薪资和一列学历。请说明你会怎么选图，以及每张图回答什么问题。`,
+              source: '来源：seaborn 官方文档 API 参考（分布 / 分类 / 回归三条主线：histplot、boxplot、regplot）https://seaborn.pydata.org/api.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《10.Seaborn》课件（三类分析任务）',
+              breakdown: `按「问题 → 图」配：<strong>薪资整体什么水平</strong> → <code>histplot</code>/<code>kdeplot</code>（分布形态、偏态、有无双峰）；<strong>不同学历差多少</strong> → <code>boxplot</code>（中位数与四分位对比，附带离群点观感）；<strong>学历是不是唯一因素</strong> → 若还有经验列就加 <code>regplot</code> 或分面。选型判据是「变量类型 + 想回答的问题」，而不是「哪个图好看」。务必在图上标注样本量——只有一列学历时，组内样本量差异往往就是结论能不能站住的关键。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 Seaborn 对一份薪资数据完成三类分析并写出一段结论（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '读入薪资数据 → 画薪资分布（histplot/kdeplot）→ 画学历与薪资对比（boxplot 或 violinplot）→ 画经验与薪资回归（regplot）→ 在 Notebook 里用 Markdown 单元格写出三条结论，每条都注明依据的图与样本量。',
+                accept: ['三张图分别对应分布/分类对比/回归三类任务', '每条结论都能指出依据的图与对应样本量', '没有出现「剔除离群点后重算」这类改动原始数据的操作', '结论中没有把相关关系表述成因果关系'],
+              },
+              source: '任务基于《10.Seaborn》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：<code>df = pd.read_csv(...)</code> → <code>sns.histplot(df['salary'])</code> 看分布（偏态明显就补一句「均值不具代表性」）→ <code>sns.boxplot(data=df, x='education', y='salary')</code> 对比 → <code>sns.regplot(data=df, x='experience', y='salary')</code> 看趋势与置信带。写结论时把「图 → 数字 → 判断」三点对齐；坑在于：样本量小的组别容易得出夸张结论，以及把「薪资随经验上升」写成「经验导致薪资上升」。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://seaborn.pydata.org/tutorial/distributions.html">Seaborn 官方教程 · Visualizing distributions</a> · <a href="https://seaborn.pydata.org/generated/seaborn.boxplot.html">seaborn.boxplot 官方文档</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Seaborn速查表.html">Seaborn速查表</a>——三类分析任务、常用函数参数与和 Matplotlib 的分工一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/Seaborn">10.Seaborn</a> · 这是本课程最后一章，可回到 <a href="/agents/数据科学工具包/课程导言">01.课程导言</a> 查看课程地图</li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

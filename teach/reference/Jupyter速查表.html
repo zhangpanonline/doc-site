@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jupyter速查表 · 参考手册</title>
+  <meta name="description" content="Jupyter速查表 · 可打印参考手册：配合《Jupyter互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · 数据科学工具包</p>
+      <h1>Jupyter速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ds-0002-Jupyter.html">《Jupyter互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>uv 命令速记</h2>
+      <pre>uv init .                # 初始化 uv 工程（生成 pyproject.toml）
+uv add numpy             # 运行时依赖 → project.dependencies
+uv add --dev jupyter     # 开发期工具 → dependency-groups
+uv remove jupyter        # 装错字段时先移除，再按正确字段装回
+uv sync                  # 按 uv.lock 复现同一套环境
+uv run python -c "import numpy; print(numpy.__version__)"   # 在工程环境里验证</pre>
+      <table class="cmp-table">
+        <tr><th>命令</th><th>写到哪</th><th>什么时候用</th></tr>
+        <tr><td><code>uv add &lt;pkg&gt;</code></td><td><code>project.dependencies</code>（对外发布的依赖）</td><td>运行这个工程的程序时需要的库，如 numpy / pandas</td></tr>
+        <tr><td><code>uv add --dev &lt;pkg&gt;</code></td><td><code>dependency-groups</code>（本地开发用的依赖）</td><td>只在写代码、探索数据时用的工具，如 jupyter</td></tr>
+      </table>
+      <p>判据一句话：<strong>「跑起来需要它吗」——需要用 <code>uv add</code>，只在开发时用 <code>uv add --dev</code></strong>。<code>--dev</code> 不等于「不写进配置」，它照样进 pyproject.toml 与锁文件。</p>
+    </section>
+
+    <section>
+      <h2>解释器选择要点</h2>
+      <dl class="term-grid">
+        <dt>内核（kernel）</dt>
+        <dd>真正执行单元格的进程，由某个具体 Python 解释器启动；VS Code <strong>右上角的解释器/kernel 选择器</strong>决定 Notebook 挂到谁身上。</dd>
+        <dt>工程环境 .venv</dt>
+        <dd>uv 放在 <code>pyproject.toml</code> 旁边的持久虚拟环境，<code>uv add</code> 装的包都在这里；换台机器 <code>uv sync</code> 即可复现。</dd>
+        <dt>怎么选</dt>
+        <dd>选择器里选<strong>带 <code>.venv</code> 路径</strong>的那一项（macOS/Linux：<code>.venv/bin/python</code>；Windows：<code>.venv\Scripts\python</code>）——切勿用系统 Python 或 conda base。</dd>
+        <dt>刚装完包</dt>
+        <dd>正在运行的内核不会自动看到新包：<strong>重启内核</strong>后再 import，并从上游单元格重新执行一遍。</dd>
+        <dt>检查清单</dt>
+        <dd>工程存在吗（有 pyproject.toml）→ 依赖落到对字段了吗（dependencies / dependency-groups）→ 内核挂到 .venv 了吗。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>常见报错与修法</h2>
+      <table class="cmp-table">
+        <tr><th>现象</th><th>根因</th><th>修法</th></tr>
+        <tr><td><code>ModuleNotFoundError: No module named 'numpy'</code></td><td>内核跑的是别的解释器，包装进了工程 .venv 之外的环境</td><td>右上角选择器切到带 <code>.venv</code> 路径的 Python，重启内核；确认依赖已 <code>uv add</code></td></tr>
+        <tr><td>给工程 <code>uv add jupyter</code> 后，交付产物里多出 Notebook 工具链</td><td>把开发期工具当成了运行时依赖</td><td><code>uv remove jupyter</code> 后改用 <code>uv add --dev jupyter</code></td></tr>
+        <tr><td>依赖都在，运行单元格仍报 import 失败</td><td>安装发生在内核启动之后</td><td>重启内核，再从头（Run All）执行需要的单元格</td></tr>
+        <tr><td><code>NameError: name 'df' is not defined</code></td><td>单元格是按需执行的，跳着跑就缺上游定义的变量</td><td>重启内核并从第一个单元格顺序执行；关键逻辑沉淀成 <code>.py</code> 模块</td></tr>
+        <tr><td>改动上游单元格后结果没变</td><td>下游单元格仍在使用内核里旧的变量值</td><td>重新执行上游单元格，或「重启内核 + 全量重跑」后再看结果</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>本章速记</h2>
+      <ul class="pitfall-list">
+        <li><strong>四步起步</strong>：装 Jupyter 插件 → <code>uv init .</code> → <code>uv add --dev jupyter</code> → 新建 <code>.ipynb</code> 并选 <code>.venv</code> 解释器</li>
+        <li><strong>为什么用 Notebook</strong>：代码 + 运行结果 + 说明文字放在同一文件；「分段执行 + 立即看到结果」匹配「读入数据 → 逐段试探性转换、观察中间结果」的探索式工作方式——后续每章课件都是 <code>.ipynb</code></li>
+        <li><strong>最贵的一条环境教训</strong>：解释器必须选本工程虚拟环境，否则「装了却 import 不到」</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 数据科学工具包课程</p>
+
+  </main>
+</body>
+</html>

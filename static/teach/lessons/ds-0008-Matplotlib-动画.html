@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · Matplotlib 动画：FuncAnimation 与 ArtistAnimation 两种方案、Blit 模式与动画保存——互动教学课程">
+  <title>Matplotlib - 动画 · 互动教学课程（数据科学工具包 ds-08）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>Matplotlib - 动画</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Matplotlib-动画">08.Matplotlib - 动画</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 FuncAnimation 三要素（fig / func / frames）以及 interval、init_func、blit 各自管什么</li>
+        <li>解释 Blit 模式为什么要求回调返回 Artist 序列，以及 init_func 在什么时机被调用</li>
+        <li>在 FuncAnimation 与 ArtistAnimation 之间按内存与场景取舍</li>
+        <li>用 writer（pillow / ffmpeg / html）把动画存成 gif、mp4 或嵌入 Notebook 的 HTML</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把动画的骨架过一遍——细节都在《08.Matplotlib - 动画》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>FuncAnimation：先有静态图，再让函数改数据</h3>
+        <ul class="pitfall-list">
+          <li>三要素：<strong>fig</strong>（画布）、<strong>func</strong>（每帧调用的更新函数）、<strong>frames</strong>（帧总数或可迭代对象）</li>
+          <li>写法套路是「<strong>先画静态图并保存 Artist 引用</strong> → 更新函数里调用 <code>set_data</code> / <code>set_ydata</code> 改数据 → 用 <code>FuncAnimation</code> 串起来」</li>
+          <li><code>frames</code> 的四种形态：可迭代对象（直接用）、整数（等价于 <code>range(frames)</code>）、生成器函数、<code>None</code></li>
+          <li><code>interval</code> 是<strong>显示</strong>时的每帧间隔毫秒数、默认 200；<code>repeat</code> 默认 True</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Blit 模式：只重绘变化的部分</h3>
+        <ul class="pitfall-list">
+          <li><code>blit=True</code> 时只重绘<strong>被动过的那些 Artist</strong>，而不是整张 Axes，性能提升明显</li>
+          <li>代价：更新函数（以及 blit 下的 <code>init_func</code>）<strong>必须返回 Artist 序列</strong>，blitting 算法靠它判断 Figure 上哪块区域要更新——忘了返回就报错</li>
+          <li><code>init_func</code> 用来「画一个干净的初始帧」，在<strong>第一帧之前调用一次</strong>；不传时就用 frames 第一项的画法结果</li>
+          <li>课件里的清理函数会先 <code>ani.event_source.stop()</code> 再 <code>plt.close("all")</code>：动画对象持有事件源，重跑单元格前要主动停掉</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>两种方案与保存：按内存和场景选</h3>
+        <ul class="pitfall-list">
+          <li><strong>FuncAnimation</strong>：画一次、之后只改数据，<strong>省内存、适合长动画与实时数据流</strong>（滚动窗口用 <code>deque(maxlen=100)</code> + 无限生成器）</li>
+          <li><strong>ArtistAnimation</strong>：接收一个「每帧要显示的 Artist 列表」的列表，<strong>所有帧都要事先存下来</strong>，内存随帧数增长；换来的好处是能精确控制每一帧的内容（比如柱状图竞赛）</li>
+          <li><strong>保存</strong>：<code>ani.save('sine_wave.gif', writer='pillow', fps=20)</code>；GIF 用 pillow，MP4 用 ffmpeg（需另装），嵌入 Notebook 用 <code>HTML(ani.to_jshtml())</code></li>
+          <li><code>fps</code> 管的是<strong>保存后文件</strong>的帧率，<code>interval</code> 管的是<strong>显示时</strong>的帧率——两者互不覆盖</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《08.Matplotlib - 动画》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 用 FuncAnimation 做动画，你提供的那个函数（课件里的 <code>update(frame)</code>）的职责是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">负责选播放器的后端</button>
+            <button class="quiz-option">每帧被调用一次，用来更新图上已有的 Artist（改数据、改位置等）</button>
+            <button class="quiz-option">统计总共有多少帧</button>
+            <button class="quiz-option">把动画保存成 gif / mp4 文件</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：FuncAnimation 是「你提供一个更新函数，动画循环每次调用它来更新图表」，核心三要素是 fig / update(frame) / frames。保存交给 <code>ani.save()</code>，帧数交给 <code>frames</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 课件参数表里，<code>interval</code> 的含义与默认值是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">是否循环播放，默认 True</button>
+            <button class="quiz-option">整段动画的总时长（秒），默认 10</button>
+            <button class="quiz-option">保存文件时的帧率，默认 30</button>
+            <button class="quiz-option">每帧之间的间隔（毫秒），默认 200</button>
+          </div>
+          <div class="quiz-explain" hidden>课件参数表：<code>interval</code> 是「每帧间隔（毫秒），默认 200」；<code>repeat</code> 才是「是否循环播放，默认 True」。课件示例里的 16、30、50 都是把默认值调小让动画更流畅。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 更新函数里想把正弦曲线的形状换掉，课件用的写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">对已经画好的 Line2D 调用 <code>line.set_ydata(...)</code>，只换数据</button>
+            <button class="quiz-option">每帧重新 <code>ax.plot(x, np.sin(x + phase))</code> 把线再画一遍</button>
+            <button class="quiz-option">每帧重新 <code>plt.subplots()</code> 建一张新图</button>
+            <button class="quiz-option">调用 <code>ax.clear()</code> 清空后重画整张图</button>
+          </div>
+          <div class="quiz-explain" hidden>课件写法：先用 <code>line, = ax.plot(x, np.sin(x))</code> 画一次并保存引用，更新函数里 <code>line.set_ydata(np.sin(x + phase))</code>。动画的全部意义就是「画一次、之后只改数据」——重复建图或重复 plot 会不断堆叠新 Artist。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 同事按课件写了 <code>FuncAnimation(fig, update, frames=100, blit=True, interval=50)</code>，但运行报错 <code>RuntimeError: When blit=True, the animation function must return a sequence of Artist objects.</code>。最可能的原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">frames 必须用 <code>range(100)</code> 而不能用整数 100</button>
+            <button class="quiz-option">更新函数只改了数据、没有 <code>return line,</code> 把改过的 Artist 返回给 blitting 算法</button>
+            <button class="quiz-option">机器上没装 ffmpeg</button>
+            <button class="quiz-option">漏写了 <code>repeat=True</code></button>
+          </div>
+          <div class="quiz-explain" hidden>官方文档：<code>blit == True</code> 时「func must return an iterable of all artists that were modified or created」，这份信息被 blitting 算法用来判断图上哪块区域要更新。报错点名的是动画函数，不是 repeat / frames / ffmpeg。对应课件「Blit 模式」小节。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 关于 <code>init_func</code> 的调用时机与必要性，下面哪种说法符合课件与官方文档？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">它只在动画结束时调用一次</button>
+            <button class="quiz-option">它在第一帧之前调用一次，用来画一个干净的初始帧；配合 blit 时它也要返回 Artist 序列；不写它就用 frames 第一项的绘制结果</button>
+            <button class="quiz-option">它每帧都会被调用一次，用来重置画面</button>
+            <button class="quiz-option">它是必填参数，不写就会报错</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：<code>init_func</code> 是「初始化函数，配合 blit 使用」，「先初始化所有 Artist，然后每帧只更新特定部分」；官方文档补充：不提供时「the results of drawing from the first item in the frames sequence will be used」，并且该函数「will be called once before the first frame」。对应课件「Blit 模式」小节。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 把 <code>frames</code> 写成 <code>data_stream()</code>（一个 <code>while True: yield ...</code> 的无限生成器）时，课件为什么同时传了 <code>cache_frame_data=False</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了让生成器能正常 yield 出值</button>
+            <button class="quiz-option">因为生成器不会结束，默认缓存每一帧的数据会一直堆积占内存</button>
+            <button class="quiz-option">为了让动画可以保存成 gif</button>
+            <button class="quiz-option">为了把 interval 的单位改成秒</button>
+          </div>
+          <div class="quiz-explain" hidden>官方文档对 <code>cache_frame_data</code> 的说明：「Whether frame data is cached. Disabling cache might be helpful when frames contain large objects.」无限生成器没有终点，帧数据会一帧帧缓存下去。对应课件「使用可迭代对象作为 frames」那段实时数据流示例。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 下面四种说法，哪一个是错的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">blit=True 时 update 必须返回被修改或新建的 Artist 序列，blitting 算法靠它确定要更新的区域</button>
+            <button class="quiz-option">cache_frame_data=False 适合帧对象很大或帧来源无限的情况</button>
+            <button class="quiz-option">init_func 只会在动画开始时调用一次，所以它的返回值在后续帧里完全不会被用到</button>
+            <button class="quiz-option">frames 传整数等价于传 <code>range(frames)</code>；传生成器函数则要写成无参形式</button>
+          </div>
+          <div class="quiz-explain" hidden>错在第二句的「完全不会被用到」。官方文档：<code>init_func</code> 确实「will be called once before the first frame」，但「If blit == True, init_func must return an iterable of artists to be re-drawn」——它的返回值参与确定重绘区域，返回缺失会直接报 <code>When blit=True, the init_func must return a sequence of Artist objects.</code>。「调用一次」和「返回无用」是两件事。对应课件「Blit 模式」小节。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 要做一个「不断接收传感器数据、无限滚动」的实时监控动画，为什么 FuncAnimation 通常比 ArtistAnimation 更合适？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">FuncAnimation 画一次就只改数据，内存与耗时都很小；ArtistAnimation 需要事先准备好每帧的全部 Artist，帧越多内存越大，而且根本没有「无限的最后一帧」</button>
+            <button class="quiz-option">FuncAnimation 才能用 blit，ArtistAnimation 完全没有 blit 参数</button>
+            <button class="quiz-option">ArtistAnimation 只支持静态图，压根不能做动画</button>
+            <button class="quiz-option">FuncAnimation 只能存成 gif，ArtistAnimation 只能存成 mp4</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：FuncAnimation「你提供一个更新函数，动画循环每次调用它」；ArtistAnimation「适合你已经准备好每一帧所有 Artist 的情况」「接受一个列表，每个元素是这一帧要显示的所有 Artist」。官方教程也给了同样判据：FuncAnimation「is more efficient in terms of speed and memory as it draws an artist once and then modifies it」，ArtistAnimation 的优势在灵活。ArtistAnimation 同样接受 <code>blit</code> 参数，也能保存成各种格式，A/C/D 都不成立。对应课件第 2 节。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 同事要把动画交付出去，写下 <code>ani.save('sine_wave.mp4', writer='ffmpeg')</code>，但机器上只装了 pillow、没有 ffmpeg。最符合课件说明的判断是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">需要一个能写 mp4 的 writer：ffmpeg 必须另行安装（pillow 负责 gif 这类格式，写不了 mp4）</button>
+            <button class="quiz-option">报错一定是因为 Matplotlib 版本太旧</button>
+            <button class="quiz-option">改成 <code>writer='pillow'</code> 并把文件名写成 .mp4 就能绕过依赖</button>
+            <button class="quiz-option">pillow 会静默顶上，照样生成一个合法的 mp4</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：GIF 用 pillow writer，MP4 用 ffmpeg writer（<strong>需安装 ffmpeg</strong>）。官方教程同样强调「ffmpeg and imagemagick need to be separately installed」。pillow 写不了 mp4，改 writer 而保留 .mp4 扩展名只会得到格式不匹配的错误。对应课件第 3 节「保存动画」。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0008-Matplotlib-动画',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `同事在 Jupyter 里用 AI 生成了一段动画代码，单元格跑完只看到一张静态的正弦图，波形完全不动。他的第一行魔法命令写的是 <code>%matplotlib inline</code>。问题出在哪，怎么让动画真正动起来？`,
+              source: '来源：Matplotlib 官方文档 Interactive figures（"the inline backend, is not. ipykernel.pylab.backend_inline renders the figure once and inserts a static image into the notebook when the cell is executed."）https://matplotlib.org/stable/users/explain/figure/interactive.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `官方给出的判据很直接：<strong>inline 后端不是交互式后端</strong>，它只在单元格执行时渲染一次、把静态图片插进 Notebook，所以动画对象再正确也不会动。修法有两条：① 换成交互式后端——装 ipympl 后用 <code>%matplotlib widget</code>，或只在 classic notebook（notebook&lt;7）里用 <code>%matplotlib notebook</code>；② 不在乎实时播放、只想把动画展示出来，就直接 <code>HTML(ani.to_jshtml())</code> 渲染成 JS 动画。课件里第一行写 <code>%matplotlib widget</code> 正是为了避免这个坑。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `面试官问：<code>init_func</code> 到底什么时候被调用、和 blit 是什么关系？如果 blit=True 但 init_func 不返回 Artist 会怎样？`,
+              source: '来源：Matplotlib 官方文档 matplotlib.animation.FuncAnimation（"init_func ... A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used. This function will be called once before the first frame."；"If blit == True, init_func must return an iterable of artists to be re-drawn."）https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.FuncAnimation.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《08.Matplotlib - 动画》课件（Blit 模式）',
+              breakdown: `两段引文分别回答两个问题。时机：<strong>它是「画一个干净的初始帧」的函数，在第一帧之前调用一次</strong>；不传时，初始帧就用 frames 第一项的绘制结果——所以它不是必填参数。与 blit 的关系：<strong>blit=True 时它同样必须返回 Artist 序列</strong>（这些 Artist 会被纳入重绘区域的计算），实测漏返回会抛 <code>RuntimeError: When blit=True, the init_func must return a sequence of Artist objects.</code>。常见误区是把 init_func 当成「每帧都跑的重置钩子」，或者以为「反正只调用一次，返回什么无所谓」。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查 AI 写的一段实时波形动画（<code>line</code> 已在外面创建好）：<br><code>def update(frame):</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;line.set_ydata(np.sin(x + frame * 0.1))</code><br><code>ani = FuncAnimation(fig, update, frames=100, blit=True, interval=50)</code><br>这段代码在 16 核机器上跑起来不报错但画面每帧都没变化，改哪里？`,
+              source: '来源：Matplotlib 官方文档 matplotlib.animation.FuncAnimation（"If blit == True, func must return an iterable of all artists that were modified or created. This information is used by the blitting algorithm to determine which parts of the figure have to be updated."）https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.FuncAnimation.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `<strong>核心症状是「返回缺失」而不是「数据没改」</strong>：line 的 y 数据其实每帧都被改了，但 update 没有把改动的 Artist 告诉 blitting 算法，于是没有任何区域被标记为需要重绘——第一次绘制后画面就冻在那里。改法：<code>return line,</code>（注意元组逗号；返回 list 也行）。审查这类 AI 代码的固定检查单：① blit=True 时 update / init_func 是否都返回 Artist 序列；② 是否误把 Artist 当数据对象重新创建；③ 动画对象是否被赋给一个存活足够久的变量——官方同时警告 <code>Animation</code> 必须存进变量，否则会被垃圾回收、动画直接停住。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `要给 Agent 做一个可视化交付模块：A 场景是把 5000 帧的仿真结果导出成文件给用户下载，B 场景是每帧要叠加不同的 barh 容器、内容彼此独立。请说明 FuncAnimation 与 ArtistAnimation 该怎么选，判据是什么。`,
+              source: '来源：Matplotlib 官方文档 Animations using Matplotlib（"FuncAnimation is more efficient in terms of speed and memory as it draws an artist once and then modifies it. On the other hand ArtistAnimation is flexible as it allows any iterable of artists to be animated in a sequence."）https://matplotlib.org/stable/users/explain/animations/animations.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《08.Matplotlib - 动画》课件（第 2 节 ArtistAnimation）',
+              breakdown: `判据是<strong>「每帧是改同一个 Artist，还是各帧自有 Artist」</strong>。A 场景 5000 帧纯数据变化 → FuncAnimation：画一次、只改数据，时间与内存都省（官方：efficient in terms of speed and memory）；用 ArtistAnimation 就要把 5000 帧的 Artist 全留在内存里，代价随帧数线性上涨。B 场景每帧的 barh 容器互不相同、还需要精确控制某帧显示什么 → ArtistAnimation：官方说明它「creates an animation by using a fixed set of Artist objects」，每帧条目是一组「这一帧可见」的 Artist，其余被隐藏，这种「拼接现成 Artist」的用法（柱状图竞赛）用 FuncAnimation 反而要手工增删 Artist。补充说明取舍边界：ArtistAnimation 也有 blit/interval，选它不是因为功能，而是因为帧语义。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 工具（建议 Claude Code）完成一个小任务：写一个实时滚动波形动画，数据来自无限生成器，只保留最近 100 个点；跑通后把它导出成 GIF 交付。任务卡见下方。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '用 <code>deque(maxlen=100)</code> 做滚动窗口 + 无限生成器作为 frames，FuncAnimation 里用 blit 提升性能，最后 <code>ani.save(...)</code> 出一个能打开的 GIF。',
+                accept: ['frames 传的是无限生成器，并设了 cache_frame_data=False', 'blit=True 时 update 返回 Artist 序列（init_func 若使用也要返回）', '生成的 .gif 用 pillow writer、文件非空且能正常播放', 'x 轴随数据滚动（x >= 100 后 set_xlim(x-100, x)）'],
+              },
+              source: '任务基于《08.Matplotlib - 动画》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：<code>x_data = deque(maxlen=100)</code> / <code>y_data = deque(maxlen=100)</code> → <code>(line,) = ax.plot([], [])</code> 先占位 → 生成器 <code>while True: yield t, np.sin(t*0.1)</code> → update 里 append 并 <code>line.set_data(x_data, y_data)</code>，再按需 <code>ax.set_xlim(x-100, x)</code>，<strong>return line,</strong> → <code>FuncAnimation(fig, update, frames=data_stream(), interval=30, cache_frame_data=False)</code> → <code>ani.save('roll.gif', writer='pillow', fps=20)</code>。最容易踩的三个坑：忘了 <code>cache_frame_data=False</code>，无限帧的缓存一直涨内存；blit=True 却忘了返回 Artist（报 RuntimeError）；脑子里把 fps 和 interval 当成一回事——fps 决定导出文件的帧率，interval 决定运行时显示节奏，两者互不覆盖。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://matplotlib.org/stable/users/explain/animations/animations.html">Animations using Matplotlib（官方教程）</a> · <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.FuncAnimation.html">matplotlib.animation.FuncAnimation API</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Matplotlib-动画速查表.html">Matplotlib-动画速查表</a>——FuncAnimation 参数表、两种方案对照、保存命令速记一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/Matplotlib-动画">08.Matplotlib - 动画</a> · 下一课 <a href="/agents/数据科学工具包/Matplotlib-交互式组件">09.Matplotlib - 交互式组件</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

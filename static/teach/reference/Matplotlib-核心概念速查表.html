@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matplotlib-核心概念速查表 · 参考手册</title>
+  <meta name="description" content="Matplotlib-核心概念速查表 · 可打印参考手册：配合《Matplotlib-核心概念互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · 数据科学工具包</p>
+      <h1>Matplotlib-核心概念速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ds-0007-Matplotlib-核心概念.html">《Matplotlib-核心概念互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>三层架构对照</h2>
+      <table class="cmp-table">
+        <tr><th>层</th><th>是什么</th><th>负责</th><th>典型 API / 对象</th></tr>
+        <tr><td>Figure</td><td>最顶层容器，一张画布</td><td>整体大小、样式、布局；可含一个或多个 Axes</td><td><code>plt.subplots(figsize=…)</code>、<code>fig.suptitle()</code>、<code>fig.add_subplot()</code></td></tr>
+        <tr><td>Axes</td><td>Figure 内部的绘图区（数据画在这里）</td><td>数据与坐标：画什么、范围、标题、标签、图例、脊线、注解</td><td><code>ax.plot/bar/scatter/hist</code>、<code>ax.set_title/xlabel/xlim</code>、<code>ax.legend()</code>、<code>ax.spines</code>、<code>ax.annotate</code></td></tr>
+        <tr><td>Artist</td><td>一切可见之物（连 Figure/Axes/Axis 本身都是）</td><td>视觉表现：颜色、线型、透明度、大小</td><td>Line2D、Patch / Rectangle、Text、Legend、Collection</td></tr>
+      </table>
+      <p>关系：<strong>Figure → Axes → Artist</strong>；一个 Axes 通常含 <strong>2 个 Axis</strong>（x、y；3D 为 3 个），<strong>Axes ≠ Axis</strong>。</p>
+      <pre>Figure（画布）
+  ├── Axes（绘图区1）
+  │     ├── Axis（X轴）  ├── Axis（Y轴）
+  │     ├── Line2D（折线）├── Rectangle（柱体）
+  │     ├── Text（文字）  ├── Legend（图例）└── ...
+  ├── Axes（绘图区2）
+  └── ...</pre>
+      <p>查 API 的判据：容器/全局配置 → Figure；数据、坐标、标签、脊线 → Axes；颜色/线宽/大小 → 某个 Artist。</p>
+    </section>
+
+    <section>
+      <h2>常用配置速记</h2>
+      <pre>import numpy as np
+import matplotlib.pyplot as plt
+
+# 中文字体 + 负号显示 + DPI（全局 rcParams）
+plt.rcParams.update({
+    "font.sans-serif": ["PingFang SC"],
+    "axes.unicode_minus": False,
+    "figure.dpi": 100,
+})
+
+plt.style.available          # 查看所有可选风格
+plt.style.use('ggplot')      # 切换整体视觉风格
+plt.style.use('default')     # 恢复默认
+
+fig, ax = plt.subplots(figsize=(8, 4))              # 一张画布 + 一个绘图区
+fig, axes = plt.subplots(2, 2, figsize=(8, 6))      # 2x2 网格 → 2D 数组
+fig, (ax1, ax2) = plt.subplots(1, 2)                # 一维 → 可解包
+axes[0, 1].bar([1, 2, 3], [3, 5, 2])                # 下标 [行, 列]，从 0 开始
+
+ax.spines['top'].set_visible(False)                 # 干净风格：隐藏上、右脊线
+ax.spines['right'].set_visible(False)
+ax.spines[['top', 'right']].set_visible(False)      # 列表索引 = 广播代理，一次设两条
+ax.spines['left'].set_color('gray')                 # 脊线也是 Artist，可改颜色/线宽
+ax.spines['bottom'].set_linewidth(1.5)
+
+ax.plot(x, np.sin(x), label='sin')                  # 有 label 才有图例条目
+ax.legend()                                         # 图例来自各 Artist 的 label
+
+ax.annotate('最大值',                                # 带箭头的注解
+            xy=(5, 25),                             # 被标注的点（箭头指向）
+            xytext=(4, 23),                         # 文字摆放位置
+            arrowprops={"arrowstyle": "->", "color": "red"},
+            fontsize=12)
+ax.text(1, 20, '二次函数', fontsize=14, style='italic',
+        bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5})</pre>
+      <dl class="term-grid">
+        <dt>plt.subplots(m, n)</dt>
+        <dd>一次拿到 Figure + m×n 个 Axes；<strong>不带参数</strong>时 ax 是单个对象，<strong>带 m,n</strong> 时 axes 是数组，取用方式不同。</dd>
+        <dt>ax.legend()</dt>
+        <dd>条目来自各 Artist 的 <code>label=</code>；图例不出来，先检查有没有写 label。</dd>
+        <dt>annotate 的 xy / xytext</dt>
+        <dd><code>xy</code> = 箭头指向的数据点；<code>xytext</code> = 文字落点。两者默认都在 data 坐标系（<code>xycoords='data'</code>）。</dd>
+        <dt>spines</dt>
+        <dd>属于 <strong>Axes</strong>，共 4 条：top / right / left / bottom。<code>fig.spines</code> 不存在。</dd>
+        <dt>rcParams 的作用域</dt>
+        <dd><strong>对整个 matplotlib 包全局生效</strong>；运行时 rc 设置优先于样式表，样式表优先于 matplotlibrc 文件。</dd>
+        <dt>3D 子图</dt>
+        <dd><code>plt.subplots(subplot_kw={"projection": "3d"})</code> 或 <code>fig.add_subplot(111, projection='3d')</code>。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>pyplot 隐式接口 vs 面向对象（Axes）接口</h2>
+      <table class="cmp-table">
+        <tr><th>维度</th><th>隐式 pyplot 接口</th><th>显式 Axes 接口</th></tr>
+        <tr><td>写法</td><td><code>plt.plot(...)</code>、<code>plt.title(...)</code></td><td><code>fig, ax = plt.subplots()</code> 后 <code>ax.plot(...)</code>、<code>ax.set_title(...)</code></td></tr>
+        <tr><td>状态</td><td>内部维护「最后创建的 Figure / Axes」，Artist 加到它认为你要的对象上</td><td>对象显式引用，没有隐藏的「当前对象」</td></tr>
+        <tr><td>多 Axes</td><td>退回 <code>plt.subplot(2,2,1)</code> 或 <code>plt.sca()</code> 来回切换，脆弱</td><td><code>axes[i, j]</code> 直接定位，与调用顺序无关</td></tr>
+        <tr><td>细调</td><td>能改，但难以稳定地改「某一个」绘图区</td><td>创建后、显示前都可继续定制：脊线、注解、范围、图例位置</td></tr>
+        <tr><td>适用</td><td>交互式试画、一次性简单脚本</td><td>多子图、要复用/封装成函数、要交付给人看的图</td></tr>
+      </table>
+      <p>官方口径：Axes 接口是 Matplotlib 的实现层，<strong>大量定制与微调最终都落在这层</strong>；两版混用时最容易踩的坑就是「<code>plt.figure()</code> 新建了画布，后一句 <code>plt.plot</code> 画到别处去了」。</p>
+    </section>
+
+    <section>
+      <h2>常见坑与自查</h2>
+      <ul class="pitfall-list">
+        <li><strong>只看得到一条线 / 一张图</strong>：中途调了 <code>plt.figure()</code> 或 <code>plt.subplot()</code>，切换了「当前 Axes」。改用显式 <code>fig, ax</code> 并与同一个 <code>ax</code> 复用来画。</li>
+        <li><strong>把单个 Axes 当数组、或把 2D 数组当 Axes</strong>：<code>plt.subplots()</code> 返回单对象；<code>plt.subplots(2,2)</code> 返回 2D 数组。按网格维度判断取用方式。</li>
+        <li><strong><code>AttributeError: 'Figure' object has no attribute 'spines'</code></strong>：脊线在 Axes 上，写成 <code>ax.spines[...]</code>。</li>
+        <li><strong>箭头指错地方</strong>：<code>annotate</code> 的 <code>xy</code>（指向）与 <code>xytext</code>（文字）写反了。</li>
+        <li><strong>图例是空的</strong>：绘图时漏了 <code>label=</code>。</li>
+        <li><strong>中文变方框 / 负号变方块</strong>：走 <code>plt.rcParams.update({"font.sans-serif": [...], "axes.unicode_minus": False})</code>。</li>
+        <li><strong>改了风格影响别的图</strong>：<code>style.use()</code> 与 <code>rcParams</code> 都是全局的，函数内改动会外溢；要局部生效用 <code>plt.rc_context({...})</code>。</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 数据科学工具包课程</p>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pandas-数据清洗速查表 · 参考手册</title>
+  <meta name="description" content="Pandas-数据清洗速查表 · 可打印参考手册：配合《Pandas-数据清洗互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · 数据科学工具包</p>
+      <h1>Pandas-数据清洗速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ds-0006-Pandas-数据清洗.html">《Pandas-数据清洗互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>清洗六步流程</h2>
+      <table class="cmp-table">
+        <tr><th>步骤</th><th>动作</th><th>本课（679 行招聘数据）实例</th></tr>
+        <tr><td>1 数据初探</td><td><code>info()</code> <code>head()</code> <code>dtypes</code> <code>isna().sum()</code> <code>describe()</code></td><td>6 列全是 object/str；缺失：昵称 3 / 学历 2 / 城市 21 / 经验 17 / 薪资 101 / 备注 457</td></tr>
+        <tr><td>2 错位信息提取</td><td><code>str.contains()</code> 造掩码 → <code>str.extract()</code> 取值 → <code>df.loc[mask, 新列]</code> 赋值</td><td>「26应届」→ 毕业年份 2026，经验列记 0、城市列置空</td></tr>
+        <tr><td>3 分类映射</td><td><code>map(映射表)</code>；未收录值自动成 NaN；可 <code>astype('category')</code></td><td>本/本科/本211/985本 → 本科；招人/留美 → NaN</td></tr>
+        <tr><td>4 文本统一</td><td><code>str.strip()</code> <code>str.split(x).str[-1]</code> <code>isin()</code> 布尔索引</td><td>「湖南/株洲」→ 株洲；焦虑型人格/在读/- → 空；广西柳州 → 柳州</td></tr>
+        <tr><td>5 数值解析</td><td>自定义函数 + <code>apply()</code>（规则多、要读得懂时首选）</td><td>3个月 → 0.3 年；10+年 → 10；200w/年 → 166.7k/月</td></tr>
+        <tr><td>6 结果验证</td><td>前后 <code>info()</code>/<code>dtypes</code>/<code>describe()</code> 对比 + <code>value_counts(dropna=False)</code> 抽查</td><td>行数仍 679，经验(年)/薪资(k) 变 float64；列名带单位后落盘</td></tr>
+      </table>
+      <p>一条铁律：<strong>先定口径，再写代码</strong>——「区间薪资取中值还是下限」这类决定必须写在解析函数之前。</p>
+    </section>
+
+    <section>
+      <h2>常见脏数据形态 → 对应方法</h2>
+      <table class="cmp-table">
+        <tr><th>形态</th><th>信号</th><th>方法 / 判据</th></tr>
+        <tr><td>缺失值</td><td><code>isna().sum()</code> 有数；<code>value_counts()</code> 看不到 NaN</td><td>先用 <code>dropna=False</code> 看见它；<code>dropna()</code> 默认丢「任意一个 NA 的行」，本课会把 679 行砍到两百多；<code>fillna(0)</code> 会伪造事实。判据：<strong>「本来没有」保留，「解析失败」回头修函数</strong></td></tr>
+        <tr><td>重复值</td><td><code>duplicated().sum()</code> &gt; 0；或同一昵称多条</td><td><code>drop_duplicates(subset=[...])</code>；先想清「哪几列相同才算同一条」——本课是招聘意愿登记，同昵称不同薪资不算重复</td></tr>
+        <tr><td>类型错位</td><td><code>dtypes</code> 里数值列是 object/str（本课经验、薪资）</td><td><code>apply(解析函数)</code> → <code>astype(float)</code>；毕业年份先转 <code>Int32</code>（可空整数）再落盘，否则 2026.0 会带小数点</td></tr>
+        <tr><td>文本格式不一</td><td>首尾空格、「湖南/株洲」、全角括号、<code>-&gt;</code> 多段值</td><td><code>str.strip()</code> → <code>str.split()</code> → <code>str.replace()</code>；<code>.str</code> 方法<strong>自动跳过 NaN</strong>，无需先 fillna；做字面替换时留意单字符模式会被当正则</td></tr>
+        <tr><td>异常值 / 假类别</td><td><code>value_counts()</code> 尾部出现「焦虑型人格」「招人」「留美」「？？」</td><td>白名单 <code>isin(not_cities)</code> 剔值，或反选 <code>~isin(known_values)</code>；白名单要写进代码注释，新数据来了需复查</td></tr>
+        <tr><td>信息错位</td><td>「26应届」出现在城市/经验列</td><td>搬家而不是删除：<code>str.extract(r'(\d+)\s*应届')</code> 提到新列，原列置 0 或空</td></tr>
+        <tr><td>量级 / 单位混杂</td><td>同列既有 <code>9k</code> 又有 <code>20w/年</code>、<code>k*15</code></td><td>统一换算到同一单位（本课：千元/月，<code>w/年 → ×10÷12</code>），并把单位写进列名 <code>薪资(k)</code> / <code>经验(年)</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>常用 API 速记</h2>
+      <pre>import pandas as pd, numpy as np, re
+
+df.info()                       # 行数 / 列名 / 非空计数 / dtype 一屏看全
+df.head(); df.dtypes            # 前 5 行；每列类型
+df.isna().sum()                 # 每列缺失个数
+df.describe()                   # 数值列 count/mean/std/min/四分位/max
+df[c].value_counts(dropna=False)  # 分类列清点（含 NaN 这一类）
+
+pd.isna(x) / df.notna()         # 判定缺失：np.nan / None / NaT / pd.NA 都算
+                                # 注意 s == np.nan 永远是 False，NaN 只能用 isna 判定
+
+df.dropna(how='any'|'all', thresh=n, subset=[...])   # 默认 any：任一 NA 即丢行
+df.fillna(0) / df.ffill() / df.bfill()               # 填充；（求和时 NA 视为 0）
+
+df['经验(年)'] = df['经验'].apply(parse_experience)   # 逐值自定义函数
+df['学历'] = df['学历'].map(edu_map)                  # 字典映射；未命中 → NaN
+df['学历'] = df['学历'].astype('category')            # 明确分类数据，省内存
+df['毕业年份'] = df['毕业年份'].astype('Int32')        # 可空整数，避免 2026.0
+
+df[c].str.strip()/str.lower()   # 文本规整；.str 方法自动跳过 NA
+df[c].str.contains('应届', na=False)                  # 造掩码，na=False 必写
+df[c].str.extract(r'(\d+)\s*应届')                    # 正则提取，返回 DataFrame → [0]
+df[c].str.split('/').str[-1]                          # 取最后一段（省/市 → 市）
+df[c].str.replace('k', '', regex=False)               # 字面替换；正则要用 regex=True
+
+df.loc[df['城市'] == '北京']     # 条件筛选（布尔索引，取全列）
+df.iloc[0:5, 0:3]               # 纯整数位置切片
+df = df.rename(columns={'薪资': '薪资(k)'})
+df = df[['昵称','学历','城市','经验(年)','薪资(k)','毕业年份','备注']]   # 固定列序
+df.to_csv('../linking_clean.csv', index=False, encoding='utf-8-sig')  # Excel 不乱码
+df.to_excel('../linking_clean.xlsx', index=False)</pre>
+      <dl class="term-grid">
+        <dt>解析函数骨架</dt>
+        <dd><code>if pd.isna(val): return np.nan</code> → 精确匹配的异常值整串返回 NaN → 按规则优先级 <code>re.search</code> / <code>re.findall</code> → 都不命中返回 <code>np.nan</code>。</dd>
+        <dt>规则优先级</dt>
+        <dd>经验列：应届/毕业 → 0；<code>N+年</code> 取下限 <code>N</code>；<code>&lt;N年</code> 取 <code>N-0.5</code>；<code>N年</code> 求和；<code>N个月</code> ÷12。顺序换了结果就变，先写清单再落代码。</dd>
+        <dt>验证三件套</dt>
+        <dd>行数是否变化 → 目标列 dtype 是否 float64/category → <code>describe()</code> 的量级是否符合业务（薪资 25%/50%/75% ≈ 10/15/20）。</dd>
+        <dt>NaN 记账</dt>
+        <dd>每个 NaN 都要能回答「本来没有」还是「解析失败」；城市缺失从 21 涨到 41（+15 个「X应届」提走、+3 个「焦虑型人格/在读/-」、其余为拆分与空格归并）属于预期，但要逐笔记账。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 数据科学工具包课程</p>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pandas-数据类型速查表 · 参考手册</title>
+  <meta name="description" content="Pandas-数据类型速查表 · 可打印参考手册：配合《Pandas-数据类型互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · 数据科学工具包</p>
+      <h1>Pandas-数据类型速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ds-0005-Pandas-数据类型.html">《Pandas-数据类型互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>Series vs DataFrame</h2>
+      <table class="cmp-table">
+        <tr><th>维度</th><th>Series（带标签的一维数组）</th><th>DataFrame（带标签的二维表格）</th></tr>
+        <tr><td>核心组成</td><td><code>values</code> + <code>index</code></td><td><code>index</code> + <code>columns</code> + <code>values</code> + <code>dtypes</code></td></tr>
+        <tr><td>类型报告</td><td><code>s.dtype</code>（一个类型）</td><td><code>df.dtypes</code>（逐列，属性不是方法）</td></tr>
+        <tr><td>形状</td><td><code>s.shape</code> → <code>(4,)</code></td><td><code>df.shape</code> → <code>(行数, 列数)</code></td></tr>
+        <tr><td>维度</td><td><code>s.ndim</code> → 1</td><td><code>df.ndim</code> → 2</td></tr>
+        <tr><td>取值</td><td><code>s['a']</code> 按标签 · <code>s.iloc[0]</code> 按位置</td><td><code>df['col']</code> 取列得 Series · <code>df.loc[行, 列]</code> / <code>df.iloc[i, j]</code></td></tr>
+        <tr><td>索引默认值</td><td>不传 index → <code>RangeIndex</code>（0,1,2,…）</td><td>不传 index → <code>RangeIndex</code>；不传 columns → 0,1,2,…</td></tr>
+        <tr><td>对齐行为</td><td>运算结果索引取<strong>并集</strong>，单边缺失记 <code>NaN</code></td><td>加列时也按 index 对齐，对不上补 <code>NaN</code></td></tr>
+      </table>
+      <p>从字典创建 Series：<strong>key 自动成为索引</strong>；索引长度必须与数据长度一致。</p>
+    </section>
+
+    <section>
+      <h2>DataFrame 的组成结构（四件套）</h2>
+      <dl class="term-grid">
+        <dt>index</dt>
+        <dd>行标签。默认 <code>RangeIndex(start=0, stop=679, step=1)</code>；类型是 <code>pandas.RangeIndex</code> / <code>pandas.Index</code>。</dd>
+        <dt>columns</dt>
+        <dd>列名。类型是 <code>pandas.Index</code>；从列表/ndarray 构造时不传 <code>columns=</code> 就用 0、1、2…</dd>
+        <dt>values / to_numpy()</dt>
+        <dd>核心数据，<code>numpy.ndarray</code>。整表混类型时退化成 <code>dtype=object</code>，且不带列名——先选列再转数组。</dd>
+        <dt>dtypes</dt>
+        <dd><strong>逐列</strong>一个类型（如 <code>name → str</code>、<code>age → int64</code>）；本身是 <code>dtype: object</code> 的 Series。<code>df.dtypes</code>，不要写 <code>()</code>。</dd>
+        <dt>shape / size / ndim</dt>
+        <dd><code>shape=(行,列)</code>、<code>size=元素总数</code>、<code>ndim=2</code>。</dd>
+      </dl>
+      <p>一句话判据：<strong>NumPy 数组整表只有一个 dtype，DataFrame 每列各有一个 dtype</strong>。</p>
+    </section>
+
+    <section>
+      <h2>常用读取方法对照</h2>
+      <table class="cmp-table">
+        <tr><th>方法</th><th>用途</th><th>关键参数</th></tr>
+        <tr>
+          <td><code>pd.read_csv(path)</code></td>
+          <td>读 CSV（最常用）</td>
+          <td><code>encoding</code> 编码 · <code>header=None</code> 无表头 · <code>index_col='id'</code> 指定索引列 · <code>usecols=['a','b']</code> 只读指定列 · <code>nrows=100</code> 只读前 N 行 · <code>dtype={'订单号': str}</code> 钉住列类型</td>
+        </tr>
+        <tr>
+          <td><code>pd.read_excel(path, sheet_name='Sheet1')</code></td>
+          <td>读 Excel，必须指明工作表</td>
+          <td><code>sheet_name</code> 工作表名/序号 · <code>index_col</code> · <code>na_values</code> · 引擎：.xlsx 走 openpyxl、.xls 走 xlrd</td>
+        </tr>
+        <tr>
+          <td><code>pd.read_sql(sql, con)</code></td>
+          <td>把 SQL 查询结果直接读成 DataFrame</td>
+          <td><code>sql</code> 查询语句或表名 · <code>con</code> SQLAlchemy engine / connection / URI（未装 SQLAlchemy 时可用内置 <code>sqlite3.Connection</code>）· <code>index_col</code> · <code>parse_dates</code>；它是 <code>read_sql_table</code> / <code>read_sql_query</code> 的便捷封装</td>
+        </tr>
+      </table>
+      <p>其他格式同理：JSON → <code>pd.read_json</code>；落库用 <code>df.to_sql(...)</code>，导出用 <code>to_csv</code> / <code>to_excel</code>。</p>
+    </section>
+
+    <section>
+      <h2>dtype 三个高频坑</h2>
+      <pre># 1. 标识列（订单号/邮编/工号/手机号）：不指定 dtype 就被推断成数值，前导零丢失
+df = pd.read_csv('orders.csv')                          # 007123 → 7123（不可逆）
+df = pd.read_csv('orders.csv', dtype={'订单号': str})    # 保住文本语义与前导零
+
+# 2. 事后补救来不及：astype(str) 只能拿到已经丢掉前导零的数字
+df['订单号'].astype(str)        # '7123'，原始位宽已不可恢复
+
+# 3. 整数列一旦引入缺失值，会被提升为 float64（1 → 1.0），参与计算前先想清楚
+#    float 列：不变 · object 列：不变 · 整数列：cast 到 float64 · 布尔列：cast 到 object</pre>
+      <dl class="term-grid">
+        <dt>什么时候用 dtype</dt>
+        <dd>只要列是<strong>标识/编号/带前导零的文本</strong>，就在读入那一刻钉成 <code>str</code>；金额、数量这类度量列保持推断，方便后续算术。</dd>
+        <dt>什么时候用 index_col</dt>
+        <dd>文件里已有一列天然唯一的业务主键（如 <code>id</code>）时，用它当行索引；不指定就用默认 <code>RangeIndex</code>。</dd>
+        <dt>检查动作</dt>
+        <dd>读完立刻 <code>df.dtypes</code> 复核一遍：类型不对就回来补 <code>dtype</code>，别等到结果对不上再回头找。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 数据科学工具包课程</p>
+
+  </main>
+</body>
+</html>

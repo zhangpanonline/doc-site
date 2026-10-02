@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · Jupyter：uv 初始化工程、装 Jupyter 插件、选择 .venv 解释器跑通第一个 ipynb——互动教学课程">
+  <title>Jupyter · 互动教学课程（数据科学工具包 ds-02）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>Jupyter</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Jupyter">02.Jupyter</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>装好 VS Code 的 Jupyter 插件，用 <code>uv init .</code> 初始化一个数据科学工程</li>
+        <li>用 <code>uv add --dev jupyter</code> 把 Jupyter 作为开发期工具写进工程配置</li>
+        <li>新建 <code>.ipynb</code> 并选对本工程虚拟环境（<code>.venv</code>）的解释器</li>
+        <li>说清数据科学课程为什么用 Notebook（分段执行 + 即时看到表格/图表结果）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把这一章的骨架过一遍——细节都在《02.Jupyter》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三步起步：插件 → 工程 → 依赖</h3>
+        <ul class="pitfall-list">
+          <li><strong>装插件</strong>：VS Code 里安装 <code>Jupyter</code> 插件（Notebook 支持由此而来）</li>
+          <li><strong>初始化工程</strong>：<code>uv init .</code> 在当前目录建 uv 工程，生成 <code>pyproject.toml</code></li>
+          <li><strong>装 Jupyter</strong>：<code>uv add --dev jupyter</code>——Jupyter 是<strong>开发期工具</strong>，用 <code>--dev</code> 加到 <code>dependency-groups</code>，而不是运行时依赖</li>
+          <li><strong>跑通</strong>：新建 <code>.ipynb</code> 文件，选择虚拟环境中的 <code>python</code>，运行第一个单元格</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>为什么数据科学课程用 Notebook</h3>
+        <ul class="pitfall-list">
+          <li>Notebook 把<strong>代码 + 运行结果 + 说明文字</strong>放在同一个文件里，一次运行就能看到表格、图表的输出</li>
+          <li>数据科学与 AI Agents 场景里最常见的交互是：<strong>读入一份数据</strong>（CSV / 数据库 / 接口）→ <strong>逐段试探性地转换、清洗、观察中间结果</strong></li>
+          <li>Notebook 的「<strong>分段执行 + 立即看到结果</strong>」正好匹配这种探索式工作方式——这也是后续每一章课件都是 <code>.ipynb</code> 的原因</li>
+          <li>反过来看：Notebook 的单元格是<strong>按需执行</strong>的，不保证按从上到下的顺序跑；交付前要<strong>重启内核并从头执行一遍</strong>确认结果可复现</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>环境要点（最容易踩的一条）</h3>
+        <ul class="pitfall-list">
+          <li><strong>解释器必须选本工程的虚拟环境</strong>（<code>.venv</code>），不要用系统 Python：否则 <code>numpy</code> / <code>pandas</code> 装到了别处，Notebook 里会 <code>ModuleNotFoundError</code></li>
+          <li>依赖统一用 UV 追加：<code>uv add &lt;package&gt;</code>；开发期的工具库用 <code>uv add --dev &lt;package&gt;</code>（例如 Jupyter 本身）</li>
+          <li>VS Code <strong>右上角的解释器选择器</strong>里，选带 <code>.venv</code> 路径的那一项</li>
+          <li>刚给工程加完包时，正在运行的 Notebook 内核不一定能立刻看到新包——必要时重启内核再 <code>import</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《02.Jupyter》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 要在一个 <code>.ipynb</code> 文件里编辑并运行单元格式代码，VS Code 至少需要装哪个插件？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Jupyter 插件</button>
+            <button class="quiz-option">不需要任何插件</button>
+            <button class="quiz-option">必须单独安装 Anaconda</button>
+            <button class="quiz-option">Data Wrangler 插件</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「安装 VS Code 插件」一节：安装 VSCode 插件 Jupyter。装好插件后 VS Code 才具备 Notebook 的编辑与运行能力，本章的实操从这里开始。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 初始化本章的 uv 工程，用哪条命令？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>python -m venv .venv</code></button>
+            <button class="quiz-option"><code>pip install uv</code></button>
+            <button class="quiz-option"><code>uv init .</code></button>
+            <button class="quiz-option"><code>uv sync .</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件「初始化工程并安装 Jupyter」原文：<code>uv init .</code>——初始化一个 uv 工程。uv 用它生成工程的 <code>pyproject.toml</code>，并把当前目录认作工程根目录。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 本课程的课件全部是 <code>.ipynb</code> 文件，这么安排的直接原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Notebook 不需要虚拟环境就能跑</button>
+            <button class="quiz-option">Notebook 支持分段执行、立即看到表格与图表的输出，匹配探索式数据处理</button>
+            <button class="quiz-option"><code>.ipynb</code> 的执行速度比 <code>.py</code> 快</button>
+            <button class="quiz-option"><code>.py</code> 文件不能使用 UV 管理依赖</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「为什么数据科学课程用 Notebook」：Notebook 把代码、运行结果、说明文字放在同一个文件里，一次运行就能看到表格、图表的输出；「分段执行 + 立即看到结果」正好匹配读入数据 → 逐段试探性转换的探索式工作方式。速度、<code>.py</code> 的依赖管理、虚拟环境都不是原因。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 安装 Jupyter 本身用 <code>uv add --dev jupyter</code>、而不用 <code>uv add jupyter</code>，因为？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>--dev</code> 能让 Jupyter 启动得更快</button>
+            <button class="quiz-option">Jupyter 只是开发期工具，<code>--dev</code> 把它登记到 <code>dependency-groups</code>，不混进交付时的运行时依赖</button>
+            <button class="quiz-option"><code>--dev</code> 表示只在开发机上缓存、不写进工程配置</button>
+            <button class="quiz-option"><code>uv add jupyter</code> 会报错，jupyter 装不进去</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「环境要点」：开发期的工具库用 <code>uv add --dev &lt;package&gt;</code>，例如 Jupyter 本身。运行时依赖与开发期工具分成两个字段，交付/部署时只装运行时那一份，不把 Notebook 工具带进产物。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. 已经跑过 <code>uv add numpy</code>，Notebook 里 <code>import numpy</code> 却报 <code>ModuleNotFoundError</code>。第一步应该检查什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把 <code>import numpy</code> 提到文件最顶部</button>
+            <button class="quiz-option">换成 <code>import numpy as np</code> 的写法</button>
+            <button class="quiz-option">Notebook 当前选中的解释器是不是本工程的 <code>.venv</code>（VS Code 右上角的解释器选择器）</button>
+            <button class="quiz-option">重装 VS Code</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「环境要点」：解释器必须选本工程的虚拟环境（<code>.venv</code>），不要用系统 Python——否则 <code>numpy</code> / <code>pandas</code> 装到了别处，Notebook 里会 <code>ModuleNotFoundError</code>；修法是去 VS Code 右上角的解释器选择器里选带 <code>.venv</code> 路径的那一项。import 的位置与写法都不是原因。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 一个 Notebook 的内核已经在运行，此时你在终端执行 <code>uv add pandas</code>。想让它生效，最稳妥的做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只要重开 <code>.ipynb</code> 文件即可，内核不用动</button>
+            <button class="quiz-option">把 Notebook 另存为新文件再运行</button>
+            <button class="quiz-option">改用 <code>pip install pandas</code> 就能热加载</button>
+            <button class="quiz-option">安装完成后重启内核（重启后从头执行需要的单元格）再 <code>import pandas</code></button>
+          </div>
+          <div class="quiz-explain" hidden>解释器与内核在运行时就绑定好了已加载的包集合，工程环境的变更不会自动注入正在运行的内核。稳妥做法是安装完重启内核再 import；重启后记得从头执行依赖的单元格，避免留下隐式状态（见「为什么数据科学课程用 Notebook」一节）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 新建工程的执行顺序：① 新建 <code>.ipynb</code> ② 运行 <code>uv add --dev jupyter</code> ③ 运行 <code>uv init .</code> ④ 运行 <code>uv add numpy</code> ⑤ 在解释器选择器里选 <code>.venv</code>。只考虑「顺畅、不返工」，正确的顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">③ → ① → ② → ④ → ⑤</button>
+            <button class="quiz-option">③ → ② → ④ → ① → ⑤</button>
+            <button class="quiz-option">① → ⑤ → ③ → ② → ④</button>
+            <button class="quiz-option">③ → ⑤ → ④ → ① → ②</button>
+          </div>
+          <div class="quiz-explain" hidden>先 <code>uv init .</code> 才有工程（③）；再按课件把 Jupyter 作为开发期工具装上（②）、把本章要用的库用 <code>uv add</code> 追加（④）；然后新建 <code>.ipynb</code>（①），最后在解释器选择器里选工程 <code>.venv</code>（⑤）。①→⑤ 先建文件再选解释器不算错，但「没有工程就先建 Notebook」会立刻踩到「装了却 import 不到」；⑤ 排在 ③ 之前更是无从选起。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 同事在自己的机器上克隆了你的数据科学工程，执行 <code>uv sync</code> 后 <code>import numpy</code> 正常，但 Notebook 里找不到 <code>jupyter</code> 相关功能。最可能的原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Jupyter 属于开发期依赖、落在 <code>dependency-groups</code>，默认的同步与交付路径不会把它当成运行时依赖带进来</button>
+            <button class="quiz-option"><code>jupyter</code> 是系统级命令，工程依赖管不了它</button>
+            <button class="quiz-option"><code>uv sync</code> 只能同步 <code>uv.lock</code> 里锁定的包，锁文件里没有 Jupyter</button>
+            <button class="quiz-option">他的网络不好，包没下全</button>
+          </div>
+          <div class="quiz-explain" hidden>本课把两者放在了不同字段：<code>uv add numpy</code> → 运行时依赖，<code>uv add --dev jupyter</code> → 开发期（<code>dependency-groups</code>）。这正是「开发期工具不进交付产物」的设计意图；不理解这条的人往往会在交付镜像里漏装或多装东西。选项 4 是混淆项：<code>--dev</code> 的依赖同样会被锁定。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. AI 助手给了你一份 Notebook：第 3 个单元格用 <code>df</code> 做了清洗，第 5 个单元格基于清洗结果生成图表。你直接跳到第 5 个单元格运行却报 <code>NameError: name 'df' is not defined</code>；重启内核从头跑到尾，结果又一切正常。这个现象说明了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">这是 Jupyter 的 bug，升级插件版本即可解决</button>
+            <button class="quiz-option"><code>df</code> 是保留字，改名即可</button>
+            <button class="quiz-option">单元格是按需执行的、变量靠内核里的隐式状态传递——必须从头执行验证，关键逻辑宜沉淀成 <code>.py</code> 模块</button>
+            <button class="quiz-option">Notebook 每次只允许运行一个单元格，所以必须先跑第 3 个</button>
+          </div>
+          <div class="quiz-explain" hidden>课件只承诺「分段执行 + 立即看到结果」这一探索优势，没说单元格会按顺序自动执行：变量是在内核里累积的隐式状态，跳着执行就会遇到未定义，改动上游后不重跑则下游用的是旧值。可靠交付的前提是重启内核从头执行一遍（或把逻辑抽到 <code>.py</code>），这与「环境要点」里强调的解释器/内核绑定是同一类「环境状态」问题。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0002-Jupyter',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `团队 code review 时看到新同事的 pyproject.toml：<code>[dependency-groups]</code> 下写了 <code>jupyter</code>，而 <code>[project]</code> 的 <code>dependencies</code> 里是空的。他的解释是「反正同一台机器上都能跑，分那么细没意义」。请判断这个说法，并说明 <code>--dev</code> 的实际作用。`,
+              source: '来源：uv 官方文档 Managing dependencies（"project.dependencies: Published dependencies."；"dependency-groups: Local dependencies for development."）https://docs.astral.sh/uv/concepts/projects/dependencies/ · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《02.Jupyter》课件（uv add --dev jupyter）',
+              breakdown: `官方把依赖分成两个语义完全不同的字段：<strong>project.dependencies 是「对外发布」的依赖</strong>，<strong>dependency-groups 是「本地开发」的依赖</strong>。本课把 Jupyter 放在后者，正是承认它是开发期工具——交付给生产的运行时不需要 Notebook。所以「分那么细没意义」是错的：影响的是交付产物的依赖边界，出了问题就是镜像里多带一堆东西，或者反过来漏装运行时真正要用的库。判据很简单——<strong>问一句「运行这个工程的程序时需要它吗」：需要 → <code>uv add</code>；只在写代码/探索时需要 → <code>uv add --dev</code></strong>。注意别混淆：<code>--dev</code> 不会让依赖「不写进配置」，它照样进 pyproject.toml 和锁文件。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `在 VS Code 里打开一个含 <code>.venv</code> 的 uv 工程，新建 <code>.ipynb</code>。请讲清：Notebook 到底通过什么机制拿到「该用哪个 Python 来解释这段代码」，以及为什么选错解释器会表现为「明明装了却 import 不到」。`,
+              source: '来源：uv 官方文档 Using uv with Jupyter（"When prompted to select a kernel, choose \\"Python Environments\\" and select the virtual environment you created earlier (e.g., .venv/bin/python on macOS and Linux, or .venv\\\\Scripts\\\\python on Windows)."）https://docs.astral.sh/uv/guides/integration/jupyter/ · 检索 2026-10-02 · 层级：一手（官方文档）+ VS Code 官方文档 Jupyter Notebooks in VS Code（"Next, select a kernel using the kernel picker in the top right."）https://code.visualstudio.com/docs/datascience/jupyter-notebooks · 层级：一手（官方文档）',
+              breakdown: `机制分两层。第一层：<strong>Notebook 本身不执行代码，执行的是内核（kernel）</strong>——一个由某个具体 Python 解释器启动的进程；VS Code 的右上角选择器/kernel picker 干的就是「把笔记本挂到哪个解释器的内核上」。第二层：<strong>包是装进某个环境的 site-packages 里的</strong>，uv 把工程环境放在 <code>pyproject.toml</code> 旁边的 <code>.venv</code>。所以「装了却 import 不到」只有一种解释：<code>uv add</code> 装进了工程 <code>.venv</code>，而内核跑的是系统 Python（或别的环境）。修法是选带 <code>.venv</code> 路径的那一项，然后重启内核。面试里能把「内核 = 解释器进程」和「包 = 环境里的目录」这两件事接起来，就比只会说「重选一下解释器」高一个层次。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `下面是一段「AI 帮忙初始化数据科学工程」的命令序列，请逐条审查并给出修正后的顺序：<br><code>1) uv add numpy</code><br><code>2) uv add --dev jupyter</code><br><code>3) uv init .</code><br><code>4) 新建 demo.ipynb 并直接运行 import numpy</code>`,
+              source: '来源：uv 官方文档 Creating projects（"uv supports creating a project with uv init."）https://docs.astral.sh/uv/concepts/projects/init/ · 检索 2026-10-02 · 层级：一手（官方文档）+ uv 官方文档 Project structure and files（"uv also manages a persistent environment with the project and its dependencies in a .venv directory next to the pyproject.toml."）https://docs.astral.sh/uv/concepts/projects/layout/ · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `两个问题。<strong>顺序错了</strong>：<code>uv init</code> 必须在最前面——没有 pyproject.toml 就不是工程，后面的 <code>uv add</code> 无从落笔。正确顺序是 <code>uv init .</code> → <code>uv add --dev jupyter</code> → <code>uv add numpy</code> → 新建 ipynb 并<strong>先选 .venv 解释器</strong>再运行。第二个问题更隐蔽：<strong>第 4 步少了「选解释器」这个必要动作</strong>。AI 生成的步骤表最常犯的就是「漏掉环境绑定」——命令都对，但跑在错误的解释器上，于是 <code>import numpy</code> 报 ModuleNotFoundError。审查清单可以固定成三问：工程存在吗（pyproject.toml）？依赖落到对字段了吗（dependencies vs dependency-groups）？内核挂到 .venv 了吗？`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `团队要做一份「月度销售数据清洗 + 出图」的例行交付：数据从内部接口拉，产物是发给业务方的图表。候选方案是 ① 用 Notebook 走完全流程 ② 全部写成 <code>.py</code> 脚本、图存文件 ③ Notebook 探索 + 清洗逻辑沉淀成模块、由脚本跑产出。请给出选型建议与判据。`,
+              source: '来源：Jupyter 官方文档 Project Jupyter Documentation（"A notebook is a shareable document that combines computer code, plain language descriptions, data, rich visualizations like 3D models, charts, graphs and figures, and interactive controls."）https://docs.jupyter.org/en/latest/ · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《02.Jupyter》课件（Notebook 的探索式工作方式）',
+              breakdown: `先按官方定义拆 Notebook 的能力边界：它的强项是<strong>把代码、说明文字、数据与图表放在同一份可分享文档里</strong>——这是「探索与讲清楚」的工具，不是「可重复执行」的运行时。据此判据：<strong>①全 Notebook</strong> 适合一次性分析，但作为每月重复的交付，单元格按需执行、状态隐式累积，很容易出现「图上个月能出、这个月跑不出来」；<strong>②全 .py</strong> 可复现，但丢掉探索阶段的即时反馈与图文解释，改一次清洗规则的成本很高；<strong>③</strong>是标准答案——<strong>探索用 Notebook，产线逻辑抽成模块，由脚本/任务调用</strong>，Notebook 只留「读结果、看图表、写结论」。面试时把「探索态」与「交付态」这两个词说出来，比笼统答「Notebook 方便」有说服力得多。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 VS Code + uv 从零搭好本章的数据科学工程，并让一个 Notebook 单元格真正跑起来（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 15 分钟',
+                goal: '装 Jupyter 插件 → uv init . → uv add --dev jupyter → uv add numpy → 新建 ipynb → 选择工程 .venv 解释器 → 运行一个打印 numpy 数组 shape/dtype 的单元格。',
+                accept: ['pyproject.toml 的 dependencies 里有 numpy、dependency-groups 里有 jupyter', 'Notebook 右上角显示的内核/解释器指向工程 .venv', '单元格运行无 ModuleNotFoundError，能打印出 ndarray 的 shape 与 dtype'],
+              },
+              source: '任务基于《02.Jupyter》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：<code>uv init .</code> → <code>uv add --dev jupyter</code> → <code>uv add numpy</code> → VS Code 里新建 .ipynb → 右上角内核选择器选带 <code>.venv</code> 路径的 Python → 写 <code>import numpy as np; a = np.array([[1,2,3],[4,5,6]]); print(a.shape, a.dtype)</code> 并运行，期望输出 <code>(2, 3) int64</code>（64 位平台）。最常见的坑正是本章反复强调的那条：解释器选了系统 Python 或 conda base，于是「装了却 import 不到」；第二步常见坑是先用 <code>uv add jupyter</code> 装成了运行时依赖，需要 <code>uv remove jupyter</code> 再按 <code>--dev</code> 装回去。跑完建议顺手做一次强化练习：故意把解释器切到系统 Python，观察报错，再切回来——亲手复现过一次，面试聊到环境问题才讲得具体。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://docs.astral.sh/uv/guides/integration/jupyter/">uv 官方文档 Using uv with Jupyter</a> · <a href="https://code.visualstudio.com/docs/datascience/jupyter-notebooks">VS Code 官方文档 Jupyter Notebooks in VS Code</a> · <a href="https://docs.jupyter.org/en/latest/">Jupyter 官方文档</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Jupyter速查表.html">Jupyter速查表</a>——uv 命令速记、解释器选择要点、常见报错与修法一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/Jupyter">02.Jupyter</a> · 下一课 <a href="/agents/数据科学工具包/Numpy-核心概念">03.Numpy - 核心概念</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

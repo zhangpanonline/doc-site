@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · Matplotlib 交互式组件：Slider/Button/CheckButtons/RadioButtons/TextBox 五类控件与回调、重绘、后端排查——互动教学课程">
+  <title>Matplotlib - 交互式组件 · 互动教学课程（数据科学工具包 ds-09）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>Matplotlib - 交互式组件</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Matplotlib-交互式组件">09.Matplotlib - 交互式组件</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>复述 widgets 的通用套路：先给组件建一块 Axes，再建组件对象、连回调、刷新画布</li>
+        <li>用 Slider（单值 / 多值）、Button、CheckButtons、RadioButtons、TextBox 改造静态图</li>
+        <li>解释回调里改完数据为什么要 <code>draw_idle()</code>、组件对象为什么必须留住引用</li>
+        <li>在 Notebook 里正确启用交互后端，并排查组件不显示、拖不动的三类根因</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先把握「五个组件 + 一条套路 + 一个后端前提」，细节都在《09.Matplotlib - 交互式组件》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>五个组件与选型</h3>
+        <ul class="pitfall-list">
+          <li><strong>Slider（滑块）</strong>：拖动调整连续数值，参数有 <code>valmin</code> / <code>valmax</code> / <code>valinit</code> / <code>valstep</code>，用 <code>on_changed</code> 绑定回调，回调参数是当前值；多值就是建多个滑块、共用一个回调</li>
+          <li><strong>Button（按钮）</strong>：触发一次性动作（重新生成数据、重置），用 <code>on_clicked</code> 绑回调，回调参数是事件对象 <code>event</code></li>
+          <li><strong>CheckButtons（复选框）</strong>：多个<strong>独立</strong>开关，常用于控制多条曲线显隐，用 <code>on_clicked</code>，回调参数是<strong>被切换的 label</strong></li>
+          <li><strong>RadioButtons（单选）</strong>：一组<strong>互斥</strong>选项，适合切换函数类型或图表类型，回调参数也是 label</li>
+          <li><strong>TextBox（文本框）</strong>：需要精确数值或自定义表达式时用，<code>on_submit</code> 在<strong>回车或离开输入框</strong>时触发，回调参数是字符串</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>组件通用四步套路（本章每个 demo 都是这个结构）</h3>
+        <ul class="pitfall-list">
+          <li><strong>① 建 ax</strong>：<code>fig.add_axes((left, bottom, width, height))</code> 给组件单独一块 Axes，并配 <code>fig.subplots_adjust(bottom=…)</code> 给组件腾地方</li>
+          <li><strong>② 建组件</strong>：<code>slider = Slider(slider_ax, '频率', 0.1, 5.0, valinit=1.0, valstep=0.1)</code> —— 结果<strong>必须赋值给变量</strong>，否则组件失去引用就不响应了</li>
+          <li><strong>③ 写回调</strong>：回调里改数据（<code>line.set_ydata(...)</code> / <code>line.set_visible(...)</code>）；数据范围变了还要 <code>ax.relim()</code> + <code>ax.autoscale_view()</code>（Button 重新生成数据那段就是这么做的）</li>
+          <li><strong>④ 重绘</strong>：回调末尾 <code>fig.canvas.draw_idle()</code>，把重绘请求交给 GUI 事件循环</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>后端前提与常见故障</h3>
+        <ul class="pitfall-list">
+          <li>本章第一段代码是 <code>%matplotlib widget</code>：Notebook 里要交互必须切到交互后端（<strong>ipympl</strong>，需单独安装）；默认的 inline 后端只渲染一次静态图</li>
+          <li><strong>组件画出来了但拖不动</strong>：先查后端是不是 inline；再查 ipympl 是否装了；最后查组件对象有没有被垃圾回收（裸调用 <code>Slider(...)</code> 不赋值就是典型）</li>
+          <li><strong>拖了但曲线不变</strong>：回调末尾少了 <code>draw_idle()</code>——<code>set_ydata</code> 只改数据，画布不会自己知道</li>
+          <li><strong>组件压在图上</strong>：忘了 <code>fig.subplots_adjust</code>，组件 Axes 与主图坐标区重叠了</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《09.Matplotlib - 交互式组件》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 要让用户拖拽调整一个连续数值（例如正弦波的频率），应该用哪个组件？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">CheckButtons（复选框）</button>
+            <button class="quiz-option">Button（按钮）</button>
+            <button class="quiz-option">Slider（滑块）</button>
+            <button class="quiz-option">TextBox（文本框）</button>
+          </div>
+          <div class="quiz-explain" hidden>本章第 1 节：Slider 是最常用的交互组件，适合让用户通过拖动来调整连续数值，用 on_changed 绑定回调，回调收到的就是当前值。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. Button 用什么方法把「点击」和回调函数连起来？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">on_clicked</button>
+            <button class="quiz-option">on_submit</button>
+            <button class="quiz-option">on_changed</button>
+            <button class="quiz-option">on_draw</button>
+          </div>
+          <div class="quiz-explain" hidden>本章第 2 节：Button 用 on_clicked(回调) 连接点击事件，回调收到的是事件对象；on_changed 是 Slider 的方法，on_submit 是 TextBox 的方法。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 五个组件在构造时都要传的第一个参数是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">画布对象 FigureCanvas</button>
+            <button class="quiz-option">要操作的数据数组</button>
+            <button class="quiz-option">一个事先建好的 Axes——组件自己画在哪块坐标区</button>
+            <button class="quiz-option">一个回调函数</button>
+          </div>
+          <div class="quiz-explain" hidden>本章五个示例都是先用 fig.add_axes((left, bottom, width, height)) 建一块 Axes，再把它作为第一个参数传给组件；官方 widgets 文档也写明所有组件都要求预先定义 Axes 并作为第一个参数传入。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. <code>Slider(..., valinit=1.0, valstep=0.1)</code> 里的 <code>valstep=0.1</code> 是什么语义？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">动画每帧前进 0.1，与取值无关</button>
+            <button class="quiz-option">让滑块吸附到 0.1 的整数倍（离散档位）</button>
+            <button class="quiz-option">把滑块初值设成 0.1</button>
+            <button class="quiz-option">把取值范围限制在 0.1 到 1.0 之间</button>
+          </div>
+          <div class="quiz-explain" hidden>本章第 1 节 demo_slider_single.py：valinit 是滑块的初始位置，valstep 是步长吸附——官方 Slider 文档原文说若为浮点数，滑块会 snap to multiples of valstep（吸附到 valstep 的整数倍）；若传数组则吸附到数组里的值。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 回调里已经 <code>line.set_ydata(...)</code> 改好了数据，但末尾忘了 <code>fig.canvas.draw_idle()</code>，会看到什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">图形窗口会自动关闭</button>
+            <button class="quiz-option">程序立刻报错，回调被中断</button>
+            <button class="quiz-option">曲线会自动刷新，draw_idle 可有可无</button>
+            <button class="quiz-option">画面仍是旧曲线——数据变了，但画布没有被请求重绘</button>
+          </div>
+          <div class="quiz-explain" hidden>本章五个示例的回调末尾都有 fig.canvas.draw_idle()。set_ydata 只修改 Artist 的数据，屏幕不会自己更新；draw_idle 的语义是「请求 GUI 事件循环回来时重绘一次」。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. CheckButtons 与 RadioButtons 的关键区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者完全等价，只是外观不同</button>
+            <button class="quiz-option">CheckButtons 可同时开关多项（控制多条曲线显隐），RadioButtons 一组内互斥、只能选中一个</button>
+            <button class="quiz-option">CheckButtons 最多只能放 3 个选项，RadioButtons 不限</button>
+            <button class="quiz-option">RadioButtons 只能用于数值，CheckButtons 只能用于文本</button>
+          </div>
+          <div class="quiz-explain" hidden>本章第 3、4 节：CheckButtons 的回调收到被切换的 label，用来切换多条曲线的显隐；RadioButtons 用于从一组互斥选项中选择一个，适合切换函数或图表类型。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 为什么每个组件都要单独传一个 <code>ax</code>，而不能像 <code>plt.plot(x, y)</code> 那样直接用「当前 Axes」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为组件底层依赖 pyplot 的全局状态，只能靠传 ax 绕开</button>
+            <button class="quiz-option">因为组件本身是画在一块独立 Axes 上的图形元素，位置和大小完全由这块 Axes 决定，Matplotlib 不会替你安排布局</button>
+            <button class="quiz-option">不传 ax 也能工作，传了只是习惯写法</button>
+            <button class="quiz-option">只是为了少写一行 import 语句</button>
+          </div>
+          <div class="quiz-explain" hidden>本章每个示例都用 fig.add_axes((left, bottom, width, height)) 指定组件的位置与大小，再用 fig.subplots_adjust 给它腾地方；官方 widgets 文档明确说 Matplotlib 不会替你决定组件该多宽多高，要自己算。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 在 Jupyter 里跑本章代码，图出来了但滑块拖不动、完全是静态的。最该先排查的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">是不是用了默认的 inline 后端（只渲染一次静态图），应改用 %matplotlib widget 并安装 ipympl</button>
+            <button class="quiz-option">Slider 的 valmin 和 valmax 写反了</button>
+            <button class="quiz-option">figsize 太小，需要调大</button>
+            <button class="quiz-option">NumPy 版本太低</button>
+          </div>
+          <div class="quiz-explain" hidden>本章开头第一段代码就是 %matplotlib widget。官方交互文档说明：Notebook 默认的 inline 后端是「渲染一次并插入静态图片」，不能平移缩放、不能接收用户输入、也不能被其他单元格更新；要交互必须装 ipympl 并切到 widget 后端。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 要给一张分析图做调参面板：连续调节一个系数、按需显隐 3 条曲线、偶尔精确输入一个阈值、还要一个恢复默认的按钮。最合适的组合是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">全部用 TextBox，输入文本后再解析</button>
+            <button class="quiz-option">4 个 RadioButtons，分别控制 4 件事</button>
+            <button class="quiz-option">Slider 调系数 + CheckButtons 控制 3 条曲线显隐 + TextBox 精确输入阈值 + Button 重置</button>
+            <button class="quiz-option">全部用 Button，每条曲线配一个按钮</button>
+          </div>
+          <div class="quiz-explain" hidden>选型看交互语义：连续数值用 Slider；多个独立开关用 CheckButtons；精确输入用 TextBox；一次性动作用 Button；RadioButtons 是互斥单选，用来显隐多条曲线会出现「只能显示一条」的语义错误。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0009-Matplotlib-交互式组件',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事在 Jupyter 里调试本章的滑块，AI 告诉他「只要 import matplotlib.widgets，Slider 就能拖动，后端不用管」。结果他跑出来的图完全不能拖。请指出这个说法错在哪、正确做法是什么。`,
+              source: '来源：Matplotlib 官方文档 Interactive figures（"To get interactive figures in the \'classic\' notebook or Jupyter lab, use the ipympl backend (must be installed separately) which uses the ipywidget framework."；"The default backend in notebooks, the inline backend, is not. ipykernel.pylab.backend_inline renders the figure once and inserts a static image into the notebook when the cell is executed. Because the images are static, they cannot be panned / zoomed, take user input, or be updated from other cells."）https://matplotlib.org/stable/users/explain/figure/interactive.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `组件能不能交互，不取决于 import，取决于<strong>后端</strong>。官方原文把判据写在「Jupyter Notebooks / JupyterLab」小节：默认的 inline 后端渲染一次就把静态图片插进 Notebook，而静态图片<strong>不能平移缩放、不能接收用户输入、也不能被其他单元格更新</strong>——这三条正好逐条否定「能拖动」。正确姿势是装 ipympl（官方注明 must be installed separately），再用本章第一段代码里的 <code>%matplotlib widget</code>。面试时把链条讲完整：现象是组件画出来了但拖不动 → 判据是当前 canvas 不是交互式的 → 验证方式是打印/切换后端再试；顺带说一句 <code>%matplotlib notebook</code> 走的是 nbagg，只适合 classic notebook、在 JupyterLab 里不工作，所以本章直接用 widget。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `本章五个组件的第一个参数都是 ax，而且示例里都先 <code>fig.add_axes((left, bottom, width, height))</code> 再 <code>fig.subplots_adjust(...)</code>。请解释：为什么组件不能像 plt.plot 那样直接用「当前 Axes」，以及 add_axes 里那四个数分别决定什么。`,
+              source: '来源：Matplotlib 官方文档 matplotlib.widgets（"All of these widgets require you to predefine an Axes instance and pass that as the first parameter. Matplotlib doesn\'t try to be too smart with respect to layout -- you will have to figure out how wide and tall you want your Axes to be to accommodate your widget."）https://matplotlib.org/stable/api/widgets_api.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `关键认知一句话：组件不是浮在图上的一层 UI，而是和数据折线、散点一样<strong>画在某个 Axes 坐标系里的 Artist</strong>。官方把这个前提写在模块开头——必须预先定义 Axes 并作为第一个参数传入；所以「传 ax」= 指定组件画在哪、占多大。add_axes 的四个数是归一化 Figure 坐标的 (left, bottom, width, height)：本章示例里 (0.2, 0.1, 0.6, 0.03) 是一条又扁又长的滑轨，(0.4, 0.05, 0.2, 0.075) 更接近方形，所以是按钮。官方还专门提醒 Matplotlib 不会替你算布局，宽高要自己定——这正是示例都要配 <code>fig.subplots_adjust(bottom=0.25)</code> 把主图往上压的原因：不腾地方，组件会压在数据上。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `回调最后一行 <code>fig.canvas.draw_idle()</code> 是本章五个示例的固定收尾。请说明它到底做了什么；如果连续拖滑块触发上百次回调，或者改用 <code>fig.canvas.draw()</code>，会有什么差别？`,
+              source: '来源：Matplotlib 官方文档 FigureCanvasBase.draw_idle（"Request a widget redraw once control returns to the GUI event loop. Even if multiple calls to draw_idle occur before control returns to the GUI event loop, the figure will only be rendered once."）https://matplotlib.org/stable/api/backend_bases_api.html#matplotlib.backend_bases.FigureCanvasBase.draw_idle · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `官方定义拆成两点：① 它是「请求」而不是立即重绘——把重绘推迟到<strong>控制权交还给 GUI 事件循环</strong>的时候；② 在交还之前调用多少次，图形<strong>也只渲染一次</strong>（合并 / 去抖）。所以拖滑块触发的上百次 on_changed 不会变成上百次全量渲染，这正是所有官方示例统一用 draw_idle 的原因；<code>draw()</code> 是立即重绘，塞进高频回调里容易卡顿。还要补上本章的另一半因果：<code>set_ydata</code> / <code>set_visible</code> 只改了 Artist 的数据，画布不会自己知道，必须显式请求重绘——这题答到「数据 → 屏幕」这一步才算说清。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 给的滑块初稿如下，请审查并指出问题（至少三点）：
+<pre><code>ax_amp = fig.add_axes((0.2, 0.1, 0.6, 0.03))
+Slider(ax_amp, '振幅', 0.1, 2.0, valinit=1.0, valstep=0.1)
+
+def update(val):
+    line.set_ydata(amp_slider.val * np.sin(freq_slider.val * x))
+
+amp_slider.on_changed(update)</code></pre>`,
+              source: '来源：Matplotlib 官方文档 matplotlib.widgets.Slider 与 SliderBase（"valinit float, default: 0.5 The slider initial position."；"valstep float or array-like, default: None If a float, the slider will snap to multiples of valstep."；"For the slider to remain responsive you must maintain a reference to it."）https://matplotlib.org/stable/api/_as_gen/matplotlib.widgets.Slider.html · https://matplotlib.org/stable/api/_as_gen/matplotlib.widgets.SliderBase.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `按本章「建 ax → 建组件 → 回调 → draw_idle」四步逐条对照，至少能挑出四处：① 组件对象<strong>没有赋值给变量</strong>（裸调用 <code>Slider(...)</code>）——官方 SliderBase 原文要求「要保持响应必须保留引用」，没有引用的实例可能被回收，后面也无法 on_changed / reset；② 回调里引用 <code>amp_slider</code> 和 <code>freq_slider</code> 都是未定义名字，一拖就 NameError；③ 回调末尾<strong>缺 <code>fig.canvas.draw_idle()</code></strong>，数据改了屏幕不会刷新；④ <code>valstep=0.1</code> 的语义要说准：它让滑块吸附到 0.1 的整数倍（离散档位），不是初值、也不是动画步长——初值由 <code>valinit</code> 决定。加分项：指出 <code>val</code> 参数虽然没用上但签名必须保留（on_changed 的回调必须接受一个参数），以及若 y 范围会变，还要 <code>ax.relim()</code> + <code>ax.autoscale_view()</code>。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `要做一个「Agent 分析结果调参面板」：① 目标系数可以连续拖动；② 三条候选曲线按需显隐；③ 偶尔要精确输入一个阈值（如 0.375）；④ 一个恢复默认的按钮。请给出五种组件的选型与理由——并说明为什么不能用 RadioButtons 做显隐、CheckButtons 的回调为什么要拿 label 去查曲线。`,
+              source: '来源：Matplotlib 官方文档 CheckButtons 与 RadioButtons（"get_status() Return a list of the status (True/False) of all of the check buttons."；"value_selected str The label text of the currently selected button."；"index_selected int The index of the selected button."）https://matplotlib.org/stable/api/_as_gen/matplotlib.widgets.CheckButtons.html · https://matplotlib.org/stable/api/_as_gen/matplotlib.widgets.RadioButtons.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `选型按<strong>交互语义</strong>而不是外观：① 连续可调 → Slider（valmin / valmax / valinit，回调参数是当前值）；② 多个独立开关 → CheckButtons（<code>actives</code> 给初值，回调参数是 label，所以要把 label → Line2D 建成字典再取线，本章示例就是 <code>lines[label]</code>）；RadioButtons 是互斥单选，用它控制显隐会出现「同时只能显示一条曲线」的语义错误——这是最常见的方案级坑；③ 精确输入 → TextBox（官方定义：<code>on_submit</code> 在用户回车<strong>或离开输入框</strong>时触发，所以输入 0.375 后失焦也会提交；记得 float() 转换 + try/except ValueError，本章示例正是这么防脏输入的）；④ 一次性动作 → Button（on_clicked；重置直接调 <code>slider.reset()</code>，官方 SliderBase.reset 定义为「Reset the slider to the initial value」，官方 slider_demo 的 Reset 按钮就是这么写的）。加分判据：要一次性读全部开关状态用 <code>CheckButtons.get_status()</code>，要拿当前选中项直接读 <code>value_selected</code> / <code>index_selected</code>，比迭代 Artist 更稳。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `用 AI 编程工具（建议 Claude Code）把本章的 demo_slider_single.py 升级成一个「正弦波参数面板」，任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '在 demo_slider_single.py 的基础上：① 加第二个滑块控制振幅（参考 demo_slider_multi.py）；② 加 CheckButtons 控制两条曲线显隐（参考 demo_checkbox.py）；③ 加 Button 把两个滑块恢复初值；④ 在 Jupyter 里用 %matplotlib widget 跑通并实际拖动一次。',
+                accept: ['两个滑块都能拖动，曲线随拖动实时更新（回调末尾有 fig.canvas.draw_idle()）', '组件对象都赋值给了变量，on_changed / on_clicked 都连上了回调', '点 Button 后两个滑块回到 valinit 值（slider.reset()）', 'Notebook 使用 %matplotlib widget 后端，拖动有响应而不是静态图'],
+              },
+              source: '任务基于《09.Matplotlib - 交互式组件》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：先把本章三个 demo 的骨架拼起来——主图一块 Axes，底部用 <code>fig.add_axes</code> 摆两条滑轨，左侧再摆一块给 CheckButtons，并配 <code>fig.subplots_adjust(bottom=0.3, left=0.3)</code> 同时给底部和左侧腾地方（最容易漏的一步，漏了组件会压在曲线上）。回调尽量共用：一个 <code>update(_)</code> 里同时读 <code>freq_slider.val</code> 与 <code>amp_slider.val</code> 重算 ydata，末尾 <code>fig.canvas.draw_idle()</code>；CheckButtons 的回调收到 label，用 label → Line2D 字典取线再 <code>set_visible(not get_visible())</code>；重置按钮的回调调 <code>slider.reset()</code>。排错顺序照本章知识速览：先看后端（inline → %matplotlib widget + ipympl），再看组件对象有没有留引用，最后看回调有没有 draw_idle。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://matplotlib.org/stable/api/widgets_api.html">Matplotlib widgets API</a>（模块开头那句「必须先定义 Axes」值一读）· <a href="https://matplotlib.org/stable/users/explain/figure/interactive.html">Interactive figures</a>（Jupyter 后端与 ipympl 的权威说明）· <a href="https://matplotlib.org/stable/gallery/widgets/slider_snap_demo.html">Snap sliders to discrete values</a>（valstep 的官方示例）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/Matplotlib-交互式组件速查表.html">Matplotlib-交互式组件速查表</a>——五种组件构造参数与回调对照、通用四步套路、不显示问题排查一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/Matplotlib-交互式组件">09.Matplotlib - 交互式组件</a> · 下一课 <a href="/agents/数据科学工具包/Seaborn">10.Seaborn</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

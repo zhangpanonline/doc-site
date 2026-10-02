@@ -1,0 +1,772 @@
+---
+sidebar_position: 4
+title: '04. Numpy - 数据操作'
+description: "数据科学工具包 · Numpy 数据操作：数组创建、索引切片与花式/布尔索引、变形重塑、广播、数学统计与拼接排序。"
+displayed_sidebar: agentsDataScience
+---
+
+# Numpy - 数据操作
+
+```python
+# 导入 NumPy 库
+import numpy as np
+```
+
+## 数组创建
+
+除了从列表直接创建，NumPy 提供了很多便捷的构造方法。
+
+```python
+# np.zeros: 创建全零数组
+print('zeros(2,3):\n', np.zeros((2,3)), '\n')
+# np.ones: 创建全一数组
+print('ones(2,3):\n', np.ones((2,3), dtype=np.float32), '\n')
+# np.eye: 创建单位矩阵
+print('eye(3):\n', np.eye(3))
+```
+
+```text
+zeros(2,3):
+ [[0. 0. 0.]
+ [0. 0. 0.]] 
+
+ones(2,3):
+ [[1. 1. 1.]
+ [1. 1. 1.]] 
+
+eye(3):
+ [[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]
+```
+
+```python
+# np.arange: 创建等差数组
+print('arange(0, 10, 2):', np.arange(0, 10, 2))
+# np.linspace: 创建等间隔数组
+print('linspace(0, 1, 5):', np.linspace(0, 1, 5))
+# np.linspace: 创建等间隔数组
+print('linspace(0, 1, 5, endpoint=False):', np.linspace(0, 1, 5, endpoint=False))
+```
+
+```text
+arange(0, 10, 2): [0 2 4 6 8]
+linspace(0, 1, 5): [0.   0.25 0.5  0.75 1.  ]
+linspace(0, 1, 5, endpoint=False): [0.  0.2 0.4 0.6 0.8]
+```
+
+```python
+# default_rng: 创建随机数生成器
+rng = np.random.default_rng(41)
+# uniform: 生成均匀分布随机数
+print('uniform(0, 1, (2,3)):\n', rng.uniform(0, 1, (2,3)), '\n')
+# normal: 生成正态分布随机数
+print('normal(0, 1, (2,3)):\n', rng.normal(0, 1, (2,3)), '\n')
+# integers: 生成随机整数
+print('integers(0, 10, (2,3)):\n', rng.integers(0, 10, (2,3)))
+```
+
+```text
+uniform(0, 1, (2,3)):
+ [[0.9541511  0.76793209 0.12597075]
+ [0.82698809 0.84907207 0.34978284]] 
+
+normal(0, 1, (2,3)):
+ [[  0.93754881 -11.70818076 -13.58240395]
+ [-13.06564025  -7.17615282  11.85621358]] 
+
+integers(0, 10, (2,3)):
+ [[4 3 0]
+ [4 2 5]]
+```
+
+#### 💡**场景**
+
+快速造一批模拟数据来测试逻辑。比如模拟 10 个商品的价格和销量，测试排序或筛选功能。
+
+```python
+# default_rng: 创建随机数生成器
+rng = np.random.default_rng(42)
+# uniform: 生成均匀分布随机数
+prices = rng.uniform(10, 100, 10).round(2)
+# integers: 生成随机整数
+sales = rng.integers(0, 1000, 10)
+print('价格:', prices)
+print('销量:', sales)
+```
+
+```text
+价格: [79.66 49.5  87.27 72.76 18.48 97.81 78.5  80.75 21.53 50.53]
+销量: [500 370 182 926 781 643 402 822 545 443]
+```
+
+## 索引与切片
+
+NumPy 的索引语法与 Python 列表类似，但支持多维操作。
+
+### 基本索引与切片
+
+语法：`arr[start:stop:step]`，多维就用逗号分隔。
+
+- start：起始索引，默认 0
+- stop：结束索引（不包含），默认数组长度
+- step：步长，默认 1
+
+**注意：切片返回的是视图（view），不是拷贝**——改切片会影响原数组。
+
+```python
+# np.arange: 创建等差数组
+arr = np.arange(12).reshape(3, 4)
+print('原数组:\n', arr, '\n')
+print('arr[0]:', arr[0])
+print('arr[:, 1]:\n', arr[:, 1:])
+print('arr[1:, 2:]:\n', arr[1:, 2:])
+```
+
+```text
+原数组:
+ [[ 0  1  2  3]
+ [ 4  5  6  7]
+ [ 8  9 10 11]] 
+
+arr[0]: [0 1 2 3]
+arr[:, 1]:
+ [[ 1  2  3]
+ [ 5  6  7]
+ [ 9 10 11]]
+arr[1:, 2:]:
+ [[ 6  7]
+ [10 11]]
+```
+
+```python
+view = arr[1:, 2:]
+view[0, 0] = 99
+print('修改视图后原数组:\n', arr)
+# copy: 创建数组的副本
+copy = arr[1:, 2:].copy()
+```
+
+```text
+修改视图后原数组:
+ [[ 0  1  2  3]
+ [ 4  5 99  7]
+ [ 8  9 10 11]]
+```
+
+### 花式索引（Fancy Indexing）
+
+用整数数组选取不连续的行/列。**返回的是拷贝。**
+
+```python
+# np.arange: 创建等差数组
+arr = np.arange(12).reshape(4, 3)
+print('数组:\n', arr, '\n')
+print('arr[[0, 2]]:\n', arr[[0, 2]], '\n')
+rows = [0, 1, 3]
+cols = [2, 1, 0]
+print('arr[rows, cols]:', arr[rows, cols])
+```
+
+```text
+数组:
+ [[ 0  1  2]
+ [ 3  4  5]
+ [ 6  7  8]
+ [ 9 10 11]] 
+
+arr[[0, 2]]:
+ [[0 1 2]
+ [6 7 8]] 
+
+arr[rows, cols]: [2 4 9]
+```
+
+### 布尔索引（Boolean Indexing）
+
+用布尔数组作为掩码（mask），选取满足条件的元素。**返回的是拷贝。**
+
+```python
+# np.array: 从列表创建 NumPy 数组
+arr = np.array([10, 25, 3, 47, 8, 19])
+mask = arr > 15
+print('mask:', mask)
+print('arr[arr > 15]:', arr[mask])
+print('arr[arr % 2 == 0]:', arr[arr % 2 == 0])
+```
+
+```text
+mask: [False  True False  True False  True]
+arr[arr > 15]: [25 47 19]
+arr[arr % 2 == 0]: [10  8]
+```
+
+```python
+arr = np.array([5, 12, 18, 25, 30, 7, 42])
+print('(>10) & (<30):', arr[(arr > 10) & (arr < 30)])
+print('(<10) | (>30):', arr[(arr < 10) | (arr > 30)])
+```
+
+```text
+(>10) & (<30): [12 18 25]
+(<10) | (>30): [ 5  7 42]
+```
+
+## 变形与重塑
+
+改变数组的形状而不改数据。总元素数必须一致，用 `-1` 让 NumPy 自动算。
+
+```python
+# np.arange: 创建等差数组
+arr = np.arange(12)
+print('原始:', arr, '\n')
+# reshape: 重塑数组形状
+print('reshape(3, 4):\n', arr.reshape(3, 4), '\n')
+# reshape: 重塑数组形状
+print('reshape(2, -1):\n', arr.reshape(2, -1), '\n')
+# reshape: 重塑数组形状
+print('reshape(2, 2, 3):\n', arr.reshape(2, 2, 3))
+```
+
+```text
+原始: [ 0  1  2  3  4  5  6  7  8  9 10 11] 
+
+reshape(3, 4):
+ [[ 0  1  2  3]
+ [ 4  5  6  7]
+ [ 8  9 10 11]] 
+
+reshape(2, -1):
+ [[ 0  1  2  3  4  5]
+ [ 6  7  8  9 10 11]] 
+
+reshape(2, 2, 3):
+ [[[ 0  1  2]
+  [ 3  4  5]]
+
+ [[ 6  7  8]
+  [ 9 10 11]]]
+```
+
+```python
+# np.array: 从列表创建 NumPy 数组
+arr = np.array([1, 2, 3, 4])
+# np.resize: 改变数组大小（可重复填充）
+print('np.resize(arr, (2, 3)):\n', np.resize(arr, (2, 3)))
+# np.resize: 改变数组大小（可重复填充）
+print('np.resize(arr, (2, 2)):\n', np.resize(arr, (2, 2)))
+```
+
+```text
+np.resize(arr, (2, 3)):
+ [[1 2 3]
+ [4 1 2]]
+np.resize(arr, (2, 2)):
+ [[1 2]
+ [3 4]]
+```
+
+#### 💡**场景**
+
+API 返回的数据是一维的，但你需要按行列组织成表格，用 reshape 搞定。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+data = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+# reshape: 重塑数组形状
+table = data.reshape(4, 3)
+print('转换为 4行3列的表格:\n', table)
+```
+
+```text
+转换为 4行3列的表格:
+ [[ 1  2  3]
+ [ 4  5  6]
+ [ 7  8  9]
+ [10 11 12]]
+```
+
+## 数学运算
+
+NumPy 的所有运算符都是**向量化**的——对整个数组一次性操作，不用写循环。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+arr = np.array([1, 2, 3, 4])
+print('原数组:', arr)
+print('arr + 10:', arr + 10)
+print('arr * 2:', arr * 2)
+print('arr ** 2:', arr ** 2)
+print('arr > 2:', arr > 2)
+```
+
+```text
+原数组: [1 2 3 4]
+arr + 10: [11 12 13 14]
+arr * 2: [2 4 6 8]
+arr ** 2: [ 1  4  9 16]
+arr > 2: [False False  True  True]
+```
+
+```python
+# np.array: 从列表创建 NumPy 数组
+a = np.array([10, 20, 30])
+# np.array: 从列表创建 NumPy 数组
+b = np.array([1, 2, 3])
+print('a + b:', a + b)
+print('a - b:', a - b)
+print('a * b:', a * b)
+print('a / b:', a / b)
+```
+
+```text
+a + b: [11 22 33]
+a - b: [ 9 18 27]
+a * b: [10 40 90]
+a / b: [10. 10. 10.]
+```
+
+#### 💡**场景**
+
+对一批数据做批量转换。比如商品价格全部打八折，温度从摄氏度转华氏度。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+prices = np.array([99, 199, 299, 399], dtype=float)
+discounted = prices * 0.8
+print('原价:', prices)
+print('打八折:', discounted)
+
+# np.array: 从列表创建 NumPy 数组
+celsius = np.array([0, 10, 20, 30, 40])
+fahrenheit = celsius * 9 / 5 + 32
+print('摄氏:', celsius)
+print('华氏:', fahrenheit)
+```
+
+```text
+原价: [ 99. 199. 299. 399.]
+打八折: [ 79.2 159.2 239.2 319.2]
+摄氏: [ 0 10 20 30 40]
+华氏: [ 32.  50.  68.  86. 104.]
+```
+
+## 统计运算
+
+对数组做聚合统计，可以用 `axis` 指定沿哪个方向算。
+
+```python
+# np.arange: 创建等差数组
+arr = np.arange(12).reshape(3, 4).astype(float)
+print('数组:\n', arr, '\n')
+# sum: 计算所有元素之和
+print('sum:', arr.sum())
+# mean: 计算算术平均值
+print('mean:', arr.mean())
+# sum: 计算所有元素之和
+print('sum(axis=0) 按列求和:', arr.sum(axis=0))
+# sum: 计算所有元素之和
+print('sum(axis=1) 按行求和:', arr.sum(axis=1))
+# min: 找出最小值
+print('min:', arr.min(), ', max:', arr.max())
+# argmin: 找出最小值所在的索引
+print('argmin:', arr.argmin(), ', argmax:', arr.argmax())
+```
+
+```text
+数组:
+ [[ 0.  1.  2.  3.]
+ [ 4.  5.  6.  7.]
+ [ 8.  9. 10. 11.]] 
+
+sum: 66.0
+mean: 5.5
+sum(axis=0) 按列求和: [12. 15. 18. 21.]
+sum(axis=1) 按行求和: [ 6. 22. 38.]
+min: 0.0 , max: 11.0
+argmin: 0 , argmax: 11
+```
+
+#### 标准差
+
+标准差（Standard Deviation）是统计学中衡量数据波动程度（即离散程度）最常用的指标。简单来说，它告诉你数据围绕平均值有多“散”。
+
+标准差越小：说明数据越集中，平均值越有代表性（大家成绩都差不多）。
+
+标准差越大：说明数据越分散，平均值越不靠谱（有人考100分，有人考0分）。
+
+```text
+\textbf{1. 总体标准差（Population Standard Deviation）}\\[1em]
+\sigma = \sqrt{\frac{\sum_{i=1}^{N} (x_i - \mu)^2}{N}}\\[2em]
+\textbf{2. 样本标准差（Sample Standard Deviation）}\\[1em]
+s = \sqrt{\frac{\sum_{i=1}^{n} (x_i - \bar{x})^2}{n-1}}\\[1em]
+```
+
+```python
+print("arr", arr)
+print("mean", arr.mean())
+# std: 计算总体标准差
+print('std总体标准差:', arr.std())
+# std: 计算样本标准差
+print('std(ddof=1)样本标准差:', arr.std(ddof=1))
+# 变异系数
+print('变异系数CV:', arr.std() / arr.mean())
+```
+
+```text
+arr [[ 0.  1.  2.  3.]
+ [ 4.  5.  6.  7.]
+ [ 8.  9. 10. 11.]]
+mean 5.5
+std总体标准差: 3.452052529534663
+std(ddof=1)样本标准差: 3.605551275463989
+变异系数CV: 0.6276459144608478
+```
+
+| CV 范围       | 离散程度   | 直观感受                       | 典型场景举例                             |
+| :------------ | :--------- | :----------------------------- | :--------------------------------------- |
+| **< 10%**     | **非常小** | 数据极度集中，几乎一模一样     | 工厂自动化生产的零件尺寸、精密仪器读数   |
+| **10% ~ 20%** | **较小**   | 有波动但很稳定，平均值可靠     | 成年人的身高、体重、日常气温             |
+| **20% ~ 30%** | **中等**   | 正常波动范围，尚可接受         | 学生考试成绩、员工绩效评分               |
+| **30% ~ 50%** | **较大**   | 数据比较分散，平均值代表性下降 | 城市房价、不同地区的薪资水平             |
+| **> 50%**     | **非常大** | 极度分散，平均值几乎没意义     | 股票日收益率、创业公司估值、个人消费支出 |
+
+## 条件筛选与 np.where
+
+`np.where(condition, x, y)` —— 如果条件成立取 x 的值，否则取 y 的值。类似向量化的 if-else。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+arr = np.array([10, -5, 3, -8, 0, 15])
+# np.where: 根据条件筛选或替换值
+result = np.where(arr < 0, 0, arr)
+print('原数组:', arr)
+print('负数变 0:', result)
+```
+
+```text
+原数组: [10 -5  3 -8  0 15]
+负数变 0: [10  0  3  0  0 15]
+```
+
+```python
+# np.array: 从列表创建 NumPy 数组
+arr = np.array([10, 20, 30, 40, 50])
+# np.where: 根据条件筛选或替换值
+indices = np.where(arr > 25)
+print('arr > 25 的位置:', indices)
+print('对应值:', arr[indices])
+```
+
+```text
+arr > 25 的位置: (array([2, 3, 4]),)
+对应值: [30 40 50]
+```
+
+#### 💡**场景**
+
+对数据进行分类处理。比如成绩单中，60 分以上标记为「通过」，否则为「不通过」。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+scores = np.array([85, 42, 73, 59, 90, 31, 68])
+# np.where: 根据条件筛选或替换值
+result = np.where(scores >= 60, '通过', '不通过')
+print('成绩:', scores)
+print('结果:', result)
+```
+
+```text
+成绩: [85 42 73 59 90 31 68]
+结果: ['通过' '不通过' '通过' '不通过' '通过' '不通过' '通过']
+```
+
+## 拼接与分割
+
+把多个数组合并，或把一个数组拆成多份。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+a = np.array([[1, 2], [3, 4]])
+# np.array: 从列表创建 NumPy 数组
+b = np.array([[5, 6]])
+# np.vstack: 垂直堆叠数组
+print('vstack (垂直拼):\n', np.vstack([a, b]), '\n')
+# np.concatenate: 沿指定轴拼接数组
+print('concatenate axis=0:\n', np.concatenate([a, b], axis=0))
+```
+
+```text
+vstack (垂直拼):
+ [[1 2]
+ [3 4]
+ [5 6]] 
+
+concatenate axis=0:
+ [[1 2]
+ [3 4]
+ [5 6]]
+```
+
+```python
+# np.array: 从列表创建 NumPy 数组
+a = np.array([[1, 2], [3, 4]])
+# np.array: 从列表创建 NumPy 数组
+b = np.array([[5], [6]])
+# np.hstack: 水平堆叠数组
+print('hstack (水平拼):\n', np.hstack([a, b]), '\n')
+# np.concatenate: 沿指定轴拼接数组
+print('concatenate axis=1:\n', np.concatenate([a, b], axis=1))
+```
+
+```python
+# np.arange: 创建等差数组
+arr = np.arange(16).reshape(4, 4)
+print('数组:\n', arr, '\n')
+# np.split: 沿行方向分割数组
+first, second, rest = np.split(arr, [1, 3])
+print('[:1]:\n', first, '\n')
+print('[1:3]:\n', second, '\n')
+print('[3:]:\n', rest)
+```
+
+```text
+数组:
+ [[ 0  1  2  3]
+ [ 4  5  6  7]
+ [ 8  9 10 11]
+ [12 13 14 15]] 
+
+[:1]:
+ [[0 1 2 3]] 
+
+[1:3]:
+ [[ 4  5  6  7]
+ [ 8  9 10 11]] 
+
+[3:]:
+ [[12 13 14 15]]
+```
+
+```python
+# np.arange: 创建等差数组
+arr = np.arange(12).reshape(3, 4)
+print('数组:\n', arr, '\n')
+# np.hsplit: 沿列方向分割数组
+left, right = np.hsplit(arr, 2)
+print('左:\n', left, '\n')
+print('右:\n', right)
+```
+
+```text
+数组:
+ [[ 0  1  2  3]
+ [ 4  5  6  7]
+ [ 8  9 10 11]] 
+
+左:
+ [[0 1]
+ [4 5]
+ [8 9]] 
+
+右:
+ [[ 2  3]
+ [ 6  7]
+ [10 11]]
+```
+
+## 排序
+
+排序在很多场景中都会用到。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+arr = np.array([3, 1, 4, 1, 5, 9, 2, 6])
+print('原数组:', arr)
+# np.sort: 返回排序后的数组
+print('np.sort(arr):', np.sort(arr))
+# np.argsort: 返回排序后的索引数组
+print('np.argsort(arr):', np.argsort(arr))
+# np.unique: 返回唯一值
+print('np.unique(arr):', np.unique(arr))
+```
+
+```text
+原数组: [3 1 4 1 5 9 2 6]
+np.sort(arr): [1 1 2 3 4 5 6 9]
+np.argsort(arr): [1 3 6 0 2 4 7 5]
+np.unique(arr): [1 2 3 4 5 6 9]
+```
+
+```python
+# np.array: 从列表创建 NumPy 数组
+matrix = np.array([[3, 1, 2], [6, 5, 4]])
+print('矩阵:\n', matrix, '\n')
+# np.sort: 返回排序后的数组
+print('每行排序:\n', np.sort(matrix, axis=1))
+# np.sort: 返回排序后的数组
+print('每列排序:\n', np.sort(matrix, axis=0))
+```
+
+```text
+矩阵:
+ [[3 1 2]
+ [6 5 4]] 
+
+每行排序:
+ [[1 2 3]
+ [4 5 6]]
+每列排序:
+ [[3 1 2]
+ [6 5 4]]
+```
+
+```python
+# np.array: 从列表创建 NumPy 数组
+arr = np.array([3, 1, 4, 1, 5])
+# sort: 原地排序数组
+arr.sort()
+# sort: 原地排序数组
+print('arr.sort() 后:', arr)
+```
+
+```text
+arr.sort() 后: [1 1 3 4 5]
+```
+
+#### 💡**场景**
+
+找出数据中最大/最小的前几个。比如找出销量最高的前 3 个商品。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+sales = np.array([230, 150, 890, 340, 560, 120, 670])
+# np.argsort: 返回排序后的索引数组
+top3_idx = np.argsort(sales)[::-1][:3]
+print('销量:', sales)
+print('前 3 名索引:', top3_idx)
+print('前 3 名销量:', sales[top3_idx])
+```
+
+```text
+销量: [230 150 890 340 560 120 670]
+前 3 名索引: [2 6 4]
+前 3 名销量: [890 670 560]
+```
+
+## 广播（Broadcasting）
+
+广播是 NumPy 的特色：**对不同形状的数组做运算时，NumPy 会自动把小数组「扩展」成和大数组一样的形状**，无需手动复制。
+
+规则：从尾部维度开始比，维度相同或有一个是 1 就能广播。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+arr = np.array([1, 2, 3])
+print('arr + 10:', arr + 10)
+print('arr * 5:', arr * 5)
+```
+
+```text
+arr + 10: [11 12 13]
+arr * 5: [ 5 10 15]
+```
+
+```python
+# np.arange: 创建等差数组
+matrix = np.arange(12).reshape(3, 4)
+# np.array: 从列表创建 NumPy 数组
+row = np.array([10, 20, 30, 40])
+# np.array: 从列表创建 NumPy 数组
+col = np.array([[100], [200], [300]])
+
+print('matrix:\n', matrix, '\n')
+print('matrix + row (行广播):\n', matrix + row, '\n')
+# reshape: 重塑数组形状
+print('matrix + col[:, None] (列广播):\n', matrix + col)
+```
+
+```text
+matrix:
+ [[ 0  1  2  3]
+ [ 4  5  6  7]
+ [ 8  9 10 11]] 
+
+[[110 120 130 140]
+ [210 220 230 240]
+ [310 320 330 340]]
+matrix + row (行广播):
+ [[10 21 32 43]
+ [14 25 36 47]
+ [18 29 40 51]] 
+
+matrix + col[:, None] (列广播):
+ [[100 101 102 103]
+ [204 205 206 207]
+ [308 309 310 311]]
+```
+
+```python
+# np.array: 从列表创建 NumPy 数组
+a = np.array([[1], [2], [3]])
+# np.array: 从列表创建 NumPy 数组
+b = np.array([10, 20, 30, 40])
+print('(3,1) + (4,) -> (3,4):\n', a + b)
+```
+
+```text
+(3,1) + (4,) -> (3,4):
+ [[11 21 31 41]
+ [12 22 32 42]
+ [13 23 33 43]]
+```
+
+#### 💡**场景**
+
+给一个二维表格的每一列加上不同的偏移量，或者每行乘以不同的系数。
+
+```python
+# np.array: 从列表创建 NumPy 数组
+data = np.array([[80, 90, 85],
+                 [70, 75, 80],
+                 [60, 65, 70]])
+# np.array: 从列表创建 NumPy 数组
+bonus = np.array([5, 10, 3])
+print('原始成绩:\n', data, '\n')
+print('加上加分 (每人加的不同):\n', data + bonus)
+```
+
+```text
+原始成绩:
+ [[80 90 85]
+ [70 75 80]
+ [60 65 70]] 
+
+加上加分 (每人加的不同):
+ [[ 85 100  88]
+ [ 75  85  83]
+ [ 65  75  73]]
+```
+
+## 总结
+
+本节课覆盖了 NumPy 最常用的数据操作：
+
+| 操作 | 常用方法 |
+|------|----------|
+| **创建** | `array`, `zeros`, `ones`, `arange`, `linspace`, `random` |
+| **索引** | `arr[i]`, `arr[i:j]`, 花式索引, 布尔索引 |
+| **变形** | `reshape`, `resize` |
+| **数学运算** | `+`, `-`, `*`, `/`, `**`, `sin`, `cos`, `exp`, `sqrt` |
+| **统计运算** | `sum`, `mean`, `std`, `min`, `max`, `cumsum` |
+| **条件筛选** | `np.where`, 布尔掩码 |
+| **拼接分割** | `concatenate`, `vstack`, `hstack`, `split` |
+| **排序** | `sort`, `argsort`, `unique` |
+| **广播** | 自动维度扩展 |
+
+---
+
+## 互动教学课程
+
+- <a href="/teach/lessons/ds-0004-Numpy-数据操作.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/Numpy-数据操作速查表.html">📋 Numpy-数据操作速查表（可打印）</a>

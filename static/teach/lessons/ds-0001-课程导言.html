@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · 课程导言：NumPy/Pandas 处理结构化数据、Matplotlib/Seaborn 做可视化——互动教学课程">
+  <title>课程导言 · 互动教学课程（数据科学工具包 ds-01）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>课程导言</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/课程导言">01.课程导言</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 NumPy / Pandas 与 Matplotlib / Seaborn 两组库的分工</li>
+        <li>解释这门课为什么只讲「与 Agents 应用开发相关」的部分</li>
+        <li>复述 10 章课程地图与学习顺序背后的依赖关系</li>
+        <li>用 uv 初始化工程、跑通第一个 Jupyter Notebook</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把课程的骨架过一遍——细节都在《01.课程导言》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>四个库的分工</h3>
+        <ul class="pitfall-list">
+          <li><strong>NumPy &amp; Pandas</strong>：数据分析和科学计算的基石，是 Agent 处理<strong>结构化数据</strong>的核心工具</li>
+          <li><strong>Matplotlib &amp; Seaborn</strong>：把枯燥的数据转化为直观图表，是 Agent「秀出」分析成果的关键</li>
+          <li>一句话记忆：<strong>前两个管「算」，后两个管「看」</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>课程定位（最重要的一条）</h3>
+        <ul class="pitfall-list">
+          <li>目标是<strong>为 Agents 应用开发做准备</strong>——不是模型训练、微调、部署或推理</li>
+          <li>讲四个库时<strong>只讲与 Agents 应用开发相关的内容</strong>：够用、能用、能读懂 AI 给出的代码</li>
+          <li>因此不铺陈统计学体系，也不穷举可视化样式——重点在「读懂 + 改造 + 验证」</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>课程地图与工具链</h3>
+        <ul class="pitfall-list">
+          <li><strong>依赖顺序</strong>：Jupyter → NumPy（核心概念 → 数据操作）→ Pandas（数据类型 → 数据清洗）→ Matplotlib（核心概念 → 动画 → 交互式组件）→ Seaborn</li>
+          <li><strong>Pandas 建立在 NumPy 之上</strong>：Series / DataFrame 的底层就是 ndarray，所以先学 NumPy</li>
+          <li><strong>工程管理</strong>：uv（<code>uv add &lt;package&gt;</code>）；课件全部是 <code>.ipynb</code>，用 VS Code 的 Jupyter 插件运行</li>
+          <li><strong>解释器</strong>：必须选本工程虚拟环境里的 Python</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《01.课程导言》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 处理结构化数据（数组、表格）主要依靠哪两个库？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Jupyter 与 uv</button>
+            <button class="quiz-option">NumPy 与 Seaborn</button>
+            <button class="quiz-option">NumPy 与 Pandas</button>
+            <button class="quiz-option">Matplotlib 与 Seaborn</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：NumPy 与 Pandas 是数据分析和科学计算的基石，是 Agent 处理结构化数据的核心工具。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 把数据「秀出来」——转成直观图表，靠的是哪两个库？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">NumPy 与 Pandas</button>
+            <button class="quiz-option">Matplotlib 与 Seaborn</button>
+            <button class="quiz-option">Pandas 与 Matplotlib</button>
+            <button class="quiz-option">Seaborn 与 NumPy</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：Matplotlib 与 Seaborn 负责把枯燥的数据转化为直观图表，是 Agent「秀出」分析成果的关键。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 本课程明确的目标方向是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为数据科学学术研究做准备</button>
+            <button class="quiz-option">为模型训练与微调做准备</button>
+            <button class="quiz-option">为 Agents 应用开发做准备</button>
+            <button class="quiz-option">为模型部署与推理优化做准备</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：课程目标是为后续学习 AI Agents 应用开发做准备——而非模型训练、微调、部署或推理。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 课程为什么把 NumPy 排在 Pandas 之前？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Pandas 的 Series / DataFrame 底层建立在 ndarray 之上</button>
+            <button class="quiz-option">NumPy 安装更简单</button>
+            <button class="quiz-option">Pandas 已经过时了</button>
+            <button class="quiz-option">两者没有任何关系，顺序随便</button>
+          </div>
+          <div class="quiz-explain" hidden>Pandas 是建立在 NumPy 之上的数据处理库：不理解 ndarray 的 shape / dtype / axis，后面 Pandas 的广播与对齐就很难真正看懂。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 课件为什么要用 Jupyter Notebook，而不是普通 .py 文件？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">分段执行、每段立刻看到表格/图表结果，匹配探索式数据处理</button>
+            <button class="quiz-option">因为 .py 文件不能写中文注释</button>
+            <button class="quiz-option">因为 Notebook 不需要虚拟环境</button>
+            <button class="quiz-option">因为 Notebook 运行速度更快</button>
+          </div>
+          <div class="quiz-explain" hidden>数据处理的真实工作方式是「读入 → 试探性转换 → 观察中间结果」循环，Notebook 的分段执行 + 即时输出正好匹配；与运行速度、中文、虚拟环境都无关。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 安装依赖时用 <code>uv add numpy</code> 而不是 <code>pip install numpy</code>，主要区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">uv 装完不需要重启内核</button>
+            <button class="quiz-option">依赖会写进工程的 pyproject.toml（含锁文件），环境可复现、可交接</button>
+            <button class="quiz-option">uv 下载的包体积更小</button>
+            <button class="quiz-option">pip 不能装 numpy</button>
+          </div>
+          <div class="quiz-explain" hidden>uv 是工程级的依赖管理：<code>uv add</code> 会把依赖登记进工程的 pyproject.toml 并锁定版本（uv.lock），换台机器 <code>uv sync</code> 就能复现同一套环境；pip 只影响当前环境，无法随工程交接。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 一个 Agent 要「读一份 CSV，算出各城市薪资中位数，画成柱状图返回给用户」，四个库的分工链路是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Pandas 读文件与分组统计 → NumPy 承担底层数值计算 → Matplotlib 作图 → Seaborn 做统计美化</button>
+            <button class="quiz-option">Matplotlib 读文件 → NumPy 算中位数 → Pandas 画图</button>
+            <button class="quiz-option">Seaborn 读文件 → Pandas 算数值 → NumPy 作图</button>
+            <button class="quiz-option">四个库功能完全重叠，随便选一个就够</button>
+          </div>
+          <div class="quiz-explain" hidden>链路：Pandas 负责读入与分组，分组聚合的底层数值运算由 NumPy 承担，绘图交给 Matplotlib，统计类图表的样式与默认聚合由 Seaborn 接管。课程正是按这条链路排的章序。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 「只讲与 Agents 应用开发相关的内容」这条约束，意味着本课程不做哪些事？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不写任何代码，只讲概念</button>
+            <button class="quiz-option">不涉及 Pandas，只讲 NumPy</button>
+            <button class="quiz-option">不做模型训练 / 微调 / 部署 / 推理，也不追求统计学的系统性铺陈</button>
+            <button class="quiz-option">不使用真实数据，只用造出来的示例</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「项目背景」原文：为 Agents 应用开发做准备，而非模型训练、微调、部署或推理；内容范围限定在「讲解这些库时只讲与 Agents 应用开发相关的内容」。课程后面用真实招聘数据做清洗与可视化，恰恰说明不是不用真实数据。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. AI 生成的代码里有 <code>import numpy as np</code>，运行却报 <code>ModuleNotFoundError: No module named 'numpy'</code>。在 Notebook 里最可能的根因与正确修法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">需要重启电脑</button>
+            <button class="quiz-option">numpy 已被废弃，应该改用 pandas</button>
+            <button class="quiz-option">代码写错了，把 import 放到文件第一行即可</button>
+            <button class="quiz-option">Notebook 选的解释器不是本工程虚拟环境（包装到了别处）——切回 .venv 解释器，或用 <code>uv add numpy</code> 把依赖装进本工程</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「课件规范」要求：Jupyter 的 Python 解释器必须使用当前工程的虚拟环境，切勿使用其他环境。装到了别处、解释器选了系统 Python，就会出现「明明装了却 import 不到」。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0001-课程导言',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事让 AI 写一段「把 200 万条订单金额乘以 1.06 算税后价」的代码，AI 给的是 <code>[x * 1.06 for x in amounts]</code>（Python 列表推导），数据源其实是一个 NumPy 数组。审查：这个改法在 Agents 数据管道里有什么隐患？`,
+              source: '来源：NumPy 官方文档 Why use NumPy（"NumPy shines when there are large quantities of \'homogeneous\' (same-type) data to be processed on the CPU."）https://numpy.org/doc/stable/user/absolute_beginners.html · 检索 2026-10-02 · 层级：一手（官方文档，场景化改写）',
+              breakdown: `官方给出的判据是：<strong>大量同类型数据在 CPU 上处理时，NumPy 才是对的工具</strong>。列表推导会把 ndarray 逐元素转成 Python 对象——200 万次对象创建与解释器循环，速度与内存都劣化一个量级，还会丢掉 dtype 信息（后面参与计算时静默升格成 object/float64）。正确姿势是直接向量化：<code>amounts * 1.06</code>。这类「AI 把向量化代码改成 for 循环」的错误在数据管道里很常见，因为模型更熟悉纯 Python 写法。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `工程里同时要装「运行时要用的库」和「只在开发时用的工具」，uv 分别怎么写？依赖分别落到 pyproject.toml 的哪个字段？`,
+              source: '来源：uv 官方文档 Managing dependencies（"The --dev, --group, or --optional flags can be used to add dependencies to an alternative field."；"project.dependencies: Published dependencies."）https://docs.astral.sh/uv/concepts/projects/dependencies/ · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `运行时依赖：<code>uv add numpy</code> → 写入 <strong>project.dependencies</strong>（官方定义：Published dependencies）。开发期工具：<code>uv add --dev jupyter</code> → 写入 <strong>dependency-groups</strong>（官方定义：Local dependencies for development）——本课程第 02 章装 Jupyter 用的正是这一条。分开的实际意义：部署时只装运行时依赖，不把测试/Notebook 工具带进生产镜像。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `要给一个 AI Agent 选「数据处理 + 出图」的技术栈：纯 NumPy、Pandas、还是 Matplotlib/Seaborn 组合？请按数据类型和任务阶段说明分工依据。`,
+              source: '来源：NumPy 官方文档 Absolute beginners（"The NumPy library contains multidimensional array data structures, such as the homogeneous, N-dimensional ndarray, and a large library of functions that operate efficiently on these data structures."）https://numpy.org/doc/stable/user/absolute_beginners.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《01.课程导言》课件（四个库的分工）',
+              breakdown: `按阶段分工：<strong>读入与清洗</strong>用 Pandas（带列名、混合类型、缺失值处理是它的主场）；<strong>底层数值计算</strong>落到 NumPy 的 ndarray（官方定义：同质、N 维、批量高效运算）；<strong>出图</strong>用 Matplotlib（可控性最强，Figure/Axes/Artist 三层）；<strong>统计类图表</strong>用 Seaborn（默认带统计聚合与更好看的主题）。课件给的一句话是「前两个管算、后两个管看」——选型时先判断数据是不是同质数值（是 → NumPy），再判断要不要表格语义（要 → Pandas）。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 uv 从零起一个数据科学工程，并跑通第一个 Notebook（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: 'uv init 初始化工程 → uv add --dev jupyter →（用 uv add 补 numpy）→ 新建 ipynb → 选择 .venv 里的解释器 → 运行一个含 NumPy 数组与一次打印的单元格。',
+                accept: ['pyproject.toml 里 dependencies 有 numpy、dependency-groups 里有 jupyter', 'Notebook 解释器指向工程 .venv', '单元格运行无 ModuleNotFoundError，能打印出 ndarray 的 shape 与 dtype'],
+              },
+              source: '任务基于《01.课程导言》与《02.Jupyter》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：<code>uv init .</code> → <code>uv add --dev jupyter</code> → <code>uv add numpy</code> → VS Code 里新建 .ipynb → 右上角选解释器 <code>.venv/bin/python</code> → 写 <code>import numpy as np; a = np.array([[1,2,3],[4,5,6]]); print(a.shape, a.dtype)</code> 并运行。最常见的坑是解释器选了系统 Python（或 conda 的 base），于是「装了却 import 不到」——这与第 9 题是同一个根因。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://numpy.org/doc/stable/user/absolute_beginners.html">NumPy: the absolute basics for beginners</a> · <a href="https://docs.astral.sh/uv/concepts/projects/dependencies/">uv 官方文档 Managing dependencies</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/课程导言速查表.html">课程导言速查表</a>——四个库分工、课程地图与工具链一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/课程导言">01.课程导言</a> · 下一课 <a href="/agents/数据科学工具包/Jupyter">02.Jupyter</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>

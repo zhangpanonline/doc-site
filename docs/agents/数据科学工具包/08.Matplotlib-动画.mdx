@@ -1,0 +1,356 @@
+---
+sidebar_position: 8
+title: '08. Matplotlib - 动画'
+description: "数据科学工具包 · Matplotlib 动画：FuncAnimation 与 ArtistAnimation 两种方案、Blit 模式与动画保存。"
+displayed_sidebar: agentsDataScience
+---
+
+# Matplotlib - 动画
+
+```python
+# 启用交互式后端
+%matplotlib widget
+```
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, ArtistAnimation
+from IPython.display import HTML
+from collections import deque
+
+# 设置中文字体支持（可选）
+plt.rcParams.update({
+    "font.sans-serif":["PingFang SC"],
+    "axes.unicode_minus":False,
+    "figure.dpi": 100
+})
+
+def reset():
+    old_ani = globals().pop("ani", None)
+
+    if old_ani is not None:
+        try:
+            old_ani.event_source.stop()
+        except Exception:
+            pass
+
+    plt.close("all")
+```
+
+---
+
+## 1. FuncAnimation — 函数驱动动画
+
+**FuncAnimation** 是最常用的动画方式：
+你提供一个「更新函数」，动画循环每次调用它来更新图表。
+
+核心三要素：
+- `fig`：画布
+- `update(frame)`：每帧调用的更新函数
+- `frames`：帧总数（或可迭代对象）
+
+```python
+reset()
+fig, ax = plt.subplots(figsize=(8, 4))
+
+x = np.linspace(0, 2 * np.pi, 100)
+line, = ax.plot(x, np.sin(x))
+
+ax.set_ylim(-1.5, 1.5)
+ax.set_title('正弦波动画')
+
+frames = 50
+
+def update(frame):
+    # 最后一帧相位 = 2π，和第一帧（相位 0）在视觉上相等
+    phase = 2 * np.pi * frame / frames
+    line.set_ydata(np.sin(x + phase))
+    return line,
+
+ani = FuncAnimation(fig, update, frames=range(frames + 1), interval=16, repeat=True)
+```
+
+### 核心参数
+
+| 参数 | 作用 |
+|------|------|
+| `frames` | 帧总数或可迭代对象（如 `range(100)`、`np.linspace(0, 10, 100)`）|
+| `interval` | 每帧间隔（毫秒），默认 200 |
+| `repeat` | 是否循环播放，默认 True |
+| `blit` | 是否只更新变化部分（大幅提升性能）|
+| `init_func` | 初始化函数，配合 blit 使用 |
+
+```python
+reset()
+
+# 使用可迭代对象作为 frames
+
+
+fig, ax = plt.subplots(figsize=(8, 4))
+
+# 保存最近100个数据点
+x_data = deque(maxlen=100)
+y_data = deque(maxlen=100)
+
+(line,) = ax.plot([], [], lw=2)
+
+ax.set_xlim(0, 100)
+ax.set_ylim(-1.5, 1.5)
+
+
+# -----------------------------
+# 无限生成器（模拟实时数据流）
+# -----------------------------
+def data_stream():
+    t = 0
+    while True:
+        yield t, np.sin(t * 0.1)
+        t += 1
+
+
+# -----------------------------
+# 每收到一条数据就更新一次图像
+# -----------------------------
+def update(frame):
+    x, y = frame
+
+    x_data.append(x)
+    y_data.append(y)
+
+    line.set_data(x_data, y_data)
+
+    # x轴跟着移动，形成滚动窗口
+    if x >= 100:
+        ax.set_xlim(x - 100, x)
+
+
+ani = FuncAnimation(fig, update, frames=data_stream(), interval=30, cache_frame_data=False)  # 无限生成器
+```
+
+### Blit 模式
+
+`blit=True` 只重新绘制变化的 Artist，而不是整个 Axes。
+建议配合 `init_func` 使用，先初始化所有 Artist，然后每帧只更新特定部分。
+
+```python
+reset()
+fig, ax = plt.subplots(figsize=(8, 4))
+
+x = np.linspace(0, 2 * np.pi, 100)
+(line,) = ax.plot([], [], lw=2)
+(point,) = ax.plot([], [], "ro", ms=8)
+
+
+def init():
+    ax.set_xlim(0, 2 * np.pi + 5)
+    ax.set_ylim(-1.5, 1.5)
+    return line, point
+
+
+def update(frame):
+    y = np.sin(x + frame * 0.1)
+    line.set_data(x, y)
+    point.set_data([x[-1]], [y[-1]])
+    return line, point
+
+
+ani = FuncAnimation(fig, update, frames=100, init_func=init, blit=True, interval=50)
+```
+
+---
+
+## 2. ArtistAnimation — 预生成帧
+
+**ArtistAnimation** 适合你已经准备好每一帧所有 Artist 的情况。
+它接受一个列表，每个元素是这一帧要显示的所有 Artist。
+
+当你需要精确控制每一帧的内容时非常有用。
+
+```python
+reset()
+fig, ax = plt.subplots(figsize=(8, 4))
+
+x = np.linspace(0, 2 * np.pi, 100)
+frames = []
+
+for phase in np.linspace(0, 2 * np.pi, 50):
+    line, = ax.plot(x, np.sin(x + phase), color='royalblue')
+    frames.append([line])
+
+ani = ArtistAnimation(fig, frames, interval=50, repeat=True)
+```
+
+---
+
+## 3. 保存动画
+
+Matplotlib 支持将动画保存为 GIF、MP4、HTML 等格式。
+- GIF：使用 `pillow` writer
+- MP4：使用 `ffmpeg` writer（需安装 ffmpeg）
+- HTML：使用 `ani.to_jshtml()` 嵌入 Notebook
+
+```python
+# 保存为 GIF（需要 pillow 库）
+ani.save('sine_wave.gif', writer='pillow', fps=20)
+print('已保存为 sine_wave.gif')
+```
+
+```python
+# 在 Notebook 中嵌入 HTML 动画（无需额外播放器）
+HTML(ani.to_jshtml())
+```
+
+```python
+# 嵌入为 HTML5 视频（需要 ffmpeg）
+# HTML(ani.to_html5_video())
+```
+
+## 本章 demo 脚本
+课件目录下随附的示例脚本，可直接运行观察效果：
+
+### `demo1.py`
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, ArtistAnimation
+from IPython.display import HTML
+
+# 设置中文字体支持（可选）
+plt.rcParams.update(
+    {"font.sans-serif": ["PingFang SC"], "axes.unicode_minus": False, "figure.dpi": 100}
+)
+
+fig, ax = plt.subplots(figsize=(8, 4))
+
+x = np.linspace(0, 2 * np.pi, 100)
+(line,) = ax.plot(x, np.sin(x))
+
+ax.set_ylim(-1.5, 1.5)
+ax.set_title("正弦波动画")
+
+frames = 100
+
+
+def update(frame):
+    # 最后一帧相位 = 2π，和第一帧（相位 0）在视觉上相等
+    phase = 2 * np.pi * frame / frames
+    line.set_ydata(np.sin(x + phase))
+    return (line,)
+
+
+ani = FuncAnimation(fig, update, frames=range(frames + 1), interval=16, repeat=True)
+
+plt.show()
+```
+
+### `demo2.py`
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, ArtistAnimation
+from collections import deque
+
+# 设置中文字体支持（可选）
+plt.rcParams.update(
+    {"font.sans-serif": ["PingFang SC"], "axes.unicode_minus": False, "figure.dpi": 100}
+)
+# 使用可迭代对象作为 frames
+
+
+fig, ax = plt.subplots(figsize=(8, 4))
+
+# 保存最近100个数据点
+x_data = deque(maxlen=100)
+y_data = deque(maxlen=100)
+
+(line,) = ax.plot([], [], lw=2)
+
+ax.set_xlim(0, 100)
+ax.set_ylim(-1.5, 1.5)
+
+
+# -----------------------------
+# 无限生成器（模拟实时数据流）
+# -----------------------------
+def data_stream():
+    t = 0
+    while True:
+        yield t, np.sin(t * 0.1)
+        t += 1
+
+
+# -----------------------------
+# 每收到一条数据就更新一次图像
+# -----------------------------
+def update(frame):
+    x, y = frame
+
+    x_data.append(x)
+    y_data.append(y)
+
+    line.set_data(x_data, y_data)
+
+    # x轴跟着移动，形成滚动窗口
+    if x >= 100:
+        ax.set_xlim(x - 100, x)
+
+
+ani = FuncAnimation(
+    fig,
+    update,
+    frames=data_stream(),
+    interval=30,
+    cache_frame_data=False,
+)  # 无限生成器
+
+
+plt.show()
+```
+
+### `demo3.py`
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, ArtistAnimation
+from collections import deque
+
+# 设置中文字体支持（可选）
+plt.rcParams.update(
+    {"font.sans-serif": ["PingFang SC"], "axes.unicode_minus": False, "figure.dpi": 100}
+)
+
+fig, ax = plt.subplots(figsize=(8, 4))
+
+x = np.linspace(0, 2 * np.pi, 100)
+(line,) = ax.plot([], [], lw=2)
+(point,) = ax.plot([], [], "ro", ms=8)
+
+
+def init():
+    ax.set_xlim(0, 2 * np.pi + 5)
+    ax.set_ylim(-1.5, 1.5)
+    return line, point
+
+
+def update(frame):
+    y = np.sin(x + frame * 0.1)
+    line.set_data(x, y)
+    point.set_data([x[-1]], [y[-1]])
+    return line, point
+
+
+ani = FuncAnimation(fig, update, frames=100, init_func=init, blit=True, interval=50)
+
+plt.show()
+```
+
+---
+
+## 互动教学课程
+
+- <a href="/teach/lessons/ds-0008-Matplotlib-动画.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/Matplotlib-动画速查表.html">📋 Matplotlib-动画速查表（可打印）</a>

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Numpy-数据操作速查表 · 参考手册</title>
+  <meta name="description" content="Numpy-数据操作速查表 · 可打印参考手册：配合《Numpy-数据操作互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · 数据科学工具包</p>
+      <h1>Numpy-数据操作速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ds-0004-Numpy-数据操作.html">《Numpy-数据操作互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>一、创建：把形状与分布一次说清</h2>
+      <table class="cmp-table">
+        <tr><th>方法</th><th>作用</th><th>示例 → 结果</th></tr>
+        <tr><td><code>np.array</code></td><td>从列表/嵌套列表创建</td><td><code>np.array([[1,2],[3,4]])</code> → 形状 (2,2)</td></tr>
+        <tr><td><code>np.zeros</code> / <code>np.ones</code></td><td>全 0 / 全 1（默认 float64）</td><td><code>np.zeros((2,3))</code>；<code>np.ones((2,3), dtype=np.float32)</code></td></tr>
+        <tr><td><code>np.eye</code></td><td>单位矩阵</td><td><code>np.eye(3)</code> → 对角线为 1 的 3×3</td></tr>
+        <tr><td><code>np.arange</code></td><td>按<strong>步长</strong>生成，<strong>不含终点</strong></td><td><code>np.arange(0,10,2)</code> → <code>[0 2 4 6 8]</code></td></tr>
+        <tr><td><code>np.linspace</code></td><td>按<strong>个数</strong>等分，默认含终点</td><td><code>np.linspace(0,1,5)</code> → <code>[0. 0.25 0.5 0.75 1.]</code>；加 <code>endpoint=False</code> → <code>[0. 0.2 0.4 0.6 0.8]</code></td></tr>
+        <tr><td><code>np.resize</code></td><td>改形状，元素不够时<strong>循环重复填充</strong></td><td><code>np.resize(np.array([1,2,3,4]), (2,3))</code> → <code>[[1,2,3],[4,1,2]]</code></td></tr>
+      </table>
+
+      <h3 style="margin-top:1rem">随机数：先拿生成器，再调分布</h3>
+      <pre>rng = np.random.default_rng(41)      # 固定种子 ⇒ 结果可复现
+rng.uniform(0, 1, (2, 3))            # 均匀分布，可指定形状
+rng.normal(0, 1, (2, 3))             # 正态分布
+rng.integers(0, 10, (2, 3))          # 随机整数（左闭右开）
+
+# 场景：造模拟数据测排序/筛选
+prices = np.random.default_rng(42).uniform(10, 100, 10).round(2)</pre>
+      <p><strong>形状永远要写成元组</strong>：<code>np.zeros((2, 3))</code> ✅ / <code>np.zeros(2, 3)</code> ❌（会把 3 当成 dtype）。</p>
+    </section>
+
+    <section>
+      <h2>二、索引与切片：视图还是拷贝？</h2>
+      <table class="cmp-table">
+        <tr><th>写法</th><th>名称</th><th>返回</th><th>适用场景</th></tr>
+        <tr><td><code>arr[i]</code> / <code>arr[1:, 2:]</code> / <code>arr[:, 1]</code></td><td>基本索引与切片</td><td><strong>视图</strong>（改它 → 改原数组）</td><td>连续区间、按维度取子块</td></tr>
+        <tr><td><code>arr[[0, 2]]</code></td><td>花式索引（整数数组）</td><td><strong>拷贝</strong></td><td>挑不连续的行/列</td></tr>
+        <tr><td><code>arr[[0,1,3], [2,1,0]]</code></td><td>成对花式索引</td><td><strong>拷贝</strong>（长度为 3 的一维）</td><td>每行各取一个指定列</td></tr>
+        <tr><td><code>arr[arr &gt; 15]</code></td><td>布尔索引（掩码）</td><td><strong>拷贝</strong>（拍平成一维）</td><td>按条件筛选元素</td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>切片语法</dt>
+        <dd><code>arr[start:stop:step]</code>，stop 不包含，step 默认 1；多维用逗号分隔，<code>::</code> 等价于 <code>:</code>。</dd>
+        <dt>组合条件</dt>
+        <dd>用 <code>&amp;</code> / <code>|</code> / <code>~</code>，<strong>每项都要加括号</strong>：<code>arr[(arr &gt; 10) &amp; (arr &lt; 30)]</code>。</dd>
+        <dt>怎么判断视图/拷贝</dt>
+        <dd>看 <code>arr[...].base</code>：视图返回原数组，拷贝返回 <code>None</code>。强制拷贝用 <code>.copy()</code>。</dd>
+        <dt>内存提醒</dt>
+        <dd>从大数组里切一小块会让整块内存跟着存活（视图持有引用）——确定不再需要大数组时显式 <code>.copy()</code>。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>三、变形、运算与统计</h2>
+      <table class="cmp-table">
+        <tr><th>操作</th><th>写法</th><th>要点</th></tr>
+        <tr><td>重塑</td><td><code>arr.reshape(3, 4)</code> / <code>arr.reshape(2, -1)</code></td><td>只改形状不改数据；总元素数必须一致；<code>-1</code> 自动推断该维（只能出现一个）</td></tr>
+        <tr><td>拍平</td><td><code>arr.ravel()</code> / <code>arr.flatten()</code> / <code>arr.reshape(-1)</code></td><td>ravel 尽量返回视图，flatten 一定返回拷贝</td></tr>
+        <tr><td>转置</td><td><code>arr.T</code> / <code>arr.transpose(1, 0, 2)</code></td><td>换轴顺序；多维可指定任意轴排列</td></tr>
+        <tr><td>向量化运算</td><td><code>arr + 10</code> · <code>arr * 2</code> · <code>arr ** 2</code> · <code>arr &gt; 2</code></td><td>一次作用于整个数组，不要写 for 循环</td></tr>
+        <tr><td>数组间运算</td><td><code>a + b</code> · <code>a - b</code> · <code>a * b</code> · <code>a / b</code></td><td>逐元素；形状需广播兼容</td></tr>
+        <tr><td>条件替换</td><td><code>np.where(cond, x, y)</code></td><td>向量化 if-else；只传 cond 时返回满足条件的<strong>下标</strong></td></tr>
+      </table>
+
+      <h3 style="margin-top:1rem">聚合统计：axis 与 ddof</h3>
+      <pre>arr = np.arange(12).reshape(3, 4).astype(float)
+
+arr.sum(), arr.mean(), arr.min(), arr.max()   # 整数组聚合
+arr.sum(axis=0)   # 沿行方向压扁 → 按「列」求和 [12. 15. 18. 21.]
+arr.sum(axis=1)   # 按「行」求和 [ 6. 22. 38.]
+arr.argmin(), arr.argmax()                    # 最值所在的索引
+
+# 标准差：分母是 N - ddof
+arr.std()            # ddof=0 → 总体标准差 3.452052529534663
+arr.std(ddof=1)      # ddof=1 → 样本标准差 3.605551275463989（Bessel 校正，值更大）
+arr.std() ** 2 == arr.var()          # True：std 是 var 的平方根
+arr.std(ddof=1) / arr.mean()         # 变异系数 CV：0.6276</pre>
+      <table class="cmp-table">
+        <tr><th>CV 范围</th><th>离散程度</th><th>直观感受</th><th>典型场景</th></tr>
+        <tr><td>&lt; 10%</td><td>非常小</td><td>数据极度集中，几乎一模一样</td><td>精密仪器读数、自动化零件尺寸</td></tr>
+        <tr><td>10% ~ 20%</td><td>较小</td><td>有波动但很稳定，平均值可靠</td><td>成年人身高体重、日常气温</td></tr>
+        <tr><td>20% ~ 30%</td><td>中等</td><td>正常波动范围，尚可接受</td><td>考试成绩、绩效评分</td></tr>
+        <tr><td>30% ~ 50%</td><td>较大</td><td>数据分散，平均值代表性下降</td><td>城市房价、地区薪资水平</td></tr>
+        <tr><td>&gt; 50%</td><td>非常大</td><td>极度分散，平均值几乎没意义</td><td>股票日收益率、创业公司估值</td></tr>
+      </table>
+      <p><strong>CV 为什么有用</strong>：标准差带量纲，跨列/跨指标比较不了；CV = <code>std/mean</code> 无量纲，先看 CV 再决定平均值能不能代表这批数据。</p>
+    </section>
+
+    <section>
+      <h2>四、筛选、拼接、排序与广播</h2>
+      <table class="cmp-table">
+        <tr><th>操作</th><th>写法</th><th>要点</th></tr>
+        <tr><td>条件筛选</td><td><code>np.where(scores &gt;= 60, '通过', '不通过')</code></td><td>x / y / condition 三者需可互相广播</td></tr>
+        <tr><td>取下标</td><td><code>np.where(arr &gt; 25)</code></td><td>返回元组 <code>(array([2,3,4]),)</code>，可再 <code>arr[indices]</code> 取值</td></tr>
+        <tr><td>通用拼接</td><td><code>np.concatenate([a, b], axis=0)</code></td><td>axis=0 接行、axis=1 接列；其余维度必须一致</td></tr>
+        <tr><td>垂直/水平堆叠</td><td><code>np.vstack([a, b])</code> / <code>np.hstack([a, b])</code></td><td>vstack 按行叠；hstack 按列接（等价 concatenate 的常用快捷键）</td></tr>
+        <tr><td>按切点分割</td><td><code>np.split(arr, [1, 3])</code></td><td>得到 <code>[:1]</code>、<code>[1:3]</code>、<code>[3:]</code> 三段</td></tr>
+        <tr><td>按列均分</td><td><code>np.hsplit(arr, 2)</code></td><td>横向切成左右两半</td></tr>
+        <tr><td>排序</td><td><code>np.sort(arr)</code></td><td>返回排好序的<strong>值</strong>（不改原数组）</td></tr>
+        <tr><td>排序下标</td><td><code>np.argsort(arr)</code></td><td>返回「能把它排好序的<strong>下标</strong>」，<code>arr[np.argsort(arr)] == np.sort(arr)</code></td></tr>
+        <tr><td>原地排序</td><td><code>arr.sort()</code></td><td>无返回值，直接改 <code>arr</code></td></tr>
+        <tr><td>去重</td><td><code>np.unique(arr)</code></td><td>返回排好序的唯一值</td></tr>
+      </table>
+      <pre># 场景：销量前 3 名（argsort 才拿得到"谁"）
+sales = np.array([230, 150, 890, 340, 560, 120, 670])
+top3 = np.argsort(sales)[::-1][:3]     # [2 6 4]
+sales[top3]                            # [890 670 560]</pre>
+
+      <h3 style="margin-top:1rem">广播规则（Broadcasting）</h3>
+      <pre># 规则：从尾部维度开始逐个比 —— 相等，或其中一个是 1 ⇒ 兼容
+(3, 4) + (4,)      → (3, 4)     # 尾维 4 == 4，向量加到每一行
+(3, 1) + (4,)      → (3, 4)     # 1 与 4 都含 1，两侧都可拉伸
+(3, 4) + (3,)      → ValueError: operands could not be broadcast together with shapes (3,4) (3,)
+                                # 尾维 4 vs 3：既不相等也没有 1
+(2, 3) + (3,)      → (2, 3)     # 二维与一维：缺的维度按 1 补齐后尾维相等
+matrix + col[:, None]           # 把 (3,) 变 (3,1) → 按列广播</pre>
+      <dl class="term-grid">
+        <dt>报错怎么读</dt>
+        <dd><code>could not be broadcast together with shapes (3,4) (3,)</code>：右对齐后<strong>第一个不兼容的那一维</strong>就是病灶，改形状（<code>[:, None]</code> / <code>reshape</code>）或改语义。</dd>
+        <dt>什么时候别广播</dt>
+        <dd>广播会把小数组概念上"拉伸"，若中间结果形状远大于输入（如 10×3 与 5×1×3 得到 5×10×3），内存会爆——此时把外层循环写回 Python 更稳。</dd>
+        <dt>axis 记忆法</dt>
+        <dd><code>axis=0</code> 沿行方向压扁（结果长度 = 列数，按列统计）；<code>axis=1</code> 按行统计。</dd>
+        <dt>NaN 的存在感</dt>
+        <dd>数组里只要有 <code>np.nan</code>，<code>sum</code> / <code>mean</code> / <code>std</code> 全部返回 nan；先 <code>np.isnan(x).sum()</code> 数条数，再决定用 <code>np.nanmean</code> / <code>np.nanstd</code> 还是 <code>np.where</code> 填充。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 数据科学工具包课程</p>
+
+  </main>
+</body>
+</html>

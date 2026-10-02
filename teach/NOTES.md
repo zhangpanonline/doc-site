@@ -103,6 +103,33 @@
 
 作业仅 01/03/04/05/06/09/25 有；作业放在文档正文「## 作业」节（互动课内无任何作业提示，2026-09-23 起 footer 已全站移除）。
 
+## 数据科学工具包课程（2026-10-02，10 章；源 gitee dev-edu/data-science-tools）
+
+袁进《数据科学工具包》：Jupyter / Numpy（核心概念、数据操作）/ Pandas（数据类型、数据清洗）/ Matplotlib（核心概念、动画、交互式组件）/ Seaborn。
+
+### 与框架课不同的地方（源内容是 Notebook）
+
+- 源课件是 **`课件.ipynb`**（9 个 notebook：87 markdown cell + 134 code cell），不是 `课件.md`；01/02 章是 `课件.md`
+- 转换器 `.scratch/ipynb2mdx.py`（一次性，未入库）：markdown cell → MDX 正文；code cell → `python` 围栏（`!` 开头 → `shell` 围栏）；文本输出 → `text` 围栏（strip ANSI）；`image/png` 输出与 `<img src="./assets/x">` → 落盘 `static/img/data-science/` 并改 markdown 图片引用；pandas HTML 表 → markdown 表
+- **`$$...$$` 数学块要转 `text` 围栏**：站点没装数学插件，`{` `}` 会被 MDX 当 JSX 表达式直接构建失败（ch04 标准差一节）
+- 章节源名含 " - "（如「Numpy - 核心概念」），**文件名统一去掉空格改为 `Numpy-核心概念`**（否则路由出现连续连字符），frontmatter `title` 仍保留源章名原文
+- ch07/08/09 的 `demo*.py` 作为「## 本章 demo 脚本」附录进文档
+
+### 交付物与登记
+
+- 文档 `docs/agents/数据科学工具包/0N.章名.mdx`（`displayed_sidebar: agentsDataScience`；末尾两条原生 `<a>` 入口）
+- 互动课 `teach/lessons/ds-000N-章名.html`（结构同全站统一模板：目标 → 知识速览 → 9 测验 → 面试实战 → 巩固延伸）
+- 速查表 `teach/reference/章名速查表.html`
+- `data/courses.ts` 的 `DATASCIENCE_NAMES` + course entry（`key: 'datascience'`、`sidebar: 'agentsDataScience'`）；`docs/agents/index.mdx` 卡片从「筹备中」改为可点击
+- 课程首页 `docs/agents/数据科学工具包/index.mdx` 从占位改为真首页；顺手把 `docs/agents/Python框架/index.mdx` 的「筹备中」一并改成真首页（框架课 24 章早已上线但该页仍写筹备中）
+
+### 本课执行的用户指示（2026-10-02）
+
+- **不推送**：本地 commit 即可，整体完成后由用户手动 push（沿用框架课政策）
+- **不实测**：题内代码不做实际运行验证（沿用框架课政策），提交信息注明；但选项/答案的语义正确性仍需人工核对
+- **面试题数弹性 4–8 道**（不采用框架课的固定 5 题）
+- **题源协议 B 照旧**：官方文档一手来源 + URL + 检索日期；子代理若找不到官方来源，改用「源课程场景化」的场景题，禁止编造 URL
+
 ## AI 搜索替代本地插件（2026-09-28 定，站点级）
 
 - **移除** `@easyops-cn/docusaurus-search-local`：其索引一直为空（docs 的 routeBasePath 为 `/`，与插件默认 `docsRouteBasePath:['docs']` 不匹配，132 篇文档全被过滤；中文分词也未配置），右上角搜索框形同虚设

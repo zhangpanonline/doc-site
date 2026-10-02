@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matplotlib-交互式组件速查表 · 参考手册</title>
+  <meta name="description" content="Matplotlib-交互式组件速查表 · 可打印参考手册：配合《Matplotlib-交互式组件互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · 数据科学工具包</p>
+      <h1>Matplotlib-交互式组件速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ds-0009-Matplotlib-交互式组件.html">《Matplotlib-交互式组件互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>五种组件对照表</h2>
+      <table class="cmp-table">
+        <tr><th>组件</th><th>构造关键参数</th><th>连接回调</th><th>回调收到</th><th>典型用途</th></tr>
+        <tr><td>Slider</td><td><code>ax, label, valmin, valmax, valinit, valstep</code></td><td><code>on_changed(func)</code></td><td>当前值 <code>val</code></td><td>拖动调整连续数值（频率、振幅、系数）</td></tr>
+        <tr><td>Button</td><td><code>ax, label, color, hovercolor</code></td><td><code>on_clicked(func)</code></td><td>事件对象 <code>event</code></td><td>一次性动作：重新生成数据、重置参数</td></tr>
+        <tr><td>CheckButtons</td><td><code>ax, labels, actives</code></td><td><code>on_clicked(func)</code></td><td>被切换的 <code>label</code></td><td>多个独立开关：多条曲线显隐</td></tr>
+        <tr><td>RadioButtons</td><td><code>ax, labels, active</code></td><td><code>on_clicked(func)</code></td><td>选中项 <code>label</code></td><td>一组互斥选项：切换函数 / 图表类型</td></tr>
+        <tr><td>TextBox</td><td><code>ax, label, initial</code></td><td><code>on_submit(func)</code></td><td>输入文本（字符串）</td><td>精确数值或自定义表达式，回车 / 失焦提交</td></tr>
+      </table>
+      <p>选型口诀：<strong>连续值用 Slider，一次性动作用 Button，多个独立开关用 CheckButtons，互斥单选才用 RadioButtons，要精确输入用 TextBox</strong>。</p>
+    </section>
+
+    <section>
+      <h2>通用四步套路</h2>
+      <pre># ① 建 ax：给组件单独一块 Axes，并腾地方
+fig, ax = plt.subplots(figsize=(8, 4))
+fig.subplots_adjust(bottom=0.25)                 # 给底部的组件留空间
+slider_ax = fig.add_axes((0.2, 0.1, 0.6, 0.03))  # (left, bottom, width, height)
+
+# ② 建组件：结果必须赋值给变量（留住引用）
+slider = Slider(ax=slider_ax, label='频率', valmin=0.1, valmax=5.0,
+                valinit=1.0, valstep=0.1)
+
+# ③ 回调：改数据（范围变了再 relim + autoscale_view）
+def update(freq):
+    line.set_ydata(np.sin(freq * x))
+    fig.canvas.draw_idle()                       # ④ 请求重绘
+
+slider.on_changed(update)</pre>
+      <dl class="term-grid">
+        <dt>ax 参数</dt>
+        <dd>组件是画在<strong>独立 Axes</strong> 上的图形元素，位置与大小由 <code>fig.add_axes((left, bottom, width, height))</code> 的四个归一化坐标决定；Matplotlib 不替你算布局。</dd>
+        <dt>留住引用</dt>
+        <dd><code>Slider(...)</code> 裸调用不赋值 = 失去引用，组件会不响应且无法 <code>on_changed</code> / <code>reset</code>。官方原文：要保持响应必须保留引用。</dd>
+        <dt>draw_idle()</dt>
+        <dd>请求 GUI 事件循环回来时重绘一次；交还控制权前调用多次也只渲染一次。<code>set_ydata</code> / <code>set_visible</code> 只改数据，不重绘屏幕不会变。</dd>
+        <dt>valinit / valstep</dt>
+        <dd><code>valinit</code> 是初始位置；<code>valstep</code> 是吸附步长（浮点数 → 吸附到其整数倍；数组 → 吸附到数组里的值）。</dd>
+        <dt>reset()</dt>
+        <dd><code>slider.reset()</code> 把滑块恢复到 <code>valinit</code> 值——官方 Reset 按钮示例的标准写法。</dd>
+        <dt>数据范围联动</dt>
+        <dd>数据整体换了一批、y 范围会变时，回调里补 <code>ax.relim()</code> + <code>ax.autoscale_view()</code>，否则新数据可能跑出可视区。</dd>
+        <dt>复选框查表</dt>
+        <dd>回调只给 label，所以要先把 label → Line2D 建成字典：<code>lines[label].set_visible(not lines[label].get_visible())</code>。</dd>
+        <dt>单选读状态</dt>
+        <dd><code>RadioButtons.value_selected</code> / <code>index_selected</code> 直接给当前选中项；<code>CheckButtons.get_status()</code> 一次返回全部开关状态。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>组件不显示 / 拖不动 · 排查清单</h2>
+      <table class="cmp-table">
+        <tr><th>现象</th><th>最可能根因</th><th>修法</th></tr>
+        <tr><td>图能出，但组件完全拖不动、是静态图</td><td>Notebook 用了默认的 inline 后端（渲染一次即插静态图，不能接收输入）</td><td>装 <code>ipympl</code>，改用 <code>%matplotlib widget</code>（本章第一段代码）</td></tr>
+        <tr><td>点了 / 拖了毫无反应，也不报错</td><td>组件对象没有留住引用（裸调用，被回收）</td><td>一定要 <code>slider = Slider(...)</code> 赋值给变量</td></tr>
+        <tr><td>拖了数值在变，曲线不变</td><td>回调末尾少了 <code>fig.canvas.draw_idle()</code></td><td>在回调最后一行补重绘请求</td></tr>
+        <tr><td>组件压在曲线上、盖住了数据</td><td>没给组件腾地方</td><td>用 <code>fig.subplots_adjust(bottom=…, left=…)</code> 压缩主图坐标区</td></tr>
+        <tr><td>一拖就报 NameError</td><td>回调里引用的组件变量名没定义（组件没赋值或写错名字）</td><td>统一用第一步赋值的变量名读 <code>xxx.val</code></td></tr>
+        <tr><td>文本框输入非法值就崩</td><td>没做类型转换与异常保护</td><td><code>try: freq = float(text) except ValueError: pass</code></td></tr>
+        <tr><td>点按钮换数据后曲线跑出画面</td><td>坐标范围没跟着数据更新</td><td>回调里 <code>ax.relim()</code> + <code>ax.autoscale_view()</code></td></tr>
+      </table>
+      <p>排查顺序：<strong>后端 → 引用 → 重绘</strong>——三步覆盖本章练习里绝大多数「组件不工作」的现场。</p>
+    </section>
+
+    <p class="print-badge">🔖 数据科学工具包课程</p>
+
+  </main>
+</body>
+</html>

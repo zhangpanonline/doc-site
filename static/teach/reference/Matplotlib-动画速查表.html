@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matplotlib-动画速查表 · 参考手册</title>
+  <meta name="description" content="Matplotlib-动画速查表 · 可打印参考手册：配合《Matplotlib-动画互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · 数据科学工具包</p>
+      <h1>Matplotlib-动画速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ds-0008-Matplotlib-动画.html">《Matplotlib-动画互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>FuncAnimation 参数表</h2>
+      <pre>ani = FuncAnimation(fig, update, frames=100,
+                    init_func=init, blit=True, interval=50)</pre>
+      <table class="cmp-table">
+        <tr><th>参数</th><th>含义</th><th>默认</th></tr>
+        <tr><td><code>fig</code></td><td>要动画的 Figure</td><td>必填</td></tr>
+        <tr><td><code>func</code></td><td>每帧调用一次：<code>func(frame, *fargs) -&gt; iterable_of_artists</code>，里面用 <code>set_*</code> 方法改数据</td><td>必填</td></tr>
+        <tr><td><code>frames</code></td><td>帧来源。可迭代对象直接用；整数等价于 <code>range(frames)</code>；可传无参生成器函数；<code>None</code> 等价于 <code>itertools.count</code></td><td><code>None</code></td></tr>
+        <tr><td><code>init_func</code></td><td>画一个干净的初始帧，<strong>第一帧之前调用一次</strong>；不传就用 frames 第一项的画法结果</td><td><code>None</code></td></tr>
+        <tr><td><code>fargs</code></td><td>传给 func 的额外位置参数（官方更推荐 <code>functools.partial</code>）</td><td><code>None</code></td></tr>
+        <tr><td><code>save_count</code></td><td>缓存帧数的兜底值，仅在无法从 frames 推断长度时使用（迭代器 / 生成器）</td><td><code>None</code></td></tr>
+        <tr><td><code>interval</code></td><td><strong>显示</strong>时每帧间隔（毫秒）</td><td><code>200</code></td></tr>
+        <tr><td><code>repeat</code></td><td>播放完是否重新开始</td><td><code>True</code></td></tr>
+        <tr><td><code>repeat_delay</code></td><td>两次播放之间的等待（毫秒）</td><td><code>0</code></td></tr>
+        <tr><td><code>blit</code></td><td>只重绘变化的部分——此时 func / init_func <strong>必须返回 Artist 序列</strong></td><td><code>False</code></td></tr>
+        <tr><td><code>cache_frame_data</code></td><td>是否缓存每帧数据；帧对象很大或用无限生成器时设 <code>False</code></td><td><code>True</code></td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>必须持有引用</dt>
+        <dd>返回值要赋给一个活得够久的变量（如 <code>ani</code>），否则 Animation 被垃圾回收、动画直接停住。</dd>
+        <dt>滚动窗口套式</dt>
+        <dd><code>deque(maxlen=100)</code> 存最近 100 个点 + 无限生成器做 <code>frames</code> + <code>cache_frame_data=False</code>。</dd>
+        <dt>收尾清理</dt>
+        <dd>重跑单元格前先 <code>ani.event_source.stop()</code>，再 <code>plt.close("all")</code>。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>两种动画方案对照</h2>
+      <table class="cmp-table">
+        <tr><th></th><th>FuncAnimation</th><th>ArtistAnimation</th></tr>
+        <tr><td>驱动方式</td><td>函数驱动：每帧调用 <code>update(frame)</code></td><td>数据驱动：预先准备「每帧要显示的 Artist 列表」的列表</td></tr>
+        <tr><td>内存</td><td>画一次、之后只改数据，省内存</td><td>所有帧的 Artist 都要留着，内存随帧数增长</td></tr>
+        <tr><td>适合</td><td>长动画、实时数据流、滚动窗口；帧数多</td><td>每帧内容彼此独立、需要精确控制某一帧显示什么（柱状图竞赛、条形图动画）</td></tr>
+        <tr><td>关键写法</td><td>先 <code>(line,) = ax.plot(...)</code> 拿引用 → update 里 <code>line.set_ydata(...)</code> → <code>return line,</code></td><td><code>frames.append([line])</code> 逐帧收集 → <code>ArtistAnimation(fig, frames, interval=50)</code></td></tr>
+        <tr><td>擅长更新</td><td><code>set_data</code> / <code>set_ydata</code> / <code>set_offsets</code> / <code>set_text</code></td><td>直接换一组 Artist，不用逐个改属性</td></tr>
+      </table>
+      <p>一句话：<strong>省内存选 FuncAnimation，要精确控制每帧选 ArtistAnimation</strong>。</p>
+    </section>
+
+    <section>
+      <h2>Blit 模式要点</h2>
+      <pre>def init():
+    ax.set_xlim(0, 2 * np.pi + 5); ax.set_ylim(-1.5, 1.5)
+    return line, point          # blit=True 时必须返回 Artist 序列
+
+def update(frame):
+    y = np.sin(x + frame * 0.1)
+    line.set_data(x, y)
+    point.set_data([x[-1]], [y[-1]])
+    return line, point          # 漏了这句 → RuntimeError
+
+ani = FuncAnimation(fig, update, frames=100, init_func=init, blit=True, interval=50)</pre>
+      <dl class="term-grid">
+        <dt>好处</dt>
+        <dd>只重新绘制被动过的 Artist，而不是整个 Axes，帧率明显更高。</dd>
+        <dt>代价</dt>
+        <dd>回调必须返回所有被修改 / 新建的 Artist（返回值的用途是让 blitting 算法知道图 Figure 上哪块区域要更新）。</dd>
+        <dt>常见报错</dt>
+        <dd>update 漏返回 → <code>When blit=True, the animation function must return a sequence of Artist objects.</code>；init_func 漏返回 → <code>When blit=True, the init_func must return a sequence of Artist objects.</code></dd>
+        <dt>注意</dt>
+        <dd>blit 下 Artist 按 zorder 绘制，但会盖在此前所有 Artist 之上——需要叠层顺序时别开 blit 或改用 ArtistAnimation。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>保存动画命令速记</h2>
+      <pre>ani.save('sine_wave.gif', writer='pillow', fps=20, dpi=100)   # GIF：需要 pillow
+ani.save('sine_wave.mp4', writer='ffmpeg', fps=30, dpi=150)   # MP4：需要另外安装 ffmpeg
+ani.save('sine_wave.html', writer='html')                     # HTML：HTMLWriter
+HTML(ani.to_jshtml())                                         # Notebook 里嵌 JS 动画
+HTML(ani.to_html5_video())                                    # 嵌 HTML5 video（需要 ffmpeg）</pre>
+      <table class="cmp-table">
+        <tr><th>writer</th><th>支持格式</th><th>依赖</th></tr>
+        <tr><td><code>'pillow'</code></td><td>.gif / .apng / .webp</td><td>Pillow（全部帧留在内存里）</td></tr>
+        <tr><td><code>'ffmpeg'</code></td><td>ffmpeg 支持的全部格式（.mp4 / .mkv / .mjpeg …）</td><td>需另行安装 ffmpeg；管道式，性能较好</td></tr>
+        <tr><td><code>'imagemagick'</code></td><td>imagemagick 支持的全部格式</td><td>需另行安装 imagemagick</td></tr>
+        <tr><td><code>'html'</code></td><td>.html / .htm / .png</td><td>无（生成 JS 动画）</td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>fps ≠ interval</dt>
+        <dd><code>fps</code> 决定<strong>保存出来文件</strong>的帧率，<code>interval</code> 决定<strong>显示时</strong>的帧率（默认 200 ms）；<code>save()</code> 不传 fps 时才从 interval 推算。</dd>
+        <dt>dpi</dt>
+        <dd>保存时的每英寸点数，默认取 <code>savefig.dpi</code>（<code>'figure'</code>）；与图尺寸（英寸）共同决定成片分辨率。</dd>
+        <dt>writer 怎么给</dt>
+        <dd>可传字符串（上表五个）或一个 writer 对象；不传则取 <code>rcParams["animation.writer"]</code>（默认 <code>'ffmpeg'</code>）。</dd>
+        <dt>没装 ffmpeg 时</dt>
+        <dd>跨平台装法：<code>pip install imageio_ffmpeg</code>，再设 <code>rcParams["animation.ffmpeg_path"] = imageio_ffmpeg.get_ffmpeg_exe()</code>。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 数据科学工具包课程</p>
+
+  </main>
+</body>
+</html>

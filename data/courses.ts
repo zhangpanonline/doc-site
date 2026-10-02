@@ -85,9 +85,16 @@ const frameworkSections: CourseSection[] = FRAMEWORK_NAMES.map(
   name => ({id: `agents/python-framework/${name}`}),
 );
 
+// 数据科学工具包课程（gitee.com/dev-edu/data-science-tools）：10 章，源章名里的 " - " 在文件名中改为 "-"（避免路由出现连续连字符）
+const DATASCIENCE_NAMES = ['课程导言', 'Jupyter', 'Numpy-核心概念', 'Numpy-数据操作', 'Pandas-数据类型', 'Pandas-数据清洗', 'Matplotlib-核心概念', 'Matplotlib-动画', 'Matplotlib-交互式组件', 'Seaborn'];
+const dataScienceSections: CourseSection[] = DATASCIENCE_NAMES.map(
+  name => ({id: `agents/数据科学工具包/${name}`}),
+);
+
 export const courses: CourseDef[] = [
   {unit: 'agents', key: 'python', name: 'Python 语言核心', sidebar: 'agentsPython', sections: pythonSections},
   {unit: 'agents', key: 'framework', name: 'Python 框架', sidebar: 'agentsFramework', sections: frameworkSections},
+  {unit: 'agents', key: 'datascience', name: '数据科学工具包', sidebar: 'agentsDataScience', sections: dataScienceSections},
   {unit: 'agents', key: 'database', name: '数据库', sidebar: 'agentsDatabase', sections: databaseSections('agents')},
   {unit: 'backend', key: 'database', name: '数据库', sidebar: 'backendDatabase', sections: databaseSections('backend')},
   {unit: 'common', key: 'database', name: '数据库', sidebar: 'common', sections: databaseSections('common')},

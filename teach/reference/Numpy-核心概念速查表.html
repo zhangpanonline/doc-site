@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Numpy-核心概念速查表 · 参考手册</title>
+  <meta name="description" content="Numpy-核心概念速查表 · 可打印参考手册：配合《Numpy-核心概念互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · 数据科学工具包</p>
+      <h1>Numpy-核心概念速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ds-0003-Numpy-核心概念.html">《Numpy-核心概念互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>ndarray 四要素</h2>
+      <p><code>ndarray</code>（N-dimensional array）是 NumPy 的核心数据结构：<strong>同质化</strong>（所有元素同一个 dtype）、<strong>连续内存</strong>（创建后总大小固定）、<strong>向量化运算</strong>（不用循环）。四要素决定了它的形状、存储与运算规则：</p>
+      <dl class="term-grid">
+        <dt>shape</dt>
+        <dd>元组，描述每个维度上的长度。1D <code>(n,)</code>、2D <code>(m, n)</code>、3D <code>(a, m, n)</code>。元组长度就是维度个数，<strong>某一维是 1 也不会被自动去掉</strong>。</dd>
+        <dt>ndim</dt>
+        <dd>维度个数，等于 <code>len(a.shape)</code>。</dd>
+        <dt>size</dt>
+        <dd>元素总数，等于 shape 各元素之积：<code>a.size == math.prod(a.shape)</code>。</dd>
+        <dt>dtype</dt>
+        <dd>统一的元素类型；同质化意味着<strong>禁止在同一个数组里混合不同类型</strong>，否则要么报错、要么失去向量化优势。</dd>
+        <dt>strides</dt>
+        <dd>元组，在每个维度上<strong>前进一个元素要跳过的字节数</strong>。int64 的 (2, 3) 数组：<code>(24, 8)</code> = (3×8, 1×8)。</dd>
+        <dt>itemsize</dt>
+        <dd>单个元素占用的字节数（<code>float64</code> → 8，<code>float32</code> → 4，<code>bool</code> → 1）；总字节数 <code>a.nbytes == a.size * a.itemsize</code>。</dd>
+        <dt>axis</dt>
+        <dd>维度索引，从 0 开始、按 shape 元组的先后顺序编号。2D 数组里 axis=0 是行方向、axis=1 是列方向；运算里它表示<strong>被压掉的那一维</strong>。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>dtype 与内存对照表</h2>
+      <table class="cmp-table">
+        <tr><th>NumPy dtype</th><th>C 类型</th><th>大小</th><th>典型用途</th></tr>
+        <tr><td><code>bool</code></td><td><code>bool</code></td><td>1 字节</td><td>Mask（布尔掩码）</td></tr>
+        <tr><td><code>int8</code> / <code>int32</code></td><td><code>signed char</code> / <code>int</code></td><td>1 / 4 字节</td><td>小范围计数、量化结果</td></tr>
+        <tr><td><code>int64</code></td><td><code>int64_t</code></td><td>8 字节</td><td>Token ID、索引</td></tr>
+        <tr><td><code>float32</code></td><td><code>float</code></td><td>4 字节</td><td>Embedding 向量（省一半内存）</td></tr>
+        <tr><td><code>float64</code></td><td><code>double</code></td><td>8 字节</td><td>默认浮点、需要精度时</td></tr>
+        <tr><td><code>object</code></td><td>—</td><td>指针</td><td>尽量避免：失去向量化优势</td></tr>
+      </table>
+      <p>内存量级（记这两个数就够用）：100 万个 <code>float64</code> ≈ <strong>7.63 MB</strong>；100 万个 <code>float32</code> ≈ <strong>3.81 MB</strong>。换算公式恒为 <code>size × itemsize</code> 字节。</p>
+      <p>dtype 本质上是把 <strong>C 的类型系统暴露给 Python</strong>：Python 的 <code>int</code> 是不定长对象（对象头就 28+ 字节），ndarray 用 C 的定长类型才换来连续存储与向量化。显式指定 <code>dtype=np.int64</code> 后遇到字符串会直接报 <code>invalid literal for int() with base 10</code>，不会静默降级。</p>
+    </section>
+
+    <section>
+      <h2>strides 步幅与视图</h2>
+      <pre>arr = np.array([[1, 2, 3],
+                [4, 5, 6]], dtype=np.int64)
+
+arr.shape     # (2, 3)
+arr.strides   # (24, 8)   ← 行步幅 3*8，列步幅 1*8
+arr.itemsize  # 8
+
+t = arr.T
+t.shape       # (3, 2)
+t.strides     # (8, 24)   ← 只是交换了步幅，零拷贝
+
+t[0, 0] = 99  # 视图写穿：arr[0, 0] 也变成 99
+arr.T.copy()  # 要独立副本就用 copy()
+
+arr.sum(axis=0)   # [5, 7, 9]  沿 axis=0，按「列」算（结果长度 = 列数）
+arr.sum(axis=1)   # [6, 15]    沿 axis=1，按「行」算（结果长度 = 行数）</pre>
+      <ul class="pitfall-list">
+        <li><strong>转置＝换步幅，不是搬数据</strong>：<code>arr.T</code> 与 <code>arr</code> 共享同一块内存，改一个另一个跟着变</li>
+        <li><strong>判定视图</strong>：<code>np.shares_memory(a, b)</code> 最可靠；<code>b.base is a</code> 只能说明 b 不拥有内存。<code>id()</code> 与数据相等都不可靠</li>
+        <li><strong>ndarray 不能原地扩容</strong>：没有 <code>append</code>；<code>np.append</code> 是复制出一个新数组，逐行 append 在数据管道里是 O(n²)</li>
+        <li><strong>axis 是「被压掉的那一维」</strong>：<code>sum(axis=1)</code> 压掉最后一维，结果形状 = 去掉该维后的 shape</li>
+        <li><strong>选 dtype 先算账</strong>：Embedding <code>float32</code>、Token ID <code>int64</code>、Mask <code>bool</code>，用 <code>size × itemsize</code> 估准内存再决定是否降级</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 数据科学工具包课程</p>
+
+  </main>
+</body>
+</html>

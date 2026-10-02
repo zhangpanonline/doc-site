@@ -1,0 +1,182 @@
+---
+sidebar_position: 10
+title: '10. Seaborn'
+description: "数据科学工具包 · Seaborn：薪资分布单变量分析、学历与薪资分类对比、经验与薪资回归分析。"
+displayed_sidebar: agentsDataScience
+---
+
+# Seaborn
+
+```python
+# 启用交互式后端
+%matplotlib widget
+```
+
+```python
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 设置中文字体支持
+plt.rcParams.update({
+    "font.sans-serif": ["PingFang SC"],
+    "axes.unicode_minus": False,
+    "figure.dpi": 100
+})
+
+def reset():
+    plt.close("all")
+
+# Seaborn 全局样式
+sns.set_theme(style="whitegrid", font="PingFang SC")
+
+df = pd.read_csv("../linking_clean.csv")
+df.head()
+
+df_clean = df.dropna(subset=["薪资(k)"]).copy()
+```
+
+---
+
+## 1. 薪资分布 — 单变量分析
+
+先用 `histplot` 和 `kdeplot` 看薪资的整体分布形态。
+
+`histplot` — 直方图，展示数据在各区间的频次。
+
+`kdeplot` — 核密度估计，平滑地展示概率密度。
+
+```python
+reset()
+fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+
+# 直方图
+sns.histplot(data=df_clean, x="薪资(k)", bins=30, ax=axes[0])
+axes[0].set_title("薪资直方图")
+
+# 核密度估计
+sns.kdeplot(data=df_clean, x="薪资(k)", fill=True, ax=axes[1])
+axes[1].set_title("薪资核密度估计")
+
+# ax = axes[0]
+# for patch in ax.patches:
+#     height = patch.get_height()
+#     if height > 0:  # 避免标注空柱子
+#         ax.text(
+#             patch.get_x() + patch.get_width()/2,  # X 坐标：柱子中间
+#             height,                               # Y 坐标：柱子顶部
+#             f'{int(height)}',                     # 显示内容
+#             ha='center', va='bottom',             # 水平居中，垂直在底部上方
+#             fontsize=8
+#         )
+
+plt.tight_layout()
+```
+
+![输出图](/img/data-science/10-cell5-out0.png)
+
+```python
+reset()
+sns.displot(data=df_clean, x="薪资(k)",  kde=True, bins=30)
+```
+
+```text
+<seaborn.axisgrid.FacetGrid at 0x131ca8ec0>
+```
+
+![输出图](/img/data-science/10-cell6-out1.png)
+
+---
+
+## 2. 学历与薪资 — 分类对比
+
+用 `boxplot` 和 `violinplot` 对比不同学历的薪资分布。
+
+`boxplot` — 箱线图，展示中位数、四分位数、异常值。
+
+`violinplot` — 小提琴图，在箱线图基础上叠加了分布形状。
+
+```python
+df['学历'].value_counts()
+```
+
+```text
+学历
+本科    387
+大专    210
+硕士     36
+高中     23
+初中     12
+中专      4
+小学      1
+Name: count, dtype: int64
+```
+
+```python
+reset()
+fig, axes = plt.subplots(1, 2, figsize=(8, 5))
+
+# 箱线图
+sns.boxplot(data=df_clean, x="学历", y="薪资(k)",
+            order=["小学","中专", "初中", "高中", "大专", "本科", "硕士"], 
+            ax=axes[0])
+axes[0].set_title("学历 vs 薪资 — 箱线图")
+
+# 小提琴图
+sns.violinplot(data=df_clean, x="学历", y="薪资(k)",
+               order=["小学","中专", "初中", "高中", "大专", "本科", "硕士"], 
+               ax=axes[1])
+axes[1].set_title("学历 vs 薪资 — 小提琴图")
+
+fig.tight_layout()
+```
+
+![输出图](/img/data-science/10-cell9-out0.png)
+
+```python
+reset()
+# barplot 默认显示均值 + 置信区间
+sns.barplot(data=df_clean, x="学历", y="薪资(k)",
+            order=["小学","中专", "初中", "高中", "大专", "本科", "硕士"])
+plt.title("学历 vs 薪资均值")
+```
+
+```text
+Text(0.5, 1.0, '学历 vs 薪资均值')
+```
+
+![输出图](/img/data-science/10-cell10-out1.png)
+
+---
+
+## 3. 经验与薪资 — 回归分析
+
+`scatterplot` 看散点分布，`regplot` 自动添加回归线，直观判断工作年限对薪资的影响。
+
+```python
+reset()
+fig, axes = plt.subplots(1, 2, figsize=(8, 5))
+
+# 散点图
+sns.scatterplot(data=df_clean, x="经验(年)", y="薪资(k)", alpha=0.6, ax=axes[0])
+axes[0].set_title("经验 vs 薪资 — 散点图")
+
+# 添加回归线
+sns.regplot(data=df_clean, x="经验(年)", y="薪资(k)",
+            scatter_kws={"alpha": 0.5}, 
+            line_kws={"color": "red", "linewidth": 2},
+            ax=axes[1])
+axes[1].set_title("经验 vs 薪资 — 回归图")
+
+plt.tight_layout()
+```
+
+![输出图](/img/data-science/10-cell12-out0.png)
+
+---
+
+## 互动教学课程
+
+- <a href="/teach/lessons/ds-0010-Seaborn.html">📖 互动教学课程（分级测验 + 面试实战）</a>
+- <a href="/teach/reference/Seaborn速查表.html">📋 Seaborn速查表（可打印）</a>

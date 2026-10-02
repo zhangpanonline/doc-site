@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="数据科学工具包 · Numpy 数据操作：数组创建、索引切片与花式/布尔索引、变形重塑、向量化运算、统计与广播——互动教学课程">
+  <title>Numpy - 数据操作 · 互动教学课程（数据科学工具包 ds-04）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
+      <h1>Numpy - 数据操作</h1>
+      <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Numpy-数据操作">04.Numpy - 数据操作</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>用 zeros / ones / arange / linspace / default_rng 快速造出指定形状与分布的数组</li>
+        <li>分清基本切片（视图）、花式索引与布尔索引（拷贝），并解释为什么改切片会改到原数组</li>
+        <li>用 reshape / <code>-1</code> / ravel / 转置做变形与重塑，并读懂 sum / mean / std / var 的 axis 与 ddof</li>
+        <li>按广播规则推演两个数组能否运算，并在报 ValueError 时指出哪一维不兼容</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把本章的九个操作块串一遍——细节都在《04.Numpy - 数据操作》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>创建与索引：先想清楚「拿到的是谁」</h3>
+        <ul class="pitfall-list">
+          <li><strong>创建</strong>：<code>np.zeros((2,3))</code> / <code>np.ones(...)</code> / <code>np.eye(3)</code>；<code>np.arange(0,10,2)</code> 按<strong>步长</strong>走（不含终点），<code>np.linspace(0,1,5)</code> 按<strong>个数</strong>均分（默认含终点，<code>endpoint=False</code> 去掉）</li>
+          <li><strong>随机数</strong>：用 <code>rng = np.random.default_rng(41)</code> 拿生成器，再调 <code>rng.uniform</code> / <code>rng.normal</code> / <code>rng.integers</code>；固定种子 = 结果可复现</li>
+          <li><strong>基本切片</strong>（<code>arr[1:, 2:]</code>、整数索引）返回<strong>视图</strong>，改它会改到原数组</li>
+          <li><strong>花式索引</strong>（<code>arr[[0,2]]</code>）与<strong>布尔索引</strong>（<code>arr[arr &gt; 15]</code>）返回<strong>拷贝</strong>，改它不影响原数组；布尔条件要用 <code>&amp;</code> / <code>|</code> 并给每项加括号</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>变形、运算与统计：元素总数与自由度</h3>
+        <ul class="pitfall-list">
+          <li><strong>reshape</strong> 只改形状不改数据，总元素数必须一致；<code>arr.reshape(2, -1)</code> 里的 <code>-1</code> 让 NumPy 自动推断那一维（一次只能写一个 <code>-1</code>）</li>
+          <li><code>np.resize</code> 不一样：元素不够会<strong>循环重复填充</strong>，够多则截断</li>
+          <li><strong>向量化</strong>：<code>arr + 10</code>、<code>prices * 0.8</code>、<code>celsius * 9 / 5 + 32</code> 一次作用于整个数组，不要写 for 循环</li>
+          <li><strong>axis 方向</strong>：<code>sum(axis=0)</code> 沿行方向压扁 → 按<strong>列</strong>求和；<code>sum(axis=1)</code> → 按<strong>行</strong>求和</li>
+          <li><strong>ddof</strong>：分母是 <code>N - ddof</code>。<code>std()</code> 默认 <code>ddof=0</code>（总体标准差），<code>std(ddof=1)</code> 才是样本标准差（Bessel 校正），同一份数据后者一定更大</li>
+          <li><strong>变异系数 CV</strong> = <code>std() / mean()</code>，无量纲，用来跨量纲比较离散程度（CV &gt; 50% 时平均值几乎没有代表性）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>筛选、拼接、排序与广播</h3>
+        <ul class="pitfall-list">
+          <li><code>np.where(cond, x, y)</code> 是向量化 if-else：条件成立取 x，否则取 y；只传 <code>cond</code> 时返回满足条件的<strong>下标</strong>（<code>np.where(arr &gt; 25)</code> → <code>(array([2,3,4]),)</code>）</li>
+          <li><strong>拼接</strong>：<code>np.concatenate([a,b], axis=0/1)</code> 是通用形式，<code>vstack</code> 垂直拼、<code>hstack</code> 水平拼；<strong>分割</strong>：<code>np.split(arr, [1,3])</code> 按切点分、<code>np.hsplit(arr, 2)</code> 按列均分</li>
+          <li><strong>排序</strong>：<code>np.sort(arr)</code> 返回排好序的<strong>值</strong>，<code>np.argsort(arr)</code> 返回<strong>能把它排好序的下标</strong>（<code>arr[np.argsort(arr)]</code> 才等于 <code>np.sort(arr)</code>）；<code>arr.sort()</code> 是原地排序，<code>np.unique</code> 去重</li>
+          <li><strong>广播规则</strong>：从<strong>尾部维度</strong>开始逐个比，维度<strong>相等</strong>或<strong>其中一个是 1</strong> 才兼容，结果维度取较大者；不满足就抛 <code>ValueError: operands could not be broadcast together</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《04.Numpy - 数据操作》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 想快速得到一个 2 行 3 列、全是 0 的数组，写法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>np.zeros((2, 3))</code></button>
+            <button class="quiz-option"><code>np.zeros(6).reshape(0)</code></button>
+            <button class="quiz-option"><code>np.zeros([2][3])</code></button>
+            <button class="quiz-option"><code>np.zeros(2, 3)</code></button>
+          </div>
+          <div class="quiz-explain" hidden>文档「数组创建」：形状必须是<strong>一个元组</strong>——<code>np.zeros((2,3))</code>。写成 <code>np.zeros(2,3)</code> 会被理解成「第一个位置参数 2、第二个位置参数 3」，实际报 <code>TypeError</code>（<code>dtype</code> 收到了 3）；<code>np.ones((2,3), dtype=np.float32)</code> 是同一族的写法。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. <code>np.arange(0, 10, 2)</code> 与 <code>np.linspace(0, 1, 5)</code>，两者最本质的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">arange 只能产整数，linspace 只能产小数</button>
+            <button class="quiz-option">linspace 不支持指定元素个数</button>
+            <button class="quiz-option">两者完全等价，只是名字不同</button>
+            <button class="quiz-option">arange 按「步长」生成、不含终点；linspace 按「个数」等分、默认含终点</button>
+          </div>
+          <div class="quiz-explain" hidden>文档「数组创建」：<code>np.arange(0,10,2)</code> → <code>[0 2 4 6 8]</code>（终点 10 取不到）；<code>np.linspace(0,1,5)</code> → <code>[0. 0.25 0.5 0.75 1.]</code>，第三个参数是<strong>元素个数</strong>且默认 <code>endpoint=True</code>；写成 <code>linspace(0,1,5,endpoint=False)</code> 得到 <code>[0. 0.2 0.4 0.6 0.8]</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. <code>arr = np.arange(12).reshape(3, 4)</code>，那么 <code>arr[0]</code> 的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">报错，二维数组必须同时给两个下标</button>
+            <button class="quiz-option">标量 <code>0</code></button>
+            <button class="quiz-option"><code>[0 1 2 3]</code>（第 0 行的全部列）</button>
+            <button class="quiz-option"><code>[0 4 8]</code>（第 0 列的全部行）</button>
+          </div>
+          <div class="quiz-explain" hidden>文档「基本索引与切片」：索引给得比维度少时，剩余维度默认全取（相当于 <code>arr[0, :]</code>），并且返回的是<strong>视图</strong>；标量 0 要用 <code>arr[0, 0]</code> 才拿得到。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 下面关于「花式索引 <code>arr[[0, 2]]</code>」与「布尔索引 <code>arr[arr &gt; 15]</code>」的说法，正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者都返回视图，改结果会影响原数组</button>
+            <button class="quiz-option">花式索引返回视图，布尔索引返回拷贝</button>
+            <button class="quiz-option">两者都只能选取连续的一段下标</button>
+            <button class="quiz-option">两者都返回拷贝，改结果不会影响原数组</button>
+          </div>
+          <div class="quiz-explain" hidden>文档「花式索引（Fancy Indexing）」与「布尔索引（Boolean Indexing）」：两种都是高级索引，<strong>返回拷贝</strong>；只有基本切片与整数索引才是视图。它们也正是用来挑「不连续/满足条件」的元素的——连续区间应该用切片。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. <code>arr</code> 是一维数组、共 12 个元素。执行 <code>sub = arr[[0, 2]]</code>，然后 <code>sub[0] = -1</code>，结果会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">原数组被整体复制一份，内存翻倍</button>
+            <button class="quiz-option">抛 <code>ValueError</code>，拷贝不允许赋值</button>
+            <button class="quiz-option">原数组的 <code>arr[0]</code> 也变成 -1，因为 sub 是视图</button>
+            <button class="quiz-option">只有 <code>sub[0]</code> 变成 -1，原数组完全不变</button>
+          </div>
+          <div class="quiz-explain" hidden>文档「花式索引」：用整数数组选取元素返回的是<strong>拷贝</strong>。如果写成 <code>arr[0:2]</code>（基本切片）再改，才会连带改到原数组——这是本章最容易踩的坑。想显式拿拷贝也可以 <code>arr[0:2].copy()</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 对于 <code>arr = np.arange(12)</code>，<code>arr.reshape(2, -1)</code> 得到的结果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">形状 (2, 6)，这一维由 12 ÷ 2 自动推断为 6</button>
+            <button class="quiz-option">报错，reshape 的参数必须都是正数</button>
+            <button class="quiz-option">形状 (2, 2)，多余元素被丢弃</button>
+            <button class="quiz-option">形状 (2, 12)，不足的部分补 0</button>
+          </div>
+          <div class="quiz-explain" hidden>文档「变形与重塑」：<code>-1</code> 表示「这一维让 NumPy 自己算」，前提是<strong>总元素数不变</strong>（12 个元素拆成 2 行 → 6 列）；一次 reshape 里只能出现一个 <code>-1</code>。若元素数不整除则会抛 <code>ValueError: cannot reshape array</code>。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 有两个数组 <code>a</code> 与 <code>b</code>：<code>a = np.array([[1], [2], [3]])</code>（形状 (3,1)），<code>b = np.array([10, 20, 30, 40])</code>（形状 (4,)）。执行 <code>a + b</code> 会？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">广播成 (3,4)：第 0 列是 a 的列向量、行方向是 b，结果是 <code>[[11,21,31,41],[12,22,32,42],[13,23,33,43]]</code></button>
+            <button class="quiz-option">报 <code>ValueError</code>：3 和 4 不相等也不含 1，无法广播</button>
+            <button class="quiz-option">得到形状 (3,1) 的结果，b 被压缩到一列</button>
+            <button class="quiz-option">得到形状 (4,3) 的结果，a 被转置后再相加</button>
+          </div>
+          <div class="quiz-explain" hidden>文档「广播（Broadcasting）」：从尾部开始比——(3,1) 与 (4) 对齐后是 <code>3×1</code> 与 <code>1×4</code>，两处都有 1 可被拉伸，结果 (3,4)。注意如果写成形状 (3,4) 的矩阵去加形状 (3,) 的向量就会失败：<code>ValueError: operands could not be broadcast together with shapes (3,4) (3,)</code>，因为尾维 4 与 3 既不相等也没有 1。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 对同一份数据，<code>arr.std()</code> 与 <code>arr.std(ddof=1)</code> 的关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">ddof 只对 <code>var</code> 有效，std 会忽略它</button>
+            <button class="quiz-option">两者结果完全一样，ddof 只影响返回类型</button>
+            <button class="quiz-option"><code>std(ddof=1)</code> 更小，因为它做了平均</button>
+            <button class="quiz-option"><code>std()</code> 用分母 N（总体标准差），<code>std(ddof=1)</code> 用分母 N−1（样本标准差），所以后者更大</button>
+          </div>
+          <div class="quiz-explain" hidden>文档「标准差」与 <code>std</code> 参数说明：<code>ddof</code> 是 Delta Degrees of Freedom，分母为 <code>N - ddof</code>，默认 0 对应总体标准差；取 1 得到样本标准差（Bessel 校正）。本章示例里 arr 为 0~11 的 3×4 矩阵：<code>std()=3.4521</code>，<code>std(ddof=1)=3.6056</code>，并且 <code>std(ddof=1)**2 == var(ddof=1) == 13.0</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. <code>arr = np.array([30, 10, 20])</code>。关于 <code>np.sort(arr)</code> 与 <code>np.argsort(arr)</code>，正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>np.argsort(arr)</code> 会原地改写 <code>arr</code> 的顺序</button>
+            <button class="quiz-option"><code>np.sort(arr)</code> 返回排好序的值 <code>[10 20 30]</code>，<code>np.argsort(arr)</code> 返回下标 <code>[1 2 0]</code>，且 <code>arr[np.argsort(arr)]</code> 等于 <code>np.sort(arr)</code></button>
+            <button class="quiz-option"><code>np.sort(arr)</code> 返回 <code>[1 2 0]</code>，<code>np.argsort(arr)</code> 返回 <code>[10 20 30]</code></button>
+            <button class="quiz-option">两者都返回排好序的值，argsort 只是多返回一个参数</button>
+          </div>
+          <div class="quiz-explain" hidden>文档「排序」：<code>np.sort</code> 给<strong>值</strong>，<code>np.argsort</code> 给「<strong>能把它排好序的下标</strong>」。下标很有用：<code>sales[np.argsort(sales)[::-1][:3]]</code> 就能拿到销量前 3 名；而原地改写原数组的是 <code>arr.sort()</code>（无返回值）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ds-0004-Numpy-数据操作',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `同事让 AI 写一段「从一份大数组里取中间 1000 条做临时清洗」的代码，AI 写了 <code>seg = big[5000:6000]</code>，随后几行对 <code>seg</code> 做原地修正（<code>seg[seg &lt; 0] = 0</code>）。审查这段代码：数据清洗的结果会不会「偷偷」写回原始数组？判据是什么？`,
+              source: '来源：NumPy 官方文档 Copies and views（"Views are created when elements can be addressed with offsets and strides in the original array. Hence, basic indexing always creates views."；"Advanced indexing, on the other hand, always creates copies."）https://numpy.org/doc/stable/user/basics.copies.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `判据就一条：<strong>基本切片（含整数索引、<code>:</code>、<code>...</code>、<code>newaxis</code>）给视图，高级索引（整数数组花式索引、布尔掩码）给拷贝</strong>。所以 <code>big[5000:6000]</code> 是视图，<code>seg[seg&lt;0]=0</code> 会<strong>直接改写 big</strong>——清洗脚本「只改临时变量」的假设不成立。识别技巧：打印 <code>seg.base</code>，是视图则指向原数组，拷贝则为 <code>None</code>。要隔离就显式 <code>.copy()</code>，或改用花式/布尔索引取数。反过来，如果 AI 写的是 <code>seg = big[[i for i in range(5000,6000)]]</code>，反而是拷贝——视图/拷贝与"看起来像不像切片"没有关系，只与索引类型有关。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `一个 Agent 把形状 (3, 4) 的评分矩阵与形状 (3,) 的权重向量相加，直接抛了 <code>ValueError: operands could not be broadcast together with shapes (3,4) (3,)</code>。请按广播规则说明：NumPy 是怎么比这两个形状的？为什么 (4,) 能加而 (3,) 不能？`,
+              source: '来源：NumPy 官方文档 Broadcasting（"When operating on two arrays, NumPy compares their shapes element-wise. It starts with the trailing (i.e. rightmost) dimension and works its way left. Two dimensions are compatible when 1. they are equal, or 2. one of them is 1."）https://numpy.org/doc/stable/user/basics.broadcasting.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `规则是<strong>从尾维往前逐个比，相等或其中一个为 1 才算兼容</strong>，缺的维度按 1 补齐。推演过程：<code>(3,4)</code> 与 <code>(3,)</code> 右对齐后是 <code>3×4</code> 对 <code>×3</code> —— 尾维 4 vs 3，既不相等也没有 1 → 失败；而 <code>(3,4)</code> 与 <code>(4,)</code> 对齐成 <code>3×4</code> 对 <code>×4</code>，尾维相等 → 成功，向量被加到每一行上。修复方式两种：想按列/按行加要<strong>显式改形状</strong>——<code>weights[:, None]</code> 或 <code>weights.reshape(3,1)</code> 得到 (3,1)，此时 3×4 对 3×1 → (3,4)；或者确认维度语义后转置。面试官想听的是「右对齐 + 相等或为 1」这条规则，而不是"NumPy 报错了就 reshape 一下"。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 给出一段统计代码，用来算「用户消费金额的平均值与波动」：<pre><code>data = np.array([12.0, 15.0, 18.0, 21.0, np.nan, 27.0, 30.0])
+mean = data.sum() / data.size
+std = data.std(ddof=1)
+cv = data.std() / data.mean()</code></pre>请指出这段代码至少三个问题，并给出改法。`,
+              source: '来源：NumPy 官方文档 numpy.std（"Means Delta Degrees of Freedom. The divisor used in calculations is N - ddof, where N represents the number of elements. By default ddof is zero."）https://numpy.org/doc/stable/reference/generated/numpy.std.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `逐条拆：<strong>① 有 NaN 时 <code>data.sum()</code>、<code>data.std()</code>、<code>data.mean()</code> 全都返回 nan</strong>——真实数据管道的头号坑，应改用 <code>np.nanmean</code> / <code>np.nanstd</code>（或先按业务规则填充缺失值再算）。<strong>② 手写 <code>sum()/size</code> 与后面调 <code>std()</code> 统计口径不一致</strong>：缺一个样本时 nanmean 会按 6 个非 NaN 数量分母，而你自己手算的分母是 7。实测这份数据 <code>data.mean()</code> → <code>nan</code>，<code>np.nanmean(data)</code> → <code>20.5</code>。<strong>③ CV 用了 <code>data.std()/data.mean()</code></strong>：标准差默认 ddof=0 是总体口径，而上面 std 用了 ddof=1，同一段代码里混了两套口径，CV 还会被 nan 污染；统一成 <code>np.nanstd(data, ddof=1)/np.nanmean(data)</code> 才自洽。加分项：提醒 NaN 的存在本身要先用 <code>np.isnan(data).sum()</code> 统计条数并和业务确认是缺失还是异常。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `一个视觉 Agent 要处理 <code>images</code>：形状 (256, 256, 3)，另有 <code>scale</code> 形状 (3,)（每个通道的缩放系数）与 <code>bias</code> 形状 (256, 1)。请说明 <code>images * scale + bias</code> 为什么能一次算完，并对比「显式复制成同形状」「Python 双重循环」两种替代方案在内存与可读性上的取舍。`,
+              source: '来源：NumPy 官方文档 Broadcasting（"Subject to certain constraints, the smaller array is \'broadcast\' across the larger array so that they have compatible shapes. Broadcasting provides a means of vectorizing array operations so that looping occurs in C instead of Python. It does this without making needless copies of data..."）https://numpy.org/doc/stable/user/basics.broadcasting.html · 检索 2026-10-02 · 层级：一手（官方文档）',
+              breakdown: `广播推演：<code>(256,256,3) * (3,)</code> 尾维 3 与 3 相等 → 结果 (256,256,3)，即每个通道乘各自的系数；再 <code>+ (256,1)</code>，右对齐为 <code>256×256×3</code> 对 <code>×256×1</code>，第二维 256 vs 256 相等、尾维 3 vs 1 有 1 → 兼容，逐行加偏置。<strong>选型判据</strong>：广播的官方理由是「不必要的数据复制都不做，循环发生在 C 里」——内存只保留原数组与结果，代码一行可读。显式复制（<code>np.tile</code>/<code>repeat</code> 造出同形状数组）在 (256,256,3) 上会多出与图像同尺寸的中间数组，内存峰值翻数倍，还会让意图变模糊；Python 双重循环则慢一到两个量级并丢掉 dtype 语义。<strong>反面提醒</strong>：当广播会把两个小数组撑成很大的中间结果时（官方文档明确提到存在广播导致内存低效的情形），反而是显式分块或循环更好——判断依据是「中间结果的形状是否远大于输入」。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `用 AI 编程助手完成一次真实的数据清洗与比对（建议 15 分钟），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 15 分钟',
+                goal: '拿一份含缺失值与负值的销售数组，按列做归一化并统计波动：先用 default_rng 造 (6, 4) 的模拟数据并把 2 个位置写成 np.nan、2 个位置写成负数；用 np.isnan 统计缺失条数；用 np.where 把 NaN 填成该列的非缺失均值、把负数置 0；最后对每一列算出均值、std(ddof=1) 与变异系数 CV，并给出「CV 大 → 平均值代表性差」的结论。',
+                accept: ['清洗前后形状保持 (6, 4)，且原始数组未被意外改动（区分视图与拷贝，必要时 .copy()）', '缺失值统计用 np.isnan(...).sum()，填充用 np.where 而非 Python 循环', '每列统计分别给出 mean / std(ddof=1) / CV，并指出哪一列的离散程度最大', '能说明为什么填 NaN 用该列均值而不是 0，以及为什么 CV 比标准差更适合跨列比较'],
+              },
+              source: '任务基于《04.Numpy - 数据操作》课件 · 来源层级：一手（源课程）场景化',
+              breakdown: `思路：<code>rng = np.random.default_rng(7)</code> → <code>data = rng.uniform(10, 100, (6,4)).round(1)</code> → 用花式索引写入 <code>np.nan</code>（花式索引是拷贝，必须直接对 <code>data</code> 赋值，不能对切片结果赋值）→ <code>np.isnan(data).sum()</code> 统计 → <code>col_mean = np.nanmean(data, axis=0)</code>（<code>axis=0</code> 沿行压扁=按列算）→ <code>data = np.where(np.isnan(data), col_mean, data)</code> 再 <code>np.where(data &lt; 0, 0, data)</code>。统计阶段 <code>data.mean(axis=0)</code>、<code>data.std(axis=0, ddof=1)</code>、<code>data.std(axis=0, ddof=1)/data.mean(axis=0)</code>。常见坑：① 对切片做原地写入以为改到了原数组（视图/拷贝没分清）；② 用 <code>data.mean()</code> 而不是带 <code>axis</code> 的按列统计；③ CV 用了 ddof=0 而 std 用了 ddof=1，两处口径不一致；④ 填 0 会让「缺失」被当成"消费为 0"的极端值，把均值往下拉。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://numpy.org/doc/stable/user/basics.broadcasting.html">Broadcasting</a> · <a href="https://numpy.org/doc/stable/user/basics.copies.html">Copies and views</a> · <a href="https://numpy.org/doc/stable/user/basics.indexing.html">Indexing on ndarrays</a> · <a href="https://numpy.org/doc/stable/reference/generated/numpy.std.html">numpy.std（ddof 的口径说明）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Numpy-数据操作速查表.html">Numpy-数据操作速查表</a>——创建/索引/变形/运算/统计/广播六张表一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/数据科学工具包/Numpy-数据操作">04.Numpy - 数据操作</a> · 下一课 <a href="/agents/数据科学工具包/Pandas-数据类型">05.Pandas - 数据类型</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+</body>
+</html>
