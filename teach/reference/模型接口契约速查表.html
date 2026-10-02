@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>模型接口契约速查表 · 参考手册</title>
+  <meta name="description" content="模型接口契约速查表 · 可打印参考手册：配合《模型接口契约互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>模型接口契约速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0015-模型接口契约.html">《模型接口契约互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>本地模型方案选型</h2>
+      <table class="cmp-table">
+        <tr><th>方案</th><th>定位</th><th>什么时候选它</th></tr>
+        <tr><td>Pytorch + Transformers</td><td>本地训练 / 微调 / 推理</td><td>要改模型本身；推理需自行适配硬件加速</td></tr>
+        <tr><td>Ollama</td><td>命令行一键部署运行开源大模型</td><td>默认入口：内置量化支持与 GPU 加速，带 OpenAI 兼容接口</td></tr>
+        <tr><td>llama.cpp</td><td>C/C++ 高性能推理引擎</td><td>CPU 推理、多种量化方案</td></tr>
+        <tr><td>vLLM</td><td>高吞吐推理框架（PagedAttention）</td><td>生产环境部署、要吞吐</td></tr>
+        <tr><td>MLX</td><td>Apple 官方 ML 框架</td><td>Apple Silicon 本地推理</td></tr>
+        <tr><td>LM Studio</td><td>图形界面桌面应用</td><td>一键下载/运行模型，想要 GUI</td></tr>
+        <tr><td>LocalAI</td><td>本地推理服务（OpenAI 兼容 API）</td><td>让现有应用无缝切换后端</td></tr>
+      </table>
+      <p>一句话：<strong>训练微调找 Transformers，命令行体验找 Ollama，压榨 CPU 找 llama.cpp，上生产要吞吐找 vLLM</strong>。</p>
+    </section>
+
+    <section>
+      <h2>Ollama：命令与接口速查</h2>
+      <pre>ollama -v                          # 版本
+ollama pull qwen3-vl               # 拉取模型
+ollama list                         # 已下载的模型
+ollama show &lt;模型名称&gt;             # 模型信息
+ollama run &lt;模型名称&gt;              # 运行模型
+ollama rm &lt;模型名称&gt;               # 删除模型
+ollama ps                           # 当前服务
+# 环境变量：OLLAMA_MODEL_SERVER="https://mirror.ollama.com"（换镜像源）
+# 服务地址：http://localhost:11434/
+
+# 模型列表
+curl http://localhost:11434/v1/models
+
+# 聊天接口（非流式）
+curl -X POST http://localhost:11434/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "qwen3-vl", "messages": [{"role": "user", "content": "你好，请介绍一下自己"}], "stream": false}'</pre>
+      <dl class="term-grid">
+        <dt>兼容范围</dt>
+        <dd>Ollama 支持的是 OpenAI API 的<strong>子集</strong>：Chat completions / Streaming / JSON 模式 / Vision / Tools / 推理控制都在清单里，Logprobs 等不在。</dd>
+        <dt>图片输入</dt>
+        <dd>兼容清单中 <code>Base64 encoded image</code> 已支持、<code>Image URL</code> <strong>未支持</strong>——本地传图必须走 Base64 data URL。</dd>
+        <dt>API Key</dt>
+        <dd>客户端仍然要求一个 key 值，但本地服务会忽略它（照官方示例写 <code>api_key="ollama"</code> 一类的占位值即可）。</dd>
+        <dt>模型名约定</dt>
+        <dd>依赖默认名（如 <code>gpt-3.5-turbo</code>）的工具，可用 <code>ollama cp</code> 把已有模型复制成一个临时名来对接。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>一次调用的代码链路</h2>
+      <pre>uv add openai==1.74.0 python-dotenv==1.2.2
+
+# utils/config.py：以模块位置为锚点读 .env（不依赖启动目录）
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_env_file = os.path.abspath(os.path.join(_current_dir, "../.env"))
+load_dotenv(_env_file)
+OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL = os.environ.get(...)
+
+# 客户端：不传参，SDK 自动从环境变量取 key 与 base_url
+from openai import OpenAI
+client = OpenAI()
+
+# 模型列表
+print(client.models.list().to_json())
+
+# 基本对话
+response = client.chat.completions.create(
+    model=config.OPENAI_MODEL,
+    messages=[{"role": "user", "content": "你是谁"}],
+)
+
+# 关闭思维链（协议外的扩展参数 → 走 extra_body 透传）
+response = client.chat.completions.create(
+    model=config.OPENAI_MODEL,
+    messages=[{"role": "user", "content": "你是谁"}],
+    extra_body={"thinking": {"type": "disabled"}},   # qwen3-vl 无法直接关闭思考模式
+)</pre>
+      <table class="cmp-table">
+        <tr><th>resp.json 字段</th><th>含义 / 易错点</th></tr>
+        <tr><td><code>id</code> / <code>object</code> / <code>created</code> / <code>model</code> / <code>system_fingerprint</code></td><td>这次响应的身份信息；<code>object</code> 为 <code>chat.completion</code></td></tr>
+        <tr><td><code>choices[0].message.role</code></td><td>通常是 <code>assistant</code></td></tr>
+        <tr><td><code>choices[0].message.content</code></td><td><strong>正文</strong>——非流式取这一层</td></tr>
+        <tr><td><code>choices[0].message.reasoning</code></td><td><strong>思考过程</strong>，单独一个字段；只打印 content 会把推理整段丢掉</td></tr>
+        <tr><td><code>choices[0].finish_reason</code></td><td>结束原因，正常结束为 <code>stop</code></td></tr>
+        <tr><td><code>usage.prompt_tokens</code> / <code>completion_tokens</code> / <code>total_tokens</code></td><td>$total\_tokens = prompt\_tokens + completion\_tokens$；思考文本也算生成量</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>流式响应：delta 与事件流</h2>
+      <pre>stream = client.chat.completions.create(
+    model=config.OPENAI_MODEL,
+    messages=[{"role": "system", "content": "少思考，简洁回答"},
+              {"role": "user", "content": "从1数到10"}],
+    stream=True,
+)
+for chunk in stream:
+    print(chunk)
+    sys.stdout.flush()          # 不 flush 看不到实时效果
+
+# utils/stream_print.py
+print_stream(stream)</pre>
+      <dl class="term-grid">
+        <dt>读哪里</dt>
+        <dd>非流式读 <code>choices[0].message.content</code>；流式读 <code>choices[0].delta.content</code>。<code>delta</code> 里可能是 role 标记、一段 content，或流结束时的空对象。</dd>
+        <dt>推理字段兼容</dt>
+        <dd>先 <code>getattr(delta, "reasoning_content", None)</code>，取不到再退回 <code>getattr(delta, "reasoning", None)</code>——不同服务端/模型命名不统一。</dd>
+        <dt>空 choices 守卫</dt>
+        <dd>循环开头 <code>if len(chunk.choices) == 0: continue</code>：带用量的收尾帧 <code>choices</code> 为空数组，不跳过就会 <code>IndexError</code>。</dd>
+        <dt>事件序列</dt>
+        <dd><code>Chunk(type, content)</code> 由 <code>chunk_generator</code> 产出：<code>reasoning_start</code> → <code>reasoning</code>… → <code>reasoning_end</code> → <code>content_start</code> → <code>content</code>… → 固定收尾 <code>content_end</code>。没有推理时 <strong>不会</strong>出现 <code>content_start</code>，渲染层不能假设它一定来。</dd>
+        <dt>拿用量</dt>
+        <dd>流式请求带 <code>stream_options={"include_usage": True}</code>：末尾额外一个 chunk 带整次请求的 <code>usage</code>，其余 chunk 的 <code>usage</code> 为 null，且这最后一帧的 <code>choices</code> 恒为空数组。</dd>
+        <dt>代价</dt>
+        <dd>流式让首字更早到达，但部分补全更难审核评估——生产环境要为此补一层内容策略。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>视觉（多模态）输入</h2>
+      <pre># utils/img_base64.py
+to_base64(path)  -&gt; base64.b64encode(open(path,"rb").read()).decode("utf-8")
+to_dataurl(path) -&gt; f"data:{mime};base64,{b64_data}"
+# mime 按扩展名推断：.png / .jpg|.jpeg / .gif / .webp / 其它 → image/octet-stream
+
+# 消息组装：content 从字符串换成数组
+dataurl = to_dataurl("menu.png")
+stream = client.chat.completions.create(
+    model=config.OPENAI_MODEL,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "请描述这张图片的内容"},
+            {"type": "image_url", "image_url": {"url": dataurl}},
+        ],
+    }],
+    stream=True,
+)
+print_stream(stream)</pre>
+      <table class="cmp-table">
+        <tr><th>易错点</th><th>说明</th></tr>
+        <tr><td>传本地路径</td><td>模型看不到你的磁盘，路径字符串没有意义——必须转 Base64/data URL。</td></tr>
+        <tr><td>传公网 URL 给本地服务</td><td>Ollama 兼容清单里 <code>Image URL</code> 未勾选，本地场景请统一走 Base64。</td></tr>
+        <tr><td>忘了 content 用数组</td><td>文本与图片是同一条 user 消息里的两个 part（<code>type</code> 为 <code>text</code> / <code>image_url</code>）。</td></tr>
+        <tr><td>体积与 token</td><td>Base64 约放大到 4/3（字符数 $4 \times \lceil n/3 \rceil$），大图先压缩再传。</td></tr>
+        <tr><td>关思考的差异</td><td><code>extra_body</code> 里的扩展参数是服务端特定的，换模型/换后端可能直接失效。</td></tr>
+      </table>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

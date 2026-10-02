@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>训练阶段速查表 · 参考手册</title>
+  <meta name="description" content="训练阶段速查表 · 可打印参考手册：配合《训练阶段互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>训练阶段速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0014-训练阶段.html">《训练阶段互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>预训练 vs 后训练</h2>
+      <table class="cmp-table">
+        <tr><th>对照项</th><th>预训练</th><th>后训练</th></tr>
+        <tr>
+          <td>解决的问题</td>
+          <td>造<strong>能力底座</strong>：模型「能做什么」</td>
+          <td>教<strong>怎么用</strong>：模型「怎么说、说不说」</td>
+        </tr>
+        <tr>
+          <td>耗时</td>
+          <td><strong>最长</strong>，通常占总计算时间的 90% 以上</td>
+          <td><strong>很短</strong>：几小时、几天、几个月</td>
+        </tr>
+        <tr>
+          <td>学习方式</td>
+          <td><strong>自监督学习</strong>（监督信号来自文本自身）</td>
+          <td><strong>监督学习 + 强化学习</strong></td>
+        </tr>
+        <tr>
+          <td>主要成本</td>
+          <td><strong>算力</strong></td>
+          <td><strong>数据与人力</strong>（标注、评分、数据构造）</td>
+        </tr>
+        <tr>
+          <td>产出</td>
+          <td>语言、知识、基础推理、模式识别、上下文学习</td>
+          <td>对话格式、价值观、能力校准、CoT、专业领域知识</td>
+        </tr>
+      </table>
+      <p>一句话：<strong>预训练造能力，后训练教怎么用</strong>。只做预训练的 base 模型不是「不会说话」，而是不好用、不可控——该停不停、该拒答时硬答。</p>
+
+      <h3>预训练赋予模型的六种基础能力</h3>
+      <table class="cmp-table">
+        <tr><th>能力</th><th>课件里的例子</th></tr>
+        <tr><td>理解人类语言的语法规律</td><td>语言组织的通用规则</td></tr>
+        <tr><td>感知上下文语境</td><td>识别不同语境下词语含义的变化</td></tr>
+        <tr><td>知晓世界的基本事实</td><td>太阳系有几大行星、第二次世界大战哪一年结束、Python 创始人是谁</td></tr>
+        <tr><td>基础的推理能力</td><td>凡人均有一死，苏格拉底是人 → 苏格拉底会死</td></tr>
+        <tr><td>基础的模式识别能力</td><td>2, 4, 6, 8, ?</td></tr>
+        <tr><td>基础的上下文学习能力</td><td>「你是一个智能客服，请在回答时称用户为宝宝」——规则写在提示里就能照做</td></tr>
+      </table>
+      <p>量级参考：NVIDIA 公开的 Nemotron 3 Nano 配方中，<strong>Stage 0 预训练是从零开始在 25 万亿 token 上训练</strong>，之后才是 SFT 与 RL 阶段。</p>
+    </section>
+
+    <section>
+      <h2>后训练到底做了什么</h2>
+      <table class="cmp-table">
+        <tr><th>后训练目标</th><th>做法</th><th>效果</th></tr>
+        <tr>
+          <td>学会<strong>对话格式</strong></td>
+          <td>喂带特殊标记的完整对话（<code>&lt;|im_start|&gt;system / user / assistant…&lt;|im_end|&gt;</code>）</td>
+          <td>学会对话格式、对话中的角色身份、对话语气；知道轮次在哪结束</td>
+        </tr>
+        <tr>
+          <td><strong>竖立价值观</strong></td>
+          <td>人类标注「好/坏」回答对比 → 训练奖励模型 → 强化学习</td>
+          <td>让模型趋利避害：回答安全、有用、诚实</td>
+        </tr>
+        <tr>
+          <td><strong>能力校准</strong></td>
+          <td>加入大量「承认无知」问答对（如「你知道明天会发生什么吗？」→「作为 AI，我无法预测未来……」）</td>
+          <td><strong>有效降低 AI 幻觉</strong>：不知道就承认不知道</td>
+        </tr>
+        <tr>
+          <td><strong>思维链 CoT</strong></td>
+          <td>训练与引导模型先输出推理步骤、再输出最终回答</td>
+          <td>推理过程可见，最终答案的准确率更高（但不保证一定正确）</td>
+        </tr>
+        <tr>
+          <td><strong>专业领域知识</strong></td>
+          <td>用领域数据继续训练 / 微调</td>
+          <td>把通用助手变成某个领域的熟手</td>
+        </tr>
+      </table>
+      <p>成本与依赖：后训练<strong>以 SFT 检查点作为起点</strong>，再往上做 RL 对齐（DPO 用偏好对，RLHF 用奖励模型当裁判）；方法选型上，格式与术语交给 SFT，主观语气交给 DPO，复杂多步推理交给 RFT。</p>
+    </section>
+
+    <section>
+      <h2>两种格式：对话模板与思维链</h2>
+      <pre>对话模板（后训练「学会对话格式」看的就是它）
+&lt;|im_start|&gt;system&lt;|im_sep|&gt;你是一个AI聊天助手，你的名字叫袁大炮&lt;|im_end|&gt;
+&lt;|im_start|&gt;user&lt;|im_sep|&gt;你好，你是谁？&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant&lt;|im_sep|&gt;我是袁大炮&lt;|im_end|&gt;
+
+思维链 CoT（assistant 回合内部：先想，再答）
+&lt;|im_start|&gt;user&lt;|im_sep|&gt;小明有10个苹果，他给了小红3个，又买了5个，现在他有多少个苹果？&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant&lt;|im_sep|&gt;
+&lt;think&gt;
+开始有10个。给了小红3个，还剩 10 - 3 = 7 个。又买了5个，现在有 7 + 5 = 12 个。所以，答案是12个。
+&lt;/think&gt;
+最终答案是 12。&lt;|im_end|&gt;</pre>
+      <dl class="term-grid">
+        <dt>特殊标记的职责</dt>
+        <dd><code>&lt;|im_start|&gt;</code> 开一轮对话、<code>&lt;|im_sep|&gt;</code> 分隔角色与内容、<code>&lt;|im_end|&gt;</code> 结束当前轮次——模型靠它们学会「谁是用户、轮到谁说话、说到哪停」。</dd>
+        <dt>CoT 的准确定义</dt>
+        <dd>通过<strong>训练和引导</strong>，让模型在给出最终答案之前，先把内部的推理步骤「说出来」，即先输出思考过程、再输出最终回答。</dd>
+        <dt>持续学习</dt>
+        <dd>Continual Learning / 增量学习：厂商把 AI 与用户之间的对话内容作为语料，<strong>持续</strong>对大模型进行训练。</dd>
+        <dt>别混淆</dt>
+        <dd><strong>上下文学习</strong>是把示例写进提示词、模型现学（不改权重）；<strong>持续学习</strong>是拿真实对话当语料持续更新模型。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <table class="cmp-table">
+        <tr><th>常见说法</th><th>正确认识</th></tr>
+        <tr>
+          <td>「后训练只是把回答包装成对话格式」</td>
+          <td>格式只是一项；价值观对齐、能力校准（承认无知）、CoT、专业领域知识都在后训练完成。</td>
+        </tr>
+        <tr>
+          <td>「预训练做完，模型就能直接当客服」</td>
+          <td>base 模型有知识与基础推理，但不守对话格式与角色边界，也没有安全/诚实价值观与「承认无知」校准。</td>
+        </tr>
+        <tr>
+          <td>「后训练耗时短，所以很便宜」</td>
+          <td>耗时短 ≠ 便宜：后训练的主要成本是<strong>数据与人力</strong>——标注、偏好对、grader 都要人来做。</td>
+        </tr>
+        <tr>
+          <td>「CoT 就是让答案变长」</td>
+          <td>CoT 是「先输出思考过程、再输出最终回答」的输出形态，由训练和引导促成；它提升准确率，但不保证答案正确。</td>
+        </tr>
+        <tr>
+          <td>「上下文学习 = 持续学习」</td>
+          <td>上下文学习只发生在提示词里，不改权重；持续学习是拿用户对话当语料继续训练模型。</td>
+        </tr>
+        <tr>
+          <td>「思维链里打印出来的就是模型的真实内部推理」</td>
+          <td>不同厂商口径不同：一类模型只给推理摘要、原始推理不对外暴露；另一类用平级字段返回思考内容，且是否回传进上下文取决于请求是否带 tools。</td>
+        </tr>
+      </table>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

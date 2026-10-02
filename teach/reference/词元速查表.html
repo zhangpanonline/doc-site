@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>词元速查表 · 参考手册</title>
+  <meta name="description" content="词元速查表 · 可打印参考手册：配合《词元互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>词元速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0007-词元.html">《词元互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>核心术语</h2>
+      <dl class="term-grid">
+        <dt>词元（Token）</dt>
+        <dd>文本经过分词后得到的数字序列中的<strong>每一个数字</strong>。</dd>
+        <dt>分词（Tokenize）</dt>
+        <dd>把文字序列转化为可被 AI 使用的<strong>数字序列</strong>的过程。</dd>
+        <dt>分词器（Tokenizer）</dt>
+        <dd>执行分词的组件：一份词表 + 一套切分规则（匹配顺序）。</dd>
+        <dt>分词表（token vocabulary，Vocab）</dt>
+        <dd>「有意义的字／词 → 数字」的对照表，由训练得到；<strong>固定后不再改动</strong>，分词只查表。</dd>
+        <dt>BPE（字节对编码）</dt>
+        <dd>从 256 个单字节起步，反复<strong>合并高频相邻对</strong>把词表「长」到目标大小。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>三种「文字变数字」的方案</h2>
+      <table class="cmp-table">
+        <tr><th>方案</th><th>表示粒度</th><th>主要问题</th></tr>
+        <tr><td>直接用 UTF-8 字节数字</td><td>1 个汉字 = 3 个数字</td><td>长度膨胀（计算量／显存／训练速度恶化）、每层重复学习固定字节组合、学不到字词边界</td></tr>
+        <tr><td>整词词表（word-level）</td><td>1 个词 = 1 个 id</td><td>词表巨大；表外词退化成 &lt;unk&gt;，新词无法表示</td></tr>
+        <tr><td>byte-level BPE（本课）</td><td>字节起步 + 高频合并</td><td>词表小或语料未覆盖时，一个汉字会被拆成多个字节片段</td></tr>
+      </table>
+      <p>目标形态：<strong>「你好 → 10000、Hello → 10001、! → 10002、123 → 10003」</strong>——整句 4 个数字，且每个数字对应可被学习的语义。</p>
+    </section>
+
+    <section>
+      <h2>BPE 训练与分词流程</h2>
+      <pre># 训练（词表怎么长出来）
+vocab = {i: bytes([i]) for i in range(256)}      # ① 初始词表：256 个单字节
+while len(vocab) &lt; target_vocab_size:            # ④ 循环到目标大小
+    pair_counts = Counter(相邻对)                 # ② 统计当前序列的相邻对频次
+    best_pair = pair_counts.most_common(1)[0]    #    取最高频的一对
+    vocab[len(vocab)] = vocab[best_pair[0]] + vocab[best_pair[1]]
+    seq = 把 seq 中的 best_pair 全部替换成新 id    # ③ 写入新 id 并替换
+
+# 分词（只查表，不再改动词表）
+for length in range(min(max_len, 剩余字节数), 0, -1):   # 贪心最长匹配，从长到短试
+    命中就输出该 id，并前进对应字节数</pre>
+      <table class="cmp-table">
+        <tr><th>项</th><th>实测值（课件 corpus.txt）</th></tr>
+        <tr><td>语料规模</td><td>8268 字符 / 23616 字节</td></tr>
+        <tr><td>词表变化</td><td>256 → 400（target_vocab_size=400）</td></tr>
+        <tr><td>合并次数</td><td>144 次（= 目标 400 − 初始 256）</td></tr>
+        <tr><td>序列压缩</td><td>23616 → 12786 字节（54.1%）</td></tr>
+        <tr><td>测试句「人工智能模型通过深度学习来理解自然语言。」</td><td>20 字 / 60 字节 → 18 个 token；「深」「自」「然」被切成多个字节片段</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>易错点与 token 估算</h2>
+      <ul class="pitfall-list">
+        <li>结果里出现 <code>&lt;字节 e6&gt;</code> 这类片段<strong>不是编码损坏</strong>，而是该字的多字节组合没进词表（词表太小／语料没出现过该词）。</li>
+        <li>导出词表时，无法按 UTF-8 解码的字节要存十六进制；读回时用 <code>bytes.fromhex</code> 还原，不要 <code>s.encode()</code> 当普通文本处理。</li>
+        <li>分词是<strong>最长匹配</strong>（从长到短试），写成从短到长会切出更多碎片。</li>
+        <li>换语料、换分词算法、换模型 → 词表不同 → <strong>分词结果不同</strong>，token 统计与长度拦截必须重算。</li>
+        <li>「可逆无损」只对<strong>整条 token 序列</strong>成立；单个 token 可能落在 UTF-8 边界中间，单独解码会有损，要用字节级接口处理。</li>
+      </ul>
+      <table class="cmp-table">
+        <tr><th>文本单元</th><th>海外模型</th><th>国产模型</th></tr>
+        <tr><td>1 个汉字</td><td>1.3～1.5 token</td><td>0.8～1 token</td></tr>
+        <tr><td>1 个英文字母</td><td>平均 0.25～0.33 token</td><td>0.25～0.33 token</td></tr>
+        <tr><td>1 个英文单词</td><td>平均 1.3 token</td><td>平均 1.3 token</td></tr>
+      </table>
+      <p>估算口径：中文按 token 计费或做长度拦截时，别用字数代替 token 数——海外模型要按 <strong>1.3～1.5 倍</strong>估。</p>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Context Engineering：上下文工程的取舍——放什么、留多久、怎么压缩，以及注意力偏差与会话成本——互动教学课程">
+  <title>Context Engineering · 互动教学课程（Agents底层逻辑 ac-31）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Context Engineering</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Context-Engineering">31.Context Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清「提示词工程 → 上下文工程」这次提法的变化，以及上下文工程自己的两个关注点：<strong>编排</strong>与<strong>治理</strong></li>
+        <li>用注意力偏差的四条特点——<strong>长度稀释、长度分布外（OOD）、信噪比、首尾强化</strong>——解释「上下文不是越多越好」</li>
+        <li>把「放什么、留多久、怎么压缩、排在哪」四个取舍落到一个真实 Agent 的上下文装配逻辑里</li>
+        <li>把本章判据与第 16/17 章的既有原则接上：系统提示词保持静态、历史只增不改、思维链不删——因为它们直接决定缓存命中与 token 成本</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「为什么难 → 难在哪 → 工程上管什么」这条线过一遍——细节都在《31.Context Engineering》里，测验和面试会考。本章是取舍，不是清单：四类取舍（放什么、留多久、怎么压缩、排在哪）背后是同一件事——<strong>注意力的预算有限</strong>。</p>
+
+      <div class="card">
+        <h3>从「写提示词」到「管上下文」</h3>
+        <ul class="pitfall-list">
+          <li><strong>提法的变化</strong>：2025 年 6 月，Shopify 的 CEO Tobi Lütke 在社交媒体上表示，他更喜欢用「上下文工程」这个词来替代「提示词工程」，因为它更准确地描述了<strong>为 LLM 提供充分信息以完成任务</strong>的核心技能</li>
+          <li><strong>本章的硬判据</strong>：<strong>上下文唯一的影响着模型的输出质量</strong>——模型权重在推理时是固定的，你能动的只有「这一次采样看到哪些 token」</li>
+          <li><strong>上下文里到底有什么</strong>：系统提示词、用户问题、消息历史、工具定义、MCP、Skill、检索到的外部数据……它们都属于「上下文」的一部分，不只是提示词那一段</li>
+          <li><strong>一句话抓手</strong>：提示词工程管「话怎么写」，上下文工程管「<strong>此刻窗口里该有哪几样东西</strong>」</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>上下文不是越多越好：注意力偏差（Attention Bias）</h3>
+        <ul class="pitfall-list">
+          <li><strong>长度稀释</strong>：上下文越长，注意力就被分散到更多 token 上，关键信息的权重被摊薄，模型更容易漏掉信息——「都放进去」不等于「都被读到」</li>
+          <li><strong>长度分布外（OOD，Out-of-Distribution）</strong>：当上下文长度超过训练语料常见长度后，模型回复的<strong>置信度会有明显下降</strong>——长上下文是「渐变」，不是「无损」</li>
+          <li><strong>信噪比问题</strong>：噪声信息越多，越会<strong>挤占模型对关键信息的注意力预算</strong>——无关的工具原始输出、过期的中间结论都是噪声</li>
+          <li><strong>首尾强化</strong>：模型对<strong>开头（系统提示词）</strong>和<strong>结尾（最近输入）</strong>的关注度天然高于中间，这是位置偏差（Positional Bias）——所以「关键约束埋在长历史中间」是结构性问题，不是模型笨</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>上下文工程的两个关注点：编排与治理</h3>
+        <ul class="pitfall-list">
+          <li><strong>编排</strong>：提示词、用户问题、工具、MCP、Skill 等内容<strong>在上下文中如何排列？什么时间加入什么内容？</strong>——对应「放什么、排在哪、什么时候放」</li>
+          <li><strong>治理 · 可信</strong>：如何确保上下文的内容<strong>安全可信</strong>？——工具返回、检索结果、外部网页都是不可信输入，进了上下文就可能被当成指令</li>
+          <li><strong>治理 · 膨胀</strong>：如何在持续的循环中，<strong>管理和优化不断膨胀的上下文</strong>？——对应「留多久、怎么压缩」</li>
+          <li><strong>与前面章节接上</strong>：第 16 章要求系统提示词<strong>精简、自洽、全局约束、保持静态、结构化</strong>；第 17 章要求<strong>历史只增不改、新消息追加到末尾、思维链不删</strong>——<strong>静态前缀 + 只追加的尾部</strong>既保住提示词缓存命中，也压缩了无谓的 token 支出</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课、《31.Context Engineering》，以及第 16/17 章已覆盖的判据。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 本章用哪句话概括上下文与输出质量的关系？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">上下文唯一的影响着模型的输出质量</button>
+            <button class="quiz-option">上下文只影响回答速度，不影响回答质量</button>
+            <button class="quiz-option">只要提示词写得够好，上下文里的其他内容都不重要</button>
+            <button class="quiz-option">上下文越长，模型输出质量越高</button>
+          </div>
+          <div class="quiz-explain" hidden>《31.Context Engineering》原文就一句：「<strong>上下文唯一的影响着模型的输出质量</strong>」。这句话不是「上下文越长越好」（第 2 项错），也不是「只有提示词重要」（第 3 项错）——恰恰相反，系统提示词、用户问题、消息历史、工具定义、MCP、Skill 都属于上下文的一部分。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 关于本章「上下文工程」的提法，下列哪一条是原文事实？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">上下文工程只关心提示词的措辞与语气</button>
+            <button class="quiz-option">2025 年 6 月 Shopify 的 CEO Tobi Lütke 表示更喜欢用「上下文工程」替代「提示词工程」，因为它更准确地描述了为 LLM 提供充分信息以完成任务的核心技能</button>
+            <button class="quiz-option">上下文工程是比提示词工程更新的底层模型架构</button>
+            <button class="quiz-option">上下文工程要求上下文永不修改，所以长任务不可能做压缩</button>
+          </div>
+          <div class="quiz-explain" hidden>课件开头引用的就是这句表态。上下文工程不是模型架构（第 1 项错），也不是「永不修改」（第 2 项错，与第 17 章的缓存原则也不冲突）；它管的范围比措辞大得多（第 4 项错）——本章末尾把关注点落在<strong>编排</strong>与<strong>治理</strong>两件事上，后者明确包含「在持续的循环中管理和优化不断膨胀的上下文」。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 本章把上下文工程的关注点归纳为哪两项？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">采样与解码</button>
+            <button class="quiz-option">微调与蒸馏</button>
+            <button class="quiz-option">编排与治理</button>
+            <button class="quiz-option">压缩与重排</button>
+          </div>
+          <div class="quiz-explain" hidden>原文的两条：<strong>编排</strong>——提示词、用户问题、工具、MCP、Skill 等内容在上下文中如何排列、什么时间加入什么内容；<strong>治理</strong>——如何确保上下文内容安全可信，以及如何在持续循环中管理和优化不断膨胀的上下文。压缩只是治理里的一种手段（第 2 项以偏概全），采样/解码属于第 13 章推理机制，微调/蒸馏属于第 14 章训练阶段。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 某个 Agent 把检索到的一整份 8000 token 的产品文档塞进上下文，但用户只问了「退货运费谁承担」。按本章的四条注意力偏差，最直接的失效机制是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">首尾强化：文档放在中间，所以模型一定读不到</button>
+            <button class="quiz-option">长度稀释 + 信噪比：注意力被分散到大量无关 token 上，关键条款的权重被摊薄，模型更容易漏掉它</button>
+            <button class="quiz-option">长度分布外：8000 token 超过了模型的上下文窗口上限，请求会被拒绝</button>
+            <button class="quiz-option">与上下文长度无关，纯粹是文档排版问题</button>
+          </div>
+          <div class="quiz-explain" hidden>原文明确定义：长度稀释是「上下文越长，注意力就被分散到更多 token 上，关键信息的权重被摊薄，模型更容易漏掉信息」；信噪比问题是「噪声信息越多，越会挤占模型对关键信息的注意力预算」。8000 token 远未触及窗口上限（第 1 项把 OOD 说成硬性拒绝，也不对——原文说 OOD 的表现是<strong>回复置信度明显下降</strong>，是渐变）。第 3 项错在「一定读不到」（首尾强化是<strong>相对</strong>关注度差异），第 4 项忽略了这个场景真正的变量——上下文构成。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 关于「长度分布外（OOD）」，下列说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">上下文长度超过训练语料常见长度后，模型回复的置信度会有明显下降</button>
+            <button class="quiz-option">它与「长度稀释」是同一件事的两种说法</button>
+            <button class="quiz-option">上下文长度一旦超过训练语料常见长度，模型会直接报错拒答</button>
+            <button class="quiz-option">只有在上下文短于 1000 token 时才会出现</button>
+          </div>
+          <div class="quiz-explain" hidden>原文：「当上下文长度超过训练语料常见长度后，模型回复的置信度会有明显下降」。它和长度稀释是两条不同机制——稀释讲<strong>注意力被摊薄</strong>，OOD 讲<strong>长度本身落在训练分布之外</strong>（第 3 项错）；也不是「短上下文才出现」（第 2 项）或「直接报错」（第 1 项）——超窗报错是另一回事，OOD 是性能层面可感知的下降。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 一条工具返回里，真正相关的只有 3 个字段，其余 200 行是原始日志。按本章判据，正确的处理姿势是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">写回上下文，并在系统提示词里加一句「请只关注其中相关的字段」</button>
+            <button class="quiz-option">只把与当前目标相关的字段写回上下文，原始返回落到上下文之外的存储（文件/日志）备用</button>
+            <button class="quiz-option">全部丢掉，以后需要时再让模型重新调一次工具</button>
+            <button class="quiz-option">全部写回上下文，反正模型窗口够大</button>
+          </div>
+          <div class="quiz-explain" hidden>本章「信噪比问题」：噪声越多，越挤占模型对关键信息的注意力预算；而「治理」这一关注点要求的正是「在持续的循环中管理和优化不断膨胀的上下文」。所以方向是<strong>提高信噪比 + 上下文之外留旁路</strong>。第 2 项直接把噪声堆进注意力预算；第 3 项把数据丢干净，既不省事也不可追溯；第 4 项是靠提示词修补结构问题——第 16 章的「精简」原则本来就要求能不说的不说，而不是先塞进去再求模型忽略。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 一个编码 Agent 的系统提示词里包含：角色与硬性规则、当前工作目录、今天的日期时间、工具使用规范。代码在<strong>每一轮</strong>都重新拼装这份系统提示词后发请求。结合第 16/17 章，最该先修的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把全部内容都改成动态生成，保证每轮都是最新信息</button>
+            <button class="quiz-option">系统提示词越长越好，把所有项目背景都写进去，减少工具调用</button>
+            <button class="quiz-option">把系统提示词改成纯自然语言，去掉 Markdown/XML 结构，减少 token</button>
+            <button class="quiz-option">系统提示词保持静态、只留跨轮不变的内容；把时间/目录这类动态信息移到消息主体（必要时由工具按需查询）</button>
+          </div>
+          <div class="quiz-explain" hidden>两章判据叠加：第 16 章要求系统提示词<strong>保持静态</strong>（反面案例正是「当前用户 X，时间是 Y」这类动态内容）且<strong>结构化</strong>（Markdown/XML 分层，第 1 项把它改掉是倒退）；第 17 章给出成本侧的机制——多轮要命中提示词缓存，必须<strong>把新元素追加到 messages 数组末尾</strong>、<strong>历史上下文不可修改</strong>。每轮重拼系统提示词 = 每轮换前缀，缓存难命中；正确做法是让<strong>系统提示词这一段前缀跨轮逐字不变</strong>，动态事实在尾部按需出现（工具查询、或作为追加的消息）。第 2、4 项都在加剧前缀变化与长度稀释。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 一个会话连问 20 轮，每轮请求都会把整条历史重发，且历史里堆着前几轮工具的完整原始输出。这个形态同时压上来两笔账，最准确的描述是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只有计费问题——只要把历史改写成摘要就能全部解决</button>
+            <button class="quiz-option">token 账：无状态 API 每轮全量重发，累计发送量是平方级；注意力账：历史越长，注意力越被摊薄、噪声越挤占预算——两笔账由「留多久、怎么压缩」这个取舍同时决定</button>
+            <button class="quiz-option">只有存储成本问题——历史越长，磁盘文件越大</button>
+            <button class="quiz-option">只有注意力问题——与 token 计费无关</button>
+          </div>
+          <div class="quiz-explain" hidden>把两章接起来看：第 17 章算过 token 账——每轮把整份历史放进报文，属「只增不改」的代价，累计发送量随轮数<strong>平方级</strong>增长；本章给的是注意力账——长度稀释、信噪比、首尾强化都在说「历史越长，关键信息越容易被淹掉」。第 1、2 项各自只看了一半；第 3 项最危险：第 17 章明确「历史上下文不可修改」是缓存命中的前提，<strong>就地改写历史会同时让缓存失效并丢掉推理上下文</strong>——压缩必须做得克制、且尽量不破坏已有前缀。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 某 Agent 的单轮上下文已经膨胀到接近窗口上限，需要做「压缩」。按本章的判据，决定压缩是否安全的关键是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先把系统提示词精简到最短，其余照旧</button>
+            <button class="quiz-option">先按 token 数从最早的消息开始截断，截到不超限为止</button>
+            <button class="quiz-option">先换个上下文窗口更大的模型，压缩以后再说</button>
+            <button class="quiz-option">先定清「什么必须留」——判据是它是否服务于当前目标（关键约束、未解决的结论、思维链），再决定丢什么、以什么粒度丢</button>
+          </div>
+          <div class="quiz-explain" hidden>本章「治理」的两个问题里，「放什么」是前提——上下文工程本质是<strong>取舍</strong>：放什么、留多久、怎么压缩。若不先想清判据，压缩就只能按 token 数量机械裁剪，最可能丢掉的恰是「当时不起眼、后面才关键」的信息。第 2 项是无判据的截断（还会破坏第 17 章强调的前缀与思维链）；第 3 项只动了系统提示词这一段，解决不了不断膨胀的历史；第 4 项是推迟决策，不是治理。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0031-Context-Engineering',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事要接一个十来轮的代码分析 Agent，方案是「把所有能拿到的信息都一次性塞进上下文」：整个仓库的 README、三个相关模块的全文、上一次排查的完整工具日志、以及团队规范。他的理由是「反正现在窗口大，信息给足了模型就不会乱猜」。请判断这个方案的问题，并给出你认可的上下文构成原则。`,
+              source: `来源：Anthropic 官方工程博客《Effective context engineering for AI agents》（"Context is a critical but finite resource for AI agents."；"Context, therefore, must be treated as a finite resource with diminishing marginal returns."；"good context engineering means finding the smallest possible set of high-signal tokens that maximize the likelihood of some desired outcome."；"As the number of tokens in the context window increases, the model’s ability to accurately recall information from that context decreases."）https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents · 检索 2026-10-02 · 层级：一手（官方文档，场景化改写）+ 源课程《31.Context Engineering》课件（长度稀释、信噪比、首尾强化）`,
+              breakdown: `同事的默认假设错了：官方把上下文定性为 <strong>critical but finite resource</strong>，并且明确「随着上下文里 token 数增加，模型从其中<strong>准确回忆</strong>信息的能力会下降」——给足信息并不等于信息被用上。课件把这个现象拆成四条可检验的机制：<strong>长度稀释</strong>（注意力被分散、关键信息权重被摊薄）、<strong>长度分布外</strong>（超过训练语料常见长度后回复置信度明显下降）、<strong>信噪比</strong>（噪声挤占注意力预算）、<strong>首尾强化</strong>（开头与结尾天然更受关注，中间最弱）。把三份模块全文、README、完整日志一起塞进去，最大的风险是：真正的关键线索（比如那次排查里唯一异常的调用栈）落在长上下文的<strong>中段</strong>，正好是注意力最弱的位置。<br><strong>认可的原则</strong>：官方结论是「find the <strong>smallest possible set of high-signal tokens</strong> that maximize the likelihood of some desired outcome」，课件则把它表述为取舍——<strong>放什么、留多久、怎么压缩</strong>。落到这个场景：① 系统提示词与团队规范属跨轮不变内容，保持静态、放在开头；② 仓库不必全文进上下文，改为给路径与检索入口，由 Agent 按需拉取；③ 上一轮的工具日志只保留关键结论（异常栈、失败用例），完整日志留在上下文之外可追溯；④ 与当前目标无关的模块整段剔除。判断标准始终是「它是否服务于当前目标」，而不是「它是不是真的」。`,
+            },
+            {
+              type: 'mechanism',
+              level: '高级岗常问',
+              prompt: `请从机制上回答：为什么上下文变长之后，模型对其中关键信息的召回会变差？请至少从「注意力计算的代价」「模型见过的长度分布」「位置」三个角度说明，并解释本次课程给出的四条特点分别对应哪一层。`,
+              source: `来源：Anthropic 官方工程博客《Effective context engineering for AI agents》（"LLMs are based on the transformer architecture, which enables every token to attend to every other token across the entire context. This results in n² pairwise relationships for n tokens."；"As its context length increases, a model’s ability to capture these pairwise relationships gets stretched thin, creating a natural tension between context size and attention focus."；"models develop their attention patterns from training data distributions where shorter sequences are typically more common than longer ones."；"Techniques like position encoding interpolation allow models to handle longer sequences by adapting them to the originally trained smaller context, though with some degradation in token position understanding."；"LLMs have an \"attention budget\" that they draw on when parsing large volumes of context. Every new token introduced depletes this budget by some amount"）https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《31.Context Engineering》课件（注意力偏差四条特点）`,
+              breakdown: `<strong>① 注意力计算的代价</strong>：官方指出 transformer 让<strong>每个 token 都能注意其他每个 token</strong>，n 个 token 就有 n² 组 pairwise 关系；上下文越长，模型把这些关系「抓牢」的能力越被摊薄，于是形成「上下文大小 ↔ 注意力聚焦」的天然张力。官方还给出「<strong>attention budget</strong>（注意力预算）」这个比喻：每引入一个新 token 都会消耗一部分预算——这正是课件「长度稀释」（关键信息权重被摊薄）与「信噪比」（噪声挤占预算）的机制层解释。<strong>② 训练分布</strong>：模型的注意力模式是从训练数据分布中学到的，而<strong>短序列通常比长序列更常见</strong>；也就是说超长上下文属于模型「见得少」的区域，因此课件把「长度分布外（OOD）」单列一条——超过训练语料常见长度后，回复置信度会明显下降。<strong>③ 位置</strong>：为了让模型吃下更长的序列，业界会用位置编码插值把长序列「适配」回原本训练时的较短上下文，代价是<strong>token 位置理解能力有一定退化</strong>；官方同时强调这些因素造成的是<strong>性能渐变（performance gradient）而不是硬悬崖</strong>——模型在长上下文里依然很有能力，但对<strong>信息检索与长距离推理</strong>的精度会下降。课件把这一层表述为「首尾强化」：对<strong>开头（系统提示词）</strong>与<strong>结尾（最近输入）</strong>的关注天然高于中间，即位置偏差。<br><strong>工程结论</strong>：既然降级是渐变的，就别指望「窗口没爆就没事」——关键约束应放在开头或结尾，中段只承载可被检索的细节，并持续压缩噪声。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查这段「上下文装配」代码：<br><code>def build_messages(session, user_text):</code><br><code>&nbsp;&nbsp;system = render_prompt("system")&nbsp;&nbsp;# 模板里含 today / cwd / git 状态</code><br><code>&nbsp;&nbsp;system += "\\n当前时间：" + now() + "\\n当前目录：" + os.getcwd()</code><br><code>&nbsp;&nbsp;return [{"role": "system", "content": system}, *session.messages, {"role": "user", "content": user_text}]</code><br>问：这样每轮拼上下文，会带来哪些可量化的副作用？你会怎么改？`,
+              source: `来源：OpenAI Cookbook《Prompt Caching 101》（"When an API request is made, the system first checks if the beginning portion (prefix) of the prompt has already been cached. If a match is found (cache hit), the cached prompt is used, leading to reduced latency and costs."；"Place static or frequently reused content at the beginning of prompts: This helps ensure better cache efficiency by keeping dynamic data towards the end of the prompt."）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/Prompt_Caching101.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《16.系统提示词》《17.会话》课件（保持静态 / 历史上下文不可修改）`,
+              breakdown: `副作用链条很清楚。<strong>① 缓存前缀被打断</strong>：官方机制是请求先检查 prompt 的<strong>开头部分（prefix）</strong>是否已缓存，命中才复用；而这段代码每一轮都往<strong>最前面</strong>的系统消息里加一个变化的时间戳——第二轮的 prompt 与第一轮在<strong>第一个 token 处就开始不同</strong>，前缀无法复用，所有轮次都要从头处理，延迟与成本同时上升。这也正是第 16 章「保持静态」那条原则的反面案例（反例原文就是「当前用户是 X，时间是 Y」，正例是空）。<strong>② 官方给的摆放原则被违反</strong>：Cookbook 建议「把静态或频繁复用的内容放在 prompt 开头，让动态数据靠后」——这里恰好相反，把最易变的数据放在了最前面。<strong>③ 额外的 token 成本</strong>：每轮都重复写入时间与目录，历史累积时它们还会被当作历史的一部分反复重发（第 17 章的平方级账）。<br><strong>怎么改</strong>：① 系统提示词的<strong>静态段跨轮逐字不变</strong>（角色、硬性规则、工具规范、输出格式）；② 时间、目录、git 状态这类动态事实从系统前缀里拿掉——需要精确值时通过一次工具调用取得并作为<strong>尾部新消息</strong>追加（也符合第 17 章「新消息追加到 messages 数组末尾」）；③ 若确实要在系统提示词里保留环境信息，就像第 16 章那样只渲染<strong>粗粒度且稳定</strong>的字段（如语言、是否 git 仓库），并在同一会话内保持取值稳定；④ 上观测：用响应里的缓存命中 token 数（<code>usage.prompt_tokens_details.cached_tokens</code>）验证改动是否真的把命中率拉起来。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `为一个「长跑的编码 Agent」设计上下文管理方案：单轮上下文经常逼近窗口上限，既不能让它失忆，也不能让 token 成本失控。请给出你的一套分层策略（放什么、留多久、怎么压缩、怎么排），并说明各层的取舍依据与失效边界。`,
+              source: `来源：Anthropic 官方工程博客《Effective context engineering for AI agents》（"Compaction is the practice of taking a conversation nearing the context window limit, summarizing its contents, and reinitiating a new context window with the summary."；"One of the safest lightest touch forms of compaction is tool result clearing"；"Structured note-taking, or agentic memory, is a technique where the agent regularly writes notes persisted to memory outside of the context window."；"Rather than one agent attempting to maintain state across an entire project, specialized sub-agents can handle focused tasks with clean context windows. ... returns only a condensed, distilled summary of its work (often 1,000-2,000 tokens)."；"the guiding principle remains the same: find the smallest set of high-signal tokens that maximize the likelihood of your desired outcome."）https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《31.Context Engineering》课件（编排/治理）与《17.会话》课件（历史只增不改、缓存前缀）`,
+              breakdown: `按课文的两条关注点分层落地：<strong>编排层</strong>决定「放什么、排在哪」，<strong>治理层</strong>决定「留多久、怎么压缩」。<br><strong>① 静态前缀（编排）</strong>：系统提示词只放跨轮不变的内容（角色、硬性规则、工具规范、输出格式），逐字稳定放在最前——既符合第 16 章「保持静态/精简/结构化」，也让提示词缓存的前缀可复用。失效边界：一旦把时间、目录、当前用户等易变字段写进前缀，命中率立刻归零。动态事实改为尾部追加或由工具按需查询。<br><strong>② 工作集与按需检索（编排）</strong>：遵循「最小高信号 token 集合」，让 Agent 持有路径/查询这类<strong>轻量引用</strong>，在需要时用工具按需把内容拉进上下文，而不是预先把整仓库铺开。边界：运行时探索比预取慢，且工具与启发式设计不好时 Agent 会乱翻、跑偏，需要明确的检索规范兜底。<br><strong>③ 压缩（治理）</strong>：逼近窗口上限时做 <strong>compaction</strong>——把历史提炼成高保真摘要并以此开启新的上下文窗口。要注意官方的实践建议：调压缩提示词时先<strong>最大化召回</strong>、再迭代提升精度；而最安全、最轻的一种是 <strong>tool result clearing</strong>（清掉已经用过的工具原始结果）——那些原始输出在历史深处通常不再需要。边界：压缩过猛会丢掉「当时不起眼、后面才关键」的细节。与第 17 章叠加：压缩最好以<strong>追加</strong>形态出现（摘要作为新消息），就地改写前缀会让缓存全失效、思维链也一并丢失。<br><strong>④ 上下文之外的记忆（治理）</strong>：用结构化笔记/记忆文件把进度、待办、结论写到窗口之外，需要时再拉回来。边界：笔记本身会过期，需要版本与清理策略，否则把噪声重新请回上下文。<br><strong>⑤ 子代理隔离（治理）</strong>：把探索型子任务交给拥有干净上下文窗的子代理，它可以用掉上万 token，但只把 1–2k token 的凝练结论回给主 Agent——细节留在子代理里，主 Agent 只做编排与综合。边界：拆得太碎会丢跨模块关联，协调成本与延迟都会上升。<br><strong>⑥ 观测（贯穿）</strong>：把每轮上下文长度（第 17 章的 $S(n)=O(n^2)$ 曲线）、缓存命中 token 占比、以及压缩前后的质量指标一起监控——没有观测，任何压缩策略都无法证明自己没把关键信息压掉。<br><strong>一句话总结</strong>：静态前缀不动、动态内容尾部追加、原始数据留在窗口外、摘要与笔记只增不改、重活交给子代理——始终围绕同一个判据：<strong>当前这一步，窗口里最小的高信号集合是什么</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `用 AI 助手在 20 分钟内给一个多轮 Agent 做一次「上下文瘦身」改造：把上下文组成画清楚、把噪声从窗口里挪出去、并验证压缩没有把关键信息压掉。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '选一个已经能跑的多轮 Agent（第 17 章那种 <code>Session</code> + 工具循环即可）→ 打印并统计每一轮请求的上下文组成（系统提示词 / 历史消息 / 工具定义与结果 / 当前输入各占多少 token，按长度降序）→ 找出噪声最大的一项（通常是工具的原始返回），把它改成「只回相关字段 + 完整结果写到上下文之外的存储」→ 观察某一段历史不再需要时，用<strong>追加摘要</strong>的方式替代原地改写，保留思维链 → 连续跑同一组 10 轮任务，对比改造前后的上下文长度曲线、缓存命中 token 数与任务完成质量。',
+                accept: ['能给出改造前后每轮的上下文组成表，指出噪声占比最高的一项', '系统提示词在这一组任务中跨轮逐字不变（可直接 diff 前后两轮的 system 字段）', '工具返回进入上下文的只有相关字段，完整结果落在上下文之外且可追溯', '历史以「只追加」的方式演化：没有删除既有消息、没有重写前缀，思维链字段仍在', '同一组任务在改造后上下文长度曲线明显更平缓，且任务完成质量没有下降（用固定的验收问题对比回答）'],
+              },
+              source: `任务基于《31.Context Engineering》与《17.会话》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路与常见坑。① <strong>先把账算清</strong>：不统计就动手，等于凭感觉压缩——按「系统提示词 / 历史 / 工具定义与结果 / 当前输入」四类分别计 token，很快就能看出噪声大头（多数项目是工具原始返回）。② <strong>系统提示词先归位</strong>：把时间、目录、用户信息这类每轮都变的字段从系统提示词里拿掉——这是收益最快的一刀，既降长度又让前缀稳定（第 16 章「保持静态」、第 17 章缓存命中）。③ <strong>工具结果做分流</strong>：回给模型的只保留与当前目标相关的字段；完整原始输出写到文件或日志，需要时用工具再取——这是上下文工程里信噪比的直接落点。④ <strong>压缩要用追加，不要就地改写</strong>：第 17 章的判据是「历史上下文不可修改——不满足会导致难以命中模型服务商的 prompt cache」，「上下文中应保留思维链——不满足会导致推理上下文丢失」；所以摘要应作为<strong>新消息</strong>追加，让已有前缀尽量不动。⑤ <strong>验收要成对</strong>：只看长度下降是自欺——用同一组 10 轮任务比较改造前后，长度曲线与回答质量必须一起看。常见坑：把「减少 token」当成唯一目标而删掉思维链；为了省事每轮都触发压缩（每轮都动前缀，缓存永远命中不了）；把工具原始输出直接截断而不做字段级筛选，结果需要的字段恰好被切掉。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic《Effective context engineering for AI agents》</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/Prompt_Caching101.ipynb">OpenAI Cookbook《Prompt Caching 101》</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Context-Engineering速查表.html">Context Engineering 速查表</a>——注意力偏差四条、四类取舍、缓存友好的上下文排版一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Context-Engineering">31.Context Engineering</a> · 上一课 <a href="/agents/Agents底层逻辑/Prompt-Engineering">30.Prompt Engineering</a> · 同类复习 <a href="/agents/Agents底层逻辑/系统提示词">16.系统提示词</a> · <a href="/agents/Agents底层逻辑/会话">17.会话</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

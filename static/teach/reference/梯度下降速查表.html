@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>梯度下降速查表 · 参考手册</title>
+  <meta name="description" content="梯度下降速查表 · 可打印参考手册：配合《梯度下降互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>梯度下降速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0005-梯度下降.html">《梯度下降互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>三个核心术语</h2>
+      <dl class="term-grid">
+        <dt>梯度下降</dt>
+        <dd>沿着函数在当前点处<strong>最速下降方向</strong>（即负梯度方向）移动，使函数的值逐步减少。更新式：$\theta \leftarrow \theta - \eta \nabla L(\theta)$。</dd>
+        <dt>学习率</dt>
+        <dd>梯度下降的<strong>幅度</strong>——梯度给方向，学习率给步长。过大震荡发散，过小收敛极慢。</dd>
+        <dt>学习 / 训练</dt>
+        <dd>一个<strong>过程</strong>：在这个过程中，通过梯度下降的手段，让神经网络的参数逐步调整到最佳状态。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>损失函数逐符号拆解</h2>
+      <p>$$L = \frac{1}{m}\sum_{i=1}^{m}(y_i-\hat y_i)^2$$</p>
+      <table class="cmp-table">
+        <tr><th>符号</th><th>名称</th><th>含义与作用</th></tr>
+        <tr><td>$m$</td><td>样本个数</td><td>这一批参与计算的样本数，$i$ 从 1 遍历到 $m$</td></tr>
+        <tr><td>$y_i$</td><td>真实值</td><td>第 $i$ 个样本的标签</td></tr>
+        <tr><td>$\hat y_i$</td><td>预测值</td><td>前向传播算出的输出（上一章的内容）</td></tr>
+        <tr><td>$(\cdot)^2$</td><td>平方</td><td>保证非负、避免正负偏差互相抵消，并放大大偏差的样本</td></tr>
+        <tr><td>$\frac{1}{m}$</td><td>取平均</td><td>让损失不随批大小膨胀，batch 之间可比（均方误差里的 mean）</td></tr>
+      </table>
+      <p>对预测值求导：$\frac{\partial L}{\partial \hat y_i} = -\frac{2}{m}(y_i - \hat y_i)$——误差越大，回传的梯度越大；实际步长 = 梯度 × 学习率。</p>
+    </section>
+
+    <section>
+      <h2>一次训练迭代与学习率调参</h2>
+      <pre># 一次训练迭代（顺序不能乱）
+pred = model(X)           # 1. 前向传播：算出 ŷ
+loss = loss_fn(pred, y)   # 2. 损失：L = (1/m) · Σ(yᵢ - ŷᵢ)²  → 一个数字
+loss.backward()           # 3. 反向传播：把梯度填进每个参数的 .grad
+optimizer.step()          # 4. 梯度下降：θ ← θ - η·∇L
+optimizer.zero_grad()     # 5. 清零梯度，准备下一轮（否则梯度累加）</pre>
+      <dl class="term-grid">
+        <dt>学习率过大</dt>
+        <dd>一步迈过谷底：损失来回震荡、甚至越来越大（发散）。</dd>
+        <dt>学习率过小</dt>
+        <dd>每步都很小：损失下降极慢，迭代很多轮也到不了最优点。</dd>
+        <dt>随训练衰减</dt>
+        <dd>前期大步、后期小步：ExponentialLR（每轮乘 gamma）、ReduceLROnPlateau（按验证指标动态降）；调度要在 optimizer.step() 之后调用。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>易错点速查</h2>
+      <table class="cmp-table">
+        <tr><th>现象</th><th>根因</th><th>处理</th></tr>
+        <tr><td>loss 先猛降、随后乱跳或越来越大</td><td>学习率过大，步子迈过了谷底</td><td>回到 1e-3 量级重新观察，再考虑加衰减调度</td></tr>
+        <tr><td>loss 几乎不动、下降极慢</td><td>学习率过小</td><td>适当调大；SGD 对特征尺度敏感，先做标准化</td></tr>
+        <tr><td>loss 数字突然变好看</td><td>把损失整体除以了更大的常数（如 1/m → 1/m²）</td><td>看梯度与更新幅度，别只看 loss 的数字</td></tr>
+        <tr><td>损失显示「很好」但预测很差</td><td>去掉平方后正负偏差互相抵消</td><td>保留平方（或绝对值），保证每一项非负</td></tr>
+        <tr><td>更新幅度越滚越大、方向失真</td><td>循环里没有 optimizer.zero_grad()，梯度在累加</td><td>backward 之前清零；测试阶段用 torch.no_grad()</td></tr>
+      </table>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

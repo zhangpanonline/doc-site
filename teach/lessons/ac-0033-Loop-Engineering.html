@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Loop Engineering：Agent 循环的终止条件、最大迭代与预算控制、失败重试与退避、循环可观测性——互动教学课程">
+  <title>Loop Engineering · 互动教学课程（Agents底层逻辑 ac-33）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Loop Engineering</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Loop-Engineering">33.Loop Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 Loop Engineering 在课程里的位置——它解决的不是「单轮怎么走」，而是「循环怎么自我推动到交付」</li>
+        <li>复述课件列出的循环内五件事：自主发现未完成任务、并行子代理 + 工作树隔离、自主沉淀知识、自主接入工具、子代理分工</li>
+        <li>把《21.Agent》的循环判据和工程控制手段接起来：什么时候停、停了怎么算完成、跑飞了怎么兜底</li>
+        <li>为循环补上三项工程能力——预算与最大迭代、失败重试与退避、可观测与可续跑（进度文件 + 结构化交接物）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>本章源文档很精炼，就一句话定位加五条循环内的动作；下面把「定位 → 循环的三个工程问题 → 可观测与沉淀」这条线铺开，细节都能在《33.Loop Engineering》与《21.Agent》里对上。</p>
+
+      <div class="card">
+        <h3>Loop Engineering 是什么：让 Agent 自我推动到「可交付」</h3>
+        <ul class="pitfall-list">
+          <li><strong>课件定位（原文）</strong>：Loop Engineering 关注的是如何让 Agent <strong>自我推动</strong>，最终完成一个<strong>可交付的产品</strong>；它的实现方式是<strong>循环</strong></li>
+          <li><strong>循环里做的五件事（课件原文）</strong>：① 自主发现还未完成的任务；② 驱动多个子代理并行任务，并使用<strong>工作树隔离</strong>；③ 自主沉淀知识；④ 自主接入工具；⑤ 不同的子代理分工</li>
+          <li><strong>和前面几章的关系</strong>：第 20 章 ReAct 解决「一步怎么走」——思考 → 行动 → 观察；第 21 章把 Model / Session / Tool / Listener 装配成 <code>Agent</code>，用一个 <code>while True</code> 驱动 ReAct 循环；本章接着问第三个问题——<strong>这个循环怎么在没人盯着的时候一直转、并且转到能交付</strong></li>
+          <li><strong>边界（沿用第 21 章的判据）</strong>：官方把 workflow 定义为「LLM 与工具按<strong>预定义代码路径</strong>编排」，agent 定义为「LLM <strong>动态决定</strong>自己的流程与工具使用」。下一步取决于上一步结果、路径写不死的，才值得放进自主循环；路径固定的动作应该抽成工具或固定流程</li>
+          <li><strong>一句话记住</strong>：ReAct 管一步，Agent 管一圈，Loop Engineering 管「这一圈怎么自我推动到终点、并且在失控前停下」</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>循环的三个工程问题：终止条件、预算控制、失败重试与退避</h3>
+        <ul class="pitfall-list">
+          <li><strong>终止判据要外化到环境</strong>：第 21 章的退出条件是 <code>registry.invoke(session.messages[-1])</code> 返回 <code>None</code>（这一轮没有 <code>tool_calls</code>），它只说明「模型这一轮不想调工具」，<strong>不等于任务已完成</strong>。Loop 场景的目标是可交付，完成判据必须来自环境里可验证的事实：验收项通过、测试跑绿、产物文件存在。官方记录过对应的失效模式——模型倾向于把功能标记为完成却没做端到端验证，解法是给它一份功能清单并<strong>自验证</strong>，只有通过测试才允许标记</li>
+          <li><strong>最大迭代是兜底，不是失败</strong>：官方原文「任务通常在完成时终止，但通常也要包含停止条件（例如<strong>最大迭代次数</strong>）来保持控制」。超限时应当<strong>有界退出</strong>并保留现场（进度文件 + 已完成/未完成清单 + 会话快照），而不是静默继续烧钱</li>
+          <li><strong>预算要按复杂度分配、在循环里实时结算</strong>：官方数据里 agent 大约用掉聊天 <strong>4×</strong> 的 token，多代理系统大约 <strong>15×</strong>；对应的分配经验是——简单事实查找 1 个代理、3–10 次工具调用；直接对比 2–4 个子代理、每个 10–15 次调用；复杂研究才上 10 个以上子代理并明确分工。写成式子就是每轮成本累加不超过预算 $B$：$$\sum_{k=1}^{N}\left(c_{in}\cdot T^{in}_{k}+c_{out}\cdot T^{out}_{k}\right)\le B$$其中 $T^{in}_k$ / $T^{out}_k$ 是第 $k$ 轮的输入、输出 token 数，$c_{in}$ / $c_{out}$ 是单价——一旦超限就停在当前轮，别等任务结束再算总账</li>
+          <li><strong>失败重试：先分类，再退避</strong>：官方 SDK 的默认策略是「某些错误自动重试 2 次，带一个短的<strong>指数退避</strong>」——连接错误、408、409、429 与 ≥500 默认重试，而且<strong>只有请求体可以安全重发时才重试</strong>。退避可以写成 $$t_n=\min\left(t_{max},\; t_0\cdot 2^{\,n}\right)+\text{jitter}$$ 也就是第 $n$ 次重试等待「指数增长但封顶」再加上一份随机抖动，避免大量子代理在同一时刻集体重试。参数错误、权限错误属于不可重试，应当立刻上报；同一个工具连续失败要<strong>熔断换路</strong>，而不是无限重试</li>
+          <li><strong>错误会累积，所以要能续跑</strong>：官方提醒 agentic 系统里「小故障可能造成灾难性后果」，而且<strong>不能简单地从头重启</strong>（贵且用户难受）——他们做的是「从出错时 Agent 所在的位置恢复」，并把「重试逻辑」与「定期检查点」这类<strong>确定性保障</strong>和模型自身的适应能力结合起来</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>可观测性与自主沉淀：让循环每一圈都留下痕迹</h3>
+        <ul class="pitfall-list">
+          <li><strong>第 21 章的监听层就是现成的观测面</strong>：<code>ModelListener</code> 挂在 <code>reasoning_* / content_* / tool_call_* / complete</code> 全部事件上，派生出审计监听器即可在 <code>tool_call_end</code> 记下工具名、参数、调用 id 与时间。官方在生产系统里的经验是——加上完整 tracing 之后才能系统性地定位「为什么没找到信息」；至少要能回答：每一轮决定了什么、调了什么工具、结果如何、花了多少 token 与时间、循环因为什么停下</li>
+          <li><strong>自主沉淀知识 = 把状态写到 Agent 之外</strong>：每个新会话都是「没有上一班记忆的新工程师」。官方的做法是先跑一个初始化会话搭好环境（<code>init.sh</code>、一份进度文件、一次初始提交），之后每个会话只做增量推进并留下结构化更新；关键洞察是「让 Agent 在全新上下文里能<strong>快速搞清工作状态</strong>」——靠的正是进度文件加 git 历史。另一个实战收获是让 Agent 用描述性的提交信息提交进度、把进展写进进度文件，这样它既能回退坏改动，也能恢复可用状态</li>
+          <li><strong>工作树隔离：并行的前提</strong>：官方 git 文档写得直白——一个仓库可以挂<strong>多个工作树</strong>，从而同时 checkout 多于一个分支；<code>git worktree add &lt;path&gt;</code> 会关联出一个新的工作树（最简单的形式下顺带创建同名分支），而只想做实验、不想打扰既有开发时可以用 <code>git worktree add -d &lt;path&gt;</code> 建一个「丢弃式」工作树。落到本章：每个并行子代理各占一个工作树，主工作树只负责汇总与合并——否则几个子代理在同一份工作拷贝里互相覆盖</li>
+          <li><strong>子代理分工要写到提示词里</strong>：官方把循环失败模式总结得很具体——早期版本会「为简单问题开 50 个子代理」、子代理之间重复劳动（一个查 2021 年芯片危机，另外两个重复查 2025 供应链）。有效做法是每个子任务都带<strong>目标、输出格式、可用工具与来源、清晰的任务边界</strong>，并把子代理的产出直接落成文件、只把轻量引用传回主代理，避免「传话游戏」式的信息损耗</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课、《33.Loop Engineering》与《20.ReAct》/《21.Agent》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. Loop Engineering 关注的核心问题是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">如何训练一个更小的模型来降低推理成本</button>
+            <button class="quiz-option">把多个模型串起来做投票，提高单次回答的准确率</button>
+            <button class="quiz-option">让模型在单次回答里给出更完整、更长的答案</button>
+            <button class="quiz-option">如何让 Agent 自我推动，最终完成一个可交付的产品</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：「Loop Engineering 关注的是如何让 Agent 自我推动，最终完成一个可交付的产品。它的实现方式是循环。」——它不改进单次生成的措辞，也不涉及训练，而是研究<strong>循环这一层</strong>的工程问题：怎么自己找活干、怎么并行、怎么沉淀、怎么收工。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 课件列出的循环动作里，「驱动多个子代理并行任务」配套的隔离手段是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每个子代理一个独立的 Python 解释器</button>
+            <button class="quiz-option">每个子代理一份不同的系统提示词</button>
+            <button class="quiz-option">工作树（worktree）隔离</button>
+            <button class="quiz-option">每个子代理一个独立的数据库实例</button>
+          </div>
+          <div class="quiz-explain" hidden>课件第二句原文就是「驱动多个子代理并行任务，<strong>并使用工作树隔离</strong>」。git 官方文档的说法是：一个仓库可以支持多个工作树，允许同时 checkout 多于一个分支——这正是让并行子代理各写各的、最后由主工作树汇总的物理基础。解释器、提示词、数据库都不是课件提到的隔离手段。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 回看《21.Agent》：这一版 <code>Agent.invoke</code> 的循环退出判据是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会话消息数达到预设的 20 条</button>
+            <button class="quiz-option">模型连续两轮输出完全相同的内容</button>
+            <button class="quiz-option"><code>registry.invoke(session.messages[-1])</code> 返回 <code>None</code>——最后一条消息里没有 <code>tool_calls</code></button>
+            <button class="quiz-option">模型正文里出现「完成」两个字</button>
+          </div>
+          <div class="quiz-explain" hidden>第 21 章的循环是 <code>resp = model.invoke_stream(session)</code> → <code>call_msg = registry.invoke(session.messages[-1])</code>，为 <code>None</code> 就 <code>break</code>，否则把工具结果并进会话继续下一轮。记住这个判据的<strong>语义边界</strong>：它只表示「模型这一轮没要求调工具」，并不等于「任务已完成」——这正是本章要接手的问题。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 课件里的「自主发现还未完成的任务」，落到工程实现上最关键的动作是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">依赖各个子代理自己在上下文里记住做过什么</button>
+            <button class="quiz-option">把待办清单一次性写进系统提示词，之后不再更新</button>
+            <button class="quiz-option">换一个上下文窗口更大的模型，把全部历史都装进去</button>
+            <button class="quiz-option">把待办清单与进度外化成 Agent 之外的文件（进度文件）+ git 提交记录，让每一轮、每一个新会话开工先读它再决定下一步</button>
+          </div>
+          <div class="quiz-explain" hidden>官方的长任务实践是：初始化会话搭好环境（<code>init.sh</code>、进度文件、初始提交），后续会话只做增量推进并留下结构化更新，关键洞察是「让 Agent 在全新的上下文里快速搞清工作状态」。所以「自主发现」靠的不是模型记忆，而是<strong>外部状态</strong>：进度文件 + git 历史 + 功能清单。把它想成「接班的工程师」，就知道为什么清单必须写在环境里。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 循环里工具调用失败时，哪种处理策略最符合本章的工程要求？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先分类再退避：连接错误 / 408 / 409 / 429 / ≥500 用指数退避加抖动重试并设次数上限；参数或权限类错误立即上报；同一工具连续失败要熔断换路</button>
+            <button class="quiz-option">只重试参数校验失败这类错误，因为它们是偶发的</button>
+            <button class="quiz-option">任何错误都无限重试，直到成功为止</button>
+            <button class="quiz-option">一律不重试，出错就把整个循环从头重启</button>
+          </div>
+          <div class="quiz-explain" hidden>官方 SDK 的默认行为是「某些错误自动重试 2 次，带一个短的指数退避」，覆盖连接错误、408、409、429 与 ≥500，并且<strong>只在请求体可以安全重发时才重试</strong>——所以「无限重试」和「一律不重试」都错。参数校验失败重发同样的请求必然再失败，属于该立刻上报的那一类。再加一条本章视角的要求：重试要有上限，同一工具连续失败要熔断换路，否则循环会把预算烧在同一个坏工具上。退避写成 $t_n=\min(t_{max}, t_0\cdot 2^{n})+\text{jitter}$。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 要给一个「循环 + 多子代理」的 Agent 加预算控制，下面说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">按复杂度分配工作量（简单查找 1 个代理，复杂任务才上多个子代理），并在循环里持续结算 token / 费用 / 墙钟，超限时有界退出并保留现场</button>
+            <button class="quiz-option">只要设置了最大迭代次数，token 就自然不会超</button>
+            <button class="quiz-option">预算只需要在任务全部结束后统计一次总花费</button>
+            <button class="quiz-option">多代理与单代理的 token 开销差不多，不需要专门控制</button>
+          </div>
+          <div class="quiz-explain" hidden>官方数据：agent 约用掉聊天 <strong>4×</strong> 的 token，多代理系统约 <strong>15×</strong>；因此他们把「按查询复杂度伸缩投入」写进了提示词（简单查找 1 个代理 3–10 次调用，直接对比 2–4 个子代理各 10–15 次，复杂研究才 10 个以上子代理）。「事后再统计」等于没有控制；「有最大迭代就不超 token」也不成立——<strong>单轮</strong>的 token 就可以非常大，轮数与预算必须分别设限。预算约束就是 $\sum_{k=1}^{N}\left(c_{in}T^{in}_{k}+c_{out}T^{out}_{k}\right)\le B$。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 同事说：「自主循环本来就是让 Agent 一直跑下去，加 <code>max_iterations</code> 就退化成 workflow 了，所以不该加。」这个说法错在哪？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">错在把「自主」等同于「无界」：自主指的是下一步由模型依据环境反馈决定，与设不设硬上限无关；官方明确任务通常在完成时终止，但也常需要停止条件（如最大迭代次数）来保持控制。上限是兜底，完成判据仍应来自环境</button>
+            <button class="quiz-option">上限确实会把它降级成 workflow，而 workflow 更可靠，所以应该索性改成固定流程</button>
+            <button class="quiz-option">没错——自主循环本来就不该有任何上限</button>
+            <button class="quiz-option">只是命名问题，把 <code>max_iterations</code> 改叫 <code>budget</code> 就对了</button>
+          </div>
+          <div class="quiz-explain" hidden>官方的区分标准是<strong>路径由谁决定</strong>——workflow 按预定义代码路径编排，agent 由 LLM 动态决定流程与工具使用；加一个最大迭代次数并不改变这一点，Agent 依然是「LLMs using tools based on environmental feedback in a loop」。官方同时点明这类系统「有更高的成本与误差累积风险」，因此建议在沙箱中充分测试并配上护栏；而停止条件就是最基本的护栏。所以两件事要分开：<strong>软判据（环境验证任务是否完成）决定「什么时候算做完」，硬上限（迭代/预算/超时）决定「最坏情况下什么时候必须停」</strong>。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 「最终完成一个可交付的产品」，这个完成判据该怎么定？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">让另一个子代理说一句「看起来没问题」</button>
+            <button class="quiz-option">模型在正文里宣布「已完成」即可</button>
+            <button class="quiz-option">用环境里可验证的事实（端到端验收项、测试通过、产物存在）作完成判据，并用硬上限兜底；不能只信模型自评——官方记录过模型过早把功能标记为完成的失效模式</button>
+            <button class="quiz-option">循环轮数达到预设上限即视为完成</button>
+          </div>
+          <div class="quiz-explain" hidden>官方的失效模式描述得很具体：不做显式要求时，模型会改代码、也会跑单元测试或 curl，但<strong>意识不到功能并没有端到端跑通</strong>，于是过早把功能标记为完成；解法是给它一份功能清单、要求自验证，只有仔细测试后才允许标记为通过。对应到本章：完成判据必须<strong>落在环境上</strong>（可执行的验收脚本、测试结果、产物文件），轮数上限只是「最坏情况下的刹车」，不能反过来当成功信号。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 排错：一个自我推动的循环跑了 40 轮还没停，token 花掉很多，最后产物也不对，而日志里只有每轮对话、没有别的信息。按本章工程要点，首先该补的三件事是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">减少子代理数量、删掉 git 提交、缩短系统提示词</button>
+            <button class="quiz-option">把 <code>while</code> 改成 <code>for</code>、调高日志级别、关掉监听器</button>
+            <button class="quiz-option">加最大迭代 / 预算上限并记录退出原因、加逐轮 tracing（工具名 / 参数 / 结果 / 耗时 / token）、把完成判据与进度外化成文件供这一轮与下一个会话读取</button>
+            <button class="quiz-option">换更大的模型、加长上下文、把重试次数调高</button>
+          </div>
+          <div class="quiz-explain" hidden>三个症状正好对应本章三块工程能力：<strong>停不下来</strong>说明没有硬上限与退出原因记录（第 21 章的 <code>while True</code> 只靠「这轮没调工具」退出，模型反复试探就永远不停）；<strong>不知道为什么跑飞</strong>说明缺少 tracing——官方在生产系统里正是靠「完整 tracing」才能定位失败，监听层 <code>tool_call_*</code> 事件就是现成的挂点；<strong>产物不对还接着跑</strong>说明完成判据与进度没有外化，模型在自说自话。只调模型、日志级别或监听开关都不解决这三件事。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0033-Loop-Engineering',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `团队要做一个「自我推动」的编码 Agent：给它一句话需求，让它自己找活干、自己验证、直到产出可交付的产物。会上有人主张：<strong>真正的自主循环不应该有任何硬上限</strong>，一旦写了 <code>max_iterations</code>，就退化成了预定义流程的 workflow，失去了 Agent 的意义。请指出这个判断的问题，并说清「自主」与「有界」到底是什么关系；再补一句：硬上限触发时，程序应该做什么？`,
+              source: `来源：Anthropic 工程博客《Building effective agents》（"The task often terminates upon completion, but it’s also common to include stopping conditions (such as a maximum number of iterations) to maintain control."；"Agents … are typically just LLMs using tools based on environmental feedback in a loop."；"The autonomous nature of agents means higher costs, and the potential for compounding errors."）https://www.anthropic.com/engineering/building-effective-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《33.Loop Engineering》课件（循环内自主发现任务、驱动子代理、沉淀知识）+《21.Agent》课件（Agent.invoke 用 while True 驱动、靠 tool_calls 判退出）`,
+              breakdown: `先把「自主」的定义钉死：官方区分 workflow 与 agent 的唯一标准是<strong>路径由谁决定</strong>——workflow 是「LLM 与工具按预定义代码路径编排」，agent 是「LLM 动态决定自己的流程与工具使用」；而 agent 的实现往往很朴素，就是「LLMs using tools based on environmental feedback in a loop」。是否设 <code>max_iterations</code> <strong>不改变路径由谁决定</strong>，所以这个主张把「自主」和「无界」混为一谈了。<br>反过来，官方是明确支持设停止条件的：「任务通常在完成时终止，但通常也要包含停止条件（例如最大迭代次数）来保持控制」。原因是自主性带来的代价——同一篇里写着「agents 的自主性意味着更高的成本与误差累积」，建议在沙箱中充分测试并配好护栏。第 21 章那个 <code>while True</code> 正好是缺这层护栏的例子：只要模型持续发起工具调用，轮数与成本就没有上限。<br>所以要分两套判据：<strong>软判据</strong>回答「任务什么时候算完成」（环境里可验证的事实，见本课第 8 题）；<strong>硬上限</strong>回答「最坏情况下什么时候必须停」（最大迭代、token/费用预算、墙钟超时）。两者不是替代关系。<br>上限触发时的正确行为不是抛异常退出，而是<strong>有界退出 + 保留现场</strong>：记下退出原因（达到迭代上限 / 达到预算上限），把当前的进度文件、已完成与未完成清单、会话快照落盘，把控制权交回人或交给下一轮循环——这样下一次运行时还能接着干，而不是全部重来。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `课件的循环里有一条「自主沉淀知识」。请讲清它的机制：在一个可能跨越几十轮、甚至跨越多个上下文窗口的长任务里，Agent 靠什么知道自己「干到哪了、下一步干什么」？初始会话和后续会话的职责怎么分？为什么光靠模型自己的上下文记忆不够？`,
+              source: `来源：Anthropic 工程博客《Effective harnesses for long-running agents》（"an initializer agent that sets up the environment on the first run, and a coding agent that is tasked with making incremental progress in every session, while leaving clear artifacts for the next session"；"ask the model to commit its progress to git with descriptive commit messages and to write summaries of its progress in a progress file"；"The key insight here was finding a way for agents to quickly understand the state of work when starting with a fresh context window, which is accomplished with the claude-progress.txt file alongside the git history."）https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《33.Loop Engineering》课件（自主沉淀知识、自主发现还未完成的任务）`,
+              breakdown: `官方把长任务的核心困难讲成一个类比：<strong>像一支轮班的工程团队，每个新来的工程师对上一班发生的事一无所知</strong>——因为上下文窗口有限，而复杂项目装不进一个窗口。<br>解法是把职责拆成两种会话：<br>① <strong>初始化会话（initializer）</strong>：只跑一次，负责把环境搭起来——<code>init.sh</code> 启动脚本、一份进度文件（<code>claude-progress.txt</code>）记录 Agent 做过什么、以及一次初始 git 提交（交代新增了哪些文件）。<br>② <strong>后续会话（coding agent）</strong>：每一轮只做<strong>增量推进</strong>，结束时留下<strong>结构化更新</strong>（提交 + 进度记录），绝不试图一口气把整个应用写完。<br>关键洞察就是那句「让 Agent 在全新上下文窗口启动时能快速搞清工作状态」，靠的是<strong>进度文件加 git 历史</strong>。官方另一个实践细节是：要求模型用<strong>描述性的提交信息</strong>提交进度，并把进展摘要写进进度文件——好处有两个，一是能用 git 回退坏改动、恢复可用状态，二是省掉了「猜上一轮发生了什么」的时间。<br>为什么模型记忆不够：官方的失败模式里，一次尝试做太多会导致上下文在实现途中耗尽，于是下一个会话接手时面对的是「功能写了一半、也没有文档」的状态，只能靠猜，然后把大量时间花在把基本功能重新跑起来上——而且<strong>compaction（压缩）并不总能向下一个 Agent 传递足够清晰的指令</strong>。<br>面试落点：把「自主沉淀知识」具体化为可复述的机制——进度文件 + 描述性提交 + 结构化的功能清单/交接物，并且每个新会话开工第一件事是读它们，而不是直接动手。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `循环跑久了必然会遇到失败。请讲清循环里的失败处理机制：①哪些错误该重试、哪些不该；②退避（backoff）到底怎么做、为什么需要抖动（jitter）；③为什么长任务遇到错误时不能「从头重启」，官方在架构上怎么保证能接着跑？`,
+              source: `来源：OpenAI Python SDK 官方 README《Retries》（"Certain errors are automatically retried 2 times by default, with a short exponential backoff. Connection errors (for example, due to a network connectivity problem), 408 Request Timeout, 409 Conflict, 429 Rate Limit, and >=500 Internal errors are all retried by default."；"Requests are retried only when their body can be safely resent."）https://raw.githubusercontent.com/openai/openai-python/main/README.md · 检索 2026-10-02 · 层级：一手（官方文档）+ Anthropic 工程博客《How we built our multi-agent research system》（"we built systems that can resume from where the agent was when the errors occurred"；"We combine the adaptability of AI agents built on Claude with deterministic safeguards like retry logic and regular checkpoints."）https://www.anthropic.com/engineering/multi-agent-research-system · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `① <strong>分类</strong>：官方 SDK 的默认重试集合是「连接错误（例如网络不通）、408 Request Timeout、409 Conflict、429 Rate Limit 以及 ≥500 的服务端错误」，并明确「<strong>只有请求体可以被安全重发时才会重试</strong>」。反过来说，参数校验失败、鉴权/权限失败、工具本身报的业务错误都不该盲目重试——同样的请求重发一次还是同样的结果，重试只是把预算烧掉。这类错误应当立刻上报给循环（作为观察结果回到会话，或直接交给人）。<br>② <strong>退避与抖动</strong>：官方描述是「自动重试 2 次，带一个短的指数退避」。工程上写成 $t_n=\\min(t_{max},\\, t_0\\cdot 2^{\\,n})+\\text{jitter}$：第 $n$ 次重试等待时间指数增长但封顶，再叠一个随机量。抖动不是装饰——并行子代理在同一时刻撞上 429 时，若都按同一个确定值等待，就会在同一个时刻一起重试、再次一起被打回（惊群）；随机化把重试摊开。同时要设重试次数上限，并对「同一工具连续失败」做熔断：换工具、换策略或交给人，而不是无限重试。<br>③ <strong>不能从头重启</strong>：官方指出 agent 是<strong>有状态</strong>的、会在很多轮工具调用之间维持状态，所以「次要的系统故障也可能对 agent 造成灾难性影响」；而重启「昂贵且让用户难受」，因此他们做的是<strong>从出错时 Agent 所在的位置恢复</strong>。注意官方把两种手段合起来用：一边借助模型的能力优雅兜底（例如把「这个工具正在失败」告诉 Agent，让它自己换路，效果出奇地好），一边加<strong>确定性保障</strong>——重试逻辑加定期检查点。<br>落到本章：把「重试」实现成循环层的能力而不是散落在每个工具里——统一分类可重试/不可重试、统一退避与上限、统一记录重试原因；检查点则和第 2 题的进度文件是同一套机制（会话快照 + 进度落盘），保证重启能从断点继续。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `代码审查：某团队写了一个「自我推动」的循环骨架，让一个主 Agent 规划任务、再并行拉起若干子代理干活。请指出至少四个隐患并给出修法（提示：分别从「循环什么时候停」「并行子代理会不会互相踩」「出错之后还能不能接着跑」「出事了能不能查」四个角度看）。<br><br><code>def run(goal):</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;task = plan(goal)</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;while True:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# 没有轮数 / 预算 / 超时上限</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if not task.remaining(): break</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;results = [call_subagent(t) for t in task.remaining()]&nbsp;&nbsp;# 全部子代理共用同一个工作目录</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for r in results: task.mark_done(r)</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# 没有进度落盘、没有提交、没有 tracing</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;return task</code>`,
+              source: `来源：Anthropic 工程博客《How we built our multi-agent research system》（"Agents are stateful and errors compound."；"We also use the model’s intelligence to handle issues gracefully … We combine the adaptability of AI agents built on Claude with deterministic safeguards like retry logic and regular checkpoints."；"Adding full production tracing let us diagnose why agents failed and fix issues systematically."；"Early agents made errors like spawning 50 subagents for simple queries"；"Each subagent needs an objective, an output format, guidance on the tools and sources to use, and clear task boundaries."）https://www.anthropic.com/engineering/multi-agent-research-system · 检索 2026-10-02 · 层级：一手（官方文档）+ git 官方文档《git-worktree(1)》（"A git repository can support multiple working trees, allowing you to check out more than one branch at a time."；"if you just plan to make some experimental changes or do testing without disturbing existing development, it is often convenient to create a 'throwaway' worktree not associated with any branch."）https://raw.githubusercontent.com/git/git/master/Documentation/git-worktree.adoc · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `① <strong>循环没有上限</strong>：<code>while True</code> 只靠 <code>task.remaining()</code> 变空退出，而 <code>remaining()</code> 又由模型自己的完成判断驱动——模型一直产出新任务或反复「没做完」，循环就不停。修法：加最大迭代轮数、token/费用预算与墙钟超时（三者至少两样），超限时有界退出并记录退出原因；完成判据改用环境里可验证的事实（验收项、测试、产物），而不是模型自评。<br>② <strong>子代理共用一个工作目录</strong>：<code>[call_subagent(t) for t in ...]</code> 让所有子代理在同一份工作拷贝里写文件，必然互相覆盖。官方 git 文档明确「一个仓库可以支持多个工作树，从而同时 checkout 多于一个分支」，最简单的 <code>git worktree add &lt;path&gt;</code> 就会建出新的工作树（顺带创建同名分支），实验性改动还可以用 <code>git worktree add -d &lt;path&gt;</code> 建丢弃式工作树。修法：每个并行子代理各分配一个工作树，产出以分支/补丁形式回来，由主工作树统一合并；合并冲突交给主 Agent 或人处理。<br>③ <strong>没有进度落盘，无法续跑</strong>：官方强调 agent 有状态、错误会累积，而且「不能从头重启」，要用重试逻辑加<strong>定期检查点</strong>来兜底。这段代码跑完一轮什么都不留，进程一挂就全丢。修法：每轮结束把任务清单状态 + 已完成/未完成 + 关键产出写进进度文件并提交；失败时从最近检查点恢复，而不是重新规划。<br>④ <strong>没有 tracing，出问题只能猜</strong>：官方在生产系统里加上完整 tracing 之后，才能系统性定位「为什么没找到信息 / 是查询词差、来源差还是工具失败」。修法：逐轮记录轮次、任务分配、每个子代理的目标与产出引用、工具名/参数/结果/耗时/token、以及退出原因；第 21 章的 <code>tool_call_*</code> 事件就是现成的挂点。<br>另外两个值得顺手指出的问题：<em>任务描述太薄</em>——官方说每个子任务都要有目标、输出格式、可用工具与来源、清晰边界，否则子代理会重复劳动或留下空档；<em>没有按复杂度伸缩</em>——官方早期的错误正是「为简单查询开 50 个子代理」，应该让投入随任务复杂度变化，并对子代理数量设上限。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `现在要把「自我推动的循环」真正用在一个为期一周的小产品交付上：给一句需求，让 Agent 自己拆任务、并行推进、验证、迭代，最后交出可运行的产品。请给出你的设计：①主循环与子代理怎么分工、怎么隔离；②长任务的状态与知识怎么跨会话交接；③怎么判断「可以交付了」以及怎么保证它不会失控；④可观测性怎么落。`,
+              source: `来源：Anthropic 工程博客《Harness design for long-running application development》（"The final result was a three-agent architecture—planner, generator, and evaluator—that produced rich full-stack applications over multi-hour autonomous coding sessions."；"carrying over two lessons from our earlier harness work: decomposing the build into tractable chunks, and using structured artifacts to hand off context between sessions."；"by separating frontend generation from frontend grading, we can create a feedback loop that drives the generator toward stronger outputs."）https://www.anthropic.com/engineering/harness-design-long-running-apps · 检索 2026-10-02 · 层级：一手（官方文档）+ Anthropic 工程博客《How we built our multi-agent research system》（"a lead agent coordinates the process while delegating to specialized subagents that operate in parallel"；"implement artifact systems where specialized agents can create outputs that persist independently. Subagents call tools to store their work in external systems, then pass lightweight references back to the coordinator."）https://www.anthropic.com/engineering/multi-agent-research-system · 检索 2026-10-02 · 层级：一手（官方文档）+ git 官方文档《git-worktree(1)》（"A git repository can support multiple working trees, allowing you to check out more than one branch at a time."）https://raw.githubusercontent.com/git/git/master/Documentation/git-worktree.adoc · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `① <strong>分工与隔离</strong>：采用 orchestrator-worker（主代理规划 + 专业子代理并行），这是官方 Research 系统的架构——lead agent 分析查询、制定策略，再拉起子代理同时探索不同侧面。落到编码交付上，官方长任务实验给出的形态更具体：<strong>planner / generator / evaluator 三代理</strong>——一个规划、一个实现、一个像用户一样点着应用做验收（他们用 Playwright MCP 做端到端点击测试）。隔离用工作树：每个并行子代理一个 <code>git worktree</code>（最简单形式 <code>git worktree add &lt;path&gt;</code> 顺带建同名分支；纯实验可用 <code>git worktree add -d &lt;path&gt;</code>），产出以分支/补丁回到主线，由主工作树合并。每个子任务的任务卡必须写全：目标、输出格式、可用工具与来源、边界——官方指出缺了这些，子代理会重复劳动或留空档。<br>② <strong>状态与知识交接</strong>：官方两条经验直接可用——把构建<strong>拆成可处理的块</strong>，并用<strong>结构化 artifacts 跨会话交接上下文</strong>。具体做法：初始化会话搭环境（启动脚本 + 进度文件 + 初始提交），后续每个会话开工先读进度文件与 git 历史，只做增量推进，收工写提交与进度更新。子代理的产出不要让主代理转述（官方称之为「传话游戏」），而是<strong>直接落文件、只把轻量引用传回</strong>——保真又省 token。<br>③ <strong>交付判据与防失控</strong>：完成判据外化——功能清单 + 端到端验收（测试通过、应用真的能点、产物存在），只有验证通过才允许把条目标记为完成（官方记录过模型过早标记完成的失效模式，解法是清单 + 自验证）。护栏分四层：<em>硬上限</em>（最大轮数 / token 与费用预算 / 墙钟超时，按任务复杂度分配投入：简单查找 1 个代理，复杂任务才上多个）；<em>权限最小化</em>（只给这个岗位需要的工具，危险动作要确认）；<em>人机检查点</em>（在检查点或遇阻时暂停等人类判断——官方描述 Agent 会「pause for human feedback at checkpoints or when encountering blockers」）；<em>熔断</em>（同一工具连续失败就换路或上报）。<br>④ <strong>可观测</strong>：官方在生产里靠「完整 tracing」定位失败（是查询词差、来源差，还是工具挂）；他们还把「定期检查点 + 重试逻辑」当作确定性保障。落地：逐轮记录轮次、任务分配与状态、工具名/参数/结果/耗时/token、以及退出原因；第 21 章的监听层 <code>reasoning_* / content_* / tool_call_* / complete</code> 事件就是挂审计监听器的现成位置；把关键指标按轮次写到 trace 文件，出事故时可以完整重放。最后提醒一句成本意识：官方数据显示 agent 约是聊天的 4× token、多代理约 15×，所以这个设计只适合价值足够高的任务。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 40 分钟内把一个「自我推动的循环」跑起来：给它一个目标，让它自己判断还剩哪些没做完、每轮推进一点、把进度写下来、并且一定会停下来。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 40 分钟',
+                goal: '写一个 loop_runner.py：①准备一个目标文件 goal.md 与任务清单 tasks.md（每行一个未完成项）；②主循环每轮先读 tasks.md 决定下一步，用 CLI 里的编码助手（或本课程第 21 章的 Agent）执行一项，完成后把该项标记完成并追加一行进度到 progress.md；③循环带三重刹车 —— max_steps（例如 8）、token/费用上限或墙钟超时（例如 10 分钟）、以及「清单为空」这一环境判据；④任何一轮失败时打印本轮的退出/失败原因，超限时正常收尾并输出未完成清单，而不是抛异常退出；⑤把每一轮的工具名、耗时、结果摘要写到 run.log。',
+                accept: ['tasks.md 里的条目被逐项推进，progress.md 里能按轮次对上「做了什么、结果如何」', '把 max_steps 改成 2 再跑一次：程序在 2 轮后正常结束，输出未完成清单与退出原因，不抛异常', '故意让某一步失败（例如指向一个不存在的文件）：重试按次数上限停下、run.log 里能看到失败原因，循环不会卡死也不会无限重试', '最后一轮结束后，只读 tasks.md + progress.md + git log 就能说出「干到哪了、下一步做什么」'],
+              },
+              source: `任务基于《33.Loop Engineering》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 先把「状态」放到 Agent 之外——<code>goal.md</code> 定目标、<code>tasks.md</code> 是清单、<code>progress.md</code> 记进度，每轮开工先读、收工先写。这就是课件「自主发现还未完成的任务」与「自主沉淀知识」的最小实现，也对应官方长任务实践里「进度文件 + git 历史让 Agent 在全新上下文里快速搞清状态」那一招。<br>② 循环结构照第 21 章的 ReAct 循环来：判断下一步 → 执行（调工具/调助手）→ 观察结果 → 记录。区别只在于：这里每一轮结束都要<strong>落盘</strong>，而不是把状态留在模型的上下文里。<br>③ 三重刹车要同时具备：<em>步数</em>（max_steps）、<em>预算/时间</em>（token 或墙钟）、<em>环境判据</em>（清单为空、验收脚本通过）。这样「什么时候算做完」由环境回答，「最坏什么时候必须停」由硬上限回答——官方的原话就是任务常在完成时终止，但也常需要停止条件（如最大迭代次数）来保持控制。<br>④ 失败处理按分类来：可重试错误（网络、超时、429、≥500）做指数退避 + 抖动并设次数上限；参数或权限类错误直接记录并上报；同一工具连续失败就熔断换路。<br>常见坑：<em>拿模型的自评当完成判据</em>——它会说「已完成」而实际没跑通，务必用可验证的事实；<em>进度只写在内存里</em>——进程一挂全丢，也无法交接；<em>把 max_steps 调小后程序抛异常退出</em>——超限应当是有界退出并保留现场，而不是崩溃；<em>日志只有对话</em>——至少要有轮次、工具、耗时、结果与退出原因，否则排错只能猜；<em>并行子代理直接共用同一个目录</em>——真的要多代理并行时，用 <code>git worktree</code> 给每个子代理一个独立工作树。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic《Building effective agents》</a> · <a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents">Anthropic《Effective harnesses for long-running agents》</a> · <a href="https://www.anthropic.com/engineering/multi-agent-research-system">Anthropic《How we built our multi-agent research system》</a> · <a href="https://git-scm.com/docs/git-worktree">git 官方文档 git-worktree(1)</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Loop-Engineering速查表.html">Loop Engineering速查表</a>——终止判据、预算与退避公式、工作树隔离命令、可观测挂点一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Loop-Engineering">33.Loop Engineering</a> · 前一课 <a href="/agents/Agents底层逻辑/Harness-Engineering">32.Harness Engineering</a> · 下一课 <a href="/agents/Agents底层逻辑/Graph-Engineering">34.Graph Engineering</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Skill VS MCP：两种能力扩展方式的共同点、八维差异对照与「MCP 定义底层工具、Skill 定义业务流程」的选型最佳实践——互动教学课程">
+  <title>Skill VS MCP · 互动教学课程（Agents底层逻辑 ac-28）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Skill VS MCP</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Skill-VS-MCP">28.Skill VS MCP</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 Skill 与 MCP 的关系——课件原话「完全是两个东西」，为什么还要放一起比</li>
+        <li>复述两者的共同点：各有事实标准、因此形成社区与聚合站、功能体验重叠（天气既可用 Skill 也可用 MCP）</li>
+        <li>背下差异表八个维度（上下文消耗命中/未命中、接入成本、可扩展性、贡献人群、确定性、通用工具依赖、越权风险），并能解释「未命中低 / 命中高」这类反直觉的成因</li>
+        <li>用最佳实践做选型判断：<strong>MCP 定义底层工具，Skill 定义业务流程</strong>——看任务要的是确定性还是灵活性</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「为什么这两个东西会被放在一起比、比出来的差异怎么用」这条线过一遍——细节都在《28.Skill VS MCP》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>共同点：标准、社区、体验重叠</h3>
+        <ul class="pitfall-list">
+          <li><strong>前提</strong>：Skill 和 MCP <strong>完全是两个东西</strong>；它们之所以放到一起讨论，是因为在<strong>使用感官上</strong>有一些共同点</li>
+          <li><strong>标准化</strong>：无论是 Skill 还是 MCP，都有各自的<strong>事实标准</strong>——Skill 侧是 <code>SKILL.md</code> 那套目录与 frontmatter 约定，MCP 侧是协议规范</li>
+          <li><strong>有标准就有生态</strong>：由于有标准，就容易形成社区和聚合站；我们通过社区或聚合站，能使用到<strong>大量现成的 SKILL 和 MCP 工具</strong></li>
+          <li><strong>功能体验重叠</strong>：以获取某个城市的天气为例，它<strong>既可以用 Skill 来实现，也可以使用 MCP 来实现</strong>——所以「能不能做」不构成选型依据</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>定位差异：谁来做 VS 怎么做</h3>
+        <ul class="pitfall-list">
+          <li><strong>课件原话</strong>：<strong>MCP 告诉模型「谁来做」，Skill 告诉模型「怎么做」</strong></li>
+          <li>读法：MCP 提供的是一个已经实现好、可以确定性执行的<strong>外部执行者</strong>（工具/数据源通过标准协议暴露）；Skill 提供的是让模型自己动手时的<strong>方法与流程知识</strong></li>
+          <li>所以两者的产物完全不同：MCP 的产物是<strong>带 schema 的接口</strong>，Skill 的产物是<strong>可插拔的专业提示词模块</strong></li>
+          <li>这正是「功能体验重叠」却仍需对比的根因——重叠的是能力，不重叠的是<strong>定位</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>差异表：八个维度（背下来就能答题）</h3>
+        <table class="cmp-table">
+          <tr><th>维度</th><th>Skill</th><th>MCP</th></tr>
+          <tr><td>上下文消耗（未命中）</td><td>低</td><td>高 <em>（可通过渐进式披露解决）</em></td></tr>
+          <tr><td>上下文消耗（命中）</td><td>高</td><td>低</td></tr>
+          <tr><td>接入成本</td><td>低</td><td>高</td></tr>
+          <tr><td>可扩展性</td><td>高</td><td>低</td></tr>
+          <tr><td>贡献人群</td><td>广</td><td>窄</td></tr>
+          <tr><td>确定性</td><td>低</td><td>高</td></tr>
+          <tr><td>通用工具依赖</td><td>高</td><td>低</td></tr>
+          <tr><td>越权风险</td><td>高</td><td>低</td></tr>
+        </table>
+        <ul class="pitfall-list">
+          <li><strong>未命中为什么要看</strong>：Skill 未命中时系统提示词里只挂着描述，成本低；MCP 的工具定义通常是<strong>预加载进上下文</strong>的，未命中也要付这份钱——除非像官方工程实践那样做渐进式披露</li>
+          <li><strong>命中为什么反过来</strong>：Skill 一旦命中，整份正文被读进上下文，成本高；MCP 命中时只是把一次调用的结果落进上下文，比读一整篇流程文档便宜</li>
+          <li><strong>确定性与越权是一体两面</strong>：MCP 的行为被 schema 与实现钉死，越权空间小；Skill 靠自然语言指挥模型，灵活但可能被越权提问带偏——所以才有 <code>no-permission</code> 这类的拦截型 Skill</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>最佳实践：MCP 定义底层工具，Skill 定义业务流程</h3>
+        <ul class="pitfall-list">
+          <li><strong>分层判据</strong>：MCP 负责实现<strong>底层工具</strong>——文件读写、命令执行、网络搜索、接口搜索与调用、代码执行，以及<strong>其他对确定性、安全性要求高的操作</strong></li>
+          <li><strong>Skill 负责定义业务流程</strong>——机票怎么定、行程怎么规划；退货能不能退、怎么退；怎么介绍产品；怎么成交，以及<strong>其他对灵活性、专业性要求高的流程</strong></li>
+          <li><strong>一句话记忆</strong>：<strong>底层要稳（MCP）→ 上层要活（Skill）</strong>；Skill 里描述流程时可以调用 MCP 暴露的工具作为执行底座</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《28.Skill VS MCP》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 课件对 Skill 与 MCP 关系的定位是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">完全是两个东西，只是在「使用感官」上有共同点</button>
+            <button class="quiz-option">Skill 是 MCP 的旧版本，已被 MCP 取代</button>
+            <button class="quiz-option">MCP 是 Skill 的插件市场</button>
+            <button class="quiz-option">同一套协议的两种叫法</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：「Skill 和 MCP 完全是两个东西，它们之所以放到一起讨论，是因为在使用感官上，它们有一些共同点。」</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 「以获取某个城市的天气为例，它既可以用 Skill 来实现，也可以使用 MCP 来实现」——这句话在课件里用来说明？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Skill 比 MCP 更适合做天气查询</button>
+            <button class="quiz-option">MCP 只能做天气类的接口</button>
+            <button class="quiz-option">Skill 无法调用外部接口，只能靠模型瞎猜</button>
+            <button class="quiz-option">功能体验重叠：两者能力有交集，所以不能靠「能不能做」来选型</button>
+          </div>
+          <div class="quiz-explain" hidden>这一句是「共同点 → 功能体验重叠」小节的例子：同一个需求两种方式都能落地，因此选型要看差异表里的取舍，而不是看可行性。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 课件给出的定位差异原话是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">MCP 告诉模型怎么做，Skill 告诉模型谁来做</button>
+            <button class="quiz-option">MCP 告诉模型谁来做，Skill 告诉模型怎么做</button>
+            <button class="quiz-option">两者都只负责告诉模型「做什么」，不涉及怎么做</button>
+            <button class="quiz-option">MCP 负责提示词，Skill 负责协议</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「差异点」小节原文：<strong>MCP 告诉模型谁来做，Skill 告诉模型怎么做</strong>。MCP 提供的是已实现好、可确定性执行的外部工具；Skill 提供的是流程与方法知识。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 关于「上下文消耗」，课件差异表给出的组合是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Skill：未命中低、命中高；MCP：未命中高（可通过渐进式披露解决）、命中低</button>
+            <button class="quiz-option">两者未命中都低，命中都高</button>
+            <button class="quiz-option">Skill：未命中高、命中低；MCP：未命中低、命中高</button>
+            <button class="quiz-option">两者未命中都高，命中都低</button>
+          </div>
+          <div class="quiz-explain" hidden>差异表原文：Skill「未命中 低 / 命中 高」，MCP「未命中 高 <em>可通过渐进式披露解决</em> / 命中 低」。Skill 未命中时只有描述挂在提示词里、成本低，命中后整份正文进上下文、成本高；MCP 的工具定义通常预加载，未命中也要付费，但单次命中的结果比读一整篇流程便宜。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. 团队要快速沉淀一大批「本公司专属话术与流程」并让贡献者都能参与，按差异表判断应优先选哪种形态？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">MCP：因为 MCP 接入成本低、贡献人群广</button>
+            <button class="quiz-option">Skill：因为 Skill 的确定性比 MCP 高</button>
+            <button class="quiz-option">Skill：接入成本低、可扩展性高、贡献人群广，但确定性低</button>
+            <button class="quiz-option">MCP：因为 MCP 的可扩展性高于 Skill</button>
+          </div>
+          <div class="quiz-explain" hidden>差异表：Skill 在接入成本（低）、可扩展性（高）、贡献人群（广）三项占优，代价是确定性低、越权风险高。MCP 恰好相反——接入成本高、可扩展性低、贡献人群窄，换来高确定性与低越权风险。所以「快速堆量 + 多人贡献」的流程沉淀选 Skill，硬骨头（确定性/安全性要求高）交给 MCP。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 接入了十几个 MCP 服务器后，Agent 还没开始干活就吃掉几十万 token（工具定义全量预加载）。按差异表的注释，最对症的解法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">对 MCP 侧做渐进式披露：按需发现/加载工具定义，而不是一次性全量塞进上下文</button>
+            <button class="quiz-option">把 MCP 全部改写成 Skill</button>
+            <button class="quiz-option">放弃工具调用，改用更长的系统提示词硬编码所有接口说明</button>
+            <button class="quiz-option">把工具定义写短一点，但数量继续翻倍</button>
+          </div>
+          <div class="quiz-explain" hidden>差异表在 MCP「上下文消耗（未命中）＝ 高」后面专门标了「<em>可通过渐进式披露解决</em>」。方向上应保留 MCP 的高确定性，只改上下文策略：让模型先看到工具名的轻量清单，需要时再读完整定义与 schema。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 某客服 Agent 同时挂了「退货 Skill」和「订单 MCP」。团队抱怨：模型经常不退就直接按自己理解编流程答复用户，甚至答应不该答应的事。按本章的差异表与最佳实践，最合理的整改是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把退货 Skill 删掉，全部逻辑交给 MCP 工具实现</button>
+            <button class="quiz-option">提高 temperature，让模型更自由地发挥话术</button>
+            <button class="quiz-option">流程判定（能不能退、怎么退）写进 Skill 正文并明确要求严格遵守；真实退款动作由 MCP 工具承担，Skill 只负责说明「何时调用、参数怎么取、异常怎么回话」</button>
+            <button class="quiz-option">把 MCP 工具的返回内容也抄一份写进 Skill，避免模型不确定</button>
+          </div>
+          <div class="quiz-explain" hidden>最佳实践：<strong>MCP 定义底层工具，Skill 定义业务流程</strong>。退货「能不能退、怎么退」属于对灵活性、专业性要求高的流程 → Skill；退款执行属于对确定性、安全性要求高的操作 → MCP。选项 1 把流程塞进 MCP 会丢掉灵活性；选项 3 重复描述会同时抬高两侧的上下文成本，且没解决「该不该退」的判定问题；选项 4 与确定性背道而驰。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 一个 Agent 里同时存在：<code>SKILL.md</code>（描述公司销售话术与成交节奏）、MCP 文件读写工具、MCP 代码执行工具、一个本地的 <code>read_file</code> 工具。下面哪种说法符合本章结论？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Skill 能描述流程，所以文件读写和代码执行也应该写成 Skill，省掉 MCP 的接入成本</button>
+            <button class="quiz-option">话术与成交节奏属于业务流程、灵活性要求高 → Skill；文件读写与代码执行属于底层工具、确定性要求高 → MCP；本地工具与 MCP 工具的功能重叠是并存的现实，选型看确定性与治理成本，不是看「能不能做」</button>
+            <button class="quiz-option">四个都是「扩展能力」，所以应该全部改造成同一种形态，统一维护</button>
+            <button class="quiz-option">MCP 的工具和本地 <code>read_file</code> 语义重叠，说明 MCP 是多余的一层，应删掉 MCP</button>
+          </div>
+          <div class="quiz-explain" hidden>两条结论合起来用：① 功能体验重叠是常态（天气那节的例子），所以「都有文件读写」不构成谁替代谁的证据；② 分工按「确定性/安全性 vs 灵活性/专业性」切——底层工具用 MCP（或本地工具），业务流程用 Skill。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 业务方要求「三十天内上线 20 条渠道专属的成交流程，且每条流程每周都可能微调」。你只有一名工程师。按本章差异表，最务实的路径与需要配套的风控是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">放弃流程化，全部改成一段超长系统提示词，反正是同一批内容</button>
+            <button class="quiz-option">20 条流程各写一个 MCP 服务器，因为 MCP 的贡献人群广、可扩展性高</button>
+            <button class="quiz-option">20 条流程用 Skill 承载（接入成本低、可扩展性高、贡献人群广，业务方自己就能改），同时必须补上风控——Skill 确定性低、越权风险高，要用描述清晰地界定适用边界，高危动作仍由 MCP 工具兜底</button>
+            <button class="quiz-option">先做 20 个 MCP 服务器，再把它们包装成 20 个 Skill，两边都留一份</button>
+          </div>
+          <div class="quiz-explain" hidden>差异表指向很清楚：接入成本低、可扩展性高、贡献人群广 → Skill 是承载「多、常改、业务方自己维护」的流程的正确形态；但表里同时写着 Skill「确定性 低 / 越权风险 高」，所以必须配套边界约定与高危动作的 MCP 兜底，这正是最佳实践里的分层。选项 1、4 把 MCP 的低可扩展性用在了最不合适的地方；选项 3 回到第 23 章讲的提示词膨胀。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0028-Skill-VS-MCP',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `面试官（模拟你的同事）说：「MCP 那么贵，一个服务器几十个工具的 schema 一上来就全塞进上下文；Skill 未命中时几乎不占地方。所以我们把所有 MCP 都换成一个巨大的 Skill 吧。」请指出这个方案的成立条件与致命前提。`,
+              source: `来源：Anthropic 工程博客《Code execution with MCP: Building more efficient agents》（"Most MCP clients load all tool definitions upfront directly into context, exposing them to the model using a direct tool-calling syntax."；"In cases where agents are connected to thousands of tools, they’ll need to process hundreds of thousands of tokens before reading a request."；"Models are great at navigating filesystems. Presenting tools as code on a filesystem allows models to read tool definitions on-demand, rather than reading them all up-front."）https://www.anthropic.com/engineering/code-execution-with-mcp · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《28.Skill VS MCP》课件（差异表「上下文消耗（未命中）」）`,
+              breakdown: `「MCP 未命中成本高」这个观察是对的——官方原文确认多数 MCP 客户端把工具定义<strong>一次性全部预加载</strong>，连接上千个工具时还没读请求就要处理几十万 token。但结论错在两处：① 这个问题<strong>官方给了对症解法</strong>——渐进式披露，让模型按需读取工具定义，而不是换掉协议（本章差异表在「MCP 未命中 高」后面标注的「可通过渐进式披露解决」就是这条）；② Skill 的代价在另一侧：命中时整份正文进上下文，且差异表里 Skill 的<strong>确定性低、越权风险高</strong>。把「文件读写、代码执行」这类要求确定性的底层工具改成自然语言流程，等于用越权风险换 token——正确姿势是分层，不是替换。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `请从「上下文在什么时候被消耗」的角度，解释本章差异表为什么会出现「Skill 未命中低/命中高，MCP 未命中高/命中低」这组反直觉的数字，并说明两侧各自优化的抓手是什么。`,
+              source: `来源：MCP 官方文档 Architecture overview（"MCP follows a client-server architecture where an MCP host — an AI application like Claude Code or Claude Desktop — establishes connections to one or more MCP servers."）https://modelcontextprotocol.io/docs/learn/architecture + Anthropic 工程博客《Code execution with MCP》（"Direct tool calls consume context for each definition and result."；"Tool descriptions occupy more context window space, increasing response time and costs."；"This lets the agent load only the definitions it needs for the current task. This reduces the token usage from 150,000 tokens to 2,000 tokens—a time and cost saving of 98.7%."）https://www.anthropic.com/engineering/code-execution-with-mcp · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《28.Skill VS MCP》课件（差异表）`,
+              breakdown: `把「上下文消耗」拆成<strong>两笔账</strong>就通了：<br><strong>① 常驻账（未命中）</strong>：Skill 常驻的只有技能清单（名字 + 描述），一份轻量 metadata；MCP 常驻的是每个工具的完整定义与 schema——官方原文点明「工具描述占据更多上下文空间，推高响应时间与成本」。所以未命中时 Skill 低、MCP 高。<br><strong>② 单次账（命中）</strong>：Skill 一命中就把整份流程正文追加进上下文（第 23 章讲过「加载后完整指令追加到当前上下文」），是一大段文本；MCP 一命中只是走一次 <code>tools/call</code>，进上下文的是这一次调用的参数与结果。所以命中时 Skill 高、MCP 低。<br><strong>优化抓手</strong>：MCP 侧用渐进式披露／代码执行模式把「常驻账」摊薄（官方给的数据是同一任务从 150,000 token 降到 2,000 token）；Skill 侧靠把正文拆细、把长参考资料做成按需引用的附加文件来压低「单次账」。注意分工：MCP 侧定义只读一次就要反复调用，摊薄很划算；Skill 侧正文是被模型通读的指令，天然贵。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `同事提交了一份客服 Agent 的能力配置，请你做代码/配置审查，指出至少三处问题并给出改法：<code>skill/logistics/SKILL.md</code> 的 frontmatter 为 <code>description: 处理物流相关的问题</code>，正文里写了「先调 get_logistics 拿轨迹，若 48 小时未更新则调 push_message 安抚用户，并给出补偿券流程」；同时挂载了 MCP 天气/物流/退款三个服务器（合计 30+ 工具定义全部预加载），其中 <code>query_order_status</code> 与 Skill 正文里提到的 <code>get_logistics</code> 功能重叠。`,
+              source: `来源：Agent Skills 规范（"A skill is a directory containing, at minimum, a SKILL.md file"；description 字段约束 "Max 1024 characters. Non-empty. Describes what the skill does and when to use it."）https://agentskills.io/specification + MCP 官方文档 Understanding MCP servers（"Tools are schema-defined interfaces that LLMs can invoke."；"Tools may require user consent prior to execution, helping to ensure users maintain control over actions taken by a model."）https://modelcontextprotocol.io/docs/learn/server-concepts · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《28.Skill VS MCP》课件（差异表「越权风险」「上下文消耗」）`,
+              breakdown: `<strong>问题 A：description 写成「处理物流相关的问题」。</strong>规范要求描述的是「这个技能做什么、什么时候用它」（"Describes what the skill does and when to use it."）——本课讲的清单机制里，description 是模型判断「要不要命中」的唯一依据。太宽会导致误命中（正文一旦命中就整份进上下文，按差异表命中成本高）。改法：写清触发场景，例如「当用户询问包裹轨迹、超时未更新投诉、或要求补偿时使用」。<br><strong>问题 B：把 <code>push_message</code>、补偿券这类高危动作直接写成 Skill 里的自由流程。</strong>差异表写着 Skill「越权风险 高」——自然语言流程可能被越权提问带偏，而这类动作涉及资金与对外消息。改法：把发送消息/发券封装成 MCP 工具（schema 约束参数、官方文档也强调工具调用可要求用户同意），Skill 正文只保留判定规则与「何时调用哪个工具、异常怎么回话」。<br><strong>问题 C：30+ 工具定义全量预加载，且 <code>get_logistics</code> 与 <code>query_order_status</code> 语义重叠。</strong>官方原文指出全量预加载会让 Agent 在读到请求前就处理大量 token；重叠工具还会让模型选错。改法：精简去重（只留一个订单/物流查询工具），并对 MCP 侧启用渐进式披露／按需加载，让模型先看到工具清单再取定义。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `要为一个电商 Agent 设计能力层：需求包含「判断退货能不能退、怎么退」「真实发起退款」「文件读写与命令执行」「销售话术与成交节奏」。请给出分层方案，并逐项说明依据（含确定性与越权风险的权衡）。`,
+              source: `来源：MCP 官方文档 Understanding MCP servers（"Tools enable AI models to perform actions. Each tool defines a specific operation with typed inputs and outputs. The model requests tool execution based on context."；三类能力 Tools/Resources/Prompts 之中 "Tools … Who controls it: Model"）https://modelcontextprotocol.io/docs/learn/server-concepts + Anthropic 工程博客《Code execution with MCP》（"Note that code execution introduces its own complexity. Running agent-generated code requires a secure execution environment with appropriate sandboxing, resource limits, and monitoring."）https://www.anthropic.com/engineering/code-execution-with-mcp · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《28.Skill VS MCP》课件（最佳实践与差异表）`,
+              breakdown: `<strong>分层结论</strong>：底层工具层用 MCP，业务流程层用 Skill。<br><strong>① 文件读写、命令执行 → MCP（或等价的本地下层工具）。</strong>课件最佳实践明确把它们列进「MCP 负责实现底层工具」，理由是「对确定性、安全性要求高」；官方也强调执行 Agent 生成的代码需要沙箱、资源限额与监控——这类能力值得为高确定性付接入成本。<br><strong>② 真实发起退款 → MCP 工具。</strong>它是有副作用的写操作，必须被 schema 钉死参数、可审计、必要时要求用户同意（官方文档：工具可能需要用户同意后才执行）；差异表的「MCP 越权风险低」正是选它的原因。<br><strong>③ 「能不能退、怎么退」 → Skill 正文。</strong>属于课件所说「对灵活性、专业性要求高的流程」，会随活动/品类频繁变化，且业务方自己就能改（差异表：接入成本低、可扩展性高、贡献人群广）。<br><strong>④ 销售话术与成交节奏 → Skill。</strong>同理。<br><strong>权衡与兜底</strong>：Skill 侧确定性低、越权风险高，所以要给每个 Skill 写清适用边界的 description，并规定「涉及资金/对外消息的动作只能调 MCP 工具」；MCP 侧接入成本高、可扩展性低，所以工具要少而稳，避免为每个小流程造一个服务器。最终形态就是一句：<strong>MCP 定义底层工具，Skill 定义业务流程</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `用 AI 编程工具搭一个「退货客服」的最小能力骨架，把本次对比的结论落成可检查的产物，任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '① 写一个 <code>refund-policy</code> Skill：<code>SKILL.md</code> 的 frontmatter 含合规范（≤1024 字符、说明「做什么 + 何时用」）的 description，正文写清「七天无理由 / 已拆封 / 特殊品类」的判定分支与回话要点，并明确要求资金动作只能通过 MCP 工具执行；② 用 MCP 侧（或本地下层工具）提供 <code>query_order</code> 与 <code>submit_refund</code> 两个工具，参数用 schema 约束；③ 在系统提示词中挂上 Skill 清单 + MCP 工具，跑通一次「用户要求退货 → 命中 Skill → 调用 submit_refund」的完整链路。',
+                accept: ['SKILL.md 有 YAML frontmatter 且 description 说明触发场景（非「处理退货问题」这类泛化描述）', '退款动作只经由带 schema 的工具执行，Skill 正文不含绕过工具的“自己判断金额”步骤', '链路跑通：日志里能看到 Skill 命中（正文进上下文）与 submit_refund 的调用参数', '工具定义不重复：订单查询只有一个入口'],
+              },
+              source: `任务基于《28.Skill VS MCP》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：<strong>先分清哪一层写什么</strong>——判定分支（业务流程、要灵活）写进 Skill 正文；<code>query_order</code>／<code>submit_refund</code>（要确定性、有副作用）做成工具。<br><strong>Skill 写法要点</strong>：frontmatter 的 description 是模型决定命中的唯一线索（第 23 章的两级加载），所以写成「当用户提出退货、换货或退款咨询时使用」，而不是「处理退货问题」；正文用编号分支列出判定条件，每条分支结尾写「结论 + 下一步调用哪个工具 + 回话模板」。<br><strong>工具写法要点</strong>：参数必须收进 schema（订单号、退款金额上限、原因枚举），不要留自由文本让模型自己拼金额；有副作用的工具建议保留人工/用户确认环节（MCP 官方文档明确工具可要求用户同意后再执行）。<br><strong>常见坑</strong>：① description 过泛导致误命中，正文白白进上下文；② 把金额计算与「直接回复用户已退款」写进 Skill 正文，绕过了工具，形成越权风险；③ 订单查询既留本地 <code>read_file</code> 读订单文件、又挂 MCP 查询工具，模型选错入口；④ 挂一堆用不到的 MCP 工具，未命中就把上下文吃满——按差异表的注释对 MCP 侧做渐进式披露。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/code-execution-with-mcp">Anthropic《Code execution with MCP: Building more efficient agents》</a>（MCP 上下文消耗与渐进式披露的第一手数据） · <a href="https://modelcontextprotocol.io/docs/learn/server-concepts">MCP 官方文档 Understanding MCP servers</a>（Tools / Resources / Prompts 三件套与「谁控制」） · <a href="https://agentskills.io/specification">Agent Skills 规范</a>（Skill 目录与 <code>SKILL.md</code> frontmatter 约束）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/Skill-VS-MCP速查表.html">Skill-VS-MCP速查表</a>——八维差异表、定位一句话与分层最佳实践一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/实现MCP服务器">27.实现MCP服务器</a> · 下一课 <a href="/agents/Agents底层逻辑/子代理">29.子代理</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

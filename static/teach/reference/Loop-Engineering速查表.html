@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loop-Engineering速查表 · 参考手册</title>
+  <meta name="description" content="Loop-Engineering速查表 · 可打印参考手册：配合《Loop-Engineering互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>Loop-Engineering速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0033-Loop-Engineering.html">《Loop-Engineering互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>一句话定位与循环内的五件事</h2>
+      <p><strong>Loop Engineering 关注的是如何让 Agent 自我推动，最终完成一个可交付的产品；它的实现方式是循环。</strong>第 20 章 ReAct 管「一步怎么走」，第 21 章 Agent 管「一圈怎么转」，本章管「这一圈怎么自我推动到终点、并且在失控前停下」。</p>
+      <table class="cmp-table">
+        <tr><th>循环内的动作（课件原文）</th><th>工程含义</th><th>关键抓手</th></tr>
+        <tr><td>自主发现还未完成的任务</td><td>状态不能只活在模型上下文里</td><td>任务清单 + 进度文件 + git 历史，每轮开工先读</td></tr>
+        <tr><td>驱动多个子代理并行任务，并使用工作树隔离</td><td>并行必须物理隔离，否则互相覆盖</td><td><code>git worktree add &lt;path&gt;</code>，每子代理一棵工作树</td></tr>
+        <tr><td>自主沉淀知识</td><td>跨轮、跨上下文窗口的交接</td><td>进度文件 + 描述性提交 + 结构化 artifacts</td></tr>
+        <tr><td>自主接入工具</td><td>能力来自工具，工具面要按岗位收窄</td><td>工具 schema + 权限最小化 + 危险动作确认</td></tr>
+        <tr><td>不同的子代理分工</td><td>任务卡要写全，否则重复劳动</td><td>目标 / 输出格式 / 可用工具与来源 / 边界</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>循环控制三件套：终止、预算、重试退避</h2>
+      <table class="cmp-table">
+        <tr><th>控制项</th><th>回答的问题</th><th>落地要点</th></tr>
+        <tr><td>完成判据（软）</td><td>任务什么时候算<strong>做完</strong></td><td>环境里可验证的事实：端到端验收项、测试通过、产物文件存在。不要信模型自评——官方记录过「过早把功能标记为完成」的失效模式，解法是功能清单 + 自验证</td></tr>
+        <tr><td>硬上限（刹车）</td><td>最坏情况下<strong>何时必须停</strong></td><td>最大迭代轮数、token/费用预算、墙钟超时，至少两样并行；触发时<strong>有界退出 + 记录退出原因 + 保留现场</strong>（进度文件、未完成清单、会话快照），不是抛异常</td></tr>
+        <tr><td>预算分配</td><td>该投入多少工作量</td><td>按复杂度伸缩：简单查找 1 个代理 3–10 次工具调用；直接对比 2–4 个子代理各 10–15 次；复杂任务才 10+ 子代理并明确分工。官方数据：agent ≈ 聊天 <strong>4×</strong> token，多代理 ≈ <strong>15×</strong></td></tr>
+        <tr><td>失败重试</td><td>哪些错误值得再试</td><td>可重试：连接错误、408、409、429、≥500（且<strong>请求体可安全重发</strong>时）。不可重试：参数校验、鉴权/权限、业务错误——立刻上报。同一工具连续失败要<strong>熔断换路</strong></td></tr>
+        <tr><td>退避</td><td>重试要等多久</td><td>指数增长 + 封顶 + 抖动；设次数上限，避免并行子代理同时重试（惊群）</td></tr>
+        <tr><td>续跑</td><td>出错后怎么接着干</td><td>不从头重启——从出错位置恢复；「重试逻辑 + 定期检查点」作为确定性保障，与模型自身的随机应变配合</td></tr>
+      </table>
+      <pre># 预算约束：每轮成本累加不超过 B，超限即停在当前轮
+#   sum_{k=1..N} ( c_in * T_in[k] + c_out * T_out[k] ) <= B
+
+# 指数退避 + 抖动：第 n 次重试的等待时间
+#   t_n = min( t_max , t_0 * 2**n ) + jitter
+#
+# 三重刹车示例
+max_steps      = 8          # 轮数上限
+budget_tokens  = 200_000    # 或费用上限 / 墙钟超时
+done           = tasks_empty_and_acceptance_passed()   # 环境判据</pre>
+      <ul class="pitfall-list">
+        <li><code>max_iterations</code> <strong>不是</strong>「降级成 workflow」：workflow 与 agent 的分界是<strong>路径由谁决定</strong>（预定义代码路径 vs 模型动态决定），与有没有硬上限无关。官方原话：任务通常在完成时终止，但通常也要包含停止条件（如最大迭代次数）来保持控制。</li>
+        <li>把「没有 <code>tool_calls</code>」当成「任务完成」是第 21 章留下的语义缺口——它只说明这一轮不想调工具。循环型任务的完成判据必须外化到环境。</li>
+        <li>轮数上限不保护 token：<strong>单轮</strong>就可能非常贵。轮数、预算、超时是三个独立的旋钮。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>隔离与沉淀：工作树 + 交接物</h2>
+      <pre>git worktree add ../wt-taskA        # 新建工作树（最简单形式下顺带创建同名分支）
+git worktree add ../wt-exp -d       # 丢弃式工作树（detached HEAD），适合纯实验
+git worktree list                   # 列出主工作树与全部关联工作树
+git worktree remove ../wt-taskA     # 用完清理；误删可用 git worktree prune 清理管理文件
+# 官方描述：一个仓库可以支持多个工作树，从而同时 checkout 多于一个分支</pre>
+      <dl class="term-grid">
+        <dt>工作树隔离</dt>
+        <dd>每个并行子代理一棵工作树，各写各的；产出以分支 / 补丁回到主线，由主工作树统一合并，避免共享目录互相覆盖。</dd>
+        <dt>进度文件</dt>
+        <dd>把「干到哪了」写在 Agent 之外（官方实践中是 <code>claude-progress.txt</code> 一类文件 + 描述性提交）：既能回退坏改动、恢复可用状态，也省掉「猜上一轮发生了什么」。</dd>
+        <dt>初始化会话</dt>
+        <dd>只跑一次：搭好启动脚本（如 <code>init.sh</code>）、进度文件、初始提交；之后每个会话只做<strong>增量推进</strong>并留下结构化更新。</dd>
+        <dt>结构化交接物</dt>
+        <dd>跨会话 / 跨上下文传的是 artifacts 引用，不是把大段产出塞进对话——子代理把成果落文件，只把轻量引用交回主代理（官方称之为避免「传话游戏」）。</dd>
+        <dt>任务卡四要素</dt>
+        <dd>目标、输出格式、可用工具与来源、清晰边界。缺了就会重复劳动或留下空档（官方早期失败案例：为简单问题开 50 个子代理、多个子代理重复查同一件事）。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>可观测挂点与排错清单</h2>
+      <table class="cmp-table">
+        <tr><th>要回答的问题</th><th>记录什么</th><th>挂在哪</th></tr>
+        <tr><td>这一轮决定了什么</td><td>轮次、当前任务、规划理由</td><td>监听 <code>reasoning_start / reasoning / reasoning_end</code></td></tr>
+        <tr><td>调了什么、结果如何</td><td>工具名、参数、调用 id、结果摘要、耗时</td><td>监听 <code>tool_call_start / tool_call / tool_call_end</code></td></tr>
+        <tr><td>花了多少</td><td>每轮 token、累计费用、墙钟</td><td>循环层统一结算，别散落在各工具里</td></tr>
+        <tr><td>为什么停下</td><td>退出原因：清单为空 / 验收通过 / 达到轮数 / 达到预算 / 熔断 / 人工中断</td><td>循环出口处写一条结构化日志</td></tr>
+        <tr><td>出事能不能查</td><td>完整 tracing（官方正是靠它定位「为什么没找到信息」）</td><td>审计监听器 <code>ModelListener</code> 子类 + trace 文件</td></tr>
+      </table>
+      <ul class="pitfall-list">
+        <li><strong>循环不停</strong>：没有硬上限，或上限只埋在 <code>while True</code> 之外没生效 → 加步数 / 预算 / 超时，并记录退出原因。</li>
+        <li><strong>产物不对却一直跑</strong>：完成判据是模型自评 → 换成环境可验证的验收项。</li>
+        <li><strong>排错只能猜</strong>：日志只有对话文本 → 按上表补 tracing。</li>
+        <li><strong>进程一挂全丢</strong>：状态只在内存和上下文里 → 每轮落盘进度 + 提交，支持从最近检查点续跑。</li>
+        <li><strong>并行互相踩</strong>：子代理共用同一工作目录 → 每子代理一棵 <code>git worktree</code>，主工作树负责合并。</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

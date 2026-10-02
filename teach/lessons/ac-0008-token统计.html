@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · token统计：用 tiktoken 统计 token 数与成本，理解上下文窗口——互动教学课程">
+  <title>token统计 · 互动教学课程（Agents底层逻辑 ac-08）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>token统计</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/token统计">08.token统计</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 token 统计为什么分「事前统计」与「事后统计」，各自在哪个环节拿到数</li>
+        <li>复述事前统计的四个落地场景：长度拦截、额度预校验、预算审批、报价展示</li>
+        <li>会用三条统计路线——服务商 API 接口、tiktoken、transformers，并说清各自的适用边界</li>
+        <li>解释 <code>len(text)</code> 与 token 数为什么不同，把 token 数接到上下文窗口拦截与成本换算上</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把 token 统计的时机、路线与换算过一遍——细节都在《08.token统计》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>统计的时机：事前 vs 事后</h3>
+        <ul class="pitfall-list">
+          <li><strong>事后统计</strong>：调用模型服务商的 API 之后，服务商会<strong>告知本次 token 用量</strong>——数最准，但它只在你已经付过费、请求已经发出去之后才拿得到</li>
+          <li><strong>事前统计</strong>：把文本发给大模型<strong>之前</strong>先算出来，用于拦截与预估；课件的四个典型场景都靠它</li>
+          <li>① <strong>单轮输入长度拦截</strong>：用户粘贴 10 万字合同，事前算出超 100k token，直接弹窗「文本过长，请分段上传」，<strong>不发起无效 API 调用</strong></li>
+          <li>② <strong>用户额度 / 充值计费预校验</strong>：调用前预估总 token，额度不足直接拦截并提示充值，不用等 API 返回才告知超限</li>
+          <li>③ <strong>企业预算前置审批</strong>：本地算出预估 token 并换算成人民币成本，超过部门月度阈值就走审批再允许调用</li>
+          <li>④ <strong>报价前置展示</strong>：页面实时显示「本次预估消耗 XX token，约 XX 元」，用户确认后再执行，减少账单争议</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>三条统计路线，各有各的边界</h3>
+        <ul class="pitfall-list">
+          <li><strong>服务商 API 接口</strong>：某些服务商提供<strong>免费</strong>的 token 统计接口。课件以 Moonshot AI（Kimi）为例：<code>POST https://api.moonshot.cn/v1/tokenizers/estimate-token-count</code>，请求体传 <code>model</code> 与 <code>messages</code>，从 <code>result['data']['total_tokens']</code> 取结果；需要 <code>Authorization: Bearer &lt;API Key&gt;</code>（Key 在 platform.moonshot.cn 申请，用 python-dotenv 从 .env 读）</li>
+          <li><strong>tiktoken（SDK，本地）</strong>：<strong>OpenAI 官方的分词库</strong>。课件用 <code>encoding = tiktoken.encoding_for_model("gpt-4o")</code> 拿编码，<code>tokens = encoding.encode(text)</code> 得到 token 序列，<code>len(tokens)</code> 就是 token 数；<strong>首次运行会联网下载词表并缓存，之后统计完全在本地进行，无需 API Key</strong></li>
+          <li><strong>transformers（SDK，本地）</strong>：Hugging Face 的官方库，开源模型用它统计。课件用 <code>AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-V3")</code> 下载<strong>分词器文件（仅几 MB，不含模型权重）</strong>，再 <code>tokenizer.encode(text)</code> 取 token 数</li>
+          <li><strong>国内网络</strong>：访问 Hugging Face 需配置镜像——课件里是 <code>os.environ["HF_ENDPOINT"] = "http://hf-mirror.com"</code>（能直连就删掉这行）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>从 token 数到「钱」和「窗口」</h3>
+        <ul class="pitfall-list">
+          <li><strong>字符数不是 token 数</strong>：课件里同一段文本同时打印 <code>len(text)</code> 与 <code>len(tokens)</code>，两个数字<strong>并不相等</strong>；不同模型、不同语料的切法不一样，所以统计必须用<strong>目标模型配套的分词器</strong></li>
+          <li><strong>成本换算</strong>：预估 token 数 × 服务商单价 = 预估成本；输入与输出通常分开计价，预估时要连输出上限一起算（课件「报价前置展示」「企业预算前置审批」都是这条链路）</li>
+          <li><strong>上下文窗口</strong>：把统计结果与模型的上下文上限比较，超限就分段/摘要，而不是发出去等报错——这是「单轮输入长度拦截」的实现方式</li>
+          <li><strong>预估值永远是估算</strong>：消息的角色、名称等结构本身也占 token，具体口径还会随模型更新变化，所以要用 API 返回的用量做对账校准</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《08.token统计》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 按「什么时候算」，token 统计分成哪两类？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">输入统计与输出统计</button>
+            <button class="quiz-option">事前统计与事后统计</button>
+            <button class="quiz-option">本地统计与云端统计</button>
+            <button class="quiz-option">精确统计与近似统计</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：Token 统计是指将一段文本序列转换为 Token 数量的过程，分为事前统计和事后统计。事后统计靠服务商 API 告知用量，事前统计是在把文本发送给大模型之前先算出来。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 「事后统计」的 token 用量数据从哪里来？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">从模型权重的参数量反推</button>
+            <button class="quiz-option">由用户自己填写账单</button>
+            <button class="quiz-option">模型服务商的 API 接口会告知本次 token 用量</button>
+            <button class="quiz-option">用标点符号与空格个数估算</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：事后统计——使用模型服务商的 API 接口会告知你本次 token 用量。它是最贴近账单的口径，但拿到它时请求已经发出去了。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 课件用 tiktoken 统计 token 时，哪一句真正拿到了 token 数？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>len(encoding.encode(text))</code></button>
+            <button class="quiz-option"><code>requests.post(url, json={...})</code></button>
+            <button class="quiz-option"><code>tiktoken.encoding_for_model("gpt-4o")</code></button>
+            <button class="quiz-option"><code>os.environ.get("MOONSHOT_API_KEY")</code></button>
+          </div>
+          <div class="quiz-explain" hidden><code>encoding_for_model</code> 只是按模型名加载编码（词表），<code>encoding.encode(text)</code> 把文本切成 token 序列（课件里打印为「Token 序列」），对它取 <code>len()</code> 才是 token 数——课件输出里「Token 数」这一行正是 <code>len(tokens)</code>。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 用户粘贴了一份 10 万字合同，产品要求「不发起无效 API 调用就拦住超长输入」，正确做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把文本截断到 1 万字符后直接发送</button>
+            <button class="quiz-option">用 <code>len(text)</code> 与上限比较，因为字符数就等于 token 数</button>
+            <button class="quiz-option">发送前先统计 token 数，与模型上下文上限比较，超限直接提示分段上传</button>
+            <button class="quiz-option">先发给模型，等它返回超长报错再提示用户</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「单轮输入长度拦截」原文：用户粘贴 10 万字合同，事前算出超 100k token，直接弹窗「文本过长，请分段上传」，不发起无效 API 调用。字符数不等于 token 数，截断则可能截掉有效内容——两者都不是拦截该有的做法。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. tiktoken 第一次运行必须联网，之后却能完全离线统计，原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">首次要联网校验 API Key，之后才允许本地使用</button>
+            <button class="quiz-option">之后每次仍然要联网，只是本地缓存加速了下载</button>
+            <button class="quiz-option">首次会联网下载词表并缓存，此后统计全在本地完成</button>
+            <button class="quiz-option">首次要联网把文本上传到服务端建立索引</button>
+          </div>
+          <div class="quiz-explain" hidden>课件注释原文：tiktoken 是 OpenAI 官方的分词库；<strong>首次运行会联网下载词表并缓存，之后统计完全在本地进行，无需 API Key</strong>。因为统计只需要词表，不需要模型权重，也不需要把文本发给任何人。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 要统计开源模型 DeepSeek-V3（分词器发布在 Hugging Face 上）的 token 数，最合适的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>len(text)</code> 再乘一个固定系数</button>
+            <button class="quiz-option"><code>tiktoken.encoding_for_model("deepseek-v3")</code></button>
+            <button class="quiz-option"><code>AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-V3")</code></button>
+            <button class="quiz-option">Moonshot 的 estimate-token-count 接口</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「transformers 库」一节：开源模型可以使用 transformers 库进行统计，以开源模型为例用 <code>AutoTokenizer.from_pretrained(...)</code> 加载配套分词器，再 <code>tokenizer.encode(text)</code>。tiktoken 是 OpenAI 模型的官方分词库，Moonshot 的接口算的是 Kimi 的 token，系数估算则会系统性偏离。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. SaaS 产品要「上传文档后立刻显示预估 token 与费用，用户确认后再调用」，还要求预估与服务商账单口径尽量一致。架构上最稳的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只用本地分词器统计，永不参考响应里的 usage</button>
+            <button class="quiz-option">用字符数乘单价报价，因为实现最简单</button>
+            <button class="quiz-option">先真实调用一次大模型拿到 usage，再向用户展示报价</button>
+            <button class="quiz-option">按目标模型的口径统计——OpenAI 模型用 tiktoken、开源模型用配套分词器、服务商有免费 estimate 接口就直接用——再按服务商单价折算，并用响应返回的用量做对账校准</button>
+          </div>
+          <div class="quiz-explain" hidden>课件给了三条统计路线（API 接口 / tiktoken / transformers）与「报价前置展示」「企业预算前置审批」两个场景：估值要与账单口径一致，就必须用<strong>目标模型自己的分词口径</strong>，再乘服务商单价；而事后拿到的用量（usage）是最权威的对账依据。先真实调用再报价会把成本转嫁给平台；只用本地估算而不校准，则会在模型更新后慢慢失真。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 为什么不能直接用 <code>len(text)</code> 代替 token 数做计费拦截与报价？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 <code>len(text)</code> 遇到中文会直接报错</button>
+            <button class="quiz-option">因为 <code>len(text)</code> 只统计 ASCII，中文会被忽略</button>
+            <button class="quiz-option">因为字符数与 token 数没有固定换算关系——中英文、不同编码切法都不同，消息结构本身也占 token，直接拿字符数会系统性偏离账单</button>
+            <button class="quiz-option">因为 <code>len(text)</code> 统计的是字节数，一定比 token 数偏大</button>
+          </div>
+          <div class="quiz-explain" hidden>课件在两处同时观察这件事：一是每个统计示例都并排打印「文本长度：<code>len(text)</code>」与「Token 数：<code>len(tokens)</code>」，两个数不相等；二是三种路线的 token 数各自不同。同一个字符数，中英文切法不同、模型词表不同结果就不同，计费与窗口判断只能按 token 算。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 代码审查：工程师写 <code>enc = tiktoken.encoding_for_model("kimi-k3")</code> 来给 Kimi 模型的请求做预统计，运行直接抛 KeyError。最合理的根因与修法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">KeyError 说明网络不通，第一次运行必须先联网</button>
+            <button class="quiz-option">模型名写错了，改成 <code>gpt-4o</code> 就能正确统计 Kimi 的 token</button>
+            <button class="quiz-option">tiktoken 没装成功，重装一遍即可</button>
+            <button class="quiz-option">tiktoken 只登记了 OpenAI 模型的编码映射，Kimi 这类模型要改用服务商的统计接口或它自己的配套分词器</button>
+          </div>
+          <div class="quiz-explain" hidden>课件把两条路线分得很清楚：tiktoken 是「OpenAI 官方的分词库」，按 <code>encoding_for_model("gpt-4o")</code> 这类 <strong>OpenAI 模型名</strong>取编码；而其它厂商的模型要在它自己的口径上统计——Kimi 用 Moonshot 的 <code>estimate-token-count</code> 接口，开源模型用 transformers 加载配套分词器。改成 <code>gpt-4o</code> 只是换了个词表算别家模型的账，数字依然不对。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0008-token统计',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `团队给用户做 token 报价与超限拦截，AI 给出的方案是：<code>if len(prompt) &gt; 100000: 提示过长</code>，报价 = 字符数 × 单价。请用官方文档审查这个方案。`,
+              source: `来源：Kimi API Platform《Model Pricing》（"Generally speaking, for a typical English text, 1 token is roughly equivalent to 3-4 English characters. The exact number of tokens generated by each call can be obtained through the Token Calculation API."）https://platform.kimi.ai/docs/pricing/chat · 检索 2026-10-02 · 层级：一手（官方文档）+ OpenAI Cookbook《How to count tokens with tiktoken》（"Knowing how many tokens are in a text string can tell you (a) whether the string is too long for a text model to process and (b) how much an OpenAI API call costs (as usage is priced by token)."）https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb`,
+              breakdown: `官方给的只是<strong>粗略换算</strong>：英文文本里「1 token ≈ 3–4 个英文字符」，而且原话明确说「每次调用到底用了多少 token，要通过 Token Calculation API 才能拿到」。中文、代码、非英文的切法完全不同（《07.词元》实测过同一句话在不同编码下切出不同数量的 token），字符数既不能当窗口判断依据，也不能当计费依据。Cookbook 把 token 数的用途说得很直接：<strong>(a) 判断字符串是否超出模型能处理的范围，(b) 判断一次 API 调用要花多少钱——因为计费按 token</strong>。所以这个方案会同时踩两个坑：低估导致超窗请求被放进去（白付一次失败调用），报价与实际账单脱节（用户对账争议）。正确做法：按目标模型的口径统计（OpenAI 模型用 <code>encoding.encode</code> 取 <code>len</code>、开源模型用 transformers 的配套分词器、服务商有免费 estimate 接口就直接调），再乘单价，并用调用后的 usage 做对账校准。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `「事后统计」与「事前统计」分别从哪里拿到 token 数？为什么一个线上产品不能只依赖事后统计？`,
+              source: `来源：Kimi API Platform《Chat Completions API》（响应示例含 "usage": { "prompt_tokens": 123, "completion_tokens": 123, "total_tokens": 123, "cached_tokens": 123 }）https://platform.kimi.ai/docs/api/chat +《Estimate Tokens》（"Estimate the token count of your input before sending a request."）https://platform.kimi.ai/docs/api/estimate · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `<strong>事后统计</strong>来自响应体里服务商返回的用量字段：Kimi 的 Chat Completions 响应里就有 <code>prompt_tokens</code>、<code>completion_tokens</code>、<code>total_tokens</code>（K3 还带 <code>cached_tokens</code> 与缓存写入量），这是账单口径、最权威——但拿到它时请求已经发出、已经计费，用它来拦截已经晚了。<strong>事前统计</strong>在发送前算：服务商专门为此提供接口（Kimi 的 Estimate Tokens 原话就是「在发送请求前估算输入的 token 数」），或者用本地分词器离线算。它支撑课件里的四个场景：长度拦截、额度预校验、预算审批、报价展示。工程上的正解是两者配合——事前统计负责「拦」和「报」，事后 usage 负责「对账」和「校准」。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `tiktoken 为什么能在没有 API Key、没有网络的情况下统计 OpenAI 模型的 token？第一次运行为什么必须联网？<code>encoding_for_model</code> 与 <code>get_encoding</code> 又有什么区别？`,
+              source: `来源：tiktoken 官方仓库 README（"tiktoken is a fast BPE tokeniser for use with OpenAI’s models."；"To get the tokeniser corresponding to a specific model in the OpenAI API: enc = tiktoken.encoding_for_model(\"gpt-4o\")"）https://github.com/openai/tiktoken + OpenAI Cookbook《How to count tokens with tiktoken》（"Use tiktoken.get_encoding() to load an encoding by name. The first time this runs, it will require an internet connection to download. Later runs won’t need an internet connection."）https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `tiktoken 是<strong>BPE 分词器</strong>：统计只需要「词表/合并规则」这类编码数据，不需要模型权重，也不需要把文本发出去，所以拿到编码后就是纯本地 CPU 计算——这正是课件注释「之后统计完全在本地进行，无需 API Key」的依据。第一次使用某个编码时要联网<strong>下载编码文件并缓存</strong>（官方原话：第一次运行需要联网下载，之后不再需要），所以离线的关键是「先预热一次」。两个入口的区别：<code>get_encoding("o200k_base")</code> 按编码名加载；<code>encoding_for_model("gpt-4o")</code> 按<strong>模型名</strong>映射到该模型使用的编码，模型换代时映射也会变。生产建议：进程内建一次 encoding 并复用，别每个请求都重新加载；模型名不在登记表里会抛 KeyError，要显式处理而不是随便 fallback 到某个编码。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查这段「发送前预统计」代码：<code>encoding = tiktoken.encoding_for_model(model)</code> 在每次请求里执行；<code>model</code> 由前端传入（可能是 kimi-k3、qwen3）；包了 <code>except KeyError</code> 后静默改用 <code>tiktoken.get_encoding("o200k_base")</code>；最后 <code>total = sum(len(encoding.encode(m["content"])) for m in messages)</code> 作为预估 token 数。请指出问题并给修法。`,
+              source: `来源：OpenAI Cookbook《How to count tokens with tiktoken》官方示例函数（"except KeyError:" → "Warning: model not found. Using o200k_base encoding."；"Note that the exact way that tokens are counted from messages may change from model to model. Consider the counts from the function below an estimate, not a timeless guarantee."）https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `至少三处问题。① <strong>模型路由错了</strong>：<code>encoding_for_model</code> 接受的是 OpenAI 模型的编码映射，前端传 kimi-k3、qwen3 时必然 KeyError，而静默兜底到 <code>o200k_base</code> 等于<strong>用 A 模型的词表算 B 模型的账</strong>——官方示例里至少还打印了 warning，这里连告警都没有。应按模型路由：OpenAI 模型 → tiktoken；开源模型 → transformers 的配套分词器；Kimi → 服务商的 estimate 接口。② <strong>漏算消息结构开销</strong>：官方示例函数是逐条消息加固定开销、<code>name</code> 再额外加、最后给回复再加一段（"every reply is primed with &lt;|start|&gt;assistant&lt;|message|&gt;"），而这里只累加 content，系统提示与 tools 定义也没算进去，预估值会系统性偏低——用于额度拦截就会漏放。③ <strong>每次请求重新加载编码</strong>：词表加载应该缓存复用。另外官方明确提醒「不同模型的计费口径会变，这种函数算出来的是估算，不是永久保证」，所以线上要拿响应里的 usage 持续校准，而不是把它当成精确账单。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `设计一条「用户上传文档 → 立即显示预估 token 与费用 → 用户确认 → 调用模型 → 账单对账」的链路，要同时满足：拦截超窗输入、成本尽量贴近账单、交互延迟低。请给出统计口径选型、缓存与降级策略。`,
+              source: `来源：Kimi API Platform《Estimate Tokens》（"Estimate the token count of your input before sending a request."）https://platform.kimi.ai/docs/api/estimate +《Model Pricing》（"Model inference APIs bill both Input and Output based on usage."）https://platform.kimi.ai/docs/pricing/chat +《List Models》（"List all currently available models, including model ID, context length, and capability flags."）https://platform.kimi.ai/docs/api/list-models · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《08.token统计》事前统计四场景`,
+              breakdown: `按四步设计。① <strong>统计口径</strong>：优先用目标模型自己的口径——OpenAI 模型用 tiktoken 本地算（无网络依赖、延迟最低）；开源模型用 transformers 的 <code>AutoTokenizer.from_pretrained</code> 加载与模型配套的分词器；服务商提供免费 estimate 接口（如 Kimi）时直接调用，口径与账单一致。② <strong>判窗</strong>：先取目标模型的上下文长度（Kimi 的 List Models 明确会返回 model ID、context length 与能力标记），把统计结果与它比较，超限就提示分段或先做摘要，绝不把超窗请求发出去。③ <strong>报价</strong>：输入 token 预估 + 输出上限一起算，注意官方定价逻辑是<strong>输入与输出分别按用量计费</strong>（按 1M token 计价，缓存命中的部分单价更低），换算后展示；统计结果按文档内容 hash 缓存，避免同一份文档反复计算。④ <strong>对账与校准</strong>：调用后用响应里的 usage 回写实际值，与预估值比对并监控偏差，偏差变大说明模型口径变了或漏算了结构开销。降级策略：estimate 接口不可用时退回本地分词器；本地词表首次下载失败时用保守系数估算，并在界面上明确标注这是「预估」。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 20 分钟内做一个「发送前 token 预算守卫」小脚本：发送前统计 token 数、超限拦截、并给出预估成本。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '建一个 encoding（tiktoken.encoding_for_model("gpt-4o")，只建一次并复用）→ 对一段测试文本 encode → 同时打印字符数 len(text) 与 token 数 len(tokens) → 设一个上下文上限（如 100000），超限时打印「文本过长，请分段上传」并直接返回，不发起任何 API 调用 → 对未超限文本按单价把 token 数折算成预估金额并打印。',
+                accept: ['输出里同时有字符数与 token 数，并能解释两者为什么不相等', '首次运行会下载词表，之后同一环境离线也能跑出相同结果', '超限文本被提前拦截，程序没有发出任何网络请求', '能把 token 数按单价折算成预估金额，并说明它和 API 返回的 usage 是什么关系'],
+              },
+              source: `任务基于《08.token统计》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① <code>enc = tiktoken.encoding_for_model("gpt-4o")</code> 放在函数外或模块级，避免每次调用都重新加载词表；② <code>tokens = enc.encode(text)</code>，打印 <code>len(text)</code> 与 <code>len(tokens)</code> 做对照；③ 在调用任何 API 之前先 <code>if len(tokens) &gt; LIMIT: 提示分段; return</code>——这正是课件「单轮输入长度拦截」的形态；④ 未超限时按「token 数 × 单价」折算预估成本（记住输入与输出分开计价，输出还要把 max_tokens 算上）。常见坑：用 <code>len(text)</code> 当 token 数（两者不相等，中文/代码更明显）；每个请求都 <code>encoding_for_model</code> 一遍（应该复用）；把拦截写在 API 调用之后（那就白付了一次调用）；只看输入不看输出上限（报价会偏低）。想让口径与账单一致，就再用服务商的 estimate 接口或响应里的 usage 校一次，并说清「预估」与「账单」的差别。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://github.com/openai/tiktoken">tiktoken 官方仓库</a> · <a href="https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb">OpenAI Cookbook《How to count tokens with tiktoken》</a> · <a href="https://platform.kimi.ai/docs/api/estimate">Kimi 官方文档 Estimate Tokens</a> · <a href="https://github.com/huggingface/transformers/blob/main/docs/source/en/main_classes/tokenizer.md">Transformers 文档 Tokenizer 一章</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/token统计速查表.html">token统计速查表</a>——事前/事后对照、三条统计路线与核心代码一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/token统计">08.token统计</a> · 下一课 <a href="/agents/Agents底层逻辑/神经网络的本质">09.神经网络的本质</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

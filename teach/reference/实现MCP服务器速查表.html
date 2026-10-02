@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>实现MCP服务器速查表 · 参考手册</title>
+  <meta name="description" content="实现MCP服务器速查表 · 可打印参考手册：配合《实现MCP服务器互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>实现MCP服务器速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0027-实现MCP服务器.html">《实现MCP服务器互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>四步建一个 MCP 服务端（本章全景）</h2>
+      <pre># ① 装包（课程锁定 1.28.1，对应 python-sdk 的 v1.28.1 标签）
+uv add mcp==1.28.1
+
+# ② 建服务
+from mcp.server.fastmcp import FastMCP
+mcp = FastMCP("Weather Service", json_response=True)
+
+# ③ 注册工具（类型标注 = JSON Schema，docstring = 工具描述）
+@mcp.tool()
+async def get_weather(city: str = "成都") -> dict[str, str]:
+    """Get weather data for a city"""
+    return {"city": city, "temperature": "22", "condition": "多云", "humidity": "65%"}
+
+# ④ 跑起来（底层 starlette + uvicorn，默认挂载在 /mcp）
+mcp.run(transport="streamable-http")
+
+# Notebook 场景：别阻塞内核，把服务丢进独立线程
+import threading
+def run():
+    """在独立线程中运行服务器"""
+    mcp.run(transport="streamable-http")
+threading.Thread(target=run).start()</pre>
+      <p>测试服务：<code>npx -y @modelcontextprotocol/inspector@1.0.0</code>，在 UI 里连 <code>http://localhost:8000/mcp</code>。</p>
+    </section>
+
+    <section>
+      <h2>装饰器 → 协议定义：各自的唯一说明书</h2>
+      <table class="cmp-table">
+        <tr><th>源码里写的东西</th><th>协议里对应字段</th><th>谁在看它</th></tr>
+        <tr><td>函数名 <code>get_weather</code></td><td><code>tools/list</code> 的 <code>name</code></td><td>客户端路由 <code>tools/call</code> 的键</td></tr>
+        <tr><td>docstring</td><td><code>description</code></td><td><strong>模型</strong>——决定它选不选这个工具</td></tr>
+        <tr><td>类型标注 <code>city: str</code></td><td><code>inputSchema.properties</code></td><td><strong>模型</strong>——决定参数怎么填</td></tr>
+        <tr><td>无默认值的参数</td><td><code>inputSchema.required</code></td><td>服务端与客户端双侧校验</td></tr>
+        <tr><td>有默认值的参数</td><td>不进 <code>required</code>（可选）</td><td>模型可以不传 → 服务端回落到默认值</td></tr>
+        <tr><td>返回类型标注</td><td>结构化输出 / <code>outputSchema</code> 校验</td><td>客户端解析结果</td></tr>
+      </table>
+      <p>官方原话：<strong>「no JSON Schema（<code>a: int, b: int</code> <em>is</em> the schema）、no request parsing、no validation code、no protocol handling」</strong>——省掉的是样板代码，省不掉的是把 docstring 和参数说明写清楚。</p>
+    </section>
+
+    <section>
+      <h2>三种原语：别都会塞进 <code>@mcp.tool()</code></h2>
+      <table class="cmp-table">
+        <tr><th>原语</th><th>定位</th><th>该不该有副作用</th></tr>
+        <tr><td><code>@mcp.tool()</code></td><td>让模型执行动作（类似 POST）</td><td>预期有计算与副作用</td></tr>
+        <tr><td><code>@mcp.resource()</code></td><td>把数据读给模型（类似 GET）</td><td>不应做重计算或产生副作用</td></tr>
+        <tr><td><code>@mcp.prompt()</code></td><td>可复用的提示词模板</td><td>只产出消息</td></tr>
+      </table>
+      <p>工具在 MCP 里是 <strong>model-controlled</strong>：模型自行发现并调用；规范同时要求<strong>始终保留人在环路中</strong>，客户端应展示调用参数并让用户可拒绝。</p>
+    </section>
+
+    <section>
+      <h2>传输与端点速查</h2>
+      <table class="cmp-table">
+        <tr><th>传输</th><th>进程模型</th><th>默认端点</th><th>什么时候用</th></tr>
+        <tr><td><code>stdio</code></td><td>客户端把服务端当子进程拉起，消息走 stdin/stdout（换行分隔，stdout 只能是合法 MCP 消息）</td><td>无网络端点</td><td>本地一对一、桌面客户端集成</td></tr>
+        <tr><td><code>streamable-http</code></td><td>独立进程，可同时处理多个客户端连接；POST 送消息、GET 可选开 SSE 流</td><td><code>/mcp</code>（本地 <code>http://localhost:8000/mcp</code>）</td><td><strong>生产部署首选</strong></td></tr>
+        <tr><td><code>sse</code>（已被取代）</td><td>独立进程，事件流单向、端点点分离</td><td><code>/sse</code></td><td>仅为兼容老客户端</td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt><code>json_response=True</code></dt>
+        <dd>响应格式从 SSE 事件流改为一次性 JSON。<strong>是服务端的配置决定</strong>：规范要求客户端两种格式都必须支持。</dd>
+        <dt><code>stateless_http=True</code></dt>
+        <dd>去掉会话状态。官方对高扩展场景的建议组合是 <code>stateless_http=True</code> + <code>json_response=True</code>。</dd>
+        <dt>会话 ID</dt>
+        <dd>有状态模式下服务端在 initialize 响应带 <code>Mcp-Session-Id</code>；客户端后续请求必须带。服务端终止会话后对该 ID 回 404，客户端收到 404 必须重新初始化。</dd>
+        <dt>协议版本头</dt>
+        <dd>HTTP 场景下客户端须在后续请求带 <code>MCP-Protocol-Version</code>；服务端收到非法或不支持的版本必须回 400。</dd>
+        <dt>挂到已有 ASGI 应用</dt>
+        <dd><code>mcp.streamable_http_app()</code> + Starlette 的 <code>Mount</code>；用 <code>settings.streamable_http_path</code> 改挂载路径。浏览器直连需配 CORS 并 <code>expose_headers=["Mcp-Session-Id"]</code>。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>错误模型：两张表不能混</h2>
+      <table class="cmp-table">
+        <tr><th>类型</th><th>典型场景</th><th>怎么表达</th></tr>
+        <tr><td>协议错误</td><td>未知工具、参数不合法、服务端错误</td><td>JSON-RPC <code>error</code> 对象</td></tr>
+        <tr><td>工具执行错误</td><td>第三方 API 失败、限流、业务逻辑失败</td><td>结果里 <code>isError: true</code> + 文本内容</td></tr>
+      </table>
+      <pre>from mcp.server.fastmcp.exceptions import ToolError
+
+@mcp.tool()
+def divide(a: float, b: float) -> float:
+    """Divide two numbers."""
+    if b == 0:
+        raise ToolError("Cannot divide by zero")   # 推荐：可预期失败
+    return a / b
+# 未处理异常也会被框架捕获成 isError=True，不会弄崩服务端
+# 需要精细控制时返回 CallToolResult(content=[...], isError=True)</pre>
+    </section>
+
+    <section>
+      <h2>上线前的安全与易错清单</h2>
+      <table class="cmp-table">
+        <tr><th>项</th><th>要求</th><th>依据</th></tr>
+        <tr><td><code>Origin</code> 头校验</td><td>必须校验所有入站连接的 Origin，防 DNS rebinding</td><td>规范 MUST</td></tr>
+        <tr><td>绑定地址</td><td>本地运行只绑 127.0.0.1，不要 0.0.0.0</td><td>规范 SHOULD</td></tr>
+        <tr><td>认证</td><td>对所有连接做认证（SDK 支持 OAuth 2.1）</td><td>规范 SHOULD</td></tr>
+        <tr><td>工具入参</td><td>校验全部入参、做访问控制、对调用限流、清洗输出</td><td>规范 MUST/SHOULD</td></tr>
+        <tr><td>超时</td><td>为每个请求设超时，防挂死与资源耗尽</td><td>规范 SHOULD</td></tr>
+      </table>
+      <ul class="pitfall-list">
+        <li><strong>易错 1</strong>：Notebook 里直接 <code>mcp.run(...)</code> → 内核被阻塞，后面的单元格永远不执行；用子线程。</li>
+        <li><strong>易错 2</strong>：拿根路径 <code>http://localhost:8000/</code> 探测服务 → 必然 404，Streamable HTTP 的端点是 <code>/mcp</code>。</li>
+        <li><strong>易错 3</strong>：参数留了默认值（如 <code>city: str = "成都"</code>）→ 在 <code>inputSchema</code> 里不是必填，模型可以不传，你只会一直拿到默认结果。要么去掉默认值，要么在 docstring 里把默认语义讲清。</li>
+        <li><strong>易错 4</strong>：把业务失败当协议失败抛 → 客户端以为工具不存在；限流、API 失败应走 <code>isError: true</code>（<code>ToolError</code>）。</li>
+        <li><strong>易错 5</strong>：只用裸 <code>curl</code> POST 测端点 → 缺规范要求的 <code>Accept</code> 头（须同时含 <code>application/json</code> 与 <code>text/event-stream</code>）；命令行验证优先用 Inspector 的 <code>--cli</code> 模式。</li>
+        <li><strong>易错 6</strong>：Inspector 版本与协议对不上导致握手失败 → 先对齐课程锁定的 <code>@modelcontextprotocol/inspector@1.0.0</code>（新版官方文档要求 Node 22.19.0+），再怀疑业务代码。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>官方文档索引</h2>
+      <table class="cmp-table">
+        <tr><th>主题</th><th>链接</th></tr>
+        <tr><td>规范 · 生命周期（初始化 → 运行 → 关闭）</td><td><code>modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle</code></td></tr>
+        <tr><td>规范 · 传输（stdio / Streamable HTTP / 安全警告）</td><td><code>modelcontextprotocol.io/specification/2025-06-18/basic/transports</code></td></tr>
+        <tr><td>规范 · 工具（tools/list、inputSchema、isError）</td><td><code>modelcontextprotocol.io/specification/2025-06-18/server/tools</code></td></tr>
+        <tr><td>Inspector（Web / CLI / TUI）</td><td><code>modelcontextprotocol.io/docs/2026-07-28/tools/inspector</code></td></tr>
+        <tr><td>Python SDK v1.28.1 · 构建服务端</td><td><code>raw.githubusercontent.com/modelcontextprotocol/python-sdk/v1.28.1/docs/server.md</code></td></tr>
+      </table>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

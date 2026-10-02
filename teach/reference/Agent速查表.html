@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent速查表 · 参考手册</title>
+  <meta name="description" content="Agent速查表 · 可打印参考手册：配合《Agent互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>Agent速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0021-Agent.html">《Agent互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>Agent 的组装结构与 ReAct 循环</h2>
+      <dl class="term-grid">
+        <dt>Agent（入口/编排）</dt>
+        <dd><code>Agent(*, session=None, model=None, model_listener=None)</code>：<code>session or Session()</code>、<code>model or Model()</code>；传入 <code>model_listener</code> 时构造即 <code>listener.listen(self.model)</code>。</dd>
+        <dt>Model（模型层）</dt>
+        <dd>继承 <code>EventEmitter</code>，封装 <code>chat.completions.create</code>；<code>invoke()</code> / <code>invoke_stream()</code>，流式时边解析边发射事件。</dd>
+        <dt>Session（会话层）</dt>
+        <dd>管理 <code>messages</code> 与 <code>tools</code>；<code>add_message()</code>、<code>save()</code> / <code>load()</code>、<code>__str__</code>（JSON）、<code>print_friendly()</code>（分段 + 截断）。</dd>
+        <dt>Tool registry（工具层）</dt>
+        <dd><code>registry.schemas()</code> 给模型看工具定义；<code>registry.invoke(message)</code> 提取 <code>tool_calls</code> 执行，返回 tool 消息列表，没有调用则返回 <code>None</code>。</dd>
+        <dt>Listener（监听层）</dt>
+        <dd><code>ModelListener(ABC)</code> + 实现类 <code>ModelPrinterListener</code>；消费事件流，负责打印、日志等副作用。</dd>
+      </dl>
+      <p>本章 <code>agent/</code> 变更：<strong>新增 2 个</strong>（<code>agent.py</code>、<code>listener.py</code>）<strong>、修改 6 个</strong>（<code>model.py</code>、<code>printer.py</code>、<code>prompt.py</code>、<code>prompt/system.j2</code>、<code>session.py</code>、<code>分析.md</code>）。</p>
+
+      <h3>ReAct 循环：四步与出口</h3>
+      <pre>agent.invoke(q)
+  1. session.add_message({"role": "user", "content": q})
+  2. while True:
+       resp = model.invoke_stream(session)        # 内部已把 assistant 消息写进 session
+       call_msg = registry.invoke(session.messages[-1])
+  3.   if call_msg is None:                       # 没有 tool_calls
+         responses.append(resp); break           # ← 唯一出口
+       else:                                     # 有 tool_calls
+         session.messages += call_msg            # 追加 role="tool" 的结果消息
+         responses.append(resp)                  # 回到第 2 步
+  4. return responses                            # 每轮一个 InvokeResult，最终答案在最后一个</pre>
+      <ul class="pitfall-list">
+        <li>退出判据是<strong>有没有工具调用</strong>，不是正文有没有内容——模型可以先解释一句再调工具，此时循环必须继续。</li>
+        <li><code>role: "tool"</code> 的消息必须紧跟那条带 <code>tool_calls</code> 的 assistant 消息；本章靠 <code>_process</code> 先写 assistant、再追加 tool 的天然顺序保证。</li>
+        <li><code>while True</code> 没有停止条件——官方提醒 Agent 常需<strong>最大迭代次数</strong>这类停止条件来保持控制。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>事件监听链路</h2>
+      <pre>Event（事件常量）
+  reasoning_start / reasoning / reasoning_end
+  content_start   / content   / content_end
+  tool_call_start / tool_call / tool_call_end
+  complete                                   # 已定义，本章没有 emit 点
+
+EventEmitter（事件总线）
+  _listeners: dict[str, list[Callable]] = field(default_factory=lambda: defaultdict(list))
+  on(event, callback)   → _listeners[event].append(callback)   # 只 append，不去重
+  emit(event, **data)   → for cb in _listeners.get(event, []): cb(event, **data)
+
+ModelListener(ABC)
+  listening = True                       # 开关：挡的是回调，不是事件
+  listen(model) → 遍历 Event 上的事件常量，逐个 model.on(event=e, callback=self._model_print_callback)
+  _model_print_callback(e, **args) → if not listening: return; self._handler(e, **args)
+  _handler(e, **args)  @abstractmethod   # 子类必须实现，否则 ABC 不允许实例化
+
+ModelPrinterListener._handler
+  reasoning_start → 思考中...      reasoning_end → 换行
+  content_start   → 内容：         content       → 绿色增量片段
+  tool_call_end   → 青色「调用工具：xxx」</pre>
+      <p>解耦收益：Model 只负责 <code>emit</code>，打印 / 日志 / 前端推送各自派生监听器，Model 一行不用改（<code>分析.md</code> 设计亮点 2）。</p>
+    </section>
+
+    <section>
+      <h2>流式解析：三个 Builder 与结果封装</h2>
+      <table class="cmp-table">
+        <tr><th>Builder</th><th>盯什么字段</th><th>发射的事件</th><th>结束条件</th></tr>
+        <tr><td><code>ReasoningBuilder</code></td><td><code>reasoning_content</code> / <code>reasoning</code>（兼容取值）</td><td><code>reasoning_start / reasoning / reasoning_end</code></td><td>出现 <code>content</code> 或 <code>tool_calls</code>，或 <code>finish_reason</code> 非空</td></tr>
+        <tr><td><code>ContentBuilder</code></td><td><code>content</code></td><td><code>content_start / content / content_end</code></td><td><code>finish_reason</code> 非空</td></tr>
+        <tr><td><code>ToolCallsBuilder</code></td><td><code>tool_calls</code></td><td><code>tool_call_start / tool_call / tool_call_end</code></td><td><code>finish_reason</code> 非空</td></tr>
+      </table>
+      <ul class="pitfall-list">
+        <li>每个 chunk 同时喂给三个 Builder，各自用 <code>getattr(delta, field_name, None)</code> 判断有没有自己的值——互不干扰。</li>
+        <li><code>ToolCallsBuilder.append_value</code>：按 <code>tc_delta.index</code> 归位（不足处补占位 dict），<code>arguments</code> 是<strong>字符串分片拼接</strong>；<code>_normalize_tool_calls</code> 再把对象统一成 dict。参数在流中途是半截 JSON，不能提前 <code>json.loads</code>。</li>
+        <li><code>InvokeResult</code>：<code>message</code>（进会话）+ <code>raw</code>（原始响应）；<code>print_raw()</code> 查看原始数据。<code>is_end</code> 统一看 <code>chunk.choices[0].finish_reason</code>。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>排错清单（本章高频坑）</h2>
+      <table class="cmp-table">
+        <tr><th>现象</th><th>根因</th><th>修法</th></tr>
+        <tr><td>终端一片安静，任务却跑完了</td><td>没有传 <code>model_listener</code>（监听器是可选的）</td><td>构造时传 <code>Agent(model_listener=ModelPrinterListener())</code></td></tr>
+        <tr><td>循环提前结束，工具没执行</td><td>误把「正文非空」当退出条件</td><td>判据只能是 <code>registry.invoke(...)</code> 是否为 <code>None</code></td></tr>
+        <tr><td>同一段输出打印两遍</td><td>监听器重复注册（<code>on</code> 只 append 不去重，<code>listen</code> 不幂等）</td><td>注册前查重，或让 <code>listen</code> 幂等</td></tr>
+        <tr><td>进程停不下来、成本飙升</td><td><code>while True</code> 无停止条件，模型持续调工具</td><td>加最大迭代次数 / 超时 / 预算，重复工具调用熔断</td></tr>
+        <tr><td>调用方拿到的是中间旁白</td><td><code>responses</code> 是每轮结果的列表，最终答案在最后一个</td><td>直接返回最终 <code>InvokeResult</code>，轨迹交给监听器/日志</td></tr>
+        <tr><td>想看清「模型到底收到了什么」</td><td>只打印模型输出</td><td><code>session.print_friendly()</code> 看骨架（参数截 70 / 结果截 50 字符），需要细节再 <code>print(session)</code></td></tr>
+      </table>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

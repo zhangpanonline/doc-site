@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 词嵌入：Token ID 的两大局限、用向量描述 Token、嵌入矩阵维度与上下文窗口——互动教学课程">
+  <title>词嵌入 · 互动教学课程（Agents底层逻辑 ac-10）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>词嵌入</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/词嵌入">10.词嵌入</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 Token ID 序列为什么不能直接拿去训练——它既不能表示语义，也不能表达语义之间的数学关系</li>
+        <li>复述「用向量描述 Token」的思路：苹果的 3 维表示、向量空间中「接近」的含义，以及 $苹果\approx Apple$ 这类关系</li>
+        <li>解释词嵌入（word embedding）的定义与「镶嵌、植入」的本意，并说明为什么我们只规定维度个数、不规定每一维的含义与取值</li>
+        <li>分清上下文长度（本次传入的 Token 数）与上下文窗口长度（模型能容纳的最大 Token 数），会用它做长度预算</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把词嵌入的来龙去脉过一遍——细节都在《10.词嵌入》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>Token ID 的两个致命问题</h3>
+        <ul class="pitfall-list">
+          <li><strong>无法表示语义</strong>：Token ID 只是表示一个文字符号，仅靠单个符号无法表示它背后丰富的语义。课件举例：你知道某个 Token 对应的文字 <code>كِتاب</code> 是什么含义吗？</li>
+          <li><strong>无法表达语义之间的数学关系</strong：假设「吃苹果」对应的 Token 序列是 <code>[33256, 11789]</code>，那么 $33256 + 11789$ 是什么含义？答案是：没有任何含义。</li>
+          <li>结论：我们需要<strong>更多的维度</strong>来描述一个 token——这就是词嵌入要解决的问题。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>用向量描述 Token</h3>
+        <ul class="pitfall-list">
+          <li><strong>苹果</strong>可以被描述为：一种食物、和科技有关系、昂贵的——数字化成 3 个维度就是（0.9 可被食用的程度、0.6 科技程度、0.5 消费水平）</li>
+          <li>另一个 Token 的 3 维值是（0.7、0.8、0.3）。把维度值放进三维空间，可以想象这两个 token 在空间里<strong>比较接近</strong>（课件给出可视化工具 <a href="https://projector.tensorflow.org/">projector.tensorflow.org</a>）</li>
+          <li>转成多个维度的数字之后，Token 之间会形成有趣的数学关系：$苹果\approx Apple$、$国王 - 王后 \approx 男人 - 女人$、$男人+医生\approx男医生$、$2×开心≈狂喜$</li>
+          <li>把这个 token 转成多维度数字向量的过程，就叫<strong>词嵌入 word embedding</strong>；嵌入（Embedding）的本意是把低维离散对象「镶嵌、植入」到一个连续高维几何空间里</li>
+          <li>工程上，嵌入就是一张矩阵 $E \in \mathbb{R}^{|V| \times d}$（$|V|$ = 词表大小，$d$ = 每个 Token 的维度）：第 $i$ 行就是 Token ID 为 $i$ 的向量，参数量为 $|V| \times d$。官方定义见 PyTorch <code>nn.Embedding</code> 的权重形状 $(num\_embeddings, embedding\_dim)$</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>维度由谁定？上下文长度与窗口长度</h3>
+        <ul class="pitfall-list">
+          <li><strong>只规定学习方法，永远不要告诉机器答案</strong>：三个问题（规定多少个维度？每个维度表达什么含义？每个维度的值是什么？）的答案是——我们仅规定有多少个维度，让机器在训练过程中为每一个 Token 的每一个维度填写具体的值</li>
+          <li><strong>上下文长度</strong>：传入到 transformer 神经网络的 Token 数量（本次实际用了多少）</li>
+          <li><strong>上下文窗口长度</strong>：transformer 神经网络能容纳的最大 Token 数量（模型的硬上限）</li>
+          <li>两者的关系是「用量 ≤ 容量」：$上下文长度 \le 上下文窗口长度$——超了就会被截断或报错</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《10.词嵌入》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. 为什么分词得到的 Token ID 序列不能直接拿来做训练？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 Token ID 的取值范围超过了词表大小</button>
+            <button class="quiz-option">因为 Token ID 无法还原成原文</button>
+            <button class="quiz-option">因为 Token ID 是字符串，计算机无法参与数值运算</button>
+            <button class="quiz-option">因为 Token ID 只是文字符号的编号：既无法表示语义，也无法表达语义之间的数学关系</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「Token的问题」给出两条根源：<strong>Token ID 无法表示语义</strong>——它只是表示一个文字符号，仅靠单个符号无法表示背后丰富的语义；<strong>Token ID 无法表达语义之间的数学关系</strong>——「吃苹果」对应 <code>[33256, 11789]</code>，而 <code>33256 + 11789</code> 没有任何含义。所以需要「更多的维度」来描述一个 token。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 「词嵌入（word embedding）」指的是下面哪件事？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">给每个 token 在词表里追加一条中文释义</button>
+            <button class="quiz-option">把一段文本压缩成一个唯一的 Token ID</button>
+            <button class="quiz-option">按数值大小给词表里的 Token 排序</button>
+            <button class="quiz-option">把一个 token 转换成多个维度的数字向量</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：「把一个token转换成多个维度的数字向量，这一过程称之为<strong>词嵌入 word embedding</strong>」。嵌入（Embedding）这个词的本意，就是把低维离散对象「镶嵌、植入」到一个连续高维几何空间里。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 「上下文窗口长度」指的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一次对话里用户能输入的字符数上限</button>
+            <button class="quiz-option">本次请求实际传入 transformer 的 Token 数量</button>
+            <button class="quiz-option">transformer 神经网络能容纳的最大 Token 数量</button>
+            <button class="quiz-option">训练语料中句子的平均 Token 数</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「额外的术语」写得很清楚：<strong>上下文长度</strong> = 传入到 transformer 神经网络的 Token 数量；<strong>上下文窗口长度</strong> = transformer 神经网络能容纳的最大 Token 数量。前者是「这次用了多少」，后者是「最多能装多少」。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 课件把「苹果」写成三维向量（0.9 可食用 / 0.6 科技 / 0.5 消费水平）。关于这些维度的含义与数值从哪来，哪个说法正确？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">我们只规定有多少个维度，每一维的具体取值（以及它实际代表什么）由训练过程学习得到</button>
+            <button class="quiz-option">由词表大小决定：词表有多少个 token，每一维就有多少种取值</button>
+            <button class="quiz-option">必须由人逐维规定含义与取值，模型只负责计算</button>
+            <button class="quiz-option">由分词器的匹配顺序决定，与训练无关</button>
+          </div>
+          <div class="quiz-explain" hidden>课件先抛出三个问题（规定每个 token 有多少个维度？每个维度表达什么含义？每个维度的值是什么？），随后给出原则：「<strong>在深度学习中，我们只规定学习方法，永远不要告诉机器答案</strong>」——因此我们仅规定有多少维度，让机器在训练的过程中，为每一个 Token 的每一个维度填写具体的值。「可食用程度 / 科技程度 / 消费水平」只是帮助理解三维表示的举例，不是人工写死的字段。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 「吃苹果」的 Token 序列是 <code>[33256, 11789]</code>。有人算出 33256 + 11789 = 45045，并认为这个数代表「吃苹果」的语义。怎么判断？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">错——Token ID 之间不存在有意义的数学关系，相加得不到任何语义；换成多维度向量后才有可用的数学关系</button>
+            <button class="quiz-option">错，因为两个 Token ID 相加会超出词表范围</button>
+            <button class="quiz-option">对——Token ID 相加就是语义的叠加</button>
+            <button class="quiz-option">对，但需要先做归一化，否则数值太大</button>
+          </div>
+          <div class="quiz-explain" hidden>课件正是用这个例子说明第二条根源：Token ID 无法表达语义之间的数学关系。真正能做数学运算的是向量——$苹果\approx Apple$、$国王 - 王后 \approx 男人 - 女人$、$男人+医生\approx男医生$ 全都建立在「多个维度的数字向量」之上，而不是 Token ID 的算术。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 某模型的上下文窗口长度为 128K，本次请求实际传入 3000 个 Token。此次的上下文长度与上下文窗口长度分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">上下文长度 3000，上下文窗口长度 128K</button>
+            <button class="quiz-option">两者都是 3000</button>
+            <button class="quiz-option">两者都是 128K</button>
+            <button class="quiz-option">上下文长度 128K，上下文窗口长度 3000</button>
+          </div>
+          <div class="quiz-explain" hidden>上下文长度是「本次传进去的 Token 数量」（3000），上下文窗口长度是「模型能容纳的最大 Token 数量」（128K）。两者是「实际用量 ≤ 容量上限」的关系：拿窗口长度当成本次用量来算预算，或在截断时把两者混用，都会算错。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 课件说词嵌入是 transformer 架构前向传播的第一个阶段。分词器给出 <code>[33256, 11789]</code>，经过词嵌入之后，送进后续网络的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两个更大的整数（维度变多但仍是一个数）</button>
+            <button class="quiz-option">整句被压缩成一个向量，序列顺序被丢弃</button>
+            <button class="quiz-option">仍然是 <code>[33256, 11789]</code>，只是数值类型变了</button>
+            <button class="quiz-option">每个 Token ID 被替换成一个多维向量：序列长度不变，每个位置从一个数变成 d 个数</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：Token ID 无法表示语义、也无法表达语义关系，因此需要「更多的维度」来描述一个 token；词嵌入就是把一个 token 转换成多个维度的数字向量。所以 <code>[33256, 11789]</code> 变成「两个 d 维向量组成的序列」——长度还是 2，但每个位置已经是向量，后续阶段（注意力等）才有可运算的语义表示。这也是「前向传播的第一个阶段」的含义。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 课件列出 $国王 - 王后 \approx 男人 - 女人$、$男人+医生\approx男医生$、$2×开心≈狂喜$。这些式子说明什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">变成向量之后，Token 之间的语义关系表现为向量空间中的方向/差值关系，可以做向量运算</button>
+            <button class="quiz-option">只要维度足够多，模型就能直接读出「国王」这个词的文字</button>
+            <button class="quiz-option">这些关系是人手写进模型的规则</button>
+            <button class="quiz-option">Token ID 之间的加减法在词表上恰好成立</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：当我们把 Token 转换成多个维度的数字来表达后，它们之间就可以形成一些有趣的数学关系。嵌入的本意是把低维离散对象「镶嵌、植入」到连续高维几何空间里——语义关系因此变成了几何关系（差值、方向、距离）。这正是后面做语义检索、相似度计算、向量聚类的根基，而这些关系来自训练，不是人工规则。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 团队想用「两个 Token ID 的数值差越小就越相近」来实现近义词检索。判断这个方案：</div>
+          <div class="quiz-options">
+            <button class="quiz-option">可行——差值小说明两个词在语料里出现频率接近</button>
+            <button class="quiz-option">不可行——Token ID 只是符号编号，数值差与语义无关；应当比较它们的嵌入向量（距离/相似度）</button>
+            <button class="quiz-option">可行，只要先对 Token ID 做归一化</button>
+            <button class="quiz-option">不可行，因为从文本拿不到 Token ID</button>
+          </div>
+          <div class="quiz-explain" hidden>课件强调 Token ID 无法表示语义，也无法表达语义之间的数学关系——它只是词表里的一个编号（编号怎么来的见第 07 章：由合并顺序决定），编号之差没有任何语义承诺。而「苹果 ≈ Apple」这类关系只有在多维度向量空间里才成立。所以近义词检索必须先<strong>嵌入</strong>、再比距离/相似度。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0010-词嵌入',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `评审会上有人说：「Token ID 既然是数字，那就有大小和距离——ID 越接近的两个词，语义就越接近；所以把 ID 直接当特征喂给第一层，能省掉一个嵌入层。」请指出这句话错在哪。`,
+              source: `来源：PyTorch 官方文档 torch.nn.Embedding（"A simple lookup table that stores embeddings of a fixed dictionary and size. ... The input to the module is a list of indices, and the output is the corresponding word embeddings."）+ 源课程《10.词嵌入》课件（Token ID 无法表示语义 / 无法表达语义之间的数学关系）https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方把 ID 的定位写得很清楚：它是 <strong>indices</strong>（索引），送进嵌入层之后输出的是 <code>the corresponding word embeddings</code>——ID 的全部作用就是「查到第几行」，行号本身不承载语义。课件给的反例是 <code>[33256, 11789]</code>（吃苹果）：33256 + 11789 得不到任何含义，两个 ID 谁大谁小也与语义无关（词表里 id 的分配顺序由合并顺序决定，见第 07 章）。所谓「ID 接近 = 语义接近」是典型的数字直觉误用。正确链路：ID → 嵌入向量（查表），再在向量空间里比较距离或相似度——Hugging Face 官方博客的说法是「calculating the distance between different embeddings to determine how well the meaning of two sentences match」。`,
+            },
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `产品经理提出需求：把模型每个嵌入维度都标注成人类可读含义（第 1 维=可食用程度、第 2 维=科技程度……），做成一份「可解释性字段报表」给业务方看。请说明这个需求在原理上卡在哪里，以及可解释性该怎么做才靠谱。`,
+              source: `来源：fastText 官方文档 Word representations（"The dimension (dim) controls the size of the vectors, the larger they are the more information they can capture but requires more data to be learned. But, if they are too large, they are harder and slower to train."；"These vectors capture hidden information about a language, like word analogies or semantic."）+ 源课程《10.词嵌入》课件（我们仅规定有多少维度，让机器在训练中为每一维填写具体的值）https://fasttext.cc/docs/en/unsupervised-tutorial.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方文档把 dim 描述为一个<strong>控制向量大小的参数</strong>：你能决定的是维度个数（fastText 默认 100，常用 100–300 区间），而每一维到底编码了什么，是训练过程在大量语料上得到的副产物——官方原文称之为 hidden information（隐藏信息），从不承诺可读标签。课件里「维度1=可食用程度 0.9」只是为讲清「用多个维度描述 token」而做的类比，课件随即明确：我们仅规定有多少个维度，让机器在训练过程中为每一个 Token 的每一个维度填写具体的值（「只规定学习方法，永远不要告诉机器答案」）。所以逐维贴可读标签的报表在原理上不成立。可解释性只能间接做：查最近邻 token、探测某些方向/维度与语义的相关性、做消融对比——给业务方的应该是「相似样本簇」这类证据，而不是字段级释义。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `请用一句话说清「嵌入层」在实现上到底是什么，并写出它的权重形状：词表大小为 |V|、每个 Token 用 d 维向量表示时，这个矩阵是几行几列？Token ID 序列 <code>[33256, 11789]</code> 经过它之后，张量形状怎么变？`,
+              source: `来源：PyTorch 官方文档 torch.nn.Embedding（"A simple lookup table that stores embeddings of a fixed dictionary and size."；"weight (Tensor) – the learnable weights of the module of shape (num_embeddings, embedding_dim)"；"Shape: Input: (*), IntTensor or LongTensor of arbitrary shape containing the indices to extract; Output: (*, H), where * is the input shape and H = embedding_dim"）https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《10.词嵌入》课件（把一个 token 转换成多个维度的数字向量）`,
+              breakdown: `官方定义：嵌入层就是一张 <strong>simple lookup table</strong>——输入是索引，输出是索引对应的向量。其中 <code>num_embeddings</code> = 词表大小 |V|，<code>embedding_dim</code> = 每个 Token 的维度 d，权重形状为 <code>(|V|, d)</code>，官方标注为 learnable weights（可学习权重，训练中更新）。放到本课语境：|V| 行对应词表里的每个 Token ID，第 i 行就是 ID=i 的嵌入向量，参数量 = |V| × d（例如 |V|=5 万、d=768 时约 3840 万个数）。形状上，输入 <code>[33256, 11789]</code> 是 (2,)，输出是 <strong>(2, d)</strong>——序列长度不变，每个位置从「一个数」升级为「d 个数」。这正是课件那句「把一个 token 转换成多个维度的数字向量」在工程上的样子。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `官方文档说维度 dim 越大「能捕获更多信息」但「需要更多数据才能学出来」，太大还会更难更慢训练。请解释这两句话，并说明它和课件「我们只规定有多少维度」是什么关系。`,
+              source: `来源：fastText 官方文档 Word representations（"The dimension (dim) controls the size of the vectors, the larger they are the more information they can capture but requires more data to be learned. But, if they are too large, they are harder and slower to train. By default, we use 100 dimensions, but any value in the 100-300 range is as popular."）https://fasttext.cc/docs/en/unsupervised-tutorial.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《10.词嵌入》课件（仅规定有多少维度，值由训练填写）`,
+              breakdown: `课件说「我们仅规定有多少维度即可，让机器在训练过程中为每一个 Token 的每一个维度填写具体的值」——落到工程上，这个「规定」的动作就是设 dim 这个超参：你决定的是<strong>容量</strong>（d 个数），不是<strong>内容</strong>（d 个数各是什么）。官方给出的权衡是：d 越大，向量能承载的信息越多，但需要更多数据去学，而且过大之后更难、更慢训练。所以维度不是可以凭感觉拉满的参数：语料小的时候把 d 设得很大，多数维度根本学不出东西（或直接过拟合）；d 太小则语义表达不足，近义区分做不出来。几个真实锚点：fastText 默认 100、常用 100–300；Hugging Face 官方博客里句子嵌入的例子是 384 维；OpenAI 的 text-embedding-3-small 返回 1536 维（Cookbook 里 <code>len(embedding)</code> 的实测输出）。结论：维度数的选择永远是「表达力 ↔ 数据量 / 计算量」的权衡。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 帮团队写了「文本语义相似度」的第一版代码：先用分词器拿到 <code>ids = tokenizer.encode(text)</code>（例如 <code>[33256, 11789]</code>），然后 <code>vec = np.array(ids, dtype=np.float32)</code>，再和另一段文本的 id 数组算余弦相似度，输出 0.93 就认为「两段文本语义高度相似」。请审查这段代码。`,
+              source: `来源：Hugging Face 官方博客 Getting Started With Embeddings（"Since this list captures the meaning, we can do exciting things, like calculating the distance between different embeddings to determine how well the meaning of two sentences match."）+ PyTorch 官方文档 torch.nn.Embedding（"The input to the module is a list of indices, and the output is the corresponding word embeddings."）+ OpenAI Cookbook Semantic text search using embeddings（"Here we compare the cosine similarity of the embeddings of the query and the documents, and show top_n best matches."）https://huggingface.co/blog/getting-started-with-embeddings · https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html · https://cookbook.openai.com/examples/Semantic_text_search_using_embeddings · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `两处硬伤。① <strong>id 数组不是向量</strong>：官方明确说嵌入层的输入是 indices、输出才是对应的向量——<code>[33256, 11789]</code> 只是两个坐标编号，不是「两个 token 的语义表示」，对它做余弦相似度等于在比编号。② <strong>形状根本对不上</strong>：两段长度不同的文本 id 数组形状是 (2,) 和 (5,)，无法逐元素比较；长度碰巧相同也只是巧合，相似度数值没有任何语义承诺。官方给出的正确判据是「比较 embeddings 之间的距离」：先各自编码成定长向量（例如 384 维的句子向量、或 1536 维的 embedding API 输出），再算距离/余弦相似度——OpenAI Cookbook 的语义检索示例就是这么做的（对 query 与 documents 的 embedding 算余弦相似度、取 top_n）。正确改法：<code>vec = model.encode(text)</code> 或调用 embedding 接口，拿到定长向量后再算相似度；同时要固定同一个模型与同一版本，否则向量空间不可比。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `团队要用嵌入向量做「文档语义检索」（RAG 的召回层）：语料约 5 万条短文本，显存与延迟预算有限。请给出选择维度 d 的依据，并说明为什么 d 既不是越大越好、也不是越小越好。`,
+              source: `来源：fastText 官方文档 Word representations（"The dimension (dim) controls the size of the vectors, the larger they are the more information they can capture but requires more data to be learned. But, if they are too large, they are harder and slower to train."）+ Hugging Face 官方博客 Getting Started With Embeddings（"an embedding of the sentence could be represented in a vector space, for example, with a list of 384 numbers"）+ OpenAI Cookbook Using embeddings（text-embedding-3-small 的 <code>len(embedding)</code> 实测输出 1536）https://fasttext.cc/docs/en/unsupervised-tutorial.html · https://huggingface.co/blog/getting-started-with-embeddings · https://cookbook.openai.com/examples/using_embeddings · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `三个官方锚点先把「量级」定住：fastText 默认 100 维、常用 100–300，并明确 d 越大信息容量越大但需要更多数据、太大更难更慢；Hugging Face 博客的句子嵌入例子是 384 维；OpenAI 的 text-embedding-3-small 输出 1536 维。选型按四条判据走：① <strong>语义容量</strong>——检索要区分的细粒度越细（近义改写、领域术语），越需要更大的 d；② <strong>数据量是否撑得住</strong>——官方原话是更大的向量「requires more data to be learned」，5 万条短文本属于中小规模，强行上超大维度容易学不充分；③ <strong>成本随 d 线性增长</strong>——向量库存储与检索计算是 n × d 个浮点数，5 万条 × 1536 与 × 384 差 4 倍，直接体现在内存与延迟上；④ <strong>下游是否锁定现成模型</strong>——如果沿用某个嵌入 API 或开源模型，维度是它给定的，你只能在模型之间选，不能自己拍一个数。落地建议：先用现成模型的默认维度跑一版 baseline，实测召回率 + P95 延迟 + 向量库占用，再决定要不要换更大/更小的模型；同时固定版本，换模型必须全量重嵌入——因为不同模型的向量空间不可比。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `一个 Agent 要把「用户问题 + 检索到的 8 个文档片段 + 工具返回的 JSON」拼成一次请求发给模型。请说清「上下文长度」与「上下文窗口长度」在这个工程里的区别，并给出你会怎么用这两个量做预算与截断。`,
+              source: `来源：Microsoft Learn Azure AI Foundry 官方文档 Models（"The Context Window column lists the total number of tokens that a model can process in a request."；"context refers to the number of input tokens in an individual request. It doesn’t refer to the model’s maximum context window or the combined number of input and output tokens."；"Input tokens, generated output tokens, and reasoning tokens share the available context budget. More input leaves fewer tokens for generation."）+ 源课程《10.词嵌入》课件（上下文长度 / 上下文窗口长度）https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/models · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `课件给的定义：<strong>上下文长度</strong> = 传入到 transformer 神经网络的 Token 数量（这次实际拼进去多少）；<strong>上下文窗口长度</strong> = transformer 神经网络能容纳的最大 Token 数量（模型的硬上限）。官方文档从模型规格的角度把上限说成「模型在一次请求里能处理的 token 总数」，并强调输入 token、生成的输出 token 与推理 token 共享同一份预算——「More input leaves fewer tokens for generation」，输入越多，留给生成的空间越小。工程做法：① 先查目标模型的窗口上限 W；② 按「系统提示 + 对话历史 + 检索片段 + 工具结果 + 预留输出」切预算，把本次要发的消息算成 L；③ 保证 L + 期望输出 ≤ W，并留安全余量；④ 超预算时按优先级裁剪：先砍检索得分最低的片段、再压历史（摘要/滑窗），最后才动系统提示与用户问题。课件那条「上下文长度 ≤ 上下文窗口长度」是唯一硬约束，超了要么报错要么被静默截断——评审里两个词混用，预算就必然算错。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 25 分钟内做一个「Token → 向量」的小实验：自建一张小嵌入表，把一段 Token ID 序列查表成向量序列，并用距离说明「随机初始化的嵌入没有语义」。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '手写 5–10 个 Token 的小词表 → 建一张 |V| × d 的随机初始化嵌入表（d 取 4 或 8 便于打印）→ 把「吃苹果」的 ID 序列 [33256, 11789] 查表成 (2, d) 的向量序列 → 对任意两个 token 的向量算欧氏距离与余弦相似度 → 再用一个训练好的句子嵌入模型对两句近义/无关文本各编码一次并比距离。',
+                accept: ['嵌入表形状 = |V| × d，能指出第 i 行对应 Token ID = i', '长度 2 的 ID 序列查表后得到 (2, d) 的向量序列（序列长度不变，每个位置变成 d 个数）', '能说明随机初始化时向量距离没有语义意义——向量要靠训练学出来（官方原话：requires more data to be learned）', '换成训练好的模型后，近义句的距离小于无关句的距离'],
+              },
+              source: `任务基于《10.词嵌入》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 先拿一份小词表（或用第 07 章的分词结果），列出 5–10 个 Token ID；② 用 <code>np.random.randn(|V|, d)</code> 造嵌入表，并记住第 i 行就是 ID=i 的向量；③ 对 <code>[33256, 11789]</code> 做「查表」得到形状 (2, d) 的数组——这一步等价于 <code>nn.Embedding</code> 官方说的 lookup table；④ 对任意两个 token 的向量算距离/余弦，观察随机表下这些数值与语义无关，因为向量还没训练（fastText 官方说向量要「requires more data to be learned」）；⑤ 换成训练好的句子嵌入模型（例如 sentence-transformers 的 384 维向量）对「今天天气不错」与「外面阳光很好」/「今天天气不错」与「库存报表要重跑」各编一次，比距离，能看到近义更近。常见坑：把 Token ID 直接当向量用（和第 9 题同一个坑）；把「第 i 行」错当成「第 i 个维度」；把 |V| 理解成句子里 token 的个数（|V| 是词表大小，不是序列长度）；用随机表的结果就下结论说「嵌入没用」——随机初始化本来就无意义，训练之后才有语义。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://fasttext.cc/docs/en/unsupervised-tutorial.html">fastText 官方文档 Word representations</a> · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html">PyTorch nn.Embedding</a> · <a href="https://huggingface.co/blog/getting-started-with-embeddings">Hugging Face《Getting Started With Embeddings》</a> · <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/models">Azure AI Foundry 模型文档（Context Window）</a></li>
+        <li><strong>动手看看</strong>：<a href="https://projector.tensorflow.org/">TensorFlow Embedding Projector</a>——把词向量投到三维空间，直观感受「语义相近的 token 在空间里靠近」。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/词嵌入速查表.html">词嵌入速查表</a>——核心术语、Token ID vs 向量、嵌入矩阵维度与上下文窗口一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/词嵌入">10.词嵌入</a> · 下一课 <a href="/agents/Agents底层逻辑/注意力机制">11.注意力机制</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

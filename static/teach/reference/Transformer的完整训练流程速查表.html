@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transformer的完整训练流程速查表 · 参考手册</title>
+  <meta name="description" content="Transformer的完整训练流程速查表 · 可打印参考手册：配合《Transformer的完整训练流程互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>Transformer的完整训练流程速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0012-Transformer的完整训练流程.html">《Transformer的完整训练流程互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>单个 Transformer Block 的六个阶段（顺序不能乱）</h2>
+      <table class="cmp-table">
+        <tr><th>#</th><th>阶段</th><th>作用 / 要点</th><th>输出形状</th></tr>
+        <tr><td>①</td><td>多头注意力（含 RoPE）</td><td>让每个位置吸收别的位置的信息；现代模型在此注入位置信息，算法是<strong>旋转位置编码 RoPE</strong>，作用于 Q、K，时机在多头切分之后、注意力得分计算之前</td><td>$4×6$</td></tr>
+        <tr><td>②</td><td>残差连接 Add</td><td>把注意力阶段的残差与其输入相加，原信息原样带下去</td><td>$4×6$</td></tr>
+        <tr><td>③</td><td>归一化 Norm</td><td>用 <strong>RMSNorm</strong>（均方根归一化）把大部分数据归到 $[-3,3]$，防梯度爆炸/消失</td><td>$4×6$</td></tr>
+        <tr><td>④</td><td>前馈网络 FFN</td><td>提升复杂度、引入非线性；FFN 权重矩阵的不同行（神经元）相当于存了不同「知识片段」，上下文命中即激活（如 DeepSeek 用 MoE 替换/扩展这一层）</td><td>$4×6$</td></tr>
+        <tr><td>⑤</td><td>残差连接 Add</td><td>把 FFN 阶段的残差与其输入相加</td><td>$4×6$</td></tr>
+        <tr><td>⑥</td><td>归一化 Norm</td><td>再一次 RMSNorm，单个 Block 全部完成</td><td>$4×6$</td></tr>
+      </table>
+      <p><strong>形状契约</strong>：一个 block 进 $4×6$、出 $4×6$。所以内部怎么改（例如把 FFN 换成 MoE）对外都成立，才能把几十层串起来（例：DeepSeek v4 pro 有 61 个 Block）。</p>
+    </section>
+
+    <section>
+      <h2>从隐藏状态到「下一个 token 的概率」</h2>
+      <pre>隐藏状态 H (4×6)
+   ↓ 线性变换层（单层全连接，y = xW）
+logits (4×120000)     ← 120000 = 词表大小
+   ↓ Softmax
+下一个 token 的概率分布
+
+权重矩阵形状：x(4×6) · W(6×120000) = 4×120000
+参数量：6 × 120000 = 720000（不含偏置）
+PyTorch 等价写法：nn.Linear(6, 120000)</pre>
+      <dl class="term-grid">
+        <dt>每一行的含义</dt>
+        <dd>该行表达「对于当前上下文，下一个 token 的可能性」——数值越大越可能。</dd>
+        <dt>Softmax 之后</dt>
+        <dd>得到归一化的概率分布（和为 1），才是可采样的那一张分布。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>自监督训练闭环</h2>
+      <pre>原始语料
+  → 切出上下文
+  → 标签 = 同一序列错开一位的下一个 token（无需人工标注）
+  → 前向传播得到预测分布
+  → 与标签比较算损失
+  → 反向传播，更新 Transformer 里所有参数</pre>
+      <p><strong>「上下文」是怎么攒出来的</strong>：把 block 输出再传给下一个 block，循环堆叠；注意力把别的位置的信息混进来、残差把原信息带下去，于是越靠后的层，每一行包含的上下文信息越全。</p>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <ul class="pitfall-list">
+        <li>把残差与归一化的<strong>顺序</strong>记反（本课件的顺序是 注意力 → Add → Norm → FFN → Add → Norm）</li>
+        <li>以为 RoPE 作用在注意力计算之后（实际是切分多头之后、算得分之前，作用于 Q/K）</li>
+        <li>把「形状不变」理解成「内容不变」——形状是契约，内容每层都在被改写</li>
+        <li>算权重参数量时忘了它是 $6×120000$ 而不是 $4×120000$（用 $y=xW$ 的写法，$W$ 的左边是输入维度）</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

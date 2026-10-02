@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · MCP Client：以客户端身份连接 MCP 服务器，走完 initialize → tools/list → tools/call，并把 stdio/HTTP 连接与同步调用封装成 MCPClient——互动教学课程">
+  <title>MCP Client · 互动教学课程（Agents底层逻辑 ac-25）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>MCP Client</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/MCP-Client">25.MCP Client</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>以客户端身份连上 MCP 服务器，并按 <code>initialize → tools/list → tools/call</code> 的顺序完成第一次工具发现与调用</li>
+        <li>说清 stdio 与 Streamable HTTP 两种传输的连接方式差异，以及为什么一个返回二元组、一个返回三元组</li>
+        <li>用 <code>@asynccontextmanager</code> 把「连接 + 初始化」封装成 <code>connect_mcp</code>，再向上长出 <code>MCPClient</code> 的多服务器管理能力</li>
+        <li>解释 <code>run_async</code> 为什么要在独立线程里跑 <code>asyncio.run</code>，并判断什么时候不该做同步封装</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把本章的骨架过一遍——细节都在《25.MCP Client》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>一次客户端会话的固定三步</h3>
+        <ul class="pitfall-list">
+          <li>装依赖：<code>!uv add mcp==1.28.1</code>（python-sdk 的 v1.28.1）</li>
+          <li><strong>第 1 步 initialize</strong>：<code>await session.initialize()</code>——协商协议版本与能力，官方规范把它定为客户端与服务器之间的<strong>第一次交互</strong></li>
+          <li><strong>第 2 步 发现工具</strong>：<code>tools = await session.list_tools()</code>（协议方法 <code>tools/list</code>），打印时用 <code>tools.model_dump_json(indent=2, ensure_ascii=False)</code></li>
+          <li><strong>第 3 步 调用工具</strong>：<code>await session.call_tool(name="get_current_time", arguments={"timezone": "Asia/Shanghai"})</code>（协议方法 <code>tools/call</code>）</li>
+          <li>三步都发生在同一个会话里：<code>async with</code> 连接 → <code>async with ClientSession(read, write)</code> → 拿到 <code>session</code> 后才能做后两步</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>两种传输：stdio 与 Streamable HTTP</h3>
+        <ul class="pitfall-list">
+          <li><strong>stdio</strong>：客户端把服务器<strong>作为子进程启动</strong>，用标准输入输出传换行分隔的 JSON-RPC 消息。参数用 <code>StdioServerParameters(command="uvx", args=["mcp-server-time"])</code>，连接写 <code>async with stdio_client(server_params) as (read, write)</code>——<strong>二元组</strong></li>
+          <li><strong>Streamable HTTP</strong>：服务器是独立进程、可服务多个客户端，客户端连的是一个 <strong>MCP endpoint URL</strong>。写法是 <code>async with streamable_http_client("https://learn.microsoft.com/api/mcp") as (read_stream, write_stream, _)</code>——<strong>三元组，第三个值用 <code>_</code> 丢掉</strong>，这正是本章最常见的抄错点</li>
+          <li>两种传输拿到 <code>read / write</code> 之后的代码完全一样：<code>ClientSession(read, write)</code> → <code>initialize()</code>；差别被 <code>connect_mcp</code> 吃掉</li>
+          <li>本章实测对象：本地 <code>uvx mcp-server-time</code>（工具 <code>get_current_time</code>、<code>convert_time</code>）与微软托管的 <code>https://learn.microsoft.com/api/mcp</code>（工具 <code>microsoft_docs_search</code>、<code>microsoft_code_sample_search</code>、<code>microsoft_docs_fetch</code>）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>三层封装：connect_mcp → 单服务器函数 → MCPClient</h3>
+        <ul class="pitfall-list">
+          <li>配置驱动：<code>mcp = {"servers": {"time": {"type": "stdio", "command": "uvx", "args": [...]}, "microsoft-learn": {"type": "http", "url": "..."}}}</code>，每个服务器带一个 <code>type</code> 字段</li>
+          <li><strong>第一层 <code>connect_mcp(server_config)</code></strong>：<code>@asynccontextmanager</code> 装饰的异步生成器，按 <code>type</code> 选传输、建会话、<code>initialize()</code>，然后 <code>yield session</code>；<strong>不认识就 <code>raise ValueError</code></strong>。</li>
+          <li><strong>第二层 <code>list_server_tools</code> / <code>call_server_tool</code></strong>：<code>async with connect_mcp(config) as session:</code> 一行进上下文，直接 <code>return await session.list_tools()</code> / <code>session.call_tool(tool_name, arguments or {})</code></li>
+          <li><strong>第三层 <code>MCPClient</code></strong>：<code>__init__</code> 存下 <code>config["servers"]</code>；<code>alist_tools()</code> 遍历所有服务器，产出 <code>[{"server": 服务器名, "tools": 结果}]</code>；<code>acall_tool(server_name, tool_name, arguments)</code> 按名字取配置再调用</li>
+          <li><strong>同步封装 <code>run_async(coro)</code></strong>：新开 <code>threading.Thread</code> 在里面 <code>asyncio.run(coro)</code>，<code>t.join()</code> 后取结果或重新抛出异常。原因：<code>asyncio.run()</code> <strong>不能在已有事件循环运行的线程里调用</strong>，而 Jupyter 自己维护着一个事件循环；每个线程有独立事件循环，所以新线程里是安全的</li>
+          <li>最终 <code>MCPClient.list_tools()</code> / <code>call_tool()</code> 就是「<code>run_async</code> 包异步方法」的同步皮；本章工程变更 = <strong>新增 1 个文件 <code>agent/tool/use_mcp.py</code>、修改 0 个文件</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《25.MCP Client》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 客户端连上一个 MCP 服务器后，做「工具发现 + 工具调用」之前必须先完成哪一步？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先 <code>await session.initialize()</code>，完成协议版本与能力协商</button>
+            <button class="quiz-option">什么都不用做，<code>ClientSession</code> 构造完就能直接调用工具</button>
+            <button class="quiz-option">先 <code>session.list_tools()</code>，拿到工具名之后才能初始化</button>
+            <button class="quiz-option">先调用一次 <code>tools/list</code> 之外的 ping 把服务器唤醒</button>
+          </div>
+          <div class="quiz-explain" hidden>课件里每一段示例都严格按 <code>await session.initialize()</code> → <code>await session.list_tools()</code> → <code>await session.call_tool(...)</code> 的顺序写，注释直接标了 <code># initialize</code> / <code># tools/list</code> / <code># tools/call</code>。官方规范也把初始化阶段定为「客户端与服务器之间的<strong>第一次交互</strong>」。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. HTTP 版本的示例为什么把连接写成 <code>as (read_stream, write_stream, _)</code>，而不是像 stdio 那样只接两个值？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为第三个值是服务器的会话 id，必须取出来手动带去下一次请求</button>
+            <button class="quiz-option">因为 stdio 版本其实也有第三个值，只是课件故意省略了</button>
+            <button class="quiz-option">因为 HTTP 需要额外接收一个 HTTP 状态码，用来判断请求是否成功</button>
+            <button class="quiz-option">因为 <code>streamable_http_client</code> 解出三个值，第三个本章用不到，约定俗成用 <code>_</code> 丢弃</button>
+          </div>
+          <div class="quiz-explain" hidden>课件把两个传输的解包形状并排展示：<code>stdio_client(params) as (read, write)</code> 对 <code>streamable_http_client(url) as (read_stream, write_stream, _)</code>。<strong>两者后面接 <code>ClientSession(read, write)</code> 的写法完全一致</strong>，区别只在传输层——第三个值不是状态码、也不是必须手动传的会话 id，用 <code>_</code> 丢掉即可。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 用 stdio 传输时，配置里的 <code>command: "uvx"</code> + <code>args: ["mcp-server-time"]</code> 实际意味着什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">客户端先用 <code>uvx</code> 把工具注册进当前进程，再直接在本进程内调用，不产生新进程</button>
+            <button class="quiz-option">客户端以这两个值<strong>启动一个子进程</strong>当 MCP 服务器，再用它的标准输入输出收发 JSON-RPC 消息</button>
+            <button class="quiz-option">这只是给人看的注释，真正的地址由 mcp 包内置决定</button>
+            <button class="quiz-option">客户端去网上找一个叫 uvx 的公共 MCP 服务，用 <code>mcp-server-time</code> 当 API 路径</button>
+          </div>
+          <div class="quiz-explain" hidden>课件的注释写着 <code># Using uv to run the server</code>：stdio 传输下<strong>客户端负责把服务器拉起来</strong>，官方规范的原话是「The client launches the MCP server as a subprocess」，消息走 <code>stdin</code>/<code>stdout</code>。<code>uvx</code> 在这里只是「按需运行一个 Python 工具包」的启动器，不是网络服务名。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 下面这段配置传给 <code>connect_mcp</code>，会发生什么？<br><code>{"type": "sse", "url": "https://example.com/mcp"}</code></div>
+          <div class="quiz-options">
+            <button class="quiz-option">命中 <code>else</code> 分支，抛出 <code>ValueError: 不支持的服务器类型: sse</code></button>
+            <button class="quiz-option">自动降级走 stdio，把 <code>url</code> 当 <code>command</code>、没有 <code>args</code> 就当空列表</button>
+            <button class="quiz-option">自动降级走 HTTP，把 <code>url</code> 交给 <code>streamable_http_client</code></button>
+            <button class="quiz-option">返回 <code>None</code>，表示这个服务器被跳过，其他服务器照常遍历</button>
+          </div>
+          <div class="quiz-explain" hidden><code>connect_mcp</code> 只认两个分支：<code>if type == "stdio"</code> 与 <code>elif type == "http"</code>，其余一律走 <code>else: raise ValueError(f"不支持的服务器类型: {server_config['type']}")</code>。更值得注意的是<strong>抛出时机</strong>：这个异常发生在 <code>MCPClient.alist_tools()</code> 的 <code>for</code> 循环里，会<strong>打断整轮遍历</strong>——一个配置写错的服务器，能让其他本来正常的服务器也拿不到工具列表。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. <code>tools = await session.list_tools()</code> 之后，<code>tools</code> 身上最方便用来打印的工具发现结果的方法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>json.dumps(tools)</code>——直接序列化这个结果对象</button>
+            <button class="quiz-option"><code>print(tools)</code>——<code>__str__</code> 会输出完整 JSON</button>
+            <button class="quiz-option"><code>tools.content[0].text</code>——工具列表就装在 <code>content</code> 里</button>
+            <button class="quiz-option"><code>tools.model_dump_json(indent=2, ensure_ascii=False)</code>——Pydantic 模型序列化，中文不被转义</button>
+          </div>
+          <div class="quiz-explain" hidden>课件在 stdio、HTTP、封装后三个小节的示例里，打印一律用 <code>tools.model_dump_json(indent=2, ensure_ascii=False)</code>——说明 <code>list_tools()</code> 返回的是 <strong>Pydantic 模型结果对象</strong>，<code>model_dump_json</code> 是它的正规出口；<code>ensure_ascii=False</code> 是为了中文描述不被写成 <code>\uXXXX</code>。<code>json.dumps</code> 不认识这个类型会直接报错；<code>content[0].text</code> 是 <strong>tools/call 结果</strong>的形状（工具执行产出的内容），两个结果对象的字段完全不同。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 为什么 <code>run_async(coro)</code> 要专门开一个线程，而不是在 <code>MCPClient.list_tools()</code> 里直接 <code>asyncio.run(self.alist_tools())</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 Jupyter 自身维护着事件循环，<code>asyncio.run()</code> 在同一线程里已有循环运行时<strong>不允许被调用</strong>；新线程有自己的事件循环，所以安全</button>
+            <button class="quiz-option">因为 <code>asyncio.run</code> 只接受协程函数、不接受协程对象，需要线程来包装</button>
+            <button class="quiz-option">因为多线程能并行访问多个 MCP 服务器，速度更快</button>
+            <button class="quiz-option">因为 <code>threading</code> 可以捕获并重新抛出异常，而 <code>asyncio.run</code> 会吞掉异常</button>
+          </div>
+          <div class="quiz-explain" hidden>课件把原因写得很直白：<code>asyncio.run()</code>「要求在调用时没有其他事件循环在运行」，而「Jupyter 自身维护了一个事件循环，直接调用会报错」；解决方法是利用 <code>threading</code> 在<strong>独立线程</strong>中运行，「每个线程拥有自己的事件循环，互不干扰」。注意第 1 个选项是错的：<code>run_async</code> 里 <code>t.start()</code> 之后立刻 <code>t.join()</code>，是<strong>串行等待</strong>，并没有并发。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 只想调用 time 服务器上的一个工具，却有 300 个 MCP 服务器配置在 <code>mcp["servers"]</code> 里。用课件的 <code>MCPClient</code>，一次 <code>acall_tool("time", ...)</code> 大概要付出什么连接成本？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">1 次 <code>connect_mcp</code>——<code>acall_tool</code> 只按 <code>server_name</code> 取一个配置，连接、初始化、调用、关闭都在这一次上下文里完成</button>
+            <button class="quiz-option">取决于 <code>type</code>：stdio 要连 300 次，http 连 1 次</button>
+            <button class="quiz-option">0 次——配置在 <code>__init__</code> 时就已经全部连好并缓存了 session</button>
+            <button class="quiz-option">300 次 <code>connect_mcp</code>——<code>acall_tool</code> 也会先把所有服务器连一遍</button>
+          </div>
+          <div class="quiz-explain" hidden><code>acall_tool</code> 的实现是 <code>config = self.servers[server_name]</code> 然后 <code>async with connect_mcp(config) as session: return await session.call_tool(...)</code>——<strong>按名字取一个配置，只连这一个</strong>，<code>async with</code> 退出时连接关闭。代价是<strong>每次调用都要重连并重新 initialize</strong>（stdio 还要重启子进程）；遍历所有服务器的只有 <code>alist_tools()</code>，它才是 300 次那一头。这也解释了为什么工具列表往往要缓存下来复用，而不是每次问模型前都重刷。<code>__init__</code> 只存字典、不建连接——第 3 个选项描述的是一个并不存在的实现。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 用 HTTP 服务器实测时，模型编了一个不存在的工具名（例如把 <code>microsoft_docs_search</code> 写成 <code>microsoft_search</code>）。按 MCP 官方规范，客户端可能看到哪两种截然不同的结果？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一定是 HTTP 404，客户端要自己解析状态码</button>
+            <button class="quiz-option">只会抛 <code>ValueError</code>，因为服务器类型对不上</button>
+            <button class="quiz-option">只会返回空字符串，模型据此判断工具不存在</button>
+            <button class="quiz-option">要么是 JSON-RPC <strong>协议错误</strong>（<code>error.message</code> 形如 <code>Unknown tool: ...</code>），要么是 <strong>工具执行错误</strong>（结果里 <code>isError: true</code>、错误文本在 <code>content</code> 中）——取决于服务器把「工具不存在」报在哪一层</button>
+          </div>
+          <div class="quiz-explain" hidden>MCP 规范把错误分成两套机制：<strong>协议错误</strong>走标准 JSON-RPC error（示例给的正是 <code>Unknown tool: invalid_tool_name</code>，code <code>-32602</code>）；<strong>工具执行错误</strong>走工具结果里的 <code>isError: true</code>。本章实测 mcp-server-time 时，<code>call_tool(name="no_such_tool")</code> 得到的是后一种：<code>isError: true</code> + 文本 <code>Error processing mcp-server-time query: Unknown tool: no_such_tool</code>，<strong>并不抛异常</strong>。客户端封装时如果不检查 <code>isError</code>，就会把「调用失败」当正常结果回灌给模型——反过来，这也恰好是让模型自己纠错的机会。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 队友说：「既然 <code>run_async</code> 能把异步包成同步，那我在 <code>Agent</code> 的工具执行函数里也套一层，工具就能同步调 MCP 了。」Review 这个方案，最大的问题是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有大问题，只是每次调用慢一点，可以接受</button>
+            <button class="quiz-option"><code>run_async</code> 无法传递 <code>dict | None</code> 这种可选参数，工具调用一定失败</button>
+            <button class="quiz-option"><code>threading.Thread</code> 是线程不安全的，会破坏 <code>MCPClient</code> 的 <code>servers</code> 字典</button>
+            <button class="quiz-option">工具函数已经在 Agent 的事件循环里执行，再开线程 + <code>asyncio.run</code> 属于绕路：应直接用 <code>await</code>；而且「同步皮」会丢掉取消、超时与共享连接的能力</button>
+          </div>
+          <div class="quiz-explain" hidden><code>run_async</code> 的存在是有明确场景的：<strong>在已经有事件循环的环境（Jupyter）里，为「不方便写 await 的调用方」提供同步入口</strong>。Agent 的工具执行链路本身就在异步上下文里，直接 <code>await session.call_tool(...)</code> 才是正解；套一层线程 + <code>asyncio.run</code> 等于把已经异步的东西搬去别的线程再搬回来，白白付出线程创建、事件循环创建与跨线程同步的开销。<br>更实质的损失是<strong>语义</strong>：课件的 <code>run_async</code> 里是 <code>t.join()</code> ——<strong>不能取消、不带超时</strong>，而 MCP 规范明确建议「为所有发出的请求设置超时」；同时每次 <code>run_async</code> 都新建事件循环，无法复用一条长连接，也没法把服务器的 progress 通知、取消通知接回来。第 3 个选项不成立：它只读字典、不写；第 4 个选项也不成立：<code>run_async</code> 收的是协程，参数早就绑定好了。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0025-MCP-Client',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `同事说：「<code>tools/list</code> 一次就把服务器的工具全拿到了，我只要在启动时调一次，之后这个列表永远是准的。」让你 review 这句话。你会指出哪两个坑？`,
+              source: `来源：MCP 官方规范 Tools（"To discover available tools, clients send a <code>tools/list</code> request. This operation supports pagination."；"When the list of available tools changes, servers that declared the <code>listChanged</code> capability SHOULD send a notification"）https://modelcontextprotocol.io/specification/2025-06-18/server/tools · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `第一个坑：<strong><code>tools/list</code> 是分页接口</strong>——请求带 <code>cursor</code>，响应带 <code>nextCursor</code>（规范原文 "This operation supports pagination"）。课件的 <code>await session.list_tools()</code> 只演示了不带游标的一次调用；工具多的服务器上，你以为的「全量列表」可能只是第一页，剩下的工具模型永远看不见。<br>第二个坑：<strong>列表会变</strong>。服务器声明了 <code>listChanged</code> 就会在工具变动时发 <code>notifications/tools/list_changed</code>（规范原文 "servers that declared the <code>listChanged</code> capability SHOULD send a notification"）。只缓存一次、不监听、也不按需重取，就会一直拿着一份过期列表——模型看到的是早就不存在的工具，或者错过刚上线的工具。<br>顺带第三个更隐蔽的：本章 <code>MCPClient.alist_tools()</code> 是「遍历服务器、每个连一次、各取一次」，<strong>它没有翻页、也没有订阅通知</strong>——要用在生产里，至少得把「缓存 + TTL / list_changed 重取」补上，并显式处理 <code>nextCursor</code>。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `课件里每一步连接后都先写 <code>await session.initialize()</code>。请讲清楚：这一次调用在协议层到底做了什么？为什么 <code>list_tools()</code> 不能抢在它前面？`,
+              source: `来源：MCP 官方规范 Lifecycle（"The initialization phase MUST be the first interaction between client and server. During this phase, the client and server: Establish protocol version compatibility / Exchange and negotiate capabilities / Share implementation details"；"The client SHOULD NOT send requests other than pings before the server has responded to the <code>initialize</code> request."）https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《25.MCP Client》课件（stdio 与 HTTP 示例中的 <code># initialize</code> 注释）`,
+              breakdown: `规范把连接生命周期划成<strong>初始化 → 运行 → 关闭</strong>三段，并规定初始化阶段「MUST be the first interaction between client and server」。这一次往返里交换三样东西：<br>① <strong>协议版本</strong>——客户端报出自己支持的 <code>protocolVersion</code>，服务器若不支持就回一个它支持的版本；客户端不支持对方给的版本「SHOULD disconnect」。<br>② <strong>能力</strong>——客户端声明 <code>roots</code> / <code>sampling</code> / <code>elicitation</code> 等，服务器声明 <code>tools</code> / <code>resources</code> / <code>prompts</code> / <code>logging</code> 等。工具能力就写在服务器这一侧：<code>"tools": {"listChanged": true}</code>——<strong>服务器没声明 tools 能力，你后面调 <code>tools/list</code> 本来就没有意义</strong>。<br>③ <strong>实现信息</strong>（<code>clientInfo</code> / <code>serverInfo</code>，名称与版本）。<br>而且顺序是硬约束：客户端在服务器回应 <code>initialize</code> 之前「SHOULD NOT send requests other than pings」，服务器在收到 <code>initialized</code> 通知之前也不该主动发请求（ping / logging 除外）。所以 <code>list_tools()</code> 抢在前面会命中未协商完成的会话。<br>工程上这就是「为什么 <code>connect_mcp</code> 要把 <code>initialize()</code> 写进上下文管理器」的答案：<strong>把「必须最先发生」的步骤封在 <code>yield session</code> 之前</strong>，调用方拿到的 session 天然是已初始化状态，从根上消灭顺序错误。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 写的这段连接封装，请做代码审查——重点看资源管理：<br><code>@asynccontextmanager</code><br><code>async def connect_mcp(server_config: dict):</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;if server_config["type"] == "stdio":</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;params = StdioServerParameters(command=server_config["command"], args=server_config.get("args", []))</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;async with stdio_client(params) as (read, write):</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;async with ClientSession(read, write) as session:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;await session.initialize()</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;yield session</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;elif server_config["type"] == "http":</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;raise ValueError("http 分支下个迭代再补")</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;else:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;raise ValueError(f"不支持的服务器类型: {server_config['type']}")</code>`,
+              source: `来源：Python 官方文档 contextlib（"This function is a decorator that can be used to define a factory function for async with statement asynchronous context managers, without needing to create a class or separate __aenter__() and __aexit__() methods."）https://docs.python.org/3/library/contextlib.html#contextlib.asynccontextmanager · 检索 2026-10-02 · 层级：一手（官方文档）+ MCP 官方规范 Lifecycle · Shutdown（stdio 关闭步骤）https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle · 渡一源课程《25.MCP Client》课件（<code>connect_mcp</code> 原文）`,
+              breakdown: `这段代码的<strong>资源管理本身是对的</strong>：<code>@asynccontextmanager</code> 要求「被装饰的函数是一个异步生成器函数」；生成器里用 <code>async with</code> 嵌套而不是手工 <code>try/finally</code>，意味着 <code>yield</code> 出去之后——无论调用方正常走完还是中途抛异常——退出时都会沿着 <code>async with</code> 逐层回卷：先关 <code>ClientSession</code>，再关传输（对 stdio 而言就是关闭子进程的输入流）。这与规范给的 stdio 关闭步骤一致（先关服务器输入流 → 等它退出，必要时 SIGTERM/SIGKILL）。<br>真正的问题在别处，一共三条：<br>① <strong>http 分支直接 raise</strong>：配置里写着 <code>"type": "http"</code> 的服务器一定连不上，而<strong>这个异常会打断 <code>MCPClient.alist_tools()</code> 的整个遍历</strong>，把本来正常的 stdio 服务器一起拖下水。要么实现它，要么让上层「单服务器失败不拖累其他服务器」。<br>② <strong>初始化失败没有善后语义</strong>：若 <code>await session.initialize()</code> 抛错（协议版本不兼容、能力协商失败），异常从生成器内部抛给 <code>async with connect_mcp(...)</code> 的调用方——虽然 <code>async with</code> 会负责清理，但调用方拿到的是一个「不知连没连上」的异常，配置错误的定位成本高。建议把服务器名带进异常信息。<br>③ <strong>没有超时</strong>：规范在 Lifecycle 里建议「Implementations SHOULD establish timeouts for all sent requests, to prevent hung connections and resource exhaustion」。<code>initialize()</code> 与后续 <code>list_tools()</code> 一旦卡住，<code>async with</code> 就一直不返回——上层 <code>run_async</code> 的 <code>t.join()</code> 更是<strong>无限期阻塞主线程</strong>，连取消都做不到。生产的连接封装应当支持 per-request 超时或整体超时。<br>顺带：<code>server_config.get("args", [])</code> 这个「缺失就空列表」的兜底是对的，但 <code>server_config["command"]</code> 是硬下标，配置里漏写 <code>command</code> 会抛 <code>KeyError</code>——错误信息不如一句「stdio 服务器缺少 command 字段」好排查。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `你要把一个 Agent 的 MCP 接入层定下来：<strong>每次操作都新建连接（课件的 <code>connect_mcp</code> 用法）</strong>，还是<strong>启动时建立长连接并在整个会话期复用</strong>？请给出取舍依据，以及在异步 Agent 里做「同步封装」的适用边界。`,
+              source: `来源：MCP 官方规范 Lifecycle（"Implementations SHOULD establish timeouts for all sent requests, to prevent hung connections and resource exhaustion."；HTTP 下"the client MUST include the MCP-Protocol-Version: &lt;protocol-version&gt; HTTP header on all subsequent requests"）https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle · 检索 2026-10-02 · 层级：一手（官方文档）+ Python 官方文档 Runners（"This function cannot be called when another asyncio event loop is running in the same thread."）https://docs.python.org/3/library/asyncio-runner.html · 渡一源课程《25.MCP Client》课件（<code>run_async</code> 与同步封装小节）`,
+              breakdown: `先把「连接」的成本拆开看，再选：<br><strong>每次新建（课件形态）</strong>：优点是简单、无状态、天然规避 <code>listChanged</code> 之后列表过期的问题，一个服务器崩了不影响别的；缺点是每次 <code>list_tools()</code> / <code>call_tool()</code> 都要重跑 <code>initialize</code>（一次额外往返），stdio 还要<strong>重启子进程</strong>（进程启动 + uvx 解析依赖，通常远贵于一次 HTTP 往返）。适合低频调用、工具集很大但用得很少的服务器。<br><strong>长连接复用</strong>：优点是把 initialize 的往返与 stdio 进程启动成本摊掉，能接收 <code>notifications/tools/list_changed</code>、progress、取消等服务器主动消息；缺点是生命周期管理变复杂——连接可能被对端或中间网络掐断（规范明确要求客户端处理超时与断连），<code>listChanged</code> 缓存要跟着失效，并发调用同一 session 还要自己排队（MCP 的 stdio 是单条换行分隔消息流，不是随便并发写）。<br><strong>我的定法</strong>：Agent 主链路用「长连接 + 按服务器粒度」；给每个服务器一条 session，配上<strong>请求级超时</strong>（规范原文的建议）与重连退避；工具列表缓存 + 监听 <code>list_changed</code> 或设 TTL 兜底；低频/一次性任务仍走课件的「用完即关」。<br><strong>同步封装的边界</strong>：<code>run_async</code> 只在<strong>没有事件循环的调用方</strong>（Jupyter 里的同步单元格、普通脚本、被同步框架驱动的工具函数）才有价值，而且必须知道它<strong>不支持取消与超时</strong>——课件的实现是 <code>t.start(); t.join()</code>。异步 Agent 的工具执行链里已经有事件循环，正确做法是直接 <code>await</code>，别再包一层线程；否则你既拿不到超时/取消语义，又被迫为每次调用新建事件循环，长连接的收益全部作废。一条判据：<strong>「调用方自己是不是异步的」决定用 <code>await</code> 还是 <code>run_async</code>；<code>run_async</code> 是兼容层，不是并发层。</strong>`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `给现有 Agent 工程再接一个 MCP 服务器并跑通一次真实调用（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: `在课件 <code>agent/tool/use_mcp.py</code> 的 <code>mcp["servers"]</code> 里新增一个服务器（stdio 追加 <code>uvx mcp-server-time</code> 以外的服务，或 http 直接复用 <code>https://learn.microsoft.com/api/mcp</code>），用 <code>MCPClient.list_tools()</code> 打印它的工具清单，再用 <code>call_tool(服务器名, 工具名, 参数)</code> 真正调一次并打印结果。`,
+                accept: [
+                  '配置里每个服务器都带正确的 <code>type</code> 字段（<code>stdio</code> 配 <code>command</code>/<code>args</code>，<code>http</code> 配 <code>url</code>）；<code>list_tools()</code> 返回的列表里能按 <code>server</code> 键找到新服务器',
+                  'http 服务器的连接写成 <code>as (read_stream, write_stream, _)</code> 三元组解包，stdio 仍是 <code>(read, write)</code> 二元组',
+                  '<code>call_tool()</code> 的返回里 <code>isError</code> 为 <code>false</code>，<code>content[0].text</code> 是能读懂的结果（例如时间服务器返回的 timezone/datetime/day_of_week）',
+                  '故意把工具名写错一次，观察到的不是异常中断，而是 <code>isError: true</code> 加一条错误文本——并说清这与「协议错误」的区别',
+                ],
+              },
+              source: `任务基于《25.MCP Client》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 在 <code>mcp["servers"]</code> 里加一项，<code>type</code> 只能写 <code>stdio</code> 或 <code>http</code>——写别的会命中 <code>connect_mcp</code> 的 <code>else: raise ValueError</code>，而且会打断 <code>list_tools()</code> 的整轮遍历；② 直接用 <code>client.list_tools()</code>（同步版，内部走 <code>run_async</code>）或 <code>await client.alist_tools()</code>（Jupyter 里），按 <code>item["server"]</code> 核对新服务器在不在；③ 调工具前先看清 <code>list_tools()</code> 打印出来的 <code>inputSchema.required</code>——例如 <code>get_current_time</code> 的 <code>timezone</code> 是必填，漏了会得到 <code>isError: true</code> + <code>Input validation error</code>；④ <code>client.call_tool("time", "get_current_time", {"timezone": "Asia/Shanghai"})</code>，结果里读 <code>isError</code> 与 <code>content[0].text</code>。<br>最容易踩的四个点：<strong>(a)</strong> http 那句抄成两元组解包——报的是「too many values to unpack」，回看课件 HTTP 小节即可；<strong>(b)</strong> 忘了 <code>args</code> 传列表（写成字符串）导致 <code>uvx</code> 启动参数错位；<strong>(c)</strong> 时区写 <code>Asia/shanghai</code> 这种不规范键——实测 mcp-server-time 会返回 <code>Invalid timezone</code>（<code>isError: true</code>），但时区库里能识别的写法可能被静默归一化，所以<strong>不要靠观察输出反推参数对不对，要以 <code>isError</code> 与返回体的 timezone 字段为准</strong>；<strong>(d)</strong> 把 <code>isError: true</code> 当正常结果直接喂给模型——这没错（正好让模型自己纠错），但要在日志里记下来，否则线上「工具一直失败」会很难发现。<br>自检顺序：先 <code>list_tools()</code> 确认发现，再单点 <code>call_tool()</code> 确认调用，最后才接进 Agent 对话——出问题时能分清是连接、发现还是调用哪一层。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle">MCP 规范 · Lifecycle</a>（initialize 的三件事、版本协商、超时建议）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports">MCP 规范 · Transports</a>（stdio 与 Streamable HTTP 的差别）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/server/tools">MCP 规范 · Tools</a>（tools/list 分页、tools/call、两套错误机制）</li>
+        <li><strong>动手自检</strong>：把 <code>connect_mcp</code> + <code>run_async</code> + <code>MCPClient</code> 抄进一个 notebook，用 <code>uvx mcp-server-time</code> 与 <code>https://learn.microsoft.com/api/mcp</code> 各跑一遍 <code>list_tools()</code>；重点验证「HTTP 三元组解包」「漏传 timezone → <code>isError: true</code>」「写错工具名 → <code>isError: true</code>」三件事，再对照 <a href="../reference/MCP-Client速查表.html">MCP-Client速查表</a> 勾一遍。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/MCP-Client速查表.html">MCP-Client速查表</a>——三步会话流程、两种传输写法、三层封装与同步封装速记一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/MCP协议">24.MCP协议</a> · 本课 <a href="/agents/Agents底层逻辑/MCP-Client">25.MCP Client</a> · 下一课 <a href="/agents/Agents底层逻辑/Agent接入MCP">26.Agent接入MCP</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>token统计速查表 · 参考手册</title>
+  <meta name="description" content="token统计速查表 · 可打印参考手册：配合《token统计互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>token统计速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0008-token统计.html">《token统计互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>事前统计 vs 事后统计</h2>
+      <table class="cmp-table">
+        <tr><th>维度</th><th>事前统计</th><th>事后统计</th></tr>
+        <tr><td>时机</td><td>把文本发送给大模型<strong>之前</strong></td><td>模型服务商 API 调用<strong>之后</strong></td></tr>
+        <tr><td>数据来源</td><td>本地分词器（tiktoken / transformers）或服务商的免费统计接口</td><td>API 接口会告知你本次 token 用量</td></tr>
+        <tr><td>用途</td><td>拦截超窗输入、额度预校验、预算审批、报价展示</td><td>账单核算、与预估值对账校准</td></tr>
+        <tr><td>局限</td><td>是估算——消息结构、模型口径变化都会带来偏差</td><td>拿到时请求已经发出并计费，拦不住任何东西</td></tr>
+      </table>
+      <p>四个典型落地场景（课件原文）：<strong>单轮输入长度拦截</strong>（10 万字合同超 100k token → 直接提示分段，不发起无效 API 调用）、<strong>用户额度 / 充值计费预校验</strong>、<strong>企业预算前置审批</strong>、<strong>报价前置展示</strong>。</p>
+    </section>
+
+    <section>
+      <h2>三条统计路线对照</h2>
+      <table class="cmp-table">
+        <tr><th>路线</th><th>适用模型</th><th>依赖 / 网络</th><th>核心调用</th></tr>
+        <tr><td>服务商 API 接口</td><td>该服务商自己的模型（如 Kimi）</td><td>需要 API Key，走网络；接口免费</td><td><code>POST /v1/tokenizers/estimate-token-count</code>，读 <code>data.total_tokens</code></td></tr>
+        <tr><td>tiktoken（SDK）</td><td>OpenAI 模型</td><td>无需 API Key；首次联网下载词表并缓存，之后完全本地</td><td><code>encoding_for_model("gpt-4o")</code> → <code>len(encoding.encode(text))</code></td></tr>
+        <tr><td>transformers（SDK）</td><td>开源模型（Hugging Face 上发布）</td><td>首次下载分词器文件（仅几 MB，不含权重），之后本地</td><td><code>AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-V3")</code> → <code>len(tokenizer.encode(text))</code></td></tr>
+      </table>
+      <p>国内访问 Hugging Face 需配置镜像：<code>os.environ["HF_ENDPOINT"] = "http://hf-mirror.com"</code>（可直连时删掉这行）。</p>
+    </section>
+
+    <section>
+      <h2>核心代码速查</h2>
+      <pre># ① 服务商 API 接口（以 Moonshot / Kimi 为例，免费统计）
+import requests, os
+from dotenv import load_dotenv
+load_dotenv('../.env')
+API_KEY = os.environ.get("MOONSHOT_API_KEY")
+
+response = requests.post(
+    "https://api.moonshot.cn/v1/tokenizers/estimate-token-count",
+    headers={"Authorization": f"Bearer {API_KEY}",
+             "Content-Type": "application/json"},
+    json={"model": "kimi-k3",
+          "messages": [{"role": "user", "content": text}]},
+)
+result = response.json()
+print(result['data']['total_tokens'])          # Token 数
+
+# ② tiktoken（OpenAI 官方分词库，本地统计，无需 API Key）
+import tiktoken
+encoding = tiktoken.encoding_for_model("gpt-4o")   # 首次联网下载词表并缓存
+tokens = encoding.encode(text)                     # Token 序列
+print(len(text), len(tokens))                      # 字符数 vs Token 数
+
+# ③ transformers（Hugging Face 官方库，开源模型）
+import os
+os.environ["HF_ENDPOINT"] = "http://hf-mirror.com"  # 国内镜像，可直连则删
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-V3")
+tokens = tokenizer.encode(text)
+print(len(text), len(tokens))</pre>
+      <p>依赖安装（课件口径）：<code>uv add requests python-dotenv</code> · <code>uv add tiktoken</code> · <code>uv add transformers</code>。</p>
+    </section>
+
+    <section>
+      <h2>易错点与工程口径</h2>
+      <dl class="term-grid">
+        <dt>字符数 ≠ token 数</dt>
+        <dd>同一段文本的 <code>len(text)</code> 与 <code>len(tokens)</code> 并不相等；中英文、不同模型的切法都不同，计费与窗口判断只能按 token 算。</dd>
+        <dt>模型要配对分词器</dt>
+        <dd>tiktoken 只对应 OpenAI 模型的编码；其它模型用服务商接口或其配套分词器。拿错词表会把预估算错且不易察觉。</dd>
+        <dt>词表只需预热一次</dt>
+        <dd>tiktoken 与 transformers 首次都要联网下载（词表 / 分词器文件），之后统计纯本地；生产上编码实例应缓存复用，不要每个请求重建。</dd>
+        <dt>预估值与账单的差</dt>
+        <dd>消息的角色、名称等结构本身也占 token；具体口径还会随模型更新变化。预估用于拦截与报价，最终以 API 返回的用量为准。</dd>
+        <dt>拦截要发生在调用之前</dt>
+        <dd>先统计、再与模型上下文上限比较，超限直接提示分段/摘要——发出去等报错等于白付一次调用。</dd>
+        <dt>输入输出分开计价</dt>
+        <dd>报价时除输入 token 外，还要把输出上限一起折算；缓存命中的部分通常单价更低。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

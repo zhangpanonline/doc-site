@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>会话速查表 · 参考手册</title>
+  <meta name="description" content="会话速查表 · 可打印参考手册：配合《会话互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>会话速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0017-会话.html">《会话互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>Session 骨架（本章 agent/session.py）</h2>
+      <pre>import json
+import uuid
+from pathlib import Path
+
+
+class Session:
+    def __init__(self):
+        self.id = str(uuid.uuid4())      # 会话的持久身份
+        self.messages: list[dict] = []   # 只增不改的消息列表
+
+    def add_message(self, message: dict):
+        self.messages.append(message)    # 追加，永远追加
+
+    def save(self):
+        sessions_dir = Path(__file__).parent / "sessions"   # 模块同级目录，不依赖 CWD
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        data = {"id": self.id, "messages": self.messages}
+        with open(sessions_dir / f"{self.id}.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)   # 中文不转义，便于排查
+
+    @classmethod
+    def load(cls, session_id: str):
+        path = Path(__file__).parent / "sessions" / f"{session_id}.json"
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        session = cls()                  # 构造函数先生成一个新 uuid4……
+        session.id = data["id"]          # ……再被文件里的 id 覆盖（保持同一身份）
+        session.messages = data["messages"]
+        return session</pre>
+      <dl class="term-grid">
+        <dt>id</dt>
+        <dd><code>str(uuid.uuid4())</code>；也是磁盘文件名 <code>sessions/&lt;id&gt;.json</code>。</dd>
+        <dt>messages</dt>
+        <dd><code>list[dict]</code>，每项形如 <code>{"role": …, "content": …}</code>；本章删除了旧的 <code>agent/message.py</code>，统一用 dict。</dd>
+        <dt>add_message</dt>
+        <dd>只做 <code>append</code>——会话层的铁律就写在这一个方法里。</dd>
+        <dt>load</dt>
+        <dd>classmethod；先 <code>cls()</code> 再覆盖 <code>id</code> / <code>messages</code>。不做参数校验：文件缺失时抛 <code>FileNotFoundError</code>。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>双入口调用矩阵（agent/model.py）</h2>
+      <table class="cmp-table">
+        <tr><th>调用形态</th><th>发给 API 的内容</th><th>调用后会话变化</th><th>典型用途</th></tr>
+        <tr><td><code>invoke(list[dict])</code></td><td>传入的列表本身</td><td>无（不持有会话）</td><td>一次性请求、无记忆脚本</td></tr>
+        <tr><td><code>invoke(Session)</code></td><td><code>session.messages</code></td><td>追加 <code>response.choices[0].message.to_dict()</code></td><td>非流式多轮</td></tr>
+        <tr><td><code>invoke_stream(list[dict])</code></td><td>传入的列表本身</td><td>无</td><td>流式单次输出</td></tr>
+        <tr><td><code>invoke_stream(Session)</code></td><td><code>session.messages</code></td><td>流结束后追加 <code>{"role": "assistant", "content": full_content}</code>，有思维链则补 <code>msg[reasoning_field] = full_reasoning_content</code></td><td>本章课件的多轮对话</td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>分流写法</dt>
+        <dd><code>if isinstance(messages, Session): session = messages; messages = session.messages</code>——一个入口吃两种参数。</dd>
+        <dt>自动回写</dt>
+        <dd>拿到回答后由 <code>model</code> 负责往会话里写 assistant 消息：<strong>调用方不要再手工 add 一条</strong>，否则历史里出现连续两条 assistant。</dd>
+        <dt>惰性陷阱</dt>
+        <dd><code>invoke_stream</code> 是生成器：不迭代 = 请求不发出、回写不执行；中途 <code>break</code> = 请求已花钱、输出已展示，但那条 assistant 消息永远进不了历史。</dd>
+        <dt>思维链字段</dt>
+        <dd>先试 <code>delta.reasoning_content</code>，没有再试 <code>delta.reasoning</code>；最终按实际出现过的字段名写回，保证推理上下文不丢。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>缓存与成本：三笔账</h2>
+      <table class="cmp-table">
+        <tr><th>账目</th><th>公式 / 事实</th><th>工程动作</th></tr>
+        <tr>
+          <td>单轮 prompt 长度</td>
+          <td>第 n 轮 ≈ <code>c + n·t</code>（c = 系统提示词等固定开销，t = 每轮新增均值）</td>
+          <td>把固定部分放最前面；可变内容放最后</td>
+        </tr>
+        <tr>
+          <td>累计发送量</td>
+          <td><code>S(n) = Σ(c + k·t) = n·c + t·n(n+1)/2 = O(n²)</code></td>
+          <td>会话越长越贵；压缩要<strong>追加</strong>而非改写前缀</td>
+        </tr>
+        <tr>
+          <td>缓存命中</td>
+          <td>服务商先检查 prompt 的开头部分（prefix）是否已缓存：命中则复用，未命中则整段从头处理并缓存前缀</td>
+          <td>历史<strong>只增不改</strong>，新消息<strong>追加到 messages 数组末尾</strong>；观察 <code>usage.prompt_tokens_details.cached_tokens</code></td>
+        </tr>
+      </table>
+      <dl class="term-grid">
+        <dt>本章两条最佳实践</dt>
+        <dd>① <strong>历史上下文不可修改</strong>——不满足会导致难以命中模型服务商的 prompt cache；② <strong>上下文中应保留思维链</strong>——不满足会导致推理上下文丢失、模型回复质量下降。</dd>
+        <dt>持久化成本</dt>
+        <dd><code>save()</code> 每轮 <code>json.dump</code> 整份 messages：历史长 n 时单次 O(n)、n 轮累计 O(n²) 的序列化与磁盘写。改成 append-only 增量写入即降到 O(n)，并可用「写临时文件 + rename」保证原子性。</dd>
+        <dt>前缀杀手</dt>
+        <dd>删早期消息、把历史整体重写成摘要、每轮往系统提示词里注入当前时间/用户名（见第 16 章「保持静态」）。</dd>
+        <dt>边界</dt>
+        <dd>会话 id 只是<strong>选择历史的键</strong>，不认证用户、不授权访问——<code>load()</code> 直接按文件名读 JSON，拿到 id 就能读整段对话，应用侧必须自己做鉴权。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>易错点清单</h2>
+      <dl class="term-grid">
+        <dt>重复的 assistant 消息</dt>
+        <dd>传了 Session 又手工 <code>add_message(assistant)</code> → 历史里两条连续 assistant，上下文被污染。</dd>
+        <dt>没消费生成器</dt>
+        <dd><code>resp = model.invoke_stream(session)</code> 之后不迭代，请求根本没发；此时手工塞进去的 assistant 消息会被当成模型说过的话。</dd>
+        <dt>id 被换掉</dt>
+        <dd>恢复会话时不用 <code>load()</code> 而自己 <code>Session()</code> 再灌 messages，会得到一个新 id，磁盘上从此有两份互不相干的历史。</dd>
+        <dt>中文乱码式难排查</dt>
+        <dd><code>json.dump</code> 忘了 <code>ensure_ascii=False</code>，会话文件里全是 <code>\uXXXX</code>，出问题时人工读不了。</dd>
+        <dt>会话目录绑死 CWD</dt>
+        <dd>把 <code>sessions</code> 写成相对路径，换个目录启动就找不到；本章用 <code>Path(__file__).parent</code> 定位。</dd>
+        <dt>没有窗口管理</dt>
+        <dd>历史只增不改却不设上限，最终会撞模型的上下文窗口上限直接报错——压缩要提前做，且以<strong>追加</strong>的方式做。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

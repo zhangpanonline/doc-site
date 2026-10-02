@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 必看导言：AI 岗位分布与薪资画像、课程安排与学习路线——互动教学课程">
+  <title>必看导言 · 互动教学课程（Agents底层逻辑 ac-01）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>必看导言</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/必看导言">01.必看导言</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 AI 岗位的三大方向——应用开发、推理部署、模型研发——各自的定位与核心知识</li>
+        <li>用「岗位需求 / 学习难度 / 薪资水平」三列一起读懂岗位表，而不是只看薪资单列</li>
+        <li>复述《Agents底层逻辑》在整条课程路线中的位置，以及学完之后的主线走向</li>
+        <li>面对一个真实需求时，判断它落在哪个方向、自己还缺哪些能力</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「岗位表 + 课程安排图」这两页骨架过一遍——细节都在《01.必看导言》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三类 AI 岗位画像</h3>
+        <ul class="pitfall-list">
+          <li><strong>应用开发</strong>：AI应用开发工程师 / Agent应用开发工程师 / 大模型应用开发工程师——岗位需求 ★★★★★、学习难度 ★★★☆☆、薪资水平 ★★★☆☆；核心知识是<strong>编程思维、AI 认知、应用框架、业务经验</strong></li>
+          <li><strong>推理部署</strong>：大模型部署工程师 / LLM 推理优化工程师——岗位需求 ★★☆☆☆、学习难度 ★★★★★、薪资水平 ★★★★★；核心知识是<strong>CUDA 内核、GPU 架构、算子融合、分布式推理、推理引擎、模型量化、显存优化</strong></li>
+          <li><strong>模型研发</strong>：大模型算法工程师 / LLM 微调工程师 / 大模型训练工程师——岗位需求 ★★☆☆☆、学习难度 ★★★★★、薪资水平 ★★★★★；核心知识是<strong>深度学习理论、算法创新、模型架构、分布式训练、数据处理、强化学习、论文复现、高等数学、线性代数、概率论、优化理论</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>课程位置：先打底座，再往上层走</h3>
+        <ul class="pitfall-list">
+          <li><strong>课程安排图的主线</strong>：Agents底层逻辑 → Agents应用框架 → Agents企业应用 → 就业</li>
+          <li><strong>《Agents底层逻辑》是最底下那一层</strong>：先把模型与 Agent 的底层机制弄懂，再学应用框架，最后落到企业应用</li>
+          <li><strong>支线</strong>：AI 效能工具（用 AI 提升开发效率）与「其他知识」，最终都汇入就业阶段</li>
+          <li>所以本课程 01–34 章不是零散知识点，而是这条底座路线自上而下的完整展开</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>怎么用这张岗位表做决定</h3>
+        <ul class="pitfall-list">
+          <li><strong>三列要一起看</strong>：需求决定岗位数量，难度决定你多久能上手，薪资决定天花板；只看一列容易判断失真</li>
+          <li><strong>需求最大的是应用开发（★★★★★），难度却只有三星</strong>——这是多数人的「入口」，不是「低级岗位」</li>
+          <li><strong>推理部署与模型研发难度、薪资都是五星，但核心知识完全不同</strong>：一个偏推理引擎与显存，一个偏训练与算法数学</li>
+          <li>官方工程实践给的判据同样是「够用就好」：能用简单方案解决，就不要先堆复杂框架</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《01.必看导言》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 《01.必看导言》的岗位表里，岗位需求标到 ★★★★★ 的是哪一类方向？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型研发</button>
+            <button class="quiz-option">三个方向的岗位需求完全相同</button>
+            <button class="quiz-option">应用开发</button>
+            <button class="quiz-option">推理部署</button>
+          </div>
+          <div class="quiz-explain" hidden>岗位表原文：应用开发的「岗位需求」为 ★★★★★，推理部署与模型研发均为 ★★☆☆☆。需求差异是这张表的第一个关键信号。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 「大模型算法工程师 / LLM 微调工程师 / 大模型训练工程师」属于哪一类方向？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">应用开发</button>
+            <button class="quiz-option">模型研发</button>
+            <button class="quiz-option">三个方向都不属于</button>
+            <button class="quiz-option">推理部署</button>
+          </div>
+          <div class="quiz-explain" hidden>岗位表原文：模型研发方向包含大模型算法工程师、LLM 微调工程师、大模型训练工程师；核心知识是深度学习理论、算法创新、模型架构、分布式训练、数据处理、强化学习、论文复现与数学基础。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 应用开发方向列出的核心知识是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">CUDA 内核、GPU 架构、显存优化</button>
+            <button class="quiz-option">编程思维、AI 认知、应用框架、业务经验</button>
+            <button class="quiz-option">深度学习理论、优化理论、论文复现</button>
+            <button class="quiz-option">分布式推理、推理引擎、模型量化</button>
+          </div>
+          <div class="quiz-explain" hidden>岗位表原文：应用开发的核心知识是编程思维、AI 认知、应用框架、业务经验——不含 CUDA 与数学训练类知识，那些属于另外两个方向。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 团队要「把线上大模型服务的推理延迟降下来、单卡吞吐提上去」，按岗位表最对口的方向与核心知识是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型研发——靠论文复现与算法创新优化</button>
+            <button class="quiz-option">三个方向都无关，属于运维范畴</button>
+            <button class="quiz-option">推理部署——核心知识是推理引擎、模型量化、显存优化</button>
+            <button class="quiz-option">应用开发——靠应用框架与业务经验优化</button>
+          </div>
+          <div class="quiz-explain" hidden>岗位表把「分布式推理、推理引擎、模型量化、显存优化」列在推理部署方向，正是延迟与吞吐问题的对口知识；应用开发管的是模型之上的编排与业务，模型研发管的是训练与算法。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 岗位表里「应用开发」需求五星、难度三星，下面哪种解读最合理？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">说明应用开发不需要编程能力</button>
+            <button class="quiz-option">岗位数量多、上手门槛相对低，是多数人切入 AI 应用的入口</button>
+            <button class="quiz-option">说明应用开发薪资必然最高</button>
+            <button class="quiz-option">说明应用开发技术含量最低，不值得做</button>
+          </div>
+          <div class="quiz-explain" hidden>三列要一起读：需求五星说明市场上这类岗位最多，难度三星说明学习曲线相对平缓，薪资三星说明天花板与稀缺度相关。由此推不出「没技术含量」「薪资最高」「不需要编程」中的任何一条。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 按《01.必看导言》的课程安排，学完《Agents底层逻辑》之后的主线走向是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先学完 AI 效能工具，再回到 Agents底层逻辑</button>
+            <button class="quiz-option">课程到这一阶段就结束了</button>
+            <button class="quiz-option">直接进入模型研发，先补数学</button>
+            <button class="quiz-option">Agents应用框架 → Agents企业应用 → 就业</button>
+          </div>
+          <div class="quiz-explain" hidden>课程安排图的主线：Agents底层逻辑 → Agents应用框架 → Agents企业应用 → 就业；「AI 效能工具」与「其他知识」是并入就业阶段的支线，不是主线前置。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 一位同学会 Python、懂业务，但没学过 CUDA 与高等数学，想在 3 个月内进入 AI 岗位。按岗位表，最匹配的方向与理由是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型研发——薪资五星，先冲天花板最高的方向</button>
+            <button class="quiz-option">应用开发——需求五星且核心知识（编程思维、AI 认知、应用框架、业务经验）与现有能力重合度最高；另外两个方向的核心知识需要长期补课</button>
+            <button class="quiz-option">推理部署——核心知识里也包含推理引擎，可以边做边学 CUDA</button>
+            <button class="quiz-option">三个方向门槛一样，随机选一个即可</button>
+          </div>
+          <div class="quiz-explain" hidden>选方向的依据是「岗位表三列 + 核心知识」的匹配度，而不是单看薪资。应用开发的四类核心知识与该同学现有能力重合度最高、难度三星可在短期内补齐；推理部署与模型研发难度五星，CUDA、数学与训练类知识不是三个月能速成的。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 有人说「推理部署和模型研发在表里需求、难度、薪资三列完全一样，所以是同一类岗位」。这个推论错在哪？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">错在薪资其实不一样，表里写错了</button>
+            <button class="quiz-option">错在岗位需求其实都是五星</button>
+            <button class="quiz-option">错在忽略了「核心知识」列：一个是推理引擎 / 显存 / 量化，一个是训练 / 算法 / 数学，日常工作完全不同</button>
+            <button class="quiz-option">没错，三列一致就说明可以互相转岗</button>
+          </div>
+          <div class="quiz-explain" hidden>三列是「市场画像」，核心知识列才是「能力画像」。两行星级相同只说明市场稀缺度与难度接近，核心知识列的差异（推理引擎、模型量化、显存优化 对 深度学习理论、分布式训练、强化学习、数学基础）决定了它们是两条不同的能力路线。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 产品团队要在两周内上线一个内部知识问答助手，团队里没人懂 CUDA 与模型训练。AI 给出的方案是「自建推理集群 + 微调一个专属模型」。最合理的判断是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先走应用开发路线（现成模型 + 检索 + 工具编排）两周内验证价值，把推理部署与模型研发当成出现瓶颈后的可选项</button>
+            <button class="quiz-option">方案正确，因为知识问答必须用专属模型</button>
+            <button class="quiz-option">应该先招模型研发，做完微调再谈产品</button>
+            <button class="quiz-option">方案正确，自建与微调最能体现技术实力</button>
+          </div>
+          <div class="quiz-explain" hidden>岗位表给的成本账：应用开发需求五星、难度三星，能立刻组队开工；推理部署与模型研发需求两星、难度五星，属于按需引入的稀缺能力。两周的窗口只够走应用开发路线把链路跑通，等出现明确的成本或效果瓶颈，再立项推理优化或微调。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0001-必看导言',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `面试官问「如果让你做一个企业内部知识问答助手，你会怎么设计」。候选人答：直接上多 Agent 编排，自己写一套任务调度框架，把规划、检索、写作拆成 5 个 Agent 互相 handoff，理由是「越复杂越能体现技术深度」。请指出这个回答里的陷阱。`,
+              source: `来源：Anthropic 官方文档 Building effective agents（"Consistently, the most successful implementations use simple, composable patterns rather than complex frameworks."；"we recommend finding the simplest solution possible, and only increasing complexity when needed."）https://www.anthropic.com/engineering/building-effective-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《01.必看导言》岗位表（应用开发核心知识：应用框架、业务经验）`,
+              breakdown: `官方原文先把两种系统分开：<strong>工作流</strong>是 LLM 与工具按预定代码路径编排，<strong>Agent</strong> 是 LLM 自己决定流程与工具使用。企业知识问答的步骤基本可预测（检索 → 组装上下文 → 生成 → 带引用返回），属于典型工作流，先用最简单的「单次调用 + 检索」就能验证；官方明确建议「找最简单的方案，只在需要时才增加复杂度」，并提醒框架的抽象层会遮蔽底层 prompt 与响应、让调试变难。对应岗位表：应用开发岗的核心知识是「应用框架 + 业务经验」——考的是选型判断力，而不是 Agent 的数量。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `岗位表把「应用框架」和「业务经验」列为应用开发岗的核心知识，却把 CUDA 与数学列在另外两个方向。为什么应用开发不必从零造模型和推理引擎？请用官方框架的设计原则说明这条分工的机制。`,
+              source: `来源：OpenAI Agents SDK 官方文档（"The OpenAI Agents SDK enables you to build agentic AI apps in a lightweight, easy-to-use package with very few abstractions."；设计原则 "Enough features to be worth using, but few enough primitives to make it quick to learn."）https://openai.github.io/openai-agents-python/ · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `机制上，应用开发站在模型之上：模型本身与推理由服务方和推理引擎负责，应用层只需要把 instructions、tools、handoffs、guardrails、sessions 这些原语编排成业务流程。官方 SDK 的设计原则是「功能足够好用，但原语少到能快速学会」——这正是应用开发岗的竞争力来源：原语组合、业务理解，以及可观测与评估（官方内置 tracing），而不是自己实现 CUDA 内核或分布式训练。所以岗位表把「编程思维 + AI 认知 + 应用框架 + 业务经验」列进这一方向，与推理部署、模型研发的核心知识互补而不重叠。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `面试官追问：「推理部署岗的显存优化和模型量化，到底在解决什么机制问题？」请用推理引擎官方文档的说法回答，并说明为什么这两项会被列进该方向的核心知识。`,
+              source: `来源：vLLM 官方文档（"vLLM is a fast and easy-to-use library for LLM inference and serving."；"State-of-the-art serving throughput"；"Efficient management of attention key and value memory with PagedAttention"；"Quantization: FP8, MXFP8/MXFP4, NVFP4, INT8, INT4, GPTQ/AWQ, GGUF, compressed-tensors, ModelOpt, TorchAO, and more"）https://docs.vllm.ai/en/stable/ · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `推理阶段的显存大头有两块：<strong>模型权重</strong>与<strong>注意力机制的 key/value 缓存</strong>。官方文档把 PagedAttention 描述为对「attention key and value memory」的高效管理——生成时 KV 缓存随并发数与上下文长度增长，管理不好就会碎片化、装不下更多并发；量化则把权重压到 FP8/INT8/INT4 等更低精度，直接降低显存占用。两者一起决定单位 GPU 能同时服务多少请求（吞吐）以及延迟表现，这也正是岗位表把「显存优化、模型量化、推理引擎」列进推理部署方向的原因。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `同事让 AI 写「4 张卡训练 70B 模型」的方案，AI 给出：用 DistributedDataParallel，每张卡各持一份完整模型与优化器状态，并声称「数据并行会自动把模型切到 4 张卡上，所以单卡放不下也能训」。请审查这份方案并给出修正方向。`,
+              source: `来源：PyTorch 官方文档 FullyShardedDataParallel（"A wrapper for sharding module parameters across data parallel workers. This is inspired by Xu et al. as well as the ZeRO Stage 3 from DeepSpeed."）https://docs.pytorch.org/docs/2.14/fsdp.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `错误在于把「数据并行」当成「模型切分」。DDP 是每个进程持有一份完整模型、只按数据分片并行，显卡变多并不会减少单卡的模型与优化器状态占用；官方把 FSDP 定义为「sharding module parameters across data parallel workers」，并注明灵感来自 DeepSpeed 的 ZeRO Stage 3——把参数、梯度、优化器状态切分到各卡，才解决单卡放不下的问题。70B 全参数训练还要同时考虑张量并行 / 流水线并行、混合精度与梯度检查点等显存手段。对应岗位表：模型研发方向的核心知识里有「分布式训练」，考的就是这类并行策略与显存账。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `公司要做一个面向销售的企业知识助手，编制只有 3 人：一名后端、一名前端、一名产品。请按岗位表的三类方向给出能力配比与技术路线，并说明为什么不需要先招模型研发或推理部署。`,
+              source: `来源：OpenAI Agents SDK 官方文档（"The OpenAI Agents SDK enables you to build agentic AI apps in a lightweight, easy-to-use package with very few abstractions."；"Enough features to be worth using, but few enough primitives to make it quick to learn."）https://openai.github.io/openai-agents-python/ · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《01.必看导言》岗位表（需求 / 难度 / 薪资三列）`,
+              breakdown: `先算岗位表这笔账：应用开发需求 ★★★★★、难度 ★★★☆☆，是最容易组队开工的方向；推理部署与模型研发需求 ★★☆☆☆、难度 ★★★★★，属于按需引入的稀缺能力。3 人编制应全部压在应用开发：用现成模型 API 加官方轻量 SDK 搭出「检索 → 工具调用 → 生成 → 引用」的工作流，把两周内验证业务价值放在第一位。只有当出现明确的成本瓶颈（调用量过大）或效果瓶颈（通用模型在垂直领域持续不达标）时，才立项推理优化或微调，届时再补对应能力。设计题的评分点是「先证明业务价值，再按瓶颈升级技术栈」。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `给自己排一份 8 周进入 AI 应用开发的学习计划：以《Agents底层逻辑》为第一段，说明后续主线、每周产出与最终验收，任务卡见下。`,
+              scene: {
+                time: '约 8 周（每周 6–8 小时）',
+                goal: '按课程安排图排出主线：Agents底层逻辑（01–34 章）→ Agents应用框架 → Agents企业应用 → 就业；把 AI 效能工具作为日常提效支线；最终交付一个可运行的最小 Agent 应用。',
+                accept: ['计划里写明三段主线的先后顺序与理由（先底层、再框架、后企业应用）', '每周有可检查的产出（章节互动课测验通过、速查表复盘、代码提交）', '最终验收：一个能调用工具、能连续多轮完成任务的小 Agent，代码可运行', '对岗位表三列做出自己的方向选择并说明理由'],
+              },
+              source: `任务基于《01.必看导言》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：第 1–4 周啃《Agents底层逻辑》这条底座（模型与 Agent 的底层机制，配合每章互动课测验与速查表复盘，示例代码按章跑通）；第 5–6 周进入 Agents应用框架，用官方轻量 SDK 把工具、会话、子代理串起来；第 7 周补企业应用要素（权限、评估、日志）；第 8 周整理成可演示的 Demo，并对齐「就业」阶段：先确定自己投应用开发、推理部署还是模型研发，再按对应核心知识列补短板。常见偏差有两个：一上来就啃 CUDA 或分布式训练（难度五星、需求两星），或者只刷课不写代码——两种情况的验收点都不成立。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic: Building effective agents</a> · <a href="https://openai.github.io/openai-agents-python/">OpenAI Agents SDK 官方文档</a> · <a href="https://docs.vllm.ai/en/stable/">vLLM 官方文档</a>——分别对应应用开发与推理部署两条能力线。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/必看导言速查表.html">必看导言速查表</a>——三类岗位对照、课程路线与选方向三问一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/必看导言">01.必看导言</a> · 下一课 <a href="/agents/Agents底层逻辑/AI的分类">02.AI的分类</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

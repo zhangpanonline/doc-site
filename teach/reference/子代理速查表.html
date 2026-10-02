@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>子代理速查表 · 参考手册</title>
+  <meta name="description" content="子代理速查表 · 可打印参考手册：配合《子代理互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>子代理速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0029-子代理.html">《子代理互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>为什么要子代理：一条上下文 vs 多条上下文</h2>
+      <table class="cmp-table">
+        <tr><th>维度</th><th>单代理一个轮次跑完</th><th>主代理 + 子代理</th></tr>
+        <tr><td>消息历史</td><td>同一条 <code>session.messages</code> 持续增长</td><td>每个子代理 <code>Agent()</code> 各自新建会话，主会话只留结论</td></tr>
+        <tr><td>典型动作</td><td>reasoning + 一个超级庞大的 ReAct 循环</td><td>主代理只做宏观需求分析/方案设计，其余派活</td></tr>
+        <tr><td>上下文内容</td><td>ORM、迁移、DTO、Service、接口、测试的调用与结果全在里面</td><td>子代理各自只处理「实现数据层 / DTO / 接口 / 测试」中的一件</td></tr>
+        <tr><td>结果形态</td><td>过程即结果，模型自己带着全部细节</td><td>只回传最后一条消息的 <code>content</code>（摘要）</td></tr>
+        <tr><td>可回看</td><td><code>agent.session.save()</code> 一份总会话</td><td>总会话 + 每个 <code>&lt;name&gt;-&lt;id&gt;.json</code> 子会话</td></tr>
+      </table>
+      <p>课件原话：单代理「最终会得到一个超级庞大的上下文，这会带来诸多问题」；子代理就是把这些过程挪出主上下文的手段。</p>
+    </section>
+
+    <section>
+      <h2><code>create_agent</code> 工具速查</h2>
+      <pre>@tool(agent_config="每个子代理的配置。每个子代理要配置名称、用户提示词…")
+def create_agent(agent_config: list[dict[str, str]]) -> str:
+    results: list[dict[str, str]] = []
+    results_lock = threading.Lock()
+    threads: list[threading.Thread] = []
+
+    def run_sub_agent(name: str, query: str) -> None:
+        agent = Agent()                      # ① 独立会话 = 上下文隔离
+        responses = agent.invoke(query)      # ② 只带 query，不继承主会话
+        content = responses[-1].message.get("content", "")   # ③ 只取摘要
+        agent.session.save(f"{name}-")       # ④ 子会话落盘，可单独回看
+        with results_lock:                   # ⑤ 共享列表加锁
+            results.append({"name": name, "result": content})
+
+    for config in agent_config:
+        thread = threading.Thread(target=run_sub_agent,
+                                  args=(config.get("name", "unnamed"),
+                                        config.get("query", "")))
+        threads.append(thread); thread.start()   # ⑥ 先全部启动
+    for thread in threads:
+        thread.join()                            # ⑦ 再逐个等待
+    return json.dumps(results, indent=2, ensure_ascii=False)</pre>
+      <table class="cmp-table">
+        <tr><th>环节</th><th>写的是什么</th><th>起什么作用</th></tr>
+        <tr><td>入参 <code>agent_config</code></td><td><code>[{"name": "sub-agent-1", "query": "…"}]</code></td><td><code>name</code> 给结果贴标签，<code>query</code> 是子代理的<strong>初始用户提示词</strong>（唯一任务交代）</td></tr>
+        <tr><td>返回</td><td><code>json.dumps([{"name":…, "result":…}], ensure_ascii=False)</code></td><td>主代理拿到的是<strong>结构化摘要列表</strong>，不是子代理的对话全文</td></tr>
+        <tr><td>注册</td><td><code>registry.register(create_agent)</code></td><td>写进 <code>agent/tool/__init__.py</code>，与 <code>read_file</code>/<code>use_mcp</code>/<code>use_skill</code> 同一条注册链</td></tr>
+      </table>
+      <p>实测调用（课件原文）：</p>
+      <pre>from agent.tool.create_agent import create_agent
+resp = create_agent(agent_config=[
+    {"name": "sub-agent-1", "query": "这是一个测试，请说：你好！"},
+    {"name": "sub-agent-2", "query": "this is a test, reply: Hello!"},
+])
+print(resp)</pre>
+    </section>
+
+    <section>
+      <h2>并发三件事：<code>start</code> / <code>join</code> / <code>Lock</code></h2>
+      <dl class="term-grid">
+        <dt><code>thread.start()</code></dt>
+        <dd>把任务交给一个独立线程，「arranges for the object's <code>run()</code> method to be invoked in a separate thread of control」——<strong>启动顺序 ≠ 执行顺序</strong>，谁先跑完由调度决定。</dd>
+        <dt><code>thread.join()</code></dt>
+        <dd>「blocks the calling thread until the thread whose join() method is called terminates」。课件在全部 <code>start()</code> 之后统一 join，实现「等待所有子代理完成，汇总结果」；<strong>它保证都完成，不保证按序完成</strong>。</dd>
+        <dt><code>threading.Lock</code></dt>
+        <dd>用于保护共享数据（这里是多线程同时 append 的 <code>results</code>）。<strong>它保证写入不丢、不撕裂，不决定谁先写</strong>——返回 JSON 里 <code>name</code> 的顺序不可依赖。</dd>
+        <dt>未处理异常</dt>
+        <dd>线程 <code>run()</code> 里的异常交给 <code>threading.excepthook()</code>，默认打到 <code>stderr</code>，<strong>不会传播到 join 的主线程</strong>：表现为「结果静默少一项」，而不是整轮失败。</dd>
+        <dt>GIL 提醒</dt>
+        <dd>CPython 下「only one thread can execute Python code at once」；线程适合 I/O 密集（模型请求、网络、文件），CPU 密集要用 <code>multiprocessing</code>。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>易错点清单（子代理专属）</h2>
+      <ul class="pitfall-list">
+        <li><strong>以为子代理能看到主代理的上下文</strong>：<code>agent = Agent()</code> 新建会话，子代理只知道 <code>query</code>。任务描述必须自带目标、输出格式、可用工具、边界。</li>
+        <li><strong>把隔离当成万能</strong>：隔离的只是消息历史——工作目录、文件系统、<code>registry</code> 里的工具是共用的，两个子代理完全可能写到同一个路径。</li>
+        <li><strong>依赖结果顺序</strong>：<code>results</code> 的先后由线程调度决定；要稳定顺序就自己按 name 重排或按索引写入。</li>
+        <li><strong>没做失败处理</strong>：一个子代理抛异常 → 少一项结果；主代理会把不完整当完整继续往下走。应 try/except 后回传 <code>{"name":…, "error":…}</code>。</li>
+        <li><strong>没有超时</strong>：无参 <code>join()</code> 会无限等；用 <code>join(timeout)</code> 并在返回后 <code>is_alive()</code> 判定是否超时。</li>
+        <li><strong>没有并发上限</strong>：<code>agent_config</code> 由模型生成，可能一次派几十个；按任务复杂度给预算并在工具层设上限。</li>
+        <li><strong>结果无限膨胀</strong>：把子代理的超长产物整段塞回主上下文，等于把省下的上下文又还回去；大产物落盘、只回传路径与摘要。</li>
+        <li><strong>成本低估</strong>：多代理系统「use about 15× more tokens than chats」，简单任务别拆。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>什么时候拆 / 什么时候别拆</h2>
+      <table class="cmp-table">
+        <tr><th>信号</th><th>判断</th></tr>
+        <tr><td>子任务之间<strong>真正独立</strong>、可同时推进（多条搜索、多份素材、多个独立文件）</td><td>适合并行子代理</td></tr>
+        <tr><td>信息量超出单条上下文窗口，需要多份「压缩后的结论」</td><td>适合拆（先用子代理压缩，再汇总到主代理）</td></tr>
+        <tr><td>过程又长又脏（跑测试、抓文档、处理日志），结果只要一句结论</td><td>适合拆（隔离高噪声输出）</td></tr>
+        <tr><td>步骤有<strong>硬依赖</strong>（数据层没建完就写测试）</td><td>别并行、别拆；先由主代理定契约，再按依赖分层</td></tr>
+        <tr><td>需要频繁来回澄清、多阶段共享同一批上下文</td><td>留在主会话里做</td></tr>
+        <tr><td>流程明确、任务很小、延迟敏感</td><td>别拆；下单代理更快更便宜</td></tr>
+      </table>
+      <p>拆了之后补四件套：<strong>失败结构化回传</strong> · <strong>超时与并发上限</strong> · <strong>产物外置到文件系统</strong> · <strong>每个子代理单独落盘可观测</strong>。</p>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

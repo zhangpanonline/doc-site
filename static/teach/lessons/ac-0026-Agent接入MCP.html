@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Agent接入MCP：把 MCP 服务器工具并入 Agent 工具集、注册 use_mcp 网关并注入系统提示词——互动教学课程">
+  <title>Agent接入MCP · 互动教学课程（Agents底层逻辑 ac-26）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Agent接入MCP</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Agent接入MCP">26.Agent接入MCP</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>复述本章四项 to do：<code>mcp</code> 独立配置 → 进一步封装描述和工具 → 注册工具 → 修改系统提示词模板和注入</li>
+        <li>读懂 <code>agent/tool/use_mcp.py</code> 的四段骨架：<code>connect_mcp</code> 两条传输分支、<code>run_async</code> 的同步/异步桥、<code>MCPClient</code> 的四个方法、<code>@tool</code> 包装出的 <code>use_mcp</code></li>
+        <li>说出 5 个变更文件各自改了什么，以及「新增 0 个、修改 5 个」这笔工程账目的含义</li>
+        <li>指出本章的三处错误处理缺口——<code>list_mcp_info</code> 静默降级、<code>servers[name]</code> 的 <code>KeyError</code> 抛穿循环、<code>Session.__init__</code> 双次渲染——并给出修法</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「四步接入路线 + 两份代码骨架」过一遍——细节都在《26.Agent接入MCP》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>接入路线：四步，一个配置中心</h3>
+        <ul class="pitfall-list">
+          <li><strong>本章 to do list（原文四条）</strong>：① <code>mcp</code> 独立配置；② 进一步封装描述和工具；③ 注册工具；④ 修改系统提示词模板和注入</li>
+          <li><strong>① 独立配置</strong> <code>agent/.agents/mcp.json</code>：<code>servers</code> 下每台服务器自带 <code>type</code>——<code>{"time": {"type": "stdio", "command": "uvx", "args": ["mcp-server-time"]}}</code> 与 <code>{"microsoft-learn": {"type": "http", "url": "https://learn.microsoft.com/api/mcp"}}</code></li>
+          <li><strong>②③ 封装与注册</strong>：把 MCP 客户端封装成一个 <strong>普通工具</strong> <code>use_mcp</code>，再和其他工具一样 <code>registry.register(use_mcp)</code>——Agent 眼里它和 <code>read_file</code>、<code>bash_command</code> 没有区别</li>
+          <li><strong>④ 提示词注入</strong>：<code>list_mcp_info()</code> 把所有服务器的工具清单序列化成 JSON，经 <code>render_prompt(mcp_servers=...)</code> 落到 <code>system.j2</code> 的 <code># MCP</code> 小节——模型因此「知道有哪些远程工具可用」</li>
+          <li><strong>四步演示（课件原文）</strong>：
+            <pre>from agent.agent import Agent
+from agent.printer import ModelPrinterListener
+
+listener = ModelPrinterListener()
+agent = Agent(model_listener=listener)
+
+agent.session.print_friendly()   # 先看看系统消息里注入了什么
+agent.invoke("当前时间是？")      # 模型 → use_mcp → time 服务器 → 时间字符串
+agent.session.save()             # 会话落盘</pre>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>骨架一：<code>connect_mcp</code> 与 <code>run_async</code></h3>
+        <ul class="pitfall-list">
+          <li><strong>配置在导入时就加载</strong>：模块顶层 <code>open(.../.agents/mcp.json)</code> → <code>mcp = json.load(_f)</code>，随后 <code>_client = MCPClient(mcp)</code>——所以配置写错会在 import 阶段就炸</li>
+          <li><strong>两条传输分支</strong>（<code>@asynccontextmanager</code>）：
+            <pre>if server_config["type"] == "stdio":
+    params = StdioServerParameters(
+        command=server_config["command"], args=server_config.get("args", []))
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()          # 握手：版本 + 能力协商
+            yield session
+elif server_config["type"] == "http":
+    async with streamable_http_client(server_config["url"]) as (read, write, _):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            yield session
+else:
+    raise ValueError(f"不支持的服务器类型: {server_config['type']}")</pre>
+          </li>
+          <li><strong><code>run_async</code>：线程里的 <code>asyncio.run</code></strong>：Agent 主循环是同步的，而 MCP SDK 只给异步 API——于是开一个 <code>threading.Thread</code>，在里面 <code>asyncio.run(coro)</code>，用 <code>nonlocal result, error</code> 把结果或异常带回来，最后在主线程 <code>raise error</code></li>
+          <li><strong><code>MCPClient</code> 四个方法一一对应</strong>：<code>alist_tools()</code> / <code>acall_tool()</code> 是异步实现，<code>list_tools()</code> / <code>call_tool()</code> 只是 <code>run_async(...)</code> 的同步包装；模块级函数 <code>list_mcp_tools()</code> 返回 <code>_client.list_tools()</code></li>
+          <li><strong>工具签名</strong>：<code>@tool(server_name="mcp服务器的名称", tool_name="工具名称", arguments="工具参数，无参工具可以不用传递")</code> 装饰 <code>use_mcp(server_name, tool_name, arguments=None)</code>，函数体只有一行——<code>return _client.call_tool(server_name, tool_name, arguments)</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>骨架二：提示词注入链路与三处错误处理缺口</h3>
+        <ul class="pitfall-list">
+          <li><strong>注入链路</strong>：<code>list_mcp_info()</code> → <code>list_mcp_tools()</code> → 每个服务器一条 <code>{"server": 名字, "tools": [{name, description, inputSchema}, …]}</code> → <code>json.dumps(result, ensure_ascii=False, indent=2)</code> → <code>render_prompt(..., mcp_servers=list_mcp_info())</code> → <code>system.j2</code> 的 MCP 小节里 <code>{{ mcp_servers }}</code> 被包在 <code>```json</code> 代码块中</li>
+          <li><strong>缺口 ①：静默降级</strong>——<code>list_mcp_info()</code> 整个函数体包在 <code>try / except Exception</code> 里，异常一律 <code>return ""</code>。好处是 MCP 挂了不阻塞对话；代价是模型看到的工具清单变成空串，而提示词仍然告诉它「可以用 <code>use_mcp</code>」，日志里也没有任何痕迹</li>
+          <li><strong>缺口 ②：<code>KeyError</code> 抛穿循环</strong>——<code>MCPClient.acall_tool</code> 里是 <code>config = self.servers[server_name]</code>。模型把服务器名写错时字典下标直接抛 <code>KeyError</code>，<code>run_async</code> 在主线程重抛，异常穿过 <code>tool(**args)</code>、<code>registry.invoke</code>，把整个 ReAct 循环打断——模型连「名字写错了」这条反馈都拿不到</li>
+          <li><strong>缺口 ③：<code>Session.__init__</code> 双次渲染</strong>——<code>if not system_prompt: system_prompt = render_prompt("system")</code> 之后，注入时又写了一次 <code>render_prompt("system")</code>：传入的自定义提示词被丢弃，且 <code>render_prompt</code> 被调用两次。接入 MCP 后它的代价从「渲染一段文本」升级为「真实连接每台 MCP 服务器」，这就是下一题（高级第 7 题）要推演的账</li>
+          <li><strong>顺带一提</strong>：<code>session.py</code> 的 <code>print_friendly</code> 里出现了 <code>except json.JSONDecodeError, TypeError:</code>——这是 Python 2 的旧写法，在 Python 3 下文件根本无法通过语法解析（应写成 <code>except (json.JSONDecodeError, TypeError):</code>）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《26.Agent接入MCP》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. 本章 <code>agent/</code> 工程相对上一章的变更账目是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">新增 5 个文件、修改 0 个——MCP 相关文件全是新的</button>
+            <button class="quiz-option">新增 1 个（<code>.agents/mcp.json</code>）、修改 4 个</button>
+            <button class="quiz-option">新增 2 个、修改 3 个，其余文件不动</button>
+            <button class="quiz-option">新增 0 个、修改 5 个：<code>prompt.py</code>、<code>prompt/system.j2</code>、<code>session.py</code>、<code>tool/__init__.py</code>、<code>tool/use_mcp.py</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：「本章 <code>agent/</code> 工程相对上一章的变更：<strong>新增 0 个文件、修改 5 个文件</strong>」，随后逐一给出这 5 个文件的全文。<code>.agents/mcp.json</code> 属于配置，不在这次的「文件变更」清单里；<code>tool/use_mcp.py</code> 是「修改」而不是「新增」，说明它在上一章（MCP Client）已经存在。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. <code>use_mcp</code> 这个工具要求模型传入哪三个参数？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>server_name</code>（服务器名称）/ <code>tool_name</code>（工具名称）/ <code>arguments</code>（工具参数，无参工具可以不传）</button>
+            <button class="quiz-option"><code>command</code> / <code>args</code> / <code>timeout</code>——直接指定要启动的 MCP 进程</button>
+            <button class="quiz-option"><code>server_name</code> / <code>tool_name</code> / <code>cwd</code>——第三个参数用来限定工作目录</button>
+            <button class="quiz-option"><code>url</code> / <code>type</code> / <code>headers</code>——直接指定要访问的端点</button>
+          </div>
+          <div class="quiz-explain" hidden>装饰器原文：<code>@tool(server_name="mcp服务器的名称", tool_name="工具名称", arguments="工具参数，无参工具可以不用传递")</code>，函数签名是 <code>def use_mcp(server_name: str, tool_name: str, arguments: dict = None)</code>。<code>command</code>/<code>url</code> 是 <code>mcp.json</code> 里的连接配置，不该由模型提供——模型只负责选「哪台服务器上的哪个工具、传什么参数」。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. MCP 服务器的连接配置写在哪里？最终注册进 <code>registry</code> 的是哪个工具？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">直接写在系统提示词里；注册的是 <code>list_mcp_tools</code></button>
+            <button class="quiz-option"><code>agent/.agents/mcp.json</code> 的 <code>servers</code> 里声明每台服务器的 <code>type</code> 与 <code>command</code>/<code>args</code> 或 <code>url</code>；注册进 registry 的是唯一的 <code>use_mcp</code></button>
+            <button class="quiz-option">写在 <code>.env</code> 环境变量里；注册的是 <code>connect_mcp</code></button>
+            <button class="quiz-option">写进 <code>agent/config.py</code> 的配置类，并把每台服务器的每个工具都单独注册一遍</button>
+          </div>
+          <div class="quiz-explain" hidden>to do 第一条就是「<code>mcp</code> 独立配置」，落地为 <code>.agents/mcp.json</code>（例如 <code>time</code> 走 stdio 的 <code>uvx mcp-server-time</code>，<code>microsoft-learn</code> 走 http）。<code>use_mcp.py</code> 末尾用 <code>@tool(...)</code> 把 <code>use_mcp</code> 包装成工具，<code>tool/__init__.py</code> 里 <code>registry.register(use_mcp)</code>。<code>connect_mcp</code> 是异步上下文管理器、<code>list_mcp_tools</code> 是查询函数，两者都不是 Tool。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. <code>run_async()</code> 为什么要专门开一个线程、在里面跑 <code>asyncio.run(coro)</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了绕过 GIL，让 MCP 调用的 CPU 计算真正并行</button>
+            <button class="quiz-option">因为 <code>threading</code> 比 <code>asyncio</code> 更快，线程能提升网络吞吐</button>
+            <button class="quiz-option">因为 MCP 的 stdio 传输依赖线程本地存储，必须在工作线程里读写</button>
+            <button class="quiz-option">因为 Agent 主循环是同步的、而 MCP SDK 只提供异步 API；<code>asyncio.run</code> 不能在已有事件循环运行的线程里调用，新线程里它自带一个全新事件循环并在结束时关闭</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 官方文档对 <code>asyncio.run</code> 的两条硬约束是判据：<strong>「This function cannot be called when another asyncio event loop is running in the same thread.」</strong>以及「This function should be used as a main entry point for asyncio programs, and should ideally only be called once.」本章的调用方是同步的 <code>query()</code>，所以用 <code>threading.Thread</code> 开一块干净地盘，让 <code>asyncio.run</code> 在那里建循环、跑协程、关循环。它不是性能优化：<code>t.join()</code> 会把主线程阻塞到结束，多台服务器仍是串行。异常传递靠 <code>nonlocal result, error</code> 暂存，回到主线程再 <code>raise error</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>connect_mcp</code> 的两条分支分别怎么写？配置里的 <code>type</code> 不认识时又会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>stdio</code> → <code>StdioServerParameters(command=..., args=...)</code> 交给 <code>stdio_client</code>；<code>http</code> → <code>streamable_http_client(server_config["url"])</code>；两者都进入 <code>ClientSession</code> 并先 <code>await session.initialize()</code>；<code>type</code> 不匹配则抛 <code>ValueError(f"不支持的服务器类型: ...")</code></button>
+            <button class="quiz-option">两条分支都只读 <code>url</code> 字段，<code>command</code> 被忽略；<code>type</code> 缺失时默认按 stdio 处理，不报错</button>
+            <button class="quiz-option"><code>stdio</code> 分支直接 <code>subprocess.Popen</code> 起进程，<code>http</code> 分支用 <code>requests</code> 发 POST，都不需要 MCP SDK</button>
+            <button class="quiz-option"><code>stdio</code> 分支用 <code>streamable_http_client</code>，<code>http</code> 分支用 <code>stdio_client</code>，两者都跳过 <code>initialize</code></button>
+          </div>
+          <div class="quiz-explain" hidden>对照课件代码：stdio 分支构造 <code>StdioServerParameters(command=server_config["command"], args=server_config.get("args", []))</code>，用 <code>async with stdio_client(params) as (read, write)</code> 拿到读写流；http 分支用 <code>async with streamable_http_client(server_config["url"]) as (read, write, _)</code>（注意是三个返回值）。两条分支随后完全一致：<code>ClientSession(read, write)</code> → <code>await session.initialize()</code> → <code>yield session</code>。<code>else</code> 分支明确 <code>raise ValueError</code>——写错 <code>type</code> 不会被静默忽略。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. <code>list_mcp_info()</code> 做了什么？它的返回值最后出现在哪里？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">返回服务器名列表，拼进用户消息里提示模型</button>
+            <button class="quiz-option">调用 <code>list_mcp_tools()</code> 取回各服务器的工具，抽成 <code>{name, description, inputSchema}</code> 后用 <code>json.dumps(..., ensure_ascii=False, indent=2)</code> 变成 JSON 字符串（异常时返回空串）；由 <code>render_prompt(mcp_servers=...)</code> 传给 <code>system.j2</code>，落在 <code># MCP</code> 小节的 <code>{{ mcp_servers }}</code> 代码块里</button>
+            <button class="quiz-option">生成一张 Markdown 表格，写回 <code>.agents/mcp.json</code> 供下次启动读取</button>
+            <button class="quiz-option">把每台 MCP 服务器的工具注册成独立 Tool 并写回 registry，让 <code>schemas()</code> 能取到</button>
+          </div>
+          <div class="quiz-explain" hidden>代码链路：<code>list_mcp_info()</code> 内部 <code>from agent.tool.use_mcp import list_mcp_tools</code> → 遍历 <code>item["server"]</code> 与 <code>item["tools"].tools</code>（<code>ListToolsResult</code> 的 <code>tools</code> 字段）→ 抽 <code>name</code>/<code>description</code>/<code>inputSchema</code> → <code>json.dumps(result, ensure_ascii=False, indent=2)</code>；<code>except Exception: return ""</code>。<code>render_prompt</code> 的渲染上下文新增 <code>mcp_servers=list_mcp_info()</code>，模板侧是 <code># MCP</code> 小节 + 「当前可用的 MCP 服务器及工具」+ <code>```json</code> 代码块包住 <code>{{ mcp_servers }}</code>。注意它是「给模型看的清单」，不是「注册给模型调用的工具」。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 推演 <code>Session.__init__</code> 的这两行：<code>if not system_prompt: system_prompt = render_prompt("system")</code> 之后紧跟 <code>self.add_message({"role": "system", "content": render_prompt("system")})</code>。接入 MCP 之后，代价为什么明显变大？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有任何影响：两次渲染结果一致，只是一次多余的字符串拼接</button>
+            <button class="quiz-option">传入的 <code>system_prompt</code> 从未被使用（自定义系统提示词失效）；且 <code>render_prompt</code> 被调用两次，而它会执行 <code>list_mcp_info()</code> 去真实连接每台 MCP 服务器做 <code>initialize</code> + 工具发现，于是「新建一个 Session」的连接链翻倍（约 $2 \times N_{\text{servers}}$ 次），MCP 不可达时还要各等一次超时</button>
+            <button class="quiz-option">会让 Python 报 <code>IndentationError</code>，因为 <code>add_message</code> 缩进层级错了</button>
+            <button class="quiz-option">第二次 <code>render_prompt</code> 会命中 Jinja2 缓存返回空串，导致系统消息为空</button>
+          </div>
+          <div class="quiz-explain" hidden>两个问题：① 局部变量 <code>system_prompt</code> 赋值完就被丢掉，注入用的是新一次 <code>render_prompt("system")</code>——所以 <code>Session(system_prompt="我的提示词")</code> 完全无效；② 双次渲染在接入 MCP 前只是多渲染一段文本，接入后 <code>render_prompt</code> 里多了 <code>mcp_servers=list_mcp_info()</code>，而 <code>list_mcp_info</code> → <code>list_mcp_tools</code> → <code>MCPClient.alist_tools</code> 会对 <code>self.servers</code> 逐台 <code>connect_mcp</code>：每台都要先 <code>initialize</code>（官方规范规定初始化握手必须是客户端与服务器的第一次交互）再 <code>list_tools</code>。所以新建一次 Session 的发现开销是 $2 \times N_{\text{servers}}$ 条连接链，本章配置下 N=2（含一台走公网的 Microsoft Learn）就是 4 条，且都是同步阻塞的。修法：只渲染一次并复用局部变量；进一步把清单缓存起来（进程级/会话级 + TTL），或把工具发现从构造函数里挪出去。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 模型把 <code>server_name</code> 写成了 <code>"times"</code>（<code>mcp.json</code> 里只有 <code>time</code>）。这一轮会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>connect_mcp</code> 抛出的 <code>ValueError</code> 会被 <code>registry.invoke</code> 捕获并转成 <code>role=tool</code> 内容回传</button>
+            <button class="quiz-option"><code>acall_tool</code> 里 <code>config = self.servers[server_name]</code> 直接抛 <code>KeyError</code>；<code>run_async</code> 把线程里的异常装进 <code>error</code> 后回主线程重新抛出，异常穿过 <code>tool(**args)</code> 与 <code>registry.invoke</code>，整个 query 循环被打断，模型拿不到「服务器名错了」这条反馈</button>
+            <button class="quiz-option"><code>self.servers.get(...)</code> 返回 <code>None</code>，工具回一句「无此服务器」，循环继续下一轮</button>
+            <button class="quiz-option">会自动回退到 <code>servers</code> 里的第一台服务器（本例是 <code>time</code>），所以结果照常返回</button>
+          </div>
+          <div class="quiz-explain" hidden>三处代码叠起来看：<code>MCPClient.acall_tool</code> 里是字典下标 <code>config = self.servers[server_name]</code>（不是 <code>.get</code>），缺键抛 <code>KeyError</code>；<code>run_async</code> 在子线程里 <code>try/except Exception</code> 把异常存进 <code>error</code>，回到主线程 <code>if error: raise error</code> 原样重抛；<code>_ToolRegistry.invoke</code> 只是 <code>result = tool(**args)</code>，没有任何 <code>try/except</code>。于是异常一路上抛、打断 ReAct 循环。这与本章「统一错误处理」的目标正好相反：对 Agent 来说，参数写错应该是一句可读的环境反馈（<code>role=tool</code> 内容），而不是让会话崩掉。修法是把 <code>server_name</code>/<code>tool_name</code> 的校验失败翻译成字符串返回值，或给 <code>_client.call_tool</code> 包一层 <code>try/except</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 下面哪一条对 <code>agent.invoke("当前时间是？")</code> 整条链路的描述与本章代码一致？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>use_mcp</code> 自己向 modelcontextprotocol.io 发 HTTP 请求，从协议官网取当前时间</button>
+            <button class="quiz-option">模型不需要工具，直接用训练数据里的「当前时间」作答，因此这题只是演示提示词注入</button>
+            <button class="quiz-option">系统提示词里的 <code>mcp_servers</code> 让模型直接调用 <code>get_current_time</code>——它在启动时已被注册成独立工具</button>
+            <button class="quiz-option">Session 注入含 MCP 清单的系统提示词 → 模型发出 <code>use_mcp(server_name="time", tool_name="get_current_time", arguments={"timezone": "Asia/shanghai"})</code> → <code>registry.invoke</code> 执行 <code>use_mcp</code> → <code>_client.call_tool</code> → <code>run_async</code> 在新线程里 <code>connect_mcp</code>（stdio 启动 <code>uvx mcp-server-time</code> 子进程并 <code>initialize</code>）→ <code>session.call_tool</code> → 结果以 <code>role=tool</code> 写回 <code>messages</code> → 模型继续推理直到不再发起工具调用，最后 <code>session.save()</code> 落盘</button>
+          </div>
+          <div class="quiz-explain" hidden>链路的关键是「<strong>MCP 工具不是独立注册的工具</strong>」：registry 里只有 <code>use_mcp</code> 这一个网关卡，模型按提示词里的清单选服务器与工具名。stdio 那台由 <code>uvx mcp-server-time</code> 起子进程（配置里 <code>command</code>/<code>args</code> 就是干这个的），握手后才能 <code>call_tool</code>；返回值经 <code>registry.invoke</code> 组装成 <code>{"role": "tool", "tool_call_id": ..., "name": "use_mcp", "content": ...}</code> 回到上下文，下一轮模型据此生成自然语言回答。<code>time</code> 服务器提供的工具名与时区参数，与上一章《25.MCP Client》里 <code>get_current_time</code> + <code>{"timezone": "Asia/shanghai"}</code> 的演示一致——本章只是把它接进了 Agent 的工具集。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0026-Agent接入MCP',
+          questions: [
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `同事看了 <code>list_mcp_info()</code> 说：「整个函数包在 try/except Exception 里、出错就返回空串，这是优雅降级——MCP 服务器挂了 Agent 照样能跑。」请判断这个说法在什么情况下成立、在什么情况下是陷阱，并结合 MCP 官方对工具「由模型控制」的定位说明后果。`,
+              source: `来源：MCP 官方规范 Tools（"Tools in MCP are designed to be model-controlled, meaning that the language model can discover and invoke tools automatically based on its contextual understanding and the user’s prompts."；"Each tool is uniquely identified by a name and includes metadata describing its schema."）https://modelcontextprotocol.io/specification/2025-06-18/server/tools · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《26.Agent接入MCP》课件（list_mcp_info 全文）`,
+              breakdown: `成立的场景：本地开发时某台 MCP 服务器没启动、或者公司内网的 MCP 端点暂时不可达，如果这里不兜底，<code>render_prompt</code> 会把异常抛进 <code>Session.__init__</code>，连「不用 MCP 的普通对话」都开不了——对「能降级就降级」的对话型 Agent，这确实比硬失败好。<br>陷阱在于：官方把 MCP 工具定义为 <strong>model-controlled</strong>——模型要能「discover and invoke tools automatically」，前提就是它看得见带 schema 的清单（官方原话：每个工具由名字唯一标识、并携带描述其 schema 的元数据）。而 <code>return ""</code> 之后，<code>system.j2</code> 里那段 <code>{{ mcp_servers }}</code> 变成空，模型<strong>既不知道有哪些服务器、也不知道工具名和 inputSchema</strong>，可提示词上面又明确写着「当你需要调用 MCP 工具时，可以使用 use_mcp 工具，传入 server_name、tool_name、arguments」。结果是模型开始猜：编造 <code>server_name</code>、把工具名写成自然语言、或者在同一台服务器上反复试错。而这类失败在本章代码里会以 <code>KeyError</code> 的形式抛穿整个循环（见另一道 review 题），连「猜错了」的反馈都拿不到。更要命的是可观测性：<code>except Exception</code> 连日志都不打，线上只能看到「模型变笨了」。<br>正确姿势是把「降级」和「信息丢失」分开：① 捕获时区分「无配置」与「服务器不可达」，并记一条 warning/结构化日志；② 仍然渲染清单，但附上失败说明（例如给每台服务器加 <code>error</code> 字段写成「time: 连接超时，暂时不可用」），让模型知道「这台存在但现在别用」；③ 给发现过程加超时，避免 <code>Session.__init__</code> 被远端拖死。降级的目标是「能力变少但行为可解释」，不是「静默地把能力抹掉」。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `本章 <code>run_async()</code> 为什么要专门开一个 <code>threading.Thread</code>，在里面再 <code>asyncio.run(coro)</code>？直接同步函数里调 <code>asyncio.run</code> 行不行？线程里的异常是怎么传回主线程的？`,
+              source: `来源：Python 官方文档 Runners（"This function cannot be called when another asyncio event loop is running in the same thread."；"This function runs the awaitable, taking care of managing the asyncio event loop, finalizing asynchronous generators, and closing the executor."；"This function should be used as a main entry point for asyncio programs, and should ideally only be called once."）https://docs.python.org/3/library/asyncio-runner.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `先看两边的接口形态：Agent 侧是同步的 <code>query()</code> → <code>registry.invoke</code> → <code>tool(**args)</code>，工具函数必须立刻返回一个值；MCP Python SDK 侧全是异步接口（<code>stdio_client</code>、<code>ClientSession.initialize/list_tools/call_tool</code>）。桥接只能用 <code>asyncio.run</code>。<br>官方给了两条正好解释这段代码的约束：① <strong>「This function cannot be called when another asyncio event loop is running in the same thread.」</strong>——如果调用方本身跑在事件循环里（比如以后把 Agent 搬进 FastAPI 异步接口），原地 <code>asyncio.run</code> 会直接抛 <code>RuntimeError</code>；② <strong>「should be used as a main entry point ... and should ideally only be called once」</strong>——它是「建循环 → 跑 → 关循环」的一次性入口。<code>threading.Thread</code> 恰好提供了「一块没有事件循环的新地盘」，所以 <code>asyncio.run</code> 在这里合法；随着 <code>t.join()</code>，主线程阻塞等待，语义上仍是同步调用。<br>异常传递：子线程里 <code>try/except Exception as e</code> 把异常对象存进闭包变量 <code>error</code>（用 <code>nonlocal</code> 声明），<code>asyncio.run</code> 的结果存进 <code>result</code>；线程结束后主线程检查 <code>if error: raise error</code>，相当于把异常「搬」了过来（注意会丢掉原始 traceback 之外的线程上下文）。<br>代价要说清楚：这不是并发优化——每次调用都新建并销毁一个线程和事件循环，多台服务器仍是串行；而且 <code>asyncio.run</code> 内部会把线程默认 executor 也关掉。生产更常见的做法是常驻一个后台事件循环线程（<code>asyncio.run_coroutine_threadsafe</code> + <code>run_forever</code>），一次建好、多次复用，同时可以复用 MCP 会话。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `本章 <code>connect_mcp</code> 同时支持 stdio 与 http。按官方规范，stdio 传输下「谁启动服务器、消息怎么走」？<code>.agents/mcp.json</code> 里的 time 与 microsoft-learn 分别属于哪种传输？为什么规范说客户端 SHOULD support stdio whenever possible？`,
+              source: `来源：MCP 官方规范 Transports（"stdio, communication over standard in and standard out"；"In the stdio transport: The client launches the MCP server as a subprocess. The server reads JSON-RPC messages from its standard input (stdin) and sends messages to its standard output (stdout). Messages are delimited by newlines"；"Clients SHOULD support stdio whenever possible."）https://modelcontextprotocol.io/specification/2025-06-18/basic/transports · 检索 2026-10-02 · 层级：一手（官方文档）+ Microsoft Learn MCP Server overview（"It’s a remote MCP server that uses streamable http."；"There’s no authentication required to access the Microsoft Learn MCP Server."）https://learn.microsoft.com/en-us/training/support/mcp · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方对两种标准传输的定义：<strong>stdio = 走标准输入输出的通信</strong>，规范写明「客户端把 MCP 服务器作为子进程启动」，服务器从 <code>stdin</code> 读 JSON-RPC、向 <code>stdout</code> 写 JSON-RPC，消息以换行分隔；另一条是 <strong>Streamable HTTP</strong>，服务器是独立进程、可服务多个客户端连接。规范还给了一句取舍建议：「Clients SHOULD support stdio whenever possible.」<br>落到本章配置：<code>time</code> 是 <code>{"type": "stdio", "command": "uvx", "args": ["mcp-server-time"]}</code>——<code>command</code>/<code>args</code> 正是「客户端要启动的那个子进程」，<code>uvx</code> 会临时拉取并运行 <code>mcp-server-time</code>；<code>microsoft-learn</code> 是 <code>{"type": "http", "url": "https://learn.microsoft.com/api/mcp"}</code>——微软官方文档确认它是「remote MCP server that uses streamable http」，端点就是 <code>https://learn.microsoft.com/api/mcp</code>，且<strong>无需鉴权</strong>。所以 <code>connect_mcp</code> 的两条分支不是「二选一」，而是按服务器形态分流：本地能力（时间、文件、数据库）走 stdio，SaaS 提供的远程能力走 http。<br>为什么 stdio 优先支持：它没有网络层、没有端口、没有跨域与鉴权链路，客户端拉起子进程即可通信，是本地服务器的默认形态；代价是<strong>生命周期归客户端管</strong>——进程随连接创建、随上下文退出销毁（本章就是「一次调用一次连接」，所以每次都要重新 <code>initialize</code>）。http 反过来：无需本地进程，但要处理网络错误、超时与（可能需要的）认证。生产上还要注意微软文档里的提醒：该端点面向 MCP 客户端编程访问，浏览器直接打开会得到 <code>405</code>。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `代码审查：<code>Session.__init__</code> 里 <code>if not system_prompt: system_prompt = render_prompt("system")</code>，紧接着 <code>self.add_message({"role": "system", "content": render_prompt("system")})</code>。指出两个问题，并说明第二个问题为什么在接入 MCP 之后代价明显变大（沿着 render_prompt → list_mcp_info → list_mcp_tools → initialize + tools/list 的调用链推）。另外，这个文件里还有一处会让 Python 3 直接解析失败的写法，找出来。`,
+              source: `来源：MCP 官方规范 Lifecycle（"The initialization phase MUST be the first interaction between client and server. During this phase, the client and server: Establish protocol version compatibility / Exchange and negotiate capabilities / Share implementation details"）https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《26.Agent接入MCP》课件（session.py、prompt.py、use_mcp.py 全文）`,
+              breakdown: `问题 ①：<strong>形参被丢弃</strong>。局部变量 <code>system_prompt</code> 赋值后没有任何地方使用它，真正进入 <code>messages</code> 的是第二次 <code>render_prompt("system")</code> 的返回值。于是 <code>Session(system_prompt="你是客服助手")</code> 这种用法完全无效，调用方还以为已经覆盖了默认提示词。<br>问题 ②：<strong>渲染被调用两次</strong>。接入 MCP 前，<code>render_prompt</code> 只是读环境（cwd/os/git/skills），便宜；接入后它多了一行 <code>mcp_servers=list_mcp_info()</code>，而 <code>list_mcp_info</code> → <code>list_mcp_tools</code> → <code>MCPClient.alist_tools</code> 会遍历 <code>self.servers</code> 逐台 <code>connect_mcp</code>，每台都要走一次官方规定的<strong>初始化握手</strong>（规范：初始化阶段「MUST be the first interaction between client and server」，要协商协议版本与能力）再 <code>list_tools</code>。所以「新建一个 Session」的发现开销是 <code>2 × N_servers</code> 条连接链；本章 N=2（其中 microsoft-learn 还要过一次公网），就是 4 条同步阻塞的链路。冷启动慢一倍只是表象，真正的风险是：远端不可达时 <code>Session.__init__</code> 会被网络超时拖住，而这个构造函数是全工程所有会话的必经之路。<br>修法：只渲染一次并用局部变量（<code>system_prompt = system_prompt or render_prompt("system")</code>，再 <code>add_message(..., system_prompt)</code>）；进一步把 MCP 工具清单做成带 TTL 的缓存或懒加载，别把外部 IO 塞进构造函数。<br>额外的语法问题在 <code>print_friendly</code>：<code>except json.JSONDecodeError, TypeError:</code> 是 Python 2 的旧写法，Python 3 要求<strong>多个异常必须写成元组</strong>（<code>except (json.JSONDecodeError, TypeError):</code>），否则模块导入阶段就 <code>SyntaxError</code>。这类「AI 改写留下的伤痕」在审查里值得单独拎出来——它让整个文件连跑都跑不起来，但 diff 里看着只像一行小改动。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `以本章实现为基线，设计一个生产可用的 MCP 接入层：连接生命周期（每次调用新建 vs 常驻会话）、超时与重试、错误如何回流给模型、工具命名空间与清单变更、鉴权与信任边界。请给出取舍与理由。`,
+              source: `来源：MCP 官方规范 Tools（"Each tool is uniquely identified by a name and includes metadata describing its schema."；"Servers that support tools MUST declare the tools capability."）https://modelcontextprotocol.io/specification/2025-06-18/server/tools · 检索 2026-10-02 · 层级：一手（官方文档）+ MCP 官方规范 Transports（"Clients SHOULD support stdio whenever possible."）https://modelcontextprotocol.io/specification/2025-06-18/basic/transports · 检索 2026-10-02 · 层级：一手（官方文档）+ MCP Python SDK v1.28.1 README（"v1.x remains recommended for production use. It is in maintenance mode and continues to receive critical bug fixes and security patches."；"If your package depends on mcp, add a &lt;2 upper bound to your version constraint"）https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/v1.28.1/README.md · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `① <strong>连接生命周期</strong>：本章是「一次工具调用 = 一次连接」（<code>call_tool</code> → <code>run_async</code> → <code>connect_mcp</code> → 用完即退）。简单、天然无状态、不会泄漏子进程；代价是每次都要重跑初始化握手、stdio 每次重启子进程、http 每次重新建连，延迟与远端压力都翻倍。<strong>建议</strong>：改成常驻的后台事件循环线程 + 服务器级连接池，会话按需建立并保活，同时保留一个「空闲 N 分钟回收 + 失败自动重建」的策略；只对一次性、低频的服务器保留短连接。取舍依据就是调用频次与握手成本。② <strong>超时与重试</strong>：本章的 <code>connect_mcp</code> 没有任何超时，<code>session.call_tool</code> 也没有——远端卡住会把同步主线程一起拖住。至少要给「连接/初始化/调用」三段分别设超时，重试只对幂等且瞬时性错误（网络抖动、限流）做，并配指数退避；把超时翻译成可读结果而不是异常。③ <strong>错误回流</strong>：本章的失败路径是抛穿（<code>servers[name]</code> 的 <code>KeyError</code>、<code>ValueError</code>、超时异常），这与「统一错误处理」的目标相反。原则应是：<strong>凡是模型可以自我修正的错误，都变成 <code>role=tool</code> 的内容</strong>——服务器名不存在、工具名不对、参数不合 schema、远端返回错误，都回一句人能读懂的话；只有「客户端自身 bug」才允许抛出终止。同时把每次调用的原始错误写进日志/审计，不要只给模型看。④ <strong>命名空间与清单</strong>：官方强调工具由 name 唯一标识并带 schema；本章把「服务器名 + 工具名」交给模型拼，等于让模型参与命名空间解析，容易写错（如 times/time）。更稳的是在提示词清单里就给出<strong>规范化全名</strong>（如 <code>time.get_current_time</code>）或让 <code>use_mcp</code> 接受全名后自己拆分；再配合「服务器不可用」的显式标记，以及支持工具清单变更（官方 capability 里有 <code>listChanged</code>）时的刷新策略，避免清单与实际能力漂移。⑤ <strong>鉴权与信任边界</strong>：stdio 服务器是<strong>本地进程</strong>，等于给了它宿主机权限，配置里能写 <code>command</code> 就意味着能跑任意命令——<code>mcp.json</code> 必须当作可执行代码来管理（评审 + 白名单 + 版本锁定）；http 服务器要区分「公共无鉴权」（例如微软文档确认 Learn MCP 端点无需认证）与「需要 OAuth/Token」的情形，凭据走环境变量或密钥管理，绝不写进提示词。⑥ <strong>依赖与版本</strong>：官方 SDK 明确 v1.x 仍在维护、同时提醒给依赖加上上界（例如 <code>mcp&gt;=1.27,&lt;2</code>），本章钉住的 <code>1.28.1</code> 就是这种策略的体现——协议与 SDK 都在演进，接入层要把版本约束和兼容性测试当成设计的一部分。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手完成本章四项 to do，让 Agent 自己调用 MCP 工具答出「当前时间是？」。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '写 <code>agent/.agents/mcp.json</code>（<code>time</code> 用 stdio：<code>uvx mcp-server-time</code>；再加一台 http 服务器，如 <code>https://learn.microsoft.com/api/mcp</code>）→ 在 <code>agent/tool/use_mcp.py</code> 里用 <code>@asynccontextmanager</code> 写 <code>connect_mcp</code>（stdio/http 两分支 + <code>initialize</code>）与 <code>run_async</code>（线程内 <code>asyncio.run</code>）→ 写 <code>MCPClient</code> 的同步/异步四方法并 <code>@tool(server_name, tool_name, arguments)</code> 包装出 <code>use_mcp</code> → 在 <code>tool/__init__.py</code> 里 <code>registry.register(use_mcp)</code> → 在 <code>prompt.py</code> 加 <code>list_mcp_info()</code> 并把 <code>mcp_servers</code> 传进 <code>render_prompt</code>，在 <code>system.j2</code> 的 <code># MCP</code> 小节插入 <code>{{ mcp_servers }}</code> → 跑 <code>Agent(...).invoke("当前时间是？")</code>，再 <code>print_friendly()</code> 与 <code>save()</code>。',
+                accept: ['<code>mcp.json</code> 里两台服务器的 <code>type</code> 分别是 <code>stdio</code> 与 <code>http</code>，字段完整（<code>command</code>/<code>args</code> 或 <code>url</code>）', '系统消息里能看到 <code># MCP</code> 小节里嵌着真实的工具清单 JSON（含 <code>name</code>/<code>description</code>/<code>inputSchema</code>）', '主循环里出现 <code>use_mcp</code> 的 <code>tool_calls</code>，且 <code>role=tool</code> 的结果带回真实时间字符串', '把 <code>server_name</code> 故意写错时能观察到当前行为（抛出并打断循环），并说出你会怎么改成回传错误信息'],
+              },
+              source: `任务基于《26.Agent接入MCP》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 配置先行——<code>.agents/mcp.json</code> 写成 <code>{"servers": {"time": {"type": "stdio", "command": "uvx", "args": ["mcp-server-time"]}, "microsoft-learn": {"type": "http", "url": "https://learn.microsoft.com/api/mcp"}}}</code>。② 连接层照本章抄两条分支，别忘 <code>await session.initialize()</code>——官方规范要求初始化握手是第一交互，跳过它后面 <code>list_tools</code> 会失败。③ 桥接层用线程 + <code>asyncio.run</code>，把结果与异常用 <code>nonlocal</code> 带回；顺手加一个 <code>timeout</code>，这是本章没做但生产中必须补的。④ 工具层只暴露 <code>use_mcp</code> 一个入口并注册进 registry；<code>arguments</code> 要给默认值 <code>None</code>，无参工具才不用传。⑤ 提示词层把清单 JSON 注入 <code>system.j2</code>，先跑一次 <code>print_friendly()</code> 确认注入成功。⑥ 验证——问「当前时间是？」，正常的轨迹是：模型先发 <code>use_mcp</code> 调用，工具返回时间字符串，模型再总结成人话；如果模型直接编时间，说明清单没注入成功或工具没注册。<br>常见坑：<code>mcp.json</code> 路径写错（模块导入期就 <code>FileNotFoundError</code>）；<code>uvx</code> 不在 PATH 导致 stdio 起不来；把 <code>streamable_http_client</code> 的返回值当两个解包（它是三个）；<code>type</code> 拼错触发 <code>ValueError</code>；以及把「服务器名写错」的 <code>KeyError</code> 当成模型的问题——那其实是错误处理该兜的地方。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://modelcontextprotocol.io/specification/2025-06-18/server/tools">MCP 规范 Tools</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports">MCP 规范 Transports</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle">MCP 规范 Lifecycle</a> · <a href="https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/v1.28.1/README.md">MCP Python SDK v1.28.1 README</a> · <a href="https://learn.microsoft.com/en-us/training/support/mcp">Microsoft Learn MCP Server overview</a> · <a href="https://docs.python.org/3/library/asyncio-runner.html">Python 官方文档 Runners</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Agent接入MCP速查表.html">Agent接入MCP速查表</a>——四项 to do、5 个文件变更、mcp.json 与 use_mcp 骨架、错误处理缺口一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Agent接入MCP">26.Agent接入MCP</a> · 上一课 <a href="/agents/Agents底层逻辑/MCP-Client">25.MCP Client</a> · 下一课 <a href="/agents/Agents底层逻辑/实现MCP服务器">27.实现MCP服务器</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

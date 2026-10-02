@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skill-VS-MCP速查表 · 参考手册</title>
+  <meta name="description" content="Skill-VS-MCP速查表 · 可打印参考手册：配合《Skill-VS-MCP互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>Skill-VS-MCP速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0028-Skill-VS-MCP.html">《Skill-VS-MCP互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>一句话定位</h2>
+      <table class="cmp-table">
+        <tr><th></th><th>Skill</th><th>MCP</th></tr>
+        <tr><td>是什么</td><td>可插拔的专业提示词模块（<code>SKILL.md</code> 目录）</td><td>通过标准协议暴露工具与数据的服务器</td></tr>
+        <tr><td>定位差异</td><td>告诉模型<strong>怎么做</strong>（流程与方法）</td><td>告诉模型<strong>谁来做</strong>（已实现好的执行者）</td></tr>
+        <tr><td>产物形态</td><td>自然语言指令（frontmatter + 正文）</td><td>带 JSON Schema 的接口（<code>tools/list</code> / <code>tools/call</code>）</td></tr>
+        <tr><td>一句话记忆</td><td><strong>上层要活</strong></td><td><strong>底层要稳</strong></td></tr>
+      </table>
+      <p>前提：课件原话——<strong>Skill 和 MCP 完全是两个东西</strong>，之所以放一起讨论，是因为在<strong>使用感官</strong>上有共同点：① 各有<strong>事实标准</strong>，因此容易形成社区与聚合站，能拿到大量现成的 SKILL 与 MCP 工具；② <strong>功能体验重叠</strong>——获取某个城市的天气，用 Skill 能做，用 MCP 也能做。</p>
+    </section>
+
+    <section>
+      <h2>差异表 · 八个维度（原表照录）</h2>
+      <table class="cmp-table">
+        <tr><th>维度</th><th>Skill</th><th>MCP</th></tr>
+        <tr><td>上下文消耗（未命中）</td><td>低</td><td>高 <em>可通过渐进式披露解决</em></td></tr>
+        <tr><td>上下文消耗（命中）</td><td>高</td><td>低</td></tr>
+        <tr><td>接入成本</td><td>低</td><td>高</td></tr>
+        <tr><td>可扩展性</td><td>高</td><td>低</td></tr>
+        <tr><td>贡献人群</td><td>广</td><td>窄</td></tr>
+        <tr><td>确定性</td><td>低</td><td>高</td></tr>
+        <tr><td>通用工具依赖</td><td>高</td><td>低</td></tr>
+        <tr><td>越权风险</td><td>高</td><td>低</td></tr>
+      </table>
+      <p>口径：<strong>未命中</strong>＝本轮没被用到时的常驻开销；<strong>命中</strong>＝本轮真正被用上时的单次开销。Skill 未命中只挂描述（低）、命中读整份正文（高）；MCP 的工具定义通常预加载（高，可做渐进式披露）、命中只是走一次调用（低）。</p>
+    </section>
+
+    <section>
+      <h2>最佳实践：MCP 定义底层工具，Skill 定义业务流程</h2>
+      <table class="cmp-table">
+        <tr><th>层</th><th>交给谁</th><th>课件给的清单</th></tr>
+        <tr><td>底层工具</td><td>MCP</td><td>文件读写 · 命令执行 · 网络搜索 · 接口搜索与调用 · 代码执行 · 其他对<strong>确定性、安全性</strong>要求高的操作</td></tr>
+        <tr><td>业务流程</td><td>Skill</td><td>机票怎么定、行程怎么规划 · 退货能不能退、怎么退 · 怎么介绍产品 · 怎么成交 · 其他对<strong>灵活性、专业性</strong>要求高的流程</td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>选型两问</dt>
+        <dd>① 这件事要的是<strong>确定性/安全</strong>还是<strong>灵活/专业</strong>？② 它会被频繁改动、由业务方多人贡献吗？前一问答「确定性」→ MCP；后一问答「是」→ Skill。</dd>
+        <dt>越权风险从哪来</dt>
+        <dd>Skill 靠自然语言指挥模型，可能被越权提问带偏；MCP 的行为被 schema 与实现钉死。故「资金、对外消息、危险命令」类动作应由工具兜底，Skill 只写判定与调用时机。</dd>
+        <dt>MCP 上下文怎么救</dt>
+        <dd>不要把工具定义一次性全量预加载；按需发现/加载工具定义（渐进式披露）是课件在差异表里给出的解法。</dd>
+        <dt>Skill 上下文怎么省</dt>
+        <dd>description 决定命中与否（写清适用场景，别写「处理相关问题」）；长参考资料拆成按需引用的附加文件，避免命中时整份灌进上下文。</dd>
+        <dt>两者怎么配合</dt>
+        <dd>Skill 描述业务流程时，把 MCP 工具当作执行底座——「判定在 Skill，动作在 MCP」。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <ul class="pitfall-list">
+        <li><strong>拿「能不能做」选型</strong>——功能体验重叠是常态（天气那个例子），要看八个维度的取舍。</li>
+        <li><strong>把两者当替代关系</strong>——「MCP 贵就全换 Skill」会同时丢掉确定性与安全性；正确动作是分层 + 对 MCP 做渐进式披露。</li>
+        <li><strong>把反直觉的数字记反</strong>——Skill 是「未命中低、命中高」，MCP 是「未命中高、命中低」。</li>
+        <li><strong>给每个小流程造一个 MCP 服务器</strong>——MCP 接入成本高、可扩展性低、贡献人群窄，堆量场景应交给 Skill。</li>
+        <li><strong>让 Skill 直接算钱/发消息</strong>——越权风险高的典型，副作用动作必须收进带 schema 的工具。</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

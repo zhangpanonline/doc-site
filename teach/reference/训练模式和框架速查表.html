@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>训练模式和框架速查表 · 参考手册</title>
+  <meta name="description" content="训练模式和框架速查表 · 可打印参考手册：配合《训练模式和框架互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>训练模式和框架速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0006-训练模式和框架.html">《训练模式和框架互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>三种梯度下降训练模式</h2>
+      <table class="cmp-table">
+        <tr><th>模式</th><th>每一步用多少样本</th><th>梯度特性</th><th>适用场景</th></tr>
+        <tr>
+          <td>随机梯度下降<br>SGD</td>
+          <td>只取 <strong>1 个样本</strong></td>
+          <td>梯度噪声极大，收敛震荡</td>
+          <td>早年小数据集用；现代大模型基本不用</td>
+        </tr>
+        <tr>
+          <td>全批量梯度下降<br>Full Batch</td>
+          <td>每一轮用<strong>全部训练集样本</strong></td>
+          <td>梯度方向最稳定</td>
+          <td>大数据集显存 / 内存爆炸、迭代极慢，几乎不用于大模型训练</td>
+        </tr>
+        <tr>
+          <td>小批量梯度下降<br>Mini-Batch</td>
+          <td>固定数量样本（<code>batch_size</code>：32 / 128 / 1024）</td>
+          <td>稳定性与速度平衡，显存可控</td>
+          <td><strong>大模型主流</strong>；LLM、CV 模型全部默认使用</td>
+        </tr>
+      </table>
+      <p>一句话：三种模式是<strong>同一条轴上的档位</strong>——<code>batch_size = 1</code> 就是 SGD，<code>batch_size = 整个训练集大小</code>就是全批量，中间都是小批量。</p>
+      <pre># 档位速记
+batch_size = 1        # SGD：梯度噪声极大、收敛震荡
+batch_size = N        # 全批量：方向最稳，但显存 / 内存爆炸、迭代极慢
+batch_size = 32/128/1024   # 小批量：大模型默认（LLM、CV 通用）</pre>
+    </section>
+
+    <section>
+      <h2>网络架构与深度学习框架</h2>
+      <table class="cmp-table">
+        <tr><th>名称</th><th>定位</th><th>核心思想 / 现状</th></tr>
+        <tr>
+          <td>CNN<br>卷积神经网络</td>
+          <td>图像领域经典架构</td>
+          <td>模仿人眼视觉：图像是<strong>局部关联</strong>的，不用一次性看整张图，只滑动小窗口（<strong>卷积核</strong>）提取局部纹理、边缘、色块</td>
+        </tr>
+        <tr>
+          <td>Transformer</td>
+          <td>NLP 起家，现在<strong>通用全能架构</strong></td>
+          <td>本章只给定位，机制在后续章节展开</td>
+        </tr>
+        <tr>
+          <td>PyTorch</td>
+          <td><strong>现在的主力训练框架</strong></td>
+          <td>训练侧首选</td>
+        </tr>
+        <tr>
+          <td>TensorFlow</td>
+          <td>现在已经不再流行</td>
+          <td>通常用于做一些<strong>边缘计算</strong></td>
+        </tr>
+      </table>
+      <p>选型直觉：图像类任务想到 CNN 的「局部 + 滑窗」，序列 / 文本类任务想到 Transformer；训练跟主力框架走，端侧（手机离线推理）落在轻量运行时上。</p>
+    </section>
+
+    <section>
+      <h2>模型文件的构成</h2>
+      <dl class="term-grid">
+        <dt>模型是什么</dt>
+        <dd>模型是<strong>训练的结果</strong>，通常以<strong>多个文件</strong>的形式存储。</dd>
+        <dt>核心权重文件</dt>
+        <dd>占 <strong>99% 体积</strong>。存的是训练得到的张量数值（各层参数），本身不知道自己属于哪一层。</dd>
+        <dt>配置文件</dt>
+        <dd>记录模型的<strong>网络架构、隐藏层维度、权重精度</strong>等信息——说明「数值该按什么结构摆」。</dd>
+        <dt>为什么配置不能丢</dt>
+        <dd>加载时要先按配置建好同构网络，再把权重逐个填进去；缺了配置就只能靠猜层数 / 维度，形状对不上直接报错。</dd>
+      </dl>
+      <table class="cmp-table">
+        <tr><th>易错点</th><th>正确认识</th></tr>
+        <tr>
+          <td>「batch_size 越大越好，设成全集收敛最快」</td>
+          <td>那是全批量：方向确实最稳，但大数据集显存 / 内存爆炸、迭代极慢——大模型默认仍是小批量。</td>
+        </tr>
+        <tr>
+          <td>「每一步只取 1 个样本 = 小批量」</td>
+          <td>每步 1 个样本是 <strong>SGD</strong>（随机梯度下降）：梯度噪声极大、收敛震荡。</td>
+        </tr>
+        <tr>
+          <td>「CNN 是通用全能架构」</td>
+          <td>通用全能是 <strong>Transformer</strong> 的定位；CNN 的主场是图像（局部关联 + 卷积核滑窗）。</td>
+        </tr>
+        <tr>
+          <td>「TensorFlow 是现在的主力训练框架」</td>
+          <td>反了：主力训练框架是 <strong>PyTorch</strong>，TensorFlow 常用于边缘计算。</td>
+        </tr>
+        <tr>
+          <td>「只拷贝权重文件就能跑」</td>
+          <td>权重只是数值；配置文件（架构、隐藏层维度、精度）一起带上才装得回去。</td>
+        </tr>
+      </table>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

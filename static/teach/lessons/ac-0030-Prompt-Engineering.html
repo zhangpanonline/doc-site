@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Prompt Engineering：提示词工程做的是什么、作用在上下文的哪一处，与 Context/Harness/Loop/Graph Engineering 的递进关系——互动教学课程">
+  <title>Prompt Engineering · 互动教学课程（Agents底层逻辑 ac-30）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Prompt Engineering</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Prompt-Engineering">30.Prompt Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>用一句话说清提示词工程在做什么——它经营的是上下文里的哪两格（系统提示词、用户问题），以及模型推理与回复在链路里的位置</li>
+        <li>复述本章指定学习资源《Prompt Engineering Guide》的骨架：提示词要素、通用技巧、技术、应用</li>
+        <li>说清 Prompt Engineering 在课程「六、工程方法论（30–34）」里的位置，以及它与 Context / Harness / Loop / Graph Engineering 的递进关系</li>
+        <li>把前 29 章学到的系统提示词原则（精简、自洽、全局约束、保持静态、结构化）接进「提示词工程」这条方法论主线</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>本章课件很短：标题、一个指向《Prompt Engineering Guide》的 GitHub 链接、一张图。所以这一课只讲三件事——那张图说的是什么、提示词工程是什么、它在 Agent 工程体系里站在哪。细节都在《30.Prompt Engineering》与它给出的那份指南里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>本章那张图：提示词工程作用在哪一格</h3>
+        <ul class="pitfall-list">
+          <li><strong>图里只有一个动作</strong>：「提示词的工程」引出两条箭头，分别落在上下文里的<strong>系统提示词</strong>与<strong>用户问题</strong>上——它经营的就是这两格文本</li>
+          <li><strong>这两格与「回复」被同一个框圈住</strong>，框的名字叫<strong>上下文</strong>；整个上下文送进<strong>模型</strong>做推理（Reasoning），再由模型产出<strong>回复</strong>。回复是模型的输出，不是提示词工程能直接写的对象</li>
+          <li><strong>接上第 16 章</strong>：系统提示词往往出现在所有消息的最前面，模型在训练过程中会重点关注它；系统提示词的核心原则是精简、自洽、全局约束、保持静态、结构化</li>
+          <li><strong>接上第 17 章</strong>：会话每一轮都会把系统提示词 + 历史消息 + 新的用户消息拼起来交给模型——提示词工程管的，是这份拼接结果里<strong>你能亲手写的那部分文本</strong></li>
+          <li><strong>一句话记忆</strong>：提示词工程 = 在「文本进入模型之前」把指令写清楚；它离模型最近，但管不到模型内部的推理，也管不到工具返回了什么</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>提示词工程是什么：定义与四要素</h3>
+        <ul class="pitfall-list">
+          <li><strong>本章指定资源的定义</strong>：《Prompt Engineering Guide》仓库 README 原文——Prompt engineering is a relatively new discipline for developing and optimizing prompts to efficiently use language models (LMs) for a wide variety of applications and research topics.（提示词工程是一门相对较新的学科，用于<strong>开发与优化提示词</strong>，以便在各种应用与研究场景中<strong>高效地使用语言模型</strong>。）</li>
+          <li><strong>它同时是一门「理解模型」的功夫</strong>：指南紧接着说，提示词工程技能有助于更好地理解大语言模型的能力与局限——所以写提示词不是玄学，而是拿它当探针去摸模型的边界</li>
+          <li><strong>提示词的四个可选要素</strong>（指南《提示词要素》原文）：<strong>指令</strong>——想要模型执行的特定任务或指令；<strong>上下文</strong>——包含外部信息或额外的上下文信息；<strong>输入数据</strong>——用户输入的内容或问题；<strong>输出指示</strong>——指定输出的类型或格式。指南明确：<strong>并非所有以上要素都是必须的</strong></li>
+          <li><strong>通用技巧的主线是迭代</strong>（指南《设计提示的通用技巧》）：从简单开始，逐渐添加元素和上下文，并在过程中不断实验；同时要具体、把指令放在提示的开头，或用 <code>###</code> 这类清晰分隔符把指令与上下文分开</li>
+          <li><strong>一句话记忆</strong>：要素齐全 + 结构清晰 + 反复迭代，把「你想让模型做什么」写到模型不会误解</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>它站在哪：工程方法论序列与学习路径</h3>
+        <ul class="pitfall-list">
+          <li><strong>序列里的位置</strong>：课程目录把 30–34 章编为「六、工程方法论」——Prompt → Context → Harness → Loop → Graph Engineering，本章是这条线的<strong>开篇</strong></li>
+          <li><strong>与上下文工程的关系（官方定义）</strong>：Anthropic 在《Effective context engineering for AI agents》里把上下文工程称为提示词工程的<strong>自然演进</strong>，而不是替代——提示词工程指「为获得最佳结果而编写与组织 LLM 指令的方法」，其主要关注点是「如何写出有效的提示词，尤其是系统提示词」；上下文工程指「在 LLM 推理过程中策划与维护最优 token 集合的策略」，<strong>包括提示词之外还会落进上下文的一切</strong>（系统指令、工具、MCP、外部数据、消息历史）</li>
+          <li><strong>再往后三章各自的关注点</strong>：Harness Engineering 管「情境与状态管理 + 护栏 + 可观测」；Loop Engineering 管「让 Agent 自我推动的循环」；Graph Engineering 管「用图组织多步流程」。它们都不再只是「写一段文本」</li>
+          <li><strong>学习路径（本章给的就是一条外链）</strong>：先把指南的 Introduction 读一遍——LLM 设置 → 基本概念 → 提示词要素 → 通用技巧 → 示例；再按需进入 Techniques（zero-shot / few-shot / 思维链 / 自洽性 / 提示链 / ReAct / RAG …）与 Applications（函数调用、生成数据、生成代码 …），最后用 Prompt Hub 找现成范例</li>
+          <li><strong>一句话记忆</strong>：提示词工程是 Agent 工程的<strong>第一层，不是全部</strong>；上下文每一轮都在变，所以后面还要学「管理整个上下文状态」</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《30.Prompt Engineering》（含本章指定指南）覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 按本章课件那张图，「提示词的工程」直接经营的是上下文里的哪两部分？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">系统提示词与用户问题</button>
+            <button class="quiz-option">工具清单与 MCP 配置</button>
+            <button class="quiz-option">系统提示词与模型回复</button>
+            <button class="quiz-option">模型的 Reasoning 内容与参数权重</button>
+          </div>
+          <div class="quiz-explain" hidden>课件图里「提示词的工程」只引出两条箭头，分别落在「系统提示词」和「用户问题」上；这两格和「回复」一起被圈在名为「上下文」的框里，整体送进模型做推理（Reasoning），再由模型产出回复。回复是模型的输出，不是提示词能直接写的对象；工具与 MCP 也不在这张图的作用面上。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 本章指定学习资源《Prompt Engineering Guide》对「提示词工程」的定义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">训练或微调语言模型，让它记住某个领域的知识</button>
+            <button class="quiz-option">用更大的上下文窗口装下更多资料</button>
+            <button class="quiz-option">给模型接上工具，让它能读写文件、访问网络</button>
+            <button class="quiz-option">开发与优化提示词，以便在各种应用与研究场景中高效地使用语言模型</button>
+          </div>
+          <div class="quiz-explain" hidden>指南 README 原文：Prompt engineering is a relatively new discipline for developing and optimizing prompts to efficiently use language models (LMs) for a wide variety of applications and research topics. 训练/微调属于第 14 章的训练阶段；接工具属于第 18–19 章；扩窗口属于上下文层的事——都不是本章的定义。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 本课程把 30–34 章编为「六、工程方法论」，本章 Prompt Engineering 在其中的位置是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">属于协议与扩展篇（24–29 章），讲 MCP 与 Skill</button>
+            <button class="quiz-option">这条线的收尾，是前四章的总结</button>
+            <button class="quiz-option">这条线的开篇，之后依次是 Context / Harness / Loop / Graph Engineering</button>
+            <button class="quiz-option">属于原理篇（03–14 章），讲模型内部机制</button>
+          </div>
+          <div class="quiz-explain" hidden>课程目录第六部分「工程方法论」是 30–34 章：Prompt → Context → Harness → Loop → Graph Engineering。原理篇（03–14）讲神经元、注意力、训练与推理；协议与扩展篇（24–29）讲 MCP、Skill、子代理。本章是工程方法论这条线的开篇，也是全课程从「原理 + 工程实现」转向「方法论」的第一章。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 指南把提示词拆成若干可选要素。提示词「把下面这段客服对话分为：投诉 / 咨询 / 退换。对话：……（一段文本）……类别：」中，最后的「类别：」属于哪个要素？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">输出指示</button>
+            <button class="quiz-option">上下文</button>
+            <button class="quiz-option">输入数据</button>
+            <button class="quiz-option">指令</button>
+          </div>
+          <div class="quiz-explain" hidden>指南《提示词要素》的定义：指令＝想要模型执行的特定任务或指令；上下文＝外部信息或额外的上下文信息；输入数据＝用户输入的内容或问题；输出指示＝指定输出的类型或格式。开头那句「把对话分为投诉/咨询/退换」是指令，「对话：……」是输入数据，而「类别：」在告诉模型用什么字段、什么形式交出结果——属于输出指示。指南也强调四个要素并非都必须出现，这一例就几乎没有额外上下文。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 指南《设计提示的通用技巧》的第一条是「从简单开始」。某团队花一周写出 400 行系统提示词、上线后再没改动过。按这条技巧，最关键的缺失是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">缺少 few-shot 示例——没有示例模型一定答错</button>
+            <button class="quiz-option">提示词设计本身是迭代过程：应从简单提示开始，逐步添加元素与上下文，并用大量实验找出最有效的写法</button>
+            <button class="quiz-option">缺少更大的上下文窗口来容纳这条提示词</button>
+            <button class="quiz-option">系统提示词必须用英文写，否则无法迭代</button>
+          </div>
+          <div class="quiz-explain" hidden>指南原文：「在开始设计提示时，你应该记住，这实际上是一个迭代过程，需要大量的实验才能获得最佳结果……你可以从简单的提示词开始，并逐渐添加更多元素和上下文。」一次写成、之后不动，等于放弃了整条主线。few-shot 只是可选要素之一（指南明确「并非所有以上要素都是必须的」），把它说成「没有示例一定答错」是过度断言；是否用英文、窗口多大，都不是这条技巧的判断依据。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 第 16 章要求系统提示词「保持静态」，本章图又把系统提示词划进提示词工程的作用面。两条合起来，对「当前时间、当前登录用户是谁」这类每轮都可能变的信息，正确做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把动态内容重复写三遍，防止模型漏掉</button>
+            <button class="quiz-option">系统提示词应尽量固定，不塞这类高频变化内容——动态信息走用户消息、工具结果或上下文编排等通道</button>
+            <button class="quiz-option">动态内容必须写在系统提示词的最后一行，模型才看得到</button>
+            <button class="quiz-option">每轮都用模板把动态内容渲染进系统提示词，这样最准确</button>
+          </div>
+          <div class="quiz-explain" hidden>第 16 章的五个原则里，这一条叫「保持静态」，并且正面案例是空的——课件用「当前用户是：&lt;动态内容&gt;，时间是：&lt;动态内容&gt;」当反面案例。本章把系统提示词交给「提示词工程」，意思是把稳定规则写清楚写好，而不是把它变成每轮重写的拼接板。注意区分：第 16 章的 <code>system.j2</code> 里确实有 <code>{{ cwd }}</code>、<code>{{ is_git }}</code>、<code>{{ language }}</code> 这类环境变量，但它们是「结构固定、取值随环境」的事实，取舍原则仍是「尽量固定」——高频变化的会话态信息（时间、用户、当前任务）更适合待在用户消息、工具结果或由上下文编排去安排。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 官方把上下文工程定义为「在 LLM 推理过程中策划与维护最优 token 集合」。以下四项工作里，哪一项不属于提示词工程，而属于上下文工程？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">在长任务里压缩历史消息、清理过期的工具结果、把探索型子任务交给上下文隔离的子代理</button>
+            <button class="quiz-option">把用户问题写得更明确具体</button>
+            <button class="quiz-option">打磨系统提示词的措辞与结构</button>
+            <button class="quiz-option">给提示词补上 few-shot 示例</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文把两件事分开：提示词工程是「为获得最佳结果而编写与组织 LLM 指令的方法」，其主要关注点是「如何写出有效的提示词，尤其是系统提示词」；上下文工程是「在 LLM 推理过程中策划与维护最优 token 集合的策略」，包括那些「落在提示词之外、却仍会进入上下文」的一切（系统指令、工具、MCP、外部数据、消息历史）。A、B、C 动的都是指令本身，属于提示词工程；D 动的是每一轮真正进入模型的 token 集合——压缩、清理、隔离，属于上下文工程，也正是第 29 章子代理与第 23 章 Skill 按需加载在方法论上的位置。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 一个工具型 Agent 跑到第 30 轮开始漏信息、跑偏。团队第一反应是继续加长系统提示词。按本章图与官方对上下文状态的说明，最合理的诊断顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先分清两层：这一轮真正进入模型的是什么（历史是否被稀释、工具结果是否膨胀、该按需加载的技能与文档有没有进来），再决定是改提示词还是改上下文编排</button>
+            <button class="quiz-option">先换一个上下文窗口更大的模型</button>
+            <button class="quiz-option">先把系统提示词加长到覆盖所有可能情况</button>
+            <button class="quiz-option">直接上多子代理，提示词不用管</button>
+          </div>
+          <div class="quiz-explain" hidden>本章的图只画了「系统提示词 / 用户问题」两格，但多轮 Agent 的真实输入远不止这两格——官方列出的上下文状态还包括系统指令、工具、MCP、外部数据、消息历史，并指出 Agent 在循环中「会产生越来越多可能与下一轮推理相关的数据，这些信息必须被循环地精炼」。所以先定位层级：提示词本身有歧义、自相矛盾、规则残缺，就改提示词（第 16 章的精简 / 自洽 / 结构化）；历史被稀释、工具结果膨胀、该加载的 Skill 没按需进来，那是上下文编排的活（第 23 章 Skill、第 29 章子代理）。加长提示词与换大窗口都把问题归错了层，还直接撞上「精简」原则。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 团队把提示词工程当成一次性任务：上线前写死系统提示词，之后不再维护。按本章与官方给两者的关系，最准确的判断是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只要提示词工程做得好，工具结果与历史消息就不需要管理</button>
+            <button class="quiz-option">两者是递进关系：提示词工程回答「指令怎么写」（尤其系统提示词），上下文工程回答「每一轮该把哪些 token 放进上下文」，多轮 Agent 里两者都要，且上下文工程是持续迭代的</button>
+            <button class="quiz-option">提示词工程已经过时，应完全由上下文工程取代，系统提示词可以不要了</button>
+            <button class="quiz-option">上下文工程就是「把提示词写得更长」</button>
+          </div>
+          <div class="quiz-explain" hidden>官方把上下文工程称为提示词工程的「自然演进」而非替代：提示词工程聚焦怎么写提示词，尤其是系统提示词；而一旦 Agent 要在多轮、更长时间跨度上工作，就需要管理整个上下文状态。官方还给了一句判据——「与『写一段提示词』这种离散任务不同，上下文工程是迭代的，每次决定往模型里传什么时都会发生一次策划」。所以「写死之后就完事」在单轮分类/生成任务上还说得过去，在 Agent 循环里不成立；但反过来把它说成「提示词工程过时了」同样是误读——本章这张图画的正是它不可替代的那一格。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0030-Prompt-Engineering',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事在调一个多轮工具型 Agent 的效果，方案是「把系统提示词写到足够长：所有规则、所有工具用法、所有输出格式全塞进去，模型就不会跑偏」，并说这就是「提示词工程」。请按第 16 章的系统提示词原则，以及官方对系统提示词「恰当高度」的说明，指出这个方案错在哪、正确做法是什么。`,
+              source: `来源：Anthropic 工程博客《Effective context engineering for AI agents》（"Regardless of how you decide to structure your system prompt, you should be striving for the minimal set of information that fully outlines your expected behavior. (Note that minimal does not necessarily mean short; you still need to give the agent sufficient information up front to ensure it adheres to the desired behavior.)"；"At one extreme, we see engineers hardcoding complex, brittle logic in their prompts to elicit exact agentic behavior. This approach creates fragility and increases maintenance complexity over time."）https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《16.系统提示词》课件（精简 / 自洽 / 全局约束 / 结构化）`,
+              breakdown: `错在把「长」当成「稳」。<strong>① 官方要的是最小信息集，不是最长文本。</strong>原文的目标是「努力给出刚好完整描述期望行为的最小信息集」，并特意补一句「最小并不必然意味着短」——你仍要给足信息让 Agent 遵守期望行为。反过来，「把所有情况硬编码成脆弱逻辑」被官方明确列为两种失败极端之一：它带来脆弱性与长期维护成本。另一个极端是「过于笼统、假设共享上下文」，同样不合格——这就是官方说的「恰当高度」：具体到能引导行为，又留出足够弹性。<strong>② 第 16 章的五个原则全部指向同一个方向。</strong>精简（能不说就不说）、自洽（不能一边要求详尽一边要求 30 字内）、全局约束（系统提示词作用于每一轮，写进去的规则会一直生效）、结构化（用 Markdown / XML 分层隔离核心指令与硬性约束）、保持静态（尽量固定）。把工具用法一股脑写进系统提示词，还违反了职责划分：工具的能力边界应由工具 schema 描述（第 18–19 章），场景化的长文本应由 Skill 按需加载（第 23 章）——那正是第 23 章讲的「提示词膨胀」要解决的问题。<strong>③ 真实代价是每轮都在付。</strong>系统提示词是全局常驻内容，Agent 每轮请求都要背上它；官方把这种消耗称为模型的「注意力预算」（attention budget），并指出随着上下文 token 增加，模型的准确召回能力会下降。所以正确的动作是：先用最小提示词 + 最强模型跑基线，观察失败模式，再针对失败模式补「清晰指令与示例」——而不是预先穷举所有可能性。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `把本章课件那张图讲成一条完整链路：提示词工程在 Agent 的哪一段起作用？「系统提示词」「用户问题」「上下文」「模型推理」「回复」这五个东西是什么关系？为什么把它叫「工程」而不是「写一句话」？`,
+              source: `来源：Anthropic 工程博客《Effective context engineering for AI agents》（"Prompt engineering refers to methods for writing and organizing LLM instructions for optimal outcomes"；"the primary focus of prompt engineering is how to write effective prompts, particularly system prompts"）https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents + 《Prompt Engineering Guide》官方仓库 README（"Prompt engineering is a relatively new discipline for developing and optimizing prompts to efficiently use language models (LMs) for a wide variety of applications and research topics."）https://raw.githubusercontent.com/dair-ai/Prompt-Engineering-Guide/main/README.md · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《30.Prompt Engineering》课件（课件图）`,
+              breakdown: `<strong>图读三句。</strong>① 「提示词的工程」引出两条箭头，落在<strong>系统提示词</strong>与<strong>用户问题</strong>上；② 这两格与「<strong>回复</strong>」被同一个框圈住，框名是<strong>上下文</strong>；③ 整个上下文送进<strong>模型</strong>做推理（Reasoning），模型产出回复。<strong>关系与边界：</strong>提示词工程作用在「文本进入模型之前」那一段——它决定系统提示词与用户问题长什么样；模型内部怎么推理、工具返回了什么，都不在它的作用面上。所以它离模型最近，却管不了模型。<strong>为什么叫「工程」：</strong>官方对提示词工程的定义是「为获得最佳结果而编写<em>与组织</em> LLM 指令的方法」，注意「组织」二字——它不只是遣词造句。落到实践上有三层工程动作：<strong>结构</strong>（指南把提示词拆成指令 / 上下文 / 输入数据 / 输出指示四要素，并建议用 <code>###</code> 之类的分隔符把指令与上下文分开）、<strong>迭代</strong>（指南第一条技巧就是「从简单开始」，强调这是需要大量实验的迭代过程）、<strong>可评测</strong>（用失败样例驱动下一版提示词，而不是凭感觉改）。再加上第 16 章给系统提示词定的精简 / 自洽 / 全局约束 / 保持静态 / 结构化五条原则，这一格才真正配得上「工程」两个字。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `团队在做 Agent 的上下文治理评审，会上有人说「上下文工程就是提示词工程改个名字」。请按官方定义把两者分开讲清：各自定义、各自作用对象，以及一条能在评审现场快速判断「这件工作属于哪一边」的实用判据。`,
+              source: `来源：Anthropic 工程博客《Effective context engineering for AI agents》（"At Anthropic, we view context engineering as the natural progression of prompt engineering. Prompt engineering refers to methods for writing and organizing LLM instructions for optimal outcomes... Context engineering refers to the set of strategies for curating and maintaining the optimal set of tokens (information) during LLM inference, including all the other information that may land there outside of the prompts."；"as we move towards engineering more capable agents that operate over multiple turns of inference and longer time horizons, we need strategies for managing the entire context state (system instructions, tools, Model Context Protocol (MCP), external data, message history, etc)."）https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《30.Prompt Engineering》课件（课件图）`,
+              breakdown: `官方立场很明确：上下文工程是提示词工程的<strong>自然演进</strong>，不是改名，也不是替代。<strong>定义对照。</strong>提示词工程 = 「为获得最佳结果而编写与组织 LLM 指令的方法」，关注点尤其落在系统提示词上；上下文工程 = 「在 LLM 推理过程中策划与维护最优 token 集合的策略」，并且特意补了一句「包括那些落在提示词之外、却仍会进入上下文的信息」。<strong>作用对象对照。</strong>本章那张图上只有两格（系统提示词、用户问题），这是提示词工程的作用面；而官方列出的上下文状态是「系统指令、工具、MCP、外部数据、消息历史等」——后四类都不在这张图里，正好是上下文工程多出来的部分。<strong>评审现场的判据一句话：问「我动的是指令，还是每一轮真正进入模型的 token 集合」。</strong>只改措辞、结构、示例、用户提问方式 → 提示词工程；动工具返回结果的裁剪、历史压缩、检索注入、MCP/外部数据的引入、子代理上下文隔离 → 上下文工程。<strong>为什么多轮 Agent 必须分开看。</strong>官方解释说，早期大多数用例是一次性分类或文本生成，提示词就是全部；但 Agent 在循环里「会产生越来越多可能与下一轮推理相关的数据，这些信息必须被循环地精炼」——这就是为什么上下文工程带有持续迭代的属性，而提示词工程更像一次性的文本创作。把它当成「改个名字」，代价是会漏掉整层治理工作。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `为一个已经在跑的多轮 Agent 项目设计「团队级提示词工程规范」：提示词怎么写、怎么组织、怎么迭代、如何避免与上下文层的工作混在一起。请给出可落地条目，并说明每条判据来自哪里。`,
+              source: `来源：dair-ai《Prompt Engineering Guide》提示词要素（"指令：想要模型执行的特定任务或指令。上下文：包含外部信息或额外的上下文信息，引导语言模型更好地响应。输入数据：用户输入的内容或问题。输出指示：指定输出的类型或格式。"；"并非所有以上要素都是必须"）https://raw.githubusercontent.com/dair-ai/Prompt-Engineering-Guide/main/pages/introduction/elements.zh.mdx + 通用技巧（"你可以从简单的提示词开始，并逐渐添加更多元素和上下文……在这个过程中不断迭代你的提示词是至关重要的。"；"有些人建议将指令放在提示的开头。另有人则建议是使用像"###"这样的清晰分隔符来分隔指令和上下文。"）https://raw.githubusercontent.com/dair-ai/Prompt-Engineering-Guide/main/pages/introduction/tips.zh.mdx + Microsoft Learn《Prompt engineering techniques》（"Prompt construction can be difficult... more of an art than a science"；prompt components: Instructions / Primary content / Supporting content / Few-shot examples；"telling the model the task you want it to do at the beginning of the prompt, before sharing additional contextual information or examples, can help produce higher-quality outputs."）https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/prompt-engineering · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《30.Prompt Engineering》课件（指定学习资源）`,
+              breakdown: `六条，每条都标出判据来源。<strong>① 要素齐备但允许缺席。</strong>写作时逐项过一遍指令 / 上下文 / 输入数据 / 输出指示，并像指南那样明确「并非所有要素都是必须的」——缺哪一项要说得出理由（判据：指南《提示词要素》）。注意 Microsoft Learn 用另一套名字描述同一件事（Instructions / Primary content / Supporting content / Few-shot examples），评审时统一术语即可，别因为叫法不同而重复劳动。<strong>② 指令前置 + 结构化分层。</strong>把任务放在提示开头，再用 <code>###</code>、Markdown 标题或 XML 标签把指令、上下文、输出规范隔开（判据：指南通用技巧；Microsoft Learn 也指出「把任务放在分享额外上下文或示例之前，有助于产生更高质量的输出」；第 16 章的「结构化」原则）。<strong>③ 从简单开始、小步迭代。</strong>禁止「一次写 400 行然后不动」；每一版都由具体失败样例驱动，先在简单提示上跑基线，再逐步加元素与示例（判据：指南通用技巧第一条；官方「先测最小提示、再按失败模式补充指令与示例」的建议）。<strong>④ 明确划线：哪一层的问题。</strong>规范里写清「措辞 / 结构 / 示例 / 用户提问方式」属于提示词工程，「工具结果裁剪、历史压缩、检索注入、子代理隔离」属于上下文工程——后者要走另一套评审流程（判据：官方对两者的定义与作用对象划分）。<strong>⑤ 把提示词当代码管。</strong>模板进仓库、变更走 review、配一组固定用例做回归；只改提示词不改用例，无法证明「变好了」（判据：指南强调的迭代与实验——没有实验就没有迭代）。<strong>⑥ 保持静态，动态走别的通道。</strong>稳定规则放系统提示词；时间、用户、当前任务这类高频变化信息不要靠改系统提示词实现（判据：第 16 章「保持静态」；官方「最小信息集」与注意力预算的说明）。最后提醒一条官方态度：Microsoft Learn 直接说提示词构建「more of an art than a science」，所以规范的目标是让迭代可复现、可评审，而不是假装存在唯一正确答案。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `任务卡：用 AI 助手在 25 分钟内给 agent 工程做一次「提示词工程」改造，并对改造前后做一次可复现的对比验证。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '读第 16 章的 agent/prompt/system.j2（角色 / 硬性规则 / 输出要求的结构）→ 按指南四要素补齐指令、上下文、输入数据、输出指示，并把指令放在开头、用 ## 或 --- 分层 → 用 render_prompt("system") 渲染出来，逐条检查是否自洽、是否存在与当前任务无关的冗余 → 用同一个用户问题（例如「目前在哪个目录？」）各跑一次改造前后，记录两次回复差异 → 把这次的失败样例写成一条「下一轮要改什么」，作为迭代输入。',
+                accept: ['能在改造后的 system.j2 里逐行指出指令 / 上下文 / 输入数据 / 输出指示分别落在哪里（缺哪个要素要能说明为什么不需要）', '指令位于开头，且用 Markdown 标题或分隔符与上下文、输出要求分层（对应第 16 章「结构化」）', 'render_prompt("system") 的输出中不存在自相矛盾的规则（对应第 16 章「自洽」）', '能说清 system.j2 里 {{ cwd }} / {{ is_git }} / {{ language }} 这类环境变量的取舍：哪些属于「结构固定、取值随环境」因而可以保留，哪些高频变化的会话态信息不该塞进系统提示词', '对同一个用户问题保留改造前后的两次回复记录，并写下一条明确的下一轮修改点'],
+              },
+              source: `任务基于《30.Prompt Engineering》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路按「先读、再改、后验、留痕」四步。<strong>① 先读。</strong>第 16 章的 <code>agent/prompt/system.j2</code> 已经是一个结构化样板：用 <code># System</code>、<code># Doing tasks</code>、<code># Tone and style</code> 这类标题分层，末尾再用 Jinja2 变量注入语言与环境信息——先读懂它的分层逻辑，再动手。<strong>② 再改。</strong>按指南四要素补齐：指令（Agent 要做什么，放最前面）、上下文（环境、工具约定）、输入数据（这一轮用户问题——注意它不在系统提示词里，而是每轮的 UserMessage）、输出指示（回复的格式与风格要求）；用分隔符把这几块隔开，避免扁平化。<strong>③ 后验。</strong><code>render_prompt("system")</code> 渲染出真实文本，逐条对照第 16 章五原则：有没有互相矛盾（自洽）、有没有无病呻吟的句子（精简）、有没有把只在某些场景才触发的长内容写进常驻文本（该改成第 23 章的 Skill 按需加载）、有没有高频动态内容被塞进来（保持静态）。<strong>④ 留痕。</strong>同一个问题（如「目前在哪个目录？」）跑改造前后各一次，保存两次回复并写下差异结论——这一步是把「感觉变好了」变成「有记录可复现」。<strong>常见坑：</strong>把工具用法整段抄进系统提示词（应留给工具 schema，见第 18–19 章）；为了「增强」把同一条规则换三种说法重复（导致自相矛盾与膨胀）；为了对齐指南四要素硬凑一个没用的「上下文」块；改完不记录、下一轮又从零开始——那就回到了「一次性任务」的老路上。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://github.com/dair-ai/Prompt-Engineering-Guide">dair-ai《Prompt Engineering Guide》（本章课件给的唯一外链）</a> · <a href="https://www.promptingguide.ai/">指南在线阅读版（Introduction / Techniques / Applications / Prompt Hub）</a> · <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic《Effective context engineering for AI agents》（提示词工程与上下文工程的分界）</a> · <a href="https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/prompt-engineering">Microsoft Learn《Prompt engineering techniques》（提示词构件与指令前置）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Prompt-Engineering速查表.html">Prompt-Engineering速查表</a>——课件图链路、提示词要素与技巧、与上下文工程的分界、30–34 章方法论序列一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Prompt-Engineering">30.Prompt Engineering</a> · 前置复习 <a href="/agents/Agents底层逻辑/系统提示词">16.系统提示词</a> · 下一课 <a href="/agents/Agents底层逻辑/Context-Engineering">31.Context Engineering</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

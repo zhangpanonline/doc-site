@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 梯度下降：损失函数、学习率与反向传播，参数如何被更新——互动教学课程">
+  <title>梯度下降 · 互动教学课程（Agents底层逻辑 ac-05）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>梯度下降</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/梯度下降">05.梯度下降</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>用自己的话说清梯度下降在做什么——为什么沿「负梯度方向」走</li>
+        <li>逐符号读懂损失函数 $L=\frac{1}{m}\sum_{i=1}^{m}(y_i-\hat y_i)^2$，说清平方与除以 $m$ 各自的作用</li>
+        <li>解释学习率如何决定每一步的幅度，过大、过小分别会发生什么</li>
+        <li>把「前向传播 → 算损失 → 反向传播求梯度 → 按学习率更新参数」串成一次完整的训练迭代</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把三个术语和一条公式过一遍——细节都在《05.梯度下降》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>梯度下降：朝「下坡最快」的方向走</h3>
+        <ul class="pitfall-list">
+          <li>损失函数把「当前这组参数好不好」变成一个数字：数字越小，预测越接近真实值</li>
+          <li><strong>梯度</strong>指向函数值上升最快的方向，所以<strong>负梯度方向</strong>才是当前点的最速下降方向</li>
+          <li>课件术语原文：梯度下降是「沿着函数在当前点处<strong>最速下降方向</strong>（即负梯度方向）移动，使得函数的值逐步减少」</li>
+          <li>写成一行：$\theta \leftarrow \theta - \eta \nabla L(\theta)$——$\nabla L(\theta)$ 是梯度，$\eta$ 是学习率</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>损失函数：一个数字背后的四个符号</h3>
+        <ul class="pitfall-list">
+          <li><strong>公式</strong>：$$L = \frac{1}{m}\sum_{i=1}^{m}(y_i-\hat y_i)^2$$</li>
+          <li>$m$：这一批参与计算的<strong>样本个数</strong>；$i$ 从 1 遍历到 $m$</li>
+          <li>$y_i$：第 $i$ 个样本的<strong>真实值</strong>；$\hat y_i$：模型<strong>前向传播</strong>算出的预测值（上一章的内容）</li>
+          <li><strong>平方</strong>：让每一项非负，避免「一半偏高、一半偏低」互相抵消，同时放大了偏差大的样本</li>
+          <li><strong>除以 $m$</strong>：取平均，让损失不随这一批的样本数膨胀，不同 batch 之间才可比——这就是「均方误差」里的 mean</li>
+          <li>损失函数只负责<strong>量差距</strong>；参数往哪改、改多少，要靠对它求梯度</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>学习率与「一次训练迭代」</h3>
+        <ul class="pitfall-list">
+          <li>学习率 $\eta$ 是梯度下降的<strong>幅度</strong>：梯度给方向，学习率给步长</li>
+          <li><strong>过大</strong>：一步迈过谷底，损失来回震荡甚至越来越大（发散）；<strong>过小</strong>：每步都很小，收敛极慢</li>
+          <li>一次迭代的四步：前向传播得到 $\hat y_i$ → 与真实的 $y_i$ 算出损失 $L$ → 反向传播求出 $L$ 对每个参数的梯度 → 按 $\theta \leftarrow \theta - \eta \nabla L$ 更新参数</li>
+          <li>课件术语原文：学习/训练是「一个过程，在这个过程中，通过梯度下降的手段，让神经网络的参数逐步调整到最佳状态」——它是反复迭代的<strong>过程</strong>，不是一次动作</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《05.梯度下降》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 「梯度下降」中，参数每一步朝哪个方向移动？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">与梯度垂直的方向——绕开最陡的坡</button>
+            <button class="quiz-option">在各参数之间随机轮换的方向</button>
+            <button class="quiz-option">负梯度方向——函数在当前点最速下降的方向</button>
+            <button class="quiz-option">梯度方向——函数值上升最快的方向</button>
+          </div>
+          <div class="quiz-explain" hidden>课件术语原文：沿着函数在当前点处最速下降方向（即负梯度方向）移动，使得函数的值逐步减少。梯度是上升最快的方向，因此更新时要减去它——朝它的反方向走。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 学习率决定的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每一步沿梯度方向走多远——也就是梯度下降的幅度</button>
+            <button class="quiz-option">网络一共有多少层</button>
+            <button class="quiz-option">网络里一共有多少个参数</button>
+            <button class="quiz-option">一次用多少样本算损失</button>
+          </div>
+          <div class="quiz-explain" hidden>课件术语原文：学习率是「梯度下降的幅度」。它不改变方向，只决定沿着这个方向一次走多远；方向由负梯度给出。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 课件术语里的「学习 / 训练」指的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">打印损失曲线的那个步骤</button>
+            <button class="quiz-option">把数据集一次性读进内存的动作</button>
+            <button class="quiz-option">一次前向传播算出一个预测值</button>
+            <button class="quiz-option">一个过程：通过梯度下降的手段，让神经网络的参数逐步调整到最佳状态</button>
+          </div>
+          <div class="quiz-explain" hidden>课件术语原文：学习/训练是「一个过程，在这个过程中，通过梯度下降的手段，让神经网络的参数逐步调整到最佳状态」。关键词是「过程」——它由很多次迭代组成，而不是某一次更新。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 损失函数 $L=\frac{1}{m}\sum_{i=1}^{m}(y_i-\hat y_i)^2$ 里，$m$ 和前面的 $\frac{1}{m}$ 分别是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$m$ 是这一批样本的个数；除以 $m$ 是取平均，让损失不随样本数膨胀、batch 之间可比</button>
+            <button class="quiz-option">$m$ 是网络的层数；除以 $m$ 是把各层的误差平均</button>
+            <button class="quiz-option">$m$ 是参数个数；除以 $m$ 是一种正则化</button>
+            <button class="quiz-option">$m$ 是学习率；除以 $m$ 是为了让步长逐轮衰减</button>
+          </div>
+          <div class="quiz-explain" hidden>求和号下的 i 从 1 遍历到 m，m 就是这一批参与计算的样本数。只求和的话，batch 越大损失越大，既不能和别的 batch 比较，也看不出「平均每个样本错多少」；除以 m 之后得到的才是均方误差（mean squared error）。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 如果把平方去掉，把损失写成 $\frac{1}{m}\sum_{i=1}^{m}(y_i-\hat y_i)$，最直接的隐患是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">梯度会消失，参数不再更新</button>
+            <button class="quiz-option">正负偏差互相抵消：一半样本偏高、一半偏低时损失可能接近 0，看着「很好」其实很差</button>
+            <button class="quiz-option">损失会变成负数，程序直接报错</button>
+            <button class="quiz-option">计算量变大，训练变慢</button>
+          </div>
+          <div class="quiz-explain" hidden>平方保证每一项非负，既避免正负抵消，又放大了偏差大的样本；去掉平方后，误差 +5 和 −5 的两个样本会加出 0，指标就骗人了。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 学习率设得过大的典型表现是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每一步都很小，损失下降极慢，很久都不收敛</button>
+            <button class="quiz-option">梯度恒为 0，损失完全不动</button>
+            <button class="quiz-option">参数量变多，模型变大</button>
+            <button class="quiz-option">一步迈过谷底，损失来回震荡甚至越来越大</button>
+          </div>
+          <div class="quiz-explain" hidden>学习率是梯度下降的幅度：太大 → 越过最低点来回震荡、甚至发散；太小 → 收敛极慢。梯度给方向、学习率给步长，两者缺一不可。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 按本课术语，一次训练迭代的正确顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">更新参数 → 算损失 → 前向传播 → 反向传播</button>
+            <button class="quiz-option">前向传播得 $\hat y_i$ → 与真实值 $y_i$ 算出损失 $L$ → 反向传播求出各参数梯度 → 按学习率沿负梯度方向更新参数</button>
+            <button class="quiz-option">算损失 → 前向传播得预测 → 更新参数 → 求梯度</button>
+            <button class="quiz-option">反向传播求梯度 → 前向传播得预测 → 算损失 → 更新参数</button>
+          </div>
+          <div class="quiz-explain" hidden>前向传播负责「猜」，损失负责「量差距」，反向传播负责把误差摊到每个参数上（求梯度），梯度下降负责按学习率更新。顺序错一步，算出的梯度就对不上当前参数——训练循环里的 zero_grad / backward / step 也是这个顺序。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 有同事说：「梯度下降就是让损失函数每一轮都变小，所以只要盯着 loss 往下掉，就说明训练是对的。」按本章对「学习/训练」的定义，最准确的评价是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">说得对，因为沿梯度方向走一定是下降最快的方向</button>
+            <button class="quiz-option">说得对，损失必须每轮都变小，否则代码一定写错了</button>
+            <button class="quiz-option">损失变小是过程顺利时的表现，不是梯度下降的定义——训练是一个过程：通过梯度下降让参数逐步调整到最佳状态；学习率过大时损失会不降反升</button>
+            <button class="quiz-option">说得对，损失函数的作用就是保证每一步都变小</button>
+          </div>
+          <div class="quiz-explain" hidden>课件术语：学习/训练是「一个过程」，通过梯度下降让参数逐步调整到最佳状态。loss 是衡量差距的指标，下降说明过程在起作用；但梯度下降本身只是「沿当前点最速下降方向移动」的动作，学习率（幅度）过大就会越过谷底，损失反而上升。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 有人为了让 loss 的显示数字更小，把损失从 $\frac{1}{m}\sum(y_i-\hat y_i)^2$ 改成了 $\frac{1}{m^2}\sum(y_i-\hat y_i)^2$。关于这次改动，判断正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">改动后损失与参数无关，网络不再更新</button>
+            <button class="quiz-option">只是数字小了 m 倍，对梯度方向和更新幅度都没有任何影响</button>
+            <button class="quiz-option">损失数字确实小了，但每个参数的梯度也整体缩小了约 m 倍，效果等价于悄悄调小了学习率，参数更新变慢</button>
+            <button class="quiz-option">损失变小、梯度变大，训练会更快</button>
+          </div>
+          <div class="quiz-explain" hidden>对预测值求导得 ∂L/∂ŷᵢ = −(2/m)(yᵢ − ŷᵢ)。把 1/m 换成 1/m²，梯度整体乘了 1/m，等价于把学习率调小 m 倍——方向没变，步子却小了。所以判断一个改动是否安全，看的不是 loss 的数字，而是它对梯度（也就是更新幅度）做了什么。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0005-梯度下降',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事说「训练时只要盯着 loss 数字往下掉就行，掉得越快模型越好」，于是让 AI 把学习率从 1e-3 直接改成 10 去调参。结果前几轮 loss 猛地变小，随后开始上下乱跳、甚至越来越大。请指出这句话里的陷阱，并说明学习率在这件事里到底管什么。`,
+              source: `来源：PyTorch 官方教程 Optimizing Model Parameters（"Learning Rate - how much to update models parameters at each batch/epoch. Smaller values yield slow learning speed, while large values may result in unpredictable behavior during training."）https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `学习率不是「越大越快」：它是每一步沿负梯度方向走的<strong>幅度</strong>（课件术语：学习率 = 梯度下降的幅度）。官方文档把话说得很直白——小值学得慢，<strong>大值会让训练出现不可预测的行为</strong>，你看到的「先猛降、再乱跳」正是步子迈过谷底后的震荡。<br><br>回答时把三件事分开：① 方向由负梯度决定，学习率只管步长；② loss 是衡量差距的指标，不是「模型好不好」的判决书，收敛要结合验证集指标看；③ 调参的正确姿势是先把学习率固定在一个保守值（如 1e-3）确认 loss 能稳定下降，再考虑用学习率调度逐步衰减，而不是一步跳到 10。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `损失算出来以后，误差是怎么变成每个参数的更新量的？请用一句话讲清「反向传播」与「梯度下降」在这条链路里的分工，并指出 PyTorch 里对应的两行代码。`,
+              source: `来源：PyTorch 官方教程 A Gentle Introduction to torch.autograd（"Backward Propagation: In backprop, the NN adjusts its parameters proportionate to the error in its guess. It does this by traversing backwards from the output, collecting the derivatives of the error with respect to the parameters of the functions (gradients), and optimizing the parameters using gradient descent."）https://docs.pytorch.org/tutorials/beginner/blitz/autograd_tutorial.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `<strong>反向传播 = 求梯度的那一步</strong>：从输出端的误差出发，沿网络反向逐层应用链式法则，收集损失对每个参数的偏导（gradient），存进参数的 .grad 上。<strong>梯度下降 = 用这些梯度更新参数的那一步</strong>：θ ← θ − η·∇L(θ)，η 就是学习率。<br><br>官方在同一句里点明了两者关系——反向传播负责「收导数」，梯度下降负责「用导数优化参数」。落到 PyTorch 就是两行：<code>loss.backward()</code> 填好每个参数的 .grad，<code>optimizer.step()</code> 按 .grad 与学习率更新参数；如果被追问，再补一句 <code>optimizer.zero_grad()</code> 负责在下一轮前把 .grad 清零。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `课件里的损失函数是 L = (1/m) · Σ (yᵢ − ŷᵢ)²（i 从 1 到 m）。请说明：为什么要平方、为什么要除以 m；再写出它对单个预测值 ŷᵢ 的偏导，并解释这个偏导与学习率是什么关系。`,
+              source: `来源：PyTorch 官方文档 torch.nn.MSELoss（"Creates a criterion that measures the mean squared error (squared L2 norm) between each element in the input x and target y."；默认 reduction 为 mean，"The mean operation still operates over all the elements, and divides by N."）https://docs.pytorch.org/docs/stable/generated/torch.nn.MSELoss.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `<strong>平方</strong>：让每一项非负，避免正负偏差互相抵消，同时放大偏差大的样本——官方对 MSE 的定义就是「误差平方的均值（squared L2 norm）」；<strong>除以 m</strong>：取平均（mean squared error 里的 mean），使损失与这一批的样本数无关，不同 batch 之间可比。<br><br>对预测值求导：∂L/∂ŷᵢ = −(2/m)(yᵢ − ŷᵢ)。它说明两件事：① 梯度的大小正比于误差大小——错得越多，往回传的信号越强；② 更新量是「梯度 × 学习率」，所以学习率是给这个信号配的步长系数，误差与学习率共同决定这一步走多远。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 生成的训练循环是这样的：<pre><code>for epoch in range(5):
+    for X, y in dataloader:
+        pred = model(X)
+        loss = loss_fn(pred, y)
+        loss.backward()
+        optimizer.step()</code></pre>请指出这段代码在「梯度与参数更新」上的问题，并给出修法；顺带说明测试/验证阶段还应该补什么。`,
+              source: `来源：PyTorch 官方教程 Optimizing Model Parameters（"Call optimizer.zero_grad() to reset the gradients of model parameters. Gradients by default add up; to prevent double-counting, we explicitly zero them at each iteration."）+ PyTorch 官方 recipe Zeroing out gradients in PyTorch（"by default, gradients are accumulated in buffers (i.e, not overwritten) whenever .backward() is called."）https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html · https://docs.pytorch.org/tutorials/recipes/recipes/zeroing_out_gradients.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `问题是<strong>循环里没有清零梯度</strong>：PyTorch 的梯度默认累加到 .grad（官方原文：不是覆盖，而是累积），于是第 n 步用的其实是前 n 个 batch 梯度的和——方向被历史污染，幅度越滚越大，表现就是 loss 剧烈震荡甚至发散。修法：每个 batch 在反向传播前加一行 <code>optimizer.zero_grad()</code>，官方训练循环的顺序是 zero_grad → backward → step。<br><br>第二个可查的点：验证/测试阶段要用 <code>with torch.no_grad():</code> 包住前向计算——官方注释写得很清楚，这样才不会在测试时计算和保存梯度，省显存也省时间。真要看代码是否健康，先打印两个 batch 的 .grad 范数：不清零时它会单调变大。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `要为一个训练任务决定学习率策略：是全程固定 1e-3，还是让它随训练逐渐衰减？请说明判断依据，并给出一个你能落地的方案（含具体 API）。`,
+              source: `来源：PyTorch 官方文档 torch.optim · How to adjust learning rate（"torch.optim.lr_scheduler.LRScheduler provides several methods to adjust the learning rate based on the number of epochs."；"Learning rate scheduling should be applied after optimizer’s update"）+ Keras 官方文档 ExponentialDecay（"When training a model, it is often useful to lower the learning rate as the training progresses."）https://docs.pytorch.org/docs/stable/optim.html · https://keras.io/api/optimizers/learning_rate_schedules/exponential_decay/ · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `判断依据来自学习率的两面性：前期需要较大幅度快速下降，后期需要较小幅度精细调整，所以「先固定值起步、再随 epoch 衰减」是最常见的组合；官方文档也明确把调度器的职责定义为「按 epoch 数调整学习率」。<br><br>落地示例：<code>optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)</code> + <code>scheduler = ExponentialLR(optimizer, gamma=0.9)</code>，并且记住官方那条顺序要求——<strong>scheduler.step() 要写在 optimizer.step() 之后</strong>；如果 loss 后期抖动，可以换成 ReduceLROnPlateau，按验证集指标动态降学习率。<br><br>反过来说，小任务、epoch 很少的场景固定学习率更省事、更好复现——调度的收益要用 loss 曲线来证明，而不是当作必须的仪式。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `只用 NumPy（不调用现成的优化器）手写一维梯度下降：对 f(x) = (x − 3)² 从 x = −5 出发迭代 30 次，分别用学习率 0.1、0.01、1.1 各跑一遍，记录每 5 步的 x 与 f(x)，并解释三者差别。建议用 Claude Code / Cursor 生成脚本，你负责验收。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '手写梯度 2(x − 3) 与更新式 x = x - lr * grad，对三个学习率各迭代 30 次，打印 x 与 f(x) 的变化序列，并用「损失是否稳定下降」判断收敛还是发散。',
+                accept: ['梯度与更新式是自己写的，更新式形如 x = x - lr * grad，最终 lr = 0.1 时 x 收敛到 3 附近', 'lr = 0.01 时 30 步后离 3 还有明显距离（收敛慢）；lr = 1.1 时 x 在 3 两侧来回跳、幅度越来越大（发散）', '能给出三个学习率下 f(x) 的序列，并用它说明「梯度给方向、学习率给步长」'],
+              },
+              source: `任务基于《05. 梯度下降》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：定义 f(x) = (x - 3) ** 2 与 grad(x) = 2 * (x - 3)，然后 for i in range(30): x = x - lr * grad(x)，每 5 步打印一次 x 和 f(x)。<br><br>这个任务一次性验证了本章三个术语：梯度（2(x − 3) 的方向，x 在 3 左边为负、右边为正，所以沿负梯度更新天然把 x 推向 3）、学习率（幅度）、训练（反复迭代让参数逐步到最优）。<br><br>最值得亲手跑的是 lr = 1.1：更新式变成 x ← x − 1.1·2(x − 3) = −1.2x + 6.6，系数绝对值大于 1，于是 x 在 3 两侧来回跳且幅度放大——这就是「学习率过大导致震荡、发散」的最直观证据。若想把数学与课件公式对上，取 m = 1、y = 3、ŷ = x，L = (1/m)Σ(yᵢ − ŷᵢ)² 就是这里的 f(x)。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html">PyTorch Optimizing Model Parameters</a>（损失、学习率、一次迭代的完整顺序） · <a href="https://docs.pytorch.org/tutorials/beginner/blitz/autograd_tutorial.html">PyTorch A Gentle Introduction to torch.autograd</a>（反向传播怎么收集梯度） · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.MSELoss.html">torch.nn.MSELoss</a>（均方误差的官方定义）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/梯度下降速查表.html">梯度下降速查表</a>——三个术语、损失函数逐符号拆解、一次迭代顺序与学习率调参一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/梯度下降">05.梯度下降</a> · 下一课 <a href="/agents/Agents底层逻辑/训练模式和框架">06.训练模式和框架</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

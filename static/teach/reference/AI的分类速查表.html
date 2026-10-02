@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI的分类速查表 · 参考手册</title>
+  <meta name="description" content="AI的分类速查表 · 可打印参考手册：配合《AI的分类互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>AI的分类速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0002-AI的分类.html">《AI的分类互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>四层包含关系（从外到内）</h2>
+      <table class="cmp-table">
+        <tr><th>层次</th><th>定义</th><th>判据（凭什么属于这一层）</th><th>典型任务</th></tr>
+        <tr><td>人工智能 AI</td><td>一切让机器表现出智能行为的方法（最大的圈）</td><td>机器做了「看起来需要智能」的事，不论手段</td><td>规则系统、知识工程、演化计算、机器学习……</td></tr>
+        <tr><td>机器学习 ML</td><td>AI 的子集：不靠人写规则，从数据里学规律</td><td>性能随经验／数据增加而提升（T / E / P）</td><td>垃圾邮件识别、流失预测、聚类、智能体试错</td></tr>
+        <tr><td>深度学习 DL</td><td>机器学习的子集：用多层神经网络来学</td><td>模型结构是<strong>多层神经网络</strong></td><td>图像分类、目标检测、语音识别、文本分类</td></tr>
+        <tr><td>生成式 AI / 大模型</td><td>深度学习里以「生成内容」为目标的那一支</td><td>产出是<strong>新内容</strong>（文本／图像／音频）</td><td>写文章、写代码、文生图、多轮对话问答</td></tr>
+      </table>
+      <p>方向：<strong>AI ⊃ 机器学习 ⊃ 深度学习 ⊃ 生成式 AI / 大模型</strong>——越往里圈越小。<strong>只能从外往内推，不能从内往外反推。</strong></p>
+    </section>
+
+    <section>
+      <h2>AI 的三大战场（要解决的问题）</h2>
+      <table class="cmp-table">
+        <tr><th>领域</th><th>典型任务</th></tr>
+        <tr><td>自然语言处理 NLP</td><td>文本分类（情感分析、垃圾邮件识别）、机器翻译（中译英／英译中）、文本生成（写文章／写代码）、问答系统（智能客服、知识问答）</td></tr>
+        <tr><td>语音技术 Speech</td><td>ASR（语音转文字）、TTS（文字转语音）、语音唤醒（"Hey Siri"）、声纹识别（声音解锁）</td></tr>
+        <tr><td>计算机视觉 CV</td><td>图像分类（这张图是猫还是狗）、目标检测（框出行人）、语义分割、人脸识别（刷脸支付）、指纹识别、文字提取（OCR）</td></tr>
+      </table>
+      <p>识别／判别类任务（分类、检测、转写）产出的是<strong>判断</strong>；生成式 AI 产出的是<strong>新内容</strong>——这是能力边界上的关键一刀。</p>
+    </section>
+
+    <section>
+      <h2>机器学习的判据与四类范式</h2>
+      <pre>定义（图原文）
+  对于一个计算机程序，如果它在任务 T 上的性能 P，
+  随着经验 E 的增加而提升，那么就称它为机器学习。
+
+  T  任务   —— 你要 AI 干什么？
+  E  经验   —— 给 AI 喂什么？
+  P  性能   —— 怎么衡量好坏？
+
+关键
+  如何设计一套训练方法，让机器可以自主地学习。</pre>
+      <table class="cmp-table">
+        <tr><th>范式</th><th>答案从哪来</th><th>一句话</th></tr>
+        <tr><td>监督学习</td><td>人类给答案</td><td>用带标签的数据学「输入 → 标签」的映射（垃圾邮件识别）</td></tr>
+        <tr><td>自监督学习</td><td>自己找答案</td><td>从数据自身构造监督信号，吃掉海量无标注数据</td></tr>
+        <tr><td>无监督学习</td><td>没有答案</td><td>不预测标签，只找结构（把新闻聚成类别）</td></tr>
+        <tr><td>强化学习</td><td>给奖惩</td><td>没有标准答案，按动作后的回报试错改进策略</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>实现方法、流派与易错点</h2>
+      <dl class="term-grid">
+        <dt>实现方法</dt>
+        <dd><strong>知识工程、演化计算、机器学习</strong>——三条并列的路线，机器学习只是 AI 的其中一支。</dd>
+        <dt>哲学流派</dt>
+        <dd>符号主义（智能＝推理规则）／连接主义（智能＝大脑结构）／行为主义（智能＝环境互动）。</dd>
+        <dt>传统 ML vs 深度学习</dt>
+        <dd>线性回归、决策树、支持向量机是机器学习，<strong>不是</strong>深度学习；多层神经网络才是深度学习。</dd>
+        <dt>易错点 ①</dt>
+        <dd>把包含关系当并列关系——四个圈不是四个平行的技术名词。</dd>
+        <dt>易错点 ②</dt>
+        <dd>认为「AI 一定是机器学习」——规则／知识工程也是 AI。</dd>
+        <dt>易错点 ③</dt>
+        <dd>认为「用了机器学习就是生成式 AI」——中间还差着深度学习两层。</dd>
+        <dt>易错点 ④</dt>
+        <dd>把「用了大模型」当成「一定用了强化学习」——监督／强化是训练范式，与技术层次是两个维度。</dd>
+        <dt>课程走向</dt>
+        <dd>从图的最内层往下钻：神经网络（03–09）→ Transformer 与推理（10–14）→ Agent 应用工程（15 起）。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

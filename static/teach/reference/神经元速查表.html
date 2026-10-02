@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>神经元速查表 · 参考手册</title>
+  <meta name="description" content="神经元速查表 · 可打印参考手册：配合《神经元互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>神经元速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0003-神经元.html">《神经元互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>数学模型</h2>
+      <p>$y = \sigma(\sum_{i=1}^n w_i x_i + b) = \sigma(w_1 x_1 + w_2 x_2 + ... + w_n x_n + b)$</p>
+      <p>1943 年，Warren McCulloch（神经科学家）与 Walter Pitts（逻辑学家）为神经元建立了数学模型；经过几十年发展，定型为上面这个式子。</p>
+      <table class="cmp-table">
+        <tr><th>符号</th><th>名称</th><th>含义</th><th>形态</th></tr>
+        <tr><td>$[x_1, x_2, ... x_n]$</td><td>输入值</td><td>每一个分量表示某一个维度的信息</td><td>向量</td></tr>
+        <tr><td>$y$</td><td>输出值 / 激活值</td><td>神经元判断的结果</td><td>一个标量</td></tr>
+        <tr><td>$[w_1, w_2, ... w_n]$</td><td>权重</td><td>每个权重表示该维度信息的重要程度（带符号：负号表示负相关）</td><td>向量，与输入逐分量配对</td></tr>
+        <tr><td>$b$</td><td>偏置</td><td>改变被激活的阈值</td><td>标量</td></tr>
+        <tr><td>$\sigma$</td><td>激活函数</td><td>决定了是否输出有效值；经典激活函数 $ReLU(z)=max(0, z)$</td><td>固定，不参与训练</td></tr>
+        <tr><td>$w$ 与 $b$</td><td>参数</td><td>权重和偏置的统称；唯一决定了该神经元的输出是否正确</td><td>可训练</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>核心结论（本章「总结」）</h2>
+      <dl class="term-grid">
+        <dt>输入输出</dt>
+        <dd>单个神经元，<strong>接受一个向量，输出一个标量</strong>。</dd>
+        <dt>激活函数</dt>
+        <dd><strong>固定的</strong>——它决定「是否输出有效值」，但不是参数，不参与训练。</dd>
+        <dt>参数</dt>
+        <dd>权重和偏置的统称，<strong>唯一的决定了该神经元的输出是否正确</strong>。</dd>
+        <dt>偏置与阈值</dt>
+        <dd>输出非零的条件是 $\sum w_i x_i + b &gt; 0$，即加权和越过门槛 $-b$：$b$ 变动即阈值平移（$b=0$ 门槛 0，$b=-3$ 门槛 3）。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>参考实现（NumPy）与官方对照</h2>
+      <pre>import numpy as np
+
+w = np.array([0.5, -1.0, 2.0])   # 权重向量 (n,)
+x = np.array([1.0, 1.0, 2.0])    # 输入向量 (n,)
+b = -0.5                         # 标量偏置
+
+z = w @ x + b                    # 加权和 + 偏置（np.dot(w, x) 等价）
+y = np.maximum(0, z)             # 激活函数 ReLU：max(0, z)
+
+assert np.ndim(z) == 0           # 形状自检：单个神经元的加权和必须是标量
+print(z, y)                      # 3.0 3.0</pre>
+      <p>换任意激活函数（恒等、sigmoid 等）只改最后一步；<strong>σ 作用在「加权和 + 偏置」的整体上</strong>。</p>
+      <table class="cmp-table">
+        <tr><th>来源</th><th>原文定义</th><th>对应本章</th></tr>
+        <tr><td>PyTorch <code>torch.nn.Linear</code></td><td>"Applies an affine linear transformation to the incoming data: y = xA^T + b."</td><td>加权和 + 偏置（仿射变换）；Variables 只有 weight 与 bias 两个可学量</td></tr>
+        <tr><td>Keras <code>Dense</code></td><td>"Dense implements the operation: output = activation(dot(input, kernel) + bias)"</td><td>点积 + 偏置后<strong>整体</strong>过 activation；kernel/bias 是 layer 创建的可训练量</td></tr>
+        <tr><td>PyTorch <code>torch.nn.ReLU</code></td><td>"Applies the rectified linear unit function element-wise. ReLU(x) = (x)^+ = max(0, x)"</td><td>经典激活函数 $ReLU(z)=max(0, z)$；逐元素作用，负值截断为 0</td></tr>
+        <tr><td>NumPy <code>numpy.dot</code></td><td>"If both a and b are 1-D arrays, it is inner product of vectors (without complex conjugation)."</td><td>$\sum w_i x_i$ 用点积（<code>np.dot</code> / <code>@</code>），不是逐元素 <code>*</code></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <ul class="pitfall-list">
+        <li><strong>把激活函数当参数</strong>：σ 是固定的映射，能与梯度一起更新的只有权重和偏置；换 σ 之后参数必须重新确定。</li>
+        <li><strong>加权和写成逐元素乘</strong>：<code>w * x + b</code> 得到的是向量，<code>w @ x + b</code> 才是标量——单神经元必须输出标量。</li>
+        <li><strong>偏置加在激活函数外面</strong>：正确是 $\sigma(\sum w_i x_i + b)$；写成 $\sigma(\sum w_i x_i) + b$ 时，负样本会输出 $b$ 而不是 0。</li>
+        <li><strong>用权重符号判断重要性</strong>：负权重表示负相关（方向），绝对值大小才是影响力强度。</li>
+        <li><strong>打乱权重顺序</strong>：$w_i$ 与 $x_i$ 逐分量对应，顺序一换，加权和的含义与数值都变了。</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

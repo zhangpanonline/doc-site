@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prompt-Engineering速查表 · 参考手册</title>
+  <meta name="description" content="Prompt-Engineering速查表 · 可打印参考手册：配合《Prompt-Engineering互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>Prompt-Engineering速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0030-Prompt-Engineering.html">《Prompt-Engineering互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>它经营上下文里的哪两格</h2>
+      <table class="cmp-table">
+        <tr><th>上下文里的位置</th><th>谁在管</th><th>提示词工程能直接写吗</th></tr>
+        <tr><td>系统提示词</td><td>提示词工程（第 16 章的原则：精简/自洽/全局约束/保持静态/结构化）</td><td>能——但要求保持静态</td></tr>
+        <tr><td>用户问题</td><td>提示词工程</td><td>能</td></tr>
+        <tr><td>历史消息 / 工具结果</td><td><strong>上下文工程</strong>（第 31 章）</td><td>不能——由会话与工具运行时产生</td></tr>
+        <tr><td>模型推理与回复</td><td>模型自己</td><td>不能——回复是模型的输出，不是可写对象</td></tr>
+      </table>
+      <p>一句话：<strong>提示词工程 = 在文本进入模型之前，把指令写清楚</strong>。它离模型最近，但管不到模型内部的推理，也管不到工具返回了什么。</p>
+    </section>
+
+    <section>
+      <h2>定义与四要素</h2>
+      <dl class="term-grid">
+        <dt>定义（《Prompt Engineering Guide》）</dt>
+        <dd>一门相对年轻的学科，用于开发和优化提示词，以便高效地使用语言模型完成各类任务与应用；同时它也是<strong>理解大模型能力与局限</strong>的功夫。</dd>
+        <dt>要素 ①：指令</dt>
+        <dd>想要模型执行的特定任务或指令（Instruction）。</dd>
+        <dt>要素 ②：上下文</dt>
+        <dd>包含外部信息或额外的上下文信息（Context）。</dd>
+        <dt>要素 ③：输入数据</dt>
+        <dd>用户输入的内容或问题（Input Data）。</dd>
+        <dt>要素 ④：输出指示</dt>
+        <dd>指定输出的类型或格式（Output Indicator）。</dd>
+      </dl>
+      <p>四要素是<strong>可选组合</strong>，不是必须全填；关键是把「你想让模型做什么」写到模型不会误解。</p>
+    </section>
+
+    <section>
+      <h2>通用技巧主线：迭代</h2>
+      <pre>1) 从简单开始（不要一上来写 400 行）
+2) 逐渐添加元素与上下文
+3) 过程中不断实验、对比效果
+4) 具体明确，把指令放在提示开头
+5) 用 ### / --- / XML 标签等清晰分隔符把「指令」与「上下文」分开</pre>
+      <p>反模式：把提示词当一次性任务，上线后不再维护——模型的输入在变，提示词也需要迭代。</p>
+    </section>
+
+    <section>
+      <h2>它站在哪：工程方法论序列</h2>
+      <table class="cmp-table">
+        <tr><th>层</th><th>管什么</th><th>一句话判据</th></tr>
+        <tr><td>Prompt Engineering（30）</td><td>文本进入模型之前的指令写法</td><td>「把话写清楚」</td></tr>
+        <tr><td>Context Engineering（31）</td><td>整个上下文状态：放什么、留多久、怎么压缩</td><td>「管好整张桌子」</td></tr>
+        <tr><td>Harness Engineering（32）</td><td>情境与状态、护栏（最小权限）、可观测</td><td>「配好马具」</td></tr>
+        <tr><td>Loop Engineering（33）</td><td>让 Agent 自我推动的循环：终止条件、预算、重试</td><td>「让它自己转起来、还能停下来」</td></tr>
+        <tr><td>Graph Engineering（34）</td><td>用节点与边组织多步流程与状态流转</td><td>「把流程画成图」</td></tr>
+      </table>
+      <p>官方口径（Anthropic《Effective context engineering for AI agents》）：上下文工程是提示词工程的<strong>自然演进，而不是替代</strong>——提示词工程负责「把指令写好」，上下文工程负责「每一轮都维护最优的 token 集合」。</p>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <ul class="pitfall-list">
+        <li>把「当前时间 / 当前用户」这类每轮变化的信息写进系统提示词——违反第 16 章的「保持静态」，也破坏缓存前缀</li>
+        <li>用「加长系统提示词」解决跑偏问题（上下文状态问题要在第 31 章那层解决）</li>
+        <li>把提示词工程当全部：它只是 Agent 工程的第一层</li>
+        <li>指令与上下文混在一段里、没有分隔符，模型难以区分层级</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

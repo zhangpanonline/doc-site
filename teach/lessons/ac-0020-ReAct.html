@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · ReAct：推理与行动交替的 Agent 主循环、bash_command 工具与循环收敛——互动教学课程">
+  <title>ReAct · 互动教学课程（Agents底层逻辑 ac-20）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>ReAct</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/ReAct">20.ReAct</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 ReAct 的核心是「推理与行动<strong>交替</strong>」——以及它为什么比「先想完、再一次性行动」更稳</li>
+        <li>读懂本章 <code>query()</code> 的 ReAct 主循环：<code>invoke_stream</code> → <code>registry.invoke</code> → 结果写回 → 再进模型，并指出 <code>break</code> 的判据</li>
+        <li>复述本章 <code>agent/</code> 的四处变更：新增 bash 工具、系统提示词注入操作系统信息、新建 Session 自动注入、打印格式简洁化</li>
+        <li>审查两类高频故障——工具消息缺前置 <code>tool_calls</code>、未注册工具名直接 <code>KeyError</code>——并给循环补上收敛与安全边界</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把 ReAct 循环的骨架、本章的 <code>agent/</code> 变更过一遍——细节都在《20.ReAct》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>ReAct 是什么：想一步、做一步、看结果、再想</h3>
+        <ul class="pitfall-list">
+          <li><strong>原始定义</strong>：让模型以<strong>交替（interleaved）</strong>的方式同时产生「推理轨迹」与「任务动作」——推理帮模型诱导、跟踪、更新行动计划并处理异常；行动让它接入外部信息源（知识库、环境）去补充信息</li>
+          <li><strong>本章的落地（一行都不能少）</strong>：
+            <pre>def query(q: str, session: Session, model: Model):
+    session.add_message({"role": "user", "content": q})
+    # ReAct Loop
+    while True:
+        model.invoke_stream(session)                      # 想（推理 + 可能发起工具调用）
+        call_msg = registry.invoke(session.messages[-1])   # 做（执行 tool_calls）
+        if call_msg is None:
+            break                                          # 这一轮没有工具调用 → 收尾
+        else:
+            session.messages += call_msg                   # 看结果（把 role=tool 消息写回上下文）</pre>
+          </li>
+          <li><strong>为什么必须交替</strong>：工具结果只有写回 <code>messages</code>，模型下一轮才能基于<strong>真实环境的反馈</strong>修正计划；思考只做一次就等于退化回「链式思考 + 一次性执行」，一遇到命令报错、路径不存在就无法自救</li>
+          <li><strong>循环的出口</strong>：判据是 <code>registry.invoke()</code> 返回 <code>None</code>——即这条 assistant 消息里没有 <code>tool_calls</code>，说明模型已经给出最终回复</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>本章 <code>agent/</code> 的四处变更</h3>
+        <ul class="pitfall-list">
+          <li><strong>新增 bash 工具</strong> <code>agent/tool/bash_command.py</code>：<code>subprocess.run(command, shell=True, executable=...</code>（Windows 用 <code>"cmd"</code>，其它平台 <code>"/bin/bash"</code><code>), capture_output=True, text=True, timeout=30)</code>；返回码为 0 时回 <code>stdout</code>（空则回「(命令执行成功，无输出)」），非 0 时回 <code>[退出码 N]</code> 加 <code>stderr</code></li>
+          <li><strong>系统提示词注入操作系统信息</strong>：<code>agent/prompt.py</code> 新增 <code>get_os()</code>（<code>platform.system()</code>），<code>render_prompt</code> 的渲染上下文变成 <code>language / cwd / os / is_git</code>；<code>system.j2</code> 的 <code># Environment</code> 小节多出 <code>Operating system: {{ os }}</code></li>
+          <li><strong>新建 Session 自动注入</strong>：<code>Session.__init__</code> 里 <code>system_prompt</code> 为空就 <code>render_prompt("system")</code>，并 <code>self.tools = tools or registry.schemas()</code>——系统提示词与工具 Schema 都不再需要调用方手工传</li>
+          <li><strong>打印格式简洁化</strong>：<code>ModelPrinterListener</code> 按事件类型分支——<code>REASONING_START</code> 打「思考中...」、<code>CONTENT_START</code> 打「内容：」、<code>content</code> 绿色逐字输出、<code>TOOL_CALL_END</code> 打印被调用的工具名</li>
+          <li><strong>工程账目</strong>：新增 2 个文件（<code>tool/bash_command.py</code>、<code>分析.md</code>），修改 5 个（<code>printer.py</code>、<code>prompt.py</code>、<code>prompt/system.j2</code>、<code>session.py</code>、<code>tool/__init__.py</code>），删除 <code>1.json</code> 与 <code>uv.md</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>循环跑出来的那份「分析.md」</h3>
+        <ul class="pitfall-list">
+          <li><strong>它的来路</strong>：把「请帮我分析 ./agent 目录中的核心实现逻辑，将结果放到当前目录的 分析.md 中」交给 <code>query()</code>——Agent 靠 <code>bash_command</code> / <code>read_file</code> / <code>write_file</code> 三个工具自己看代码、自己写文件，最后 <code>session.save()</code> 把会话存进 <code>agent/sessions/&lt;id&gt;.json</code></li>
+          <li><strong>它给出的架构结论</strong>：<code>config.py</code>（pydantic-settings 读 <code>.env</code>）、<code>events.py</code>（EventEmitter 发布-订阅）、<code>model.py</code>（OpenAI 封装 + Builder 流式处理）、<code>session.py</code>（消息与工具）、<code>prompt.py</code>（Jinja2 渲染）、<code>printer.py</code>（流式打印）、<code>tool/</code>（Tool 基类 + 注册表 + 三个工具）</li>
+          <li><strong>它识别出的设计模式</strong>：发布-订阅（EventEmitter）、策略模式（Reasoning / Content / ToolCalls 三类 Builder）、装饰器模式（<code>@tool</code>）、工厂模式（<code>create_params_model</code> 动态建 Pydantic 模型）、单例模式（全局唯一 <code>registry</code>）</li>
+          <li><strong>数据流一句话</strong>：用户输入 → <code>Session.add_message</code> → <code>Model.invoke</code> → 响应拆成 Reasoning / Content / Tool Calls 三路 → 工具调用走 <code>Registry.invoke</code> 执行并把 <code>role=tool</code> 结果写回 → 再次 <code>invoke</code>，直到没有工具调用</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《20.ReAct》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. 本次代码变动中，新增的工具文件是哪个？它提供什么能力？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>agent/tool/core/utils.py</code>——动态创建参数校验模型</button>
+            <button class="quiz-option"><code>agent/tool/read_file.py</code>——读取文件内容</button>
+            <button class="quiz-option"><code>agent/prompt/system.j2</code>——渲染系统提示词模板</button>
+            <button class="quiz-option"><code>agent/tool/bash_command.py</code>——执行 bash/shell 命令并返回输出</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「本次代码变动」第一条：新增了 <code>tool/bash_command.py</code>，提供了执行 <code>bash</code> 命令的工具。它用 <code>@tool(command="要执行的 bash/shell 命令")</code> 注册，内部走 <code>subprocess.run(..., shell=True, capture_output=True, text=True, timeout=30)</code>。<code>read_file.py</code> 与 <code>core/utils.py</code> 是上一章就有的文件。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. ReAct 主循环里，<code>while True</code> 是靠什么条件跳出的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">循环固定跑满 3 轮后自动结束</button>
+            <button class="quiz-option">模型输出的内容长度为 0 时</button>
+            <button class="quiz-option">工具执行抛异常时，异常被 try/except 捕获后 break</button>
+            <button class="quiz-option"><code>registry.invoke(session.messages[-1])</code> 返回 <code>None</code>——这条 assistant 消息里没有 <code>tool_calls</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件 <code>query()</code> 原文：<code>call_msg = registry.invoke(session.messages[-1])</code>；<code>if call_msg is None: break</code>。<code>registry.invoke</code> 从消息里取 <code>tool_calls</code>，取不到就直接 <code>return None</code>——意思是「模型这一轮没有再要求调用工具」，于是当前这条 content 就是最终回复。本章代码里没有轮数上限、也没有对异常的 try/except。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 本章 <code>Session.__init__</code> 在「什么都不传」时会自动准备好哪两样东西？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">上一次会话的消息历史与一个可复用的 <code>session_id</code></button>
+            <button class="quiz-option">一个 <code>Model</code> 实例与一个 <code>ModelPrinterListener</code> 实例</button>
+            <button class="quiz-option">bash 命令的白名单与超时时间</button>
+            <button class="quiz-option">渲染好的系统提示词（<code>render_prompt("system")</code>）与全部已注册工具的 Schema（<code>registry.schemas()</code>）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「本次代码变动」第三条：新建 <code>Session</code> 时自动注入工具和提示词。代码里是 <code>system_prompt = render_prompt("system")</code>（再 <code>add_message({"role": "system", ...})</code>）与 <code>self.tools = tools or registry.schemas()</code>。<code>Model</code> 与 <code>ModelPrinterListener</code> 仍由调用方自己创建（见课件第一段 <code>session = Session(); model = Model(); listener = ModelPrinterListener(model)</code>）。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. <code>registry.invoke(session.messages[-1])</code> 里，为什么取的偏偏是「最后一条」消息？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 <code>invoke_stream</code> 刚把这一轮的 assistant 消息追加到了末尾，工具调用就写在它身上</button>
+            <button class="quiz-option">因为消息列表只保留最后一条，前面的会被自动清理</button>
+            <button class="quiz-option">因为最后一条一定是用户消息，需要读取其中的指令</button>
+            <button class="quiz-option">因为只有最后一条消息是 <code>role=tool</code> 的消息</button>
+          </div>
+          <div class="quiz-explain" hidden>循环顺序是「先 <code>model.invoke_stream(session)</code>，再取 <code>session.messages[-1]</code>」。模型调用结束会把这一轮的 assistant 消息 <code>add_message</code> 进去，所以 <code>[-1]</code> 正是那条可能携带 <code>tool_calls</code> 的回复；<code>registry.invoke</code> 从它身上提取 <code>tool_calls</code> 并逐个执行。如果是 <code>role=tool</code> 的结果消息，那已经是本函数自己产出的返回值了。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 关于 <code>bash_command</code> 里 <code>subprocess.run</code> 的参数，下列哪条描述完全正确？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>shell=True</code> 让命令经由 shell 执行（以支持管道、通配符等）；<code>capture_output=True</code> 捕获 stdout/stderr；<code>text=True</code> 以文本模式返回字符串；<code>timeout=30</code> 到期会杀掉子进程</button>
+            <button class="quiz-option"><code>timeout=30</code> 表示命令最多重试 30 次</button>
+            <button class="quiz-option"><code>capture_output=True</code> 表示把输出直接打到控制台，便于调试</button>
+            <button class="quiz-option"><code>text=True</code> 表示把命令结果写进文本文件</button>
+          </div>
+          <div class="quiz-explain" hidden>逐个对照课件代码：<code>shell=True</code> 指定「通过 shell 执行」这条命令（<code>executable</code> 进一步指定用哪个 shell：Windows 是 <code>"cmd"</code>，其它平台 <code>"/bin/bash"</code>）；<code>capture_output=True</code> 让内部 <code>Popen</code> 把 <code>stdout</code> 与 <code>stderr</code> 都设为 <code>PIPE</code>，是「捕获」而不是「打印」；<code>text=True</code> 让三个流以文本模式打开，所以 <code>result.stdout</code> 是字符串；<code>timeout=30</code> 是秒数，超时后子进程会被杀死并重抛 <code>TimeoutExpired</code>，不是重试次数。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 「在系统提示词中注入当前操作系统的信息」这条变更，具体是怎么落地的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">在 <code>system.j2</code> 里直接调用 Python 的 <code>platform.system()</code></button>
+            <button class="quiz-option">在 <code>bash_command.py</code> 里根据系统切换 <code>executable</code>，并把这个值写进提示词</button>
+            <button class="quiz-option"><code>prompt.py</code> 新增 <code>get_os()</code> 返回 <code>platform.system()</code>，<code>render_prompt</code> 把它作为 <code>os</code> 变量传给模板，<code>system.j2</code> 的 <code># Environment</code> 小节用 <code>{{ os }}</code> 输出</button>
+            <button class="quiz-option">在 <code>session.py</code> 里把 <code>platform.system()</code> 拼进用户消息</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「修改文件 <code>agent/prompt.py</code>」原文：<code>def get_os() -&gt; str: return platform.system()</code>，并且 <code>template.render(language=get_language(), cwd=get_cwd(), os=get_os(), is_git=get_is_git())</code>；模板侧 <code>system.j2</code> 的 <code># Environment</code> 小节是「Primary working directory / Operating system: {{ os }} / Is a git repository: {{ is_git }}」。模板本身只是文本 + Jinja2 占位符，不能自己调 Python。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 有人把循环改写成：<code>model.invoke_stream(session)</code> → <code>call_msg = registry.invoke(session.messages[-1])</code> → <code>if call_msg is None: break</code>，但<strong>删掉了</strong> <code>session.messages += call_msg</code>。推演一下会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没关系：工具已经真的执行了，结果写不写回上下文不影响后续对话</button>
+            <button class="quiz-option">程序会立刻抛 <code>KeyError</code> 退出，因为缺少 <code>role=tool</code> 消息</button>
+            <button class="quiz-option">只会丢掉日志，模型仍能通过工具返回值自己感知执行结果</button>
+            <button class="quiz-option">模型每轮看到的上下文都停在「我要求调用工具」的那一刻，收不到执行结果，于是很可能反复发起同一个调用——命令被重复执行、token 与费用持续消耗，循环还可能不收敛</button>
+          </div>
+          <div class="quiz-explain" hidden>循环的第三拍「看结果」正是 <code>session.messages += call_msg</code>：<code>registry.invoke</code> 返回的 <code>{"role": "tool", "tool_call_id": ..., "content": ...}</code> 必须回到上下文，模型下一轮才能读到。删掉它等于每轮都把同一个问题重新问一遍——同一个 <code>tool_call</code> 可能被执行多次（比如同一份 <code>分析.md</code> 被反复覆盖、同一条命令被反复跑），而模型永远「不知道」已经做过了。这正是 ReAct 区别于「一次性 function calling」的关键：行动结果要回流给推理。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 审查本章 <code>tool/__init__.py</code> 的 <code>invoke()</code>：<code>tool = self._tools[name]</code> 之后紧接着写 <code>if not tool: result = "无此工具，请仔细检查你传递的工具名称是否正确"</code>。这段代码的实际行为是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有任何问题，因为 <code>_tools</code> 是 <code>dict[str, Tool]</code>，缺键会返回 <code>None</code></button>
+            <button class="quiz-option">工具名没注册时，<code>self._tools[name]</code> 会先抛 <code>KeyError</code>，那句友好提示永远执行不到——应该改成 <code>self._tools.get(name)</code></button>
+            <button class="quiz-option">只会在 <code>tool_calls</code> 为空时出问题，与工具名无关</button>
+            <button class="quiz-option">完全正确：模型给出未注册的工具名时，会把这句提醒回传给模型</button>
+          </div>
+          <div class="quiz-explain" hidden>字典下标访问缺键会抛 <code>KeyError</code>，不会返回 <code>None</code>，所以 <code>if not tool</code> 这个分支在「工具名不存在」这条路径上永远走不到——错误会以异常形式打断整个 ReAct 循环。修法是 <code>tool = self._tools.get(name)</code>，或者用 <code>try/except KeyError</code> 把「无此工具」作为 <code>role=tool</code> 的内容回传给模型，让它自己改名重试。这也解释了为什么「工具不存在要回传而不是抛断」：对 Agent 而言，错误信息也是可用的环境反馈。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 那份由 Agent 自己跑出来的 <code>分析.md</code> 里，把本章工程的 <code>@tool</code> 装饰器归为哪种设计模式？它同时认定的「单例模式」落在哪个组件上？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">策略模式；单例落在 <code>ModelPrinterListener</code> 上</button>
+            <button class="quiz-option">发布-订阅模式；单例落在 <code>EventEmitter</code> 上</button>
+            <button class="quiz-option">工厂模式；单例落在 <code>Session</code> 上</button>
+            <button class="quiz-option">装饰器模式——把普通函数包装成 <code>Tool</code> 对象；单例落在全局唯一的工具注册表 <code>registry</code> 上</button>
+          </div>
+          <div class="quiz-explain" hidden><code>分析.md</code> 的「关键设计模式」表：发布-订阅 → <code>EventEmitter</code>；策略模式 → Builder 类族（不同 Builder 处理不同类型内容）；<strong>装饰器模式 → <code>@tool</code>，把普通函数包装为 <code>Tool</code> 对象</strong>；工厂模式 → <code>create_params_model</code> 动态创建 Pydantic 验证模型；<strong>单例模式 → <code>registry</code>，全局唯一的工具注册表</strong>。<code>ModelPrinterListener</code> 是事件监听器，<code>Session</code> 每次新建都是一个新会话。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0020-ReAct',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事说：「ReAct 就是让模型先写一段思考、再调用工具——所以思考只在第一轮做一次就够了，后面每轮直接执行工具就行。」按 ReAct 论文的原始定义，这个理解错在哪？请用本章 <code>query()</code> 的循环说明后果。`,
+              source: `来源：ReAct 论文《ReAct: Synergizing Reasoning and Acting in Language Models》（"we explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner, allowing for greater synergy between the two: reasoning traces help the model induce, track, and update action plans as well as handle exceptions, while actions allow it to interface with external sources, such as knowledge bases or environments, to gather additional information."）https://arxiv.org/abs/2210.03629 · 检索 2026-10-02 · 层级：一手（原始论文）+ 源课程《20.ReAct》课件（query() 的 ReAct Loop）`,
+              breakdown: `论文的关键词是 <strong>interleaved（交替）</strong>：推理轨迹与动作不是先后两个阶段，而是每一轮都在交替出现。官方给的分工很清楚——推理负责 <strong>induce、track、update action plans</strong> 以及 <strong>handle exceptions</strong>；动作负责接入外部信息源、把新信息取回来。只做一次思考，等于把 ReAct 退化回「链式思考 + 一次性执行」：命令报错、文件不存在、路径写错这类异常就没人处理了，模型也无法根据 <code>tool</code> 的真实返回更新计划。本章循环的形态正是交替的：<code>while True</code> 里每轮先 <code>model.invoke_stream(session)</code>（想），再 <code>registry.invoke(session.messages[-1])</code>（做），然后把结果 <code>session.messages += call_msg</code>（看结果），下一轮又是「想」。判断一段 Agent 代码是不是 ReAct，看的就是这个交替：推理能不能被<strong>最新</strong>的环境返回所影响。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `本章 <code>query()</code> 的主循环凭什么结束？请指出 <code>break</code> 的判据，并说明它在 OpenAI function calling 的标准流程里对应哪一步。`,
+              source: `来源：OpenAI Cookbook《How to call functions with chat models》（"Step 2: Check programmatically if model wanted to call a function. If true, proceed to step 3."；"Step 4: Invoke the chat completions API with the message list to get the response."；"else: # Model did not identify a function to call, result can be returned to the user"）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `判据是 <code>registry.invoke(session.messages[-1])</code> 的返回值：它从这条刚追加的 assistant 消息里取 <code>tool_calls</code>，取不到就 <code>return None</code>，循环 <code>break</code>。对应官方四步流程的 <strong>Step 2「程序化判断模型是否想调用函数」</strong>——官方在那段示例里写得直白：没有 <code>tool_calls</code> 就走 else 分支，「模型没有识别出要调用的函数，结果可以直接返回给用户」。所以 <code>None</code> 是一箭双雕的信号：既是「本轮没有工具要执行」，也是「可以收尾了」。补充两点容易漏的：① 工具的返回值不止用来判断，还要按 Step 3/4 追加进消息列表并再次请求模型；② 官方同时强调 <code>role=tool</code> 的消息必须是「前面某条带 <code>tool_calls</code> 的 assistant 消息」的回应——本章用 <code>tool_call_id</code> 做配对正是这个要求。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `本章 <code>bash_command</code> 里写的是 <code>subprocess.run(command, shell=True, executable=shell_flag, capture_output=True, text=True, timeout=30)</code>。按 Python 官方文档，<code>timeout</code> 到期的那一刻究竟发生了什么？<code>executable</code> 在 <code>shell=True</code> 时又是什么含义？`,
+              source: `来源：Python 官方文档 subprocess（"A timeout may be specified in seconds, it is internally passed on to Popen.communicate(). If the timeout expires, the child process will be killed and waited for. The TimeoutExpired exception will be re-raised after the child process has terminated."；"If shell=True, on POSIX the executable argument specifies a replacement shell for the default /bin/sh."）https://docs.python.org/3/library/subprocess.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方保证两步：<strong>子进程被杀死并等待回收</strong>，然后 <strong>重新抛出 <code>TimeoutExpired</code></strong>。所以 30 秒不等于「命令自己会停」，而是「到点就被 kill」，并且异常会在 Python 侧冒出来。这一点对 Agent 很关键：本章 <code>bash_command</code> 只处理了 <code>returncode == 0 / != 0</code> 两种结果，没有 catch <code>TimeoutExpired</code>——一旦某条命令卡住，异常会从 <code>tool(**args)</code> 一路上抛，直接打断整个 ReAct 循环，模型连「超时了，换条命令试试」的机会都没有。工程上更好的是把超时也翻译成 <code>role=tool</code> 的内容回传（例如「[超时 30s] 命令已被终止」）。<code>executable</code> 的语义是「替换默认 shell」：<code>shell=True</code> 时 POSIX 上默认用 <code>/bin/sh</code>，本章传 <code>"/bin/bash"</code> 就是替换它；Windows 分支传 <code>"cmd"</code>，因为 Windows 上用 <code>COMSPEC</code> 指定的命令解释器（<code>cmd.exe</code>）。另外别忘了官方在 <code>shell=True</code> 处的提示：请先读「Security Considerations」——shell 一旦被显式调用，转义与注入防范就是应用自己的责任。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查这段 AI 改写的主循环：<code>model.invoke_stream(session)</code> 之后执行 <code>results = registry.invoke(session.messages[-1])</code>，若 <code>results</code> 非空则先 <code>session.messages.pop()</code> 丢掉刚追加的 assistant 消息，再 <code>session.messages += results</code> 只保留 <code>role=tool</code> 的结果。问：下一轮请求会发生什么？为什么官方明确要求 <code>role=tool</code> 的消息必须回应前面的 <code>tool_calls</code>？`,
+              source: `来源：OpenAI Cookbook《How to call functions with chat models》（"# Note that messages with role ’tool’ must be a response to a preceding message with ’tool_calls’"；"# Append the message to messages list"…"messages.append({’role’:’tool’, ’tool_call_id’:tool_call_id, ’name’: tool_function_name, ’content’:results})"）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方在示例里专门留了这句注释：<strong>role 为 tool 的消息必须是对前面某条带 tool_calls 的 assistant 消息的回应</strong>。工具结果不是「自言自语」，而是「回答」——它靠 <code>tool_call_id</code> 与具体那一次调用配对，本章 <code>registry.invoke</code> 返回的正是 <code>{"role": "tool", "tool_call_id": id, "name": name, "content": result}</code>。把 assistant 消息 pop 掉之后，请求体里就出现了「无主的 tool 消息」：服务端通常会直接判 <code>invalid_request_error</code>（400）拒绝；即使某个实现宽松放过，模型也丢掉了「我发起过哪些调用、参数是什么」这一半上下文，无法把返回结果和自己的意图对上——同一句话到底是在回答哪次调用，它无从得知。正确顺序是官方给出的：先 <code>messages.append(response_message.to_dict())</code>（含 <code>tool_calls</code>），再为每个调用追加一条 tool 结果，然后才发起下一次请求。顺带一提，pop 掉 assistant 消息还会连带丢掉它的 reasoning / content，等于把这一轮的推理轨迹也删了。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `设计一个生产可用的 ReAct 主循环：除了「有工具调用就继续、没有就结束」，还要补哪些收敛与安全边界？请从终止条件、迭代上限、失败回传、执行环境四个方面给出方案（结合本章 <code>bash_command</code> 这种能直接跑 shell 的工具）。`,
+              source: `来源：Anthropic《Building effective agents》（"They are typically just LLMs using tools based on environmental feedback in a loop."；"During execution, it’s crucial for the agents to gain “ground truth” from the environment at each step (such as tool call results or code execution) to assess its progress."；"it’s also common to include stopping conditions (such as a maximum number of iterations) to maintain control."；"We recommend extensive testing in sandboxed environments, along with the appropriate guardrails."）https://www.anthropic.com/engineering/building-effective-agents · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方把 Agent 的实现描述得很朴素：<strong>「typically just LLMs using tools based on environmental feedback in a loop」</strong>——本章的 <code>query()</code> 就是这个 loop 的最小形态。要上生产，至少补四层。① <strong>终止条件要显式</strong>：本章的 <code>break</code> 判据（没有 <code>tool_calls</code>）依赖模型自己收手，官方明确提醒要加 stopping conditions，例如最大迭代次数——因为模型可能反复调同一个工具、或在失败命令上绕圈，循环并不保证自然收敛。除轮数外，还常用总时限、总 token/费用预算、连续失败次数。② <strong>每一步要有 ground truth</strong>：官方原话是 Agent 在执行中必须<strong>每一步</strong>都从环境拿到真实反馈（工具结果、代码执行结果）来评估进展——这正是工具结果必须写回 <code>messages</code> 的理由，少了这一步，模型只能自说自话。③ <strong>失败要回传、不要抛断</strong>：非零退出码、stderr、超时都应当变成 <code>role=tool</code> 的内容，让模型有机会换策略；本章 <code>bash_command</code> 已经把 <code>[退出码 N]</code> 与 stderr 拼进返回值，但 <code>TimeoutExpired</code> 仍会直接抛穿循环，需要补兜底。④ <strong>执行环境必须收窄</strong>：<code>bash_command</code> 等于把 shell 交给模型，官方建议在沙箱环境里充分测试并配 guardrails。落地就是：限定工作目录、命令白名单/黑名单、强制超时（本章 30 秒）、限制网络与可写路径、把每条命令与输出记入审计日志，必要时加人工确认闸门。⑤ <strong>可观测性</strong>：官方三原则里有「透明性——显式展示 Agent 的规划步骤」，本章 <code>ModelPrinterListener</code> 按事件打印推理与工具调用，就是这一层的最小实现。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 30 分钟内给 agent 工程接上 ReAct 主循环，并跑通一个真实任务：分析 <code>./agent</code> 目录、把结论写成 <code>分析.md</code>。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '新建 <code>agent/tool/bash_command.py</code>（<code>@tool</code> 装饰、<code>subprocess.run</code>、<code>capture_output</code>/<code>text</code>/<code>timeout=30</code>，非零退出码把 stderr 带回）→ 在 <code>tool/__init__.py</code> 的 <code>registry</code> 里注册 <code>read_file</code> / <code>write_file</code> / <code>bash_command</code> → 在 <code>prompt/system.j2</code> 的环境小节注入当前操作系统 → 让 <code>Session</code> 自动注入系统提示词与 <code>registry.schemas()</code> → 写 <code>query()</code> 的 ReAct 循环（<code>invoke_stream</code> → <code>registry.invoke(session.messages[-1])</code> → <code>None</code> 则 break，否则把 tool 消息写回 <code>messages</code>）→ 让它分析 <code>./agent</code> 并写出 <code>分析.md</code>，最后 <code>session.save()</code>。',
+                accept: ['循环能跑多轮：模型先调用工具、拿到结果后继续推理，直到不再发起工具调用才结束', '工具结果以 role=tool + tool_call_id 的形式回到 messages，前面的 assistant 消息（含 tool_calls）仍在上下文里', '分析.md 被 write_file 真实写出，内容覆盖 agent/ 的模块划分与关键设计模式', '会话结束时 session.save() 把会话落到 agent/sessions/<id>.json'],
+              },
+              source: `任务基于《20.ReAct》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 工具层照本章写 <code>@tool(command="要执行的 bash/shell 命令")</code>，内部 <code>subprocess.run(command, shell=True, executable="cmd" if platform == "win32" else "/bin/bash", capture_output=True, text=True, timeout=30)</code>，用 <code>returncode</code> 分流成功与失败（失败时返回 <code>[退出码 N]</code> + stderr），并在 <code>registry.register(...)</code> 里挂上三个工具。② 提示词层在 <code>render_prompt</code> 的上下文里加 <code>os=get_os()</code>，模板的 <code># Environment</code> 小节写 <code>Operating system: {{ os }}</code>。③ 会话层让 <code>Session</code> 自己 <code>render_prompt("system")</code> 并 <code>self.tools = tools or registry.schemas()</code>。④ 循环层严格按本章三拍写：想（<code>invoke_stream</code>）→ 做（<code>registry.invoke(session.messages[-1])</code>）→ 看结果（<code>session.messages += call_msg</code>）；<code>None</code> 才 break。⑤ 收尾 <code>session.save()</code>。<strong>常见坑</strong>：删掉写回结果那一步 → 模型反复发起同一个调用、命令被重复执行；<code>pop()</code> 掉带 <code>tool_calls</code> 的 assistant 消息 → 出现「无主的 tool 消息」，请求被拒；<code>bash_command</code> 超时未兜底 → <code>TimeoutExpired</code> 直接打断整个会话；工具没注册就出现在 <code>tool_calls</code> 里 → <code>self._tools[name]</code> 抛 <code>KeyError</code>，友好提示那句反而执行不到。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://arxiv.org/abs/2210.03629">ReAct: Synergizing Reasoning and Acting in Language Models</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb">OpenAI Cookbook《How to call functions with chat models》</a> · <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic《Building effective agents》</a> · <a href="https://docs.python.org/3/library/subprocess.html">Python 官方文档 subprocess</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/ReAct速查表.html">ReAct速查表</a>——循环三拍、agent/ 变更清单、bash_command 参数与易错点一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/ReAct">20.ReAct</a> · 下一课 <a href="/agents/Agents底层逻辑/Agent">21.Agent</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

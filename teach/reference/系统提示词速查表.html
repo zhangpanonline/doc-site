@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>系统提示词速查表 · 参考手册</title>
+  <meta name="description" content="系统提示词速查表 · 可打印参考手册：配合《系统提示词互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>系统提示词速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0016-系统提示词.html">《系统提示词互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>它是什么，为什么在「最前面」</h2>
+      <dl class="term-grid">
+        <dt>位置</dt>
+        <dd>往往出现在所有消息的最前面；模型在训练过程中会<strong>重点关注系统提示词</strong>。</dd>
+        <dt>作用域</dt>
+        <dd>它不在某一轮对话里，而是作用于<strong>整条对话的每一轮</strong>——写坏了不会报错，只会让行为慢慢跑偏。</dd>
+        <dt>载体（本章工程）</dt>
+        <dd><code>agent/message.py</code> 用 <code>@dataclass</code> 定义 Message 基类，<code>SystemMessage</code> / <code>UserMessage</code> / <code>AssistantMessage</code> 三个子类分别承载角色。</dd>
+        <dt>最小示例</dt>
+        <dd><code>SystemMessage("当用户向你打招呼时，你仅需回答你好即可")</code> + <code>UserMessage("你好")</code>——第一条消息就把行为定死。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>五条核心原则（正反对照）</h2>
+      <table class="cmp-table">
+        <tr><th>原则</th><th>管什么</th><th>反例 → 修法</th></tr>
+        <tr><td>精简</td><td>说多少</td><td>「你现在要充当一名专业代码顾问……希望你认真仔细地阅读……」→「你是代码顾问。精准解答编程问题，不懂直接说明，禁止编造信息。」</td></tr>
+        <tr><td>自洽</td><td>别打架</td><td>「回答务必详尽，多角度展开；同时所有回复控制在 30 字以内」→ 删掉互相矛盾的规则</td></tr>
+        <tr><td>全局约束</td><td>放对地方</td><td>「当用户要求写数据分析类代码时，应使用 Python」是<strong>局部规则</strong>，不该放系统提示词</td></tr>
+        <tr><td>保持静态</td><td>别乱动</td><td>「当前用户是：&lt;动态内容&gt;，时间是：&lt;动态内容&gt;」→ 动态内容走消息，系统提示词保持固定</td></tr>
+        <tr><td>结构化</td><td>怎么排版</td><td>用 Markdown / XML 分层，把核心指令、硬性约束、输出规范用标记隔离</td></tr>
+      </table>
+      <p>记忆抓手：<strong>精简</strong>管说多少 · <strong>自洽</strong>管别打架 · <strong>全局约束</strong>管放对地方 · <strong>保持静态</strong>管别乱动 · <strong>结构化</strong>管怎么排版。</p>
+    </section>
+
+    <section>
+      <h2>从 .j2 模板到系统提示词</h2>
+      <pre>1) 收集环境信息
+   get_cwd()      → os.getcwd()
+   get_is_git()   → git rev-parse --is-inside-work-tree（返回码 0 且输出 true 才算在仓库里）
+   get_platform() → 平台信息
+
+2) 交给 Jinja2 渲染
+   env = Environment(loader=FileSystemLoader(template_dir))
+   template = env.get_template("system.j2")
+   text = template.render(...)
+
+3) 封装通用入口
+   render_prompt(prompt_name)
+     template_dir = os.path.dirname(__file__) / "prompt"
+     取 f"{prompt_name}.j2" 并渲染
+
+4) 模板结构（system.j2）
+   # System / # Doing tasks / # Using your tools / # Tone and style / # Language</pre>
+      <p>本章 <code>agent/</code> 新增 7 个文件：<code>__init__.py</code>、<code>config.py</code>、<code>message.py</code>、<code>model.py</code>、<code>printer.py</code>、<code>prompt.py</code>、<code>prompt/system.j2</code>；依赖：<code>uv add jinja2==3.1.6</code>、<code>uv add pydantic-settings==2.14.1</code>。</p>
+    </section>
+
+    <section>
+      <h2>两类静默故障（不报错但结果错）</h2>
+      <table class="cmp-table">
+        <tr><th>故障</th><th>现象</th><th>修法</th></tr>
+        <tr><td>变量名写错</td><td>Jinja2 默认把未定义变量渲染成空字符串 → 模板里少了一段，模型照常回答</td><td>开启 <code>StrictUndefined</code>，或渲染后断言关键片段存在</td></tr>
+        <tr><td>块标签留空行</td><td><code>{% for %}</code> / <code>{% if %}</code> 控制行会留下多余空行，长提示词被撑大</td><td>用 <code>{%- ... -%}</code> 控制空白，或渲染后统一压缩连续空行</td></tr>
+      </table>
+      <ul class="pitfall-list">
+        <li>把动态内容（用户、时间、cwd）写进系统提示词 → 破坏缓存命中、也让行为随环境漂移</li>
+        <li>系统提示词里塞局部规则 → 模型在其它场景也照做</li>
+        <li>以为「模型没照做」一定是指令不够强——先检查模板渲染后到底长什么样</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

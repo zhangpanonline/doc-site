@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 注意力机制：Embedding 的上下文困境、QKV 线性投影与多头注意力五步链路——互动教学课程">
+  <title>注意力机制 · 互动教学课程（Agents底层逻辑 ac-11）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>注意力机制</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/注意力机制">11.注意力机制</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 Embedding 「单独给每个词编码」为什么不够用，以及注意力层要输出什么</li>
+        <li>写出 Q、K、V 的来历，并用一句话分别解释三者的职责</li>
+        <li>复述一次自注意力的五步链路：$QK^{\top}$ → 缩放 → 掩码 → Softmax → 加权求和</li>
+        <li>看懂 AI 写的注意力代码：投影、缩放、掩码、多头拼接有没有写对</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先把本章的骨架过一遍——细节都在《11.注意力机制》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>为什么需要注意力：Embedding 的局限</h3>
+        <ul class="pitfall-list">
+          <li><strong>本课的讨论范围</strong>：所有推演都基于<strong>训练</strong>时的前向传播过程，不是推理——先把这一点钉住，后面每一步都是"整句一次性喂进去"的算法</li>
+          <li><strong>入口</strong>：假设已经拿到 Embedding 的输出——一个 $4 \times 6$ 的矩阵（4 个 token，每个 token 用 6 维向量表示它的语义）</li>
+          <li><strong>问题</strong>：Embedding 层是<strong>为单独的每一个词</strong>编码语义的，可同一个词在不同上下文里含义会变——「他一把把把住了」「意思意思」「特等等等」「别别别的」都是同一个字在不同位置上扮演不同角色</li>
+          <li><strong>出口</strong>：注意力层输入 $4 \times 6$，输出仍是 $4 \times 6$，它要表达的是——<strong>每个 token 受到上下文的影响后，该如何调整自身的值</strong></li>
+          <li><strong>它站在 decoder 的哪一格</strong>：inputs → embedding → N ×（Masked Multi-Head Attention → Add &amp; Norm → Feed Forward → Add &amp; Norm）→ Linear → Softmax → Output Probabilities。本章只展开标着 <strong>Masked Multi-Head Attention</strong> 的那一层，其余部件后续章节再讲</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Q、K、V：同一份输入，三种角色</h3>
+        <p>$\mathbf{Q} = \mathbf{X}\mathbf{W}^{Q}$，$\mathbf{K} = \mathbf{X}\mathbf{W}^{K}$，$\mathbf{V} = \mathbf{X}\mathbf{W}^{V}$（示例里三个权重矩阵都是 $6 \times 6$）</p>
+        <ul class="pitfall-list">
+          <li><strong>不是切分，是投影</strong>：Q/K/V 来自<strong>同一份 X</strong> 分别乘三个<strong>不同的、可学习的</strong>权重矩阵，所以形状都还是 $4 \times 6$——把 X 均切成三份是拿不到 Q/K/V 的</li>
+          <li><strong>Q（Query）</strong>：我怎么去找别人？——我拿着自己的问题去问全场</li>
+          <li><strong>K（Key）</strong>：别人怎么找到我？——我身上挂着什么标签、能被谁匹配上</li>
+          <li><strong>V（Value）</strong>：我找到别人后，对它施加怎样的影响？——真正被加权汇总进输出的那份内容</li>
+          <li>一句话记忆：<strong>Q 是我要什么，K 是我有什么，V 是我给什么</strong>；三者分开，是为了让"匹配"和"传递的内容"可以各学各的</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>一次自注意力：五步链路</h3>
+        <p>$\mathrm{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V}) = \mathrm{softmax}\!\left(\dfrac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}}\right)\mathbf{V}$</p>
+        <ul class="pitfall-list">
+          <li><strong>① 打分</strong>：$\mathbf{Q}\mathbf{K}^{\top}$——$4 \times 6$ 乘 $6 \times 4$ 得到 $4 \times 4$ 的注意力得分矩阵；第 i 行第 j 列 = 第 i 个 token 对第 j 个 token 的原始关注打分</li>
+          <li><strong>② 缩放</strong>：除以 $\sqrt{d_k}$（$d_k$ 是每个头的维度）——点积的方差随 $d_k$ 增大而增大，不缩放会把 Softmax 推进梯度极小的区域</li>
+          <li><strong>③ 掩码</strong>：把 $j > i$ 的位置置为 $-\infty$——第 i 个位置只能看到自己和左边的 token，掩掉"未来"</li>
+          <li><strong>④ Softmax</strong>：逐行归一化成权重，每行和为 1；被掩成 $-\infty$ 的位置权重为 0，等价于无权参与</li>
+          <li><strong>⑤ 加权输出</strong>：权重矩阵（$4 \times 4$）乘 $\mathbf{V}$，得到这一头的输出——<strong>注意力的输出就是 V 的行按权重做的加权和</strong></li>
+          <li><strong>多头再拼接</strong>：把 6 维切成 h 个头（示例 h=2，每头 3 维），每个头照上面五步各算一遍，最后把各头输出拼回 $4 \times 6$ —— 让模型能在不同表示子空间、不同位置上共同关注信息</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《11.注意力机制》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. Embedding 层「为单独的每一个词编码它的语义」，这带来什么问题？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">它输出的向量维度太低，根本承载不了语义</button>
+            <button class="quiz-option">同一个词在不同上下文中含义会变化，而单独编码时它只有一个固定的语义</button>
+            <button class="quiz-option">它输出的是整数 id，不能参与矩阵运算</button>
+            <button class="quiz-option">它只对高频词有效，低频词会退化成未知符号</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「Embedding的问题」原文：Embedding 层为单独的每一个词编码了它的语义；但实际上，同一个词在不同的上下文中，它的含义是会变化的——「他一把把把住了」「意思意思」「特等等等」「别别别的」这些例子都是在说这件事。所以注意力层要做的事，正是让每个 token 的表示再受一次上下文的影响。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 在注意力机制里，Q（Query）、K（Key）、V（Value）各自回答什么问题？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Q：我的输出是什么；K：我的输入是什么；V：我的权重是多少</button>
+            <button class="quiz-option">Q、K、V 三者内容完全一样，只是命名不同</button>
+            <button class="quiz-option">Q：别人怎么找到我；K：我怎么去找别人；V：我如何调整自己</button>
+            <button class="quiz-option">Q：我怎么去找别人；K：别人怎么找到我；V：我找到别人后，对它施加怎样的影响</button>
+          </div>
+          <div class="quiz-explain" hidden>课件动画页原文：Q: Query，我怎么去找别人？K: Key，别人怎么找到我？V: Value，我找到别人后，对它施加怎样的影响？注意 Q 与 K 的指向是相反的：Q 是"我去找"，K 是"我被找到"。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 本章对注意力机制的全部讨论，建立在哪个阶段之上？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">训练阶段的反向传播——梯度的计算与回传</button>
+            <button class="quiz-option">推理阶段——逐 token 生成、带缓存的那套流程</button>
+            <button class="quiz-option">数据预处理阶段——分词与词表构建</button>
+            <button class="quiz-option">训练阶段的前向传播——整句一次性喂入，而非推理</button>
+          </div>
+          <div class="quiz-explain" hidden>课件开头原文：「接下来的所有讨论都基于<strong>训练</strong>的前向传播过程，而非推理」。这个前提很关键：训练时整句一次性进入，所以必须靠掩码来禁止看到未来；推理时逐 token 生成，用的是另一套流程。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. Embedding 输出 $\mathbf{X}$ 是 $4 \times 6$，权重矩阵 $\mathbf{W}^{Q}$ 是 $6 \times 6$。关于 $\mathbf{Q} = \mathbf{X}\mathbf{W}^{Q}$，正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">形状是 $6 \times 4$，因为要和 $\mathbf{X}$ 的转置对齐</button>
+            <button class="quiz-option">形状是 $4 \times 4$，因为 Q 是 $\mathbf{X}$ 与自己的点积</button>
+            <button class="quiz-option">形状是 $6 \times 6$，Q 就是权重矩阵本身</button>
+            <button class="quiz-option">形状是 $4 \times 6$，Q 是 X 与可学习权重矩阵相乘后的投影，不等于 X</button>
+          </div>
+          <div class="quiz-explain" hidden>课件动画第 1 步「Q、K、V 线性变换」：$\mathbf{X}(4 \times 6) \times \mathbf{W}_Q(6 \times 6) = \mathbf{Q}(4 \times 6)$——中间那个 6 相互抵消，行数跟着 X 走。三组权重 $\mathbf{W}^{Q}$、$\mathbf{W}^{K}$、$\mathbf{W}^{V}$ 是彼此独立的可训练参数，所以同样的 X 会投影出三种不同角色的表示。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 4 个 token、每个 6 维的输入，算 $\mathbf{Q}\mathbf{K}^{\top}$ 得到的注意力得分矩阵是什么形状？它的每个元素代表什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$6 \times 6$；每个元素是两个权重矩阵对应项的乘积</button>
+            <button class="quiz-option">$4 \times 6$；第 i 行是第 i 个 token 调整后的值</button>
+            <button class="quiz-option">$4 \times 4$；第 i 行第 j 列是第 i 与第 j 个 token 的余弦相似度</button>
+            <button class="quiz-option">$4 \times 4$；第 i 行第 j 列是第 i 个 token 对第 j 个 token 的关注打分</button>
+          </div>
+          <div class="quiz-explain" hidden>$\mathbf{Q}(4 \times 6) \times \mathbf{K}^{\top}(6 \times 4) \to 4 \times 4$，中间的 6 抵消——课件动画第 4 步「注意力得分: Q × K<sup>T</sup>」画出的正是 $4 \times 4$。注意它是<strong>原始点积</strong>，不是余弦相似度：余弦相似度要先做模长归一化，而这里只除以 $\sqrt{d_k}$ 这个与向量长度无关的常数。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 给注意力得分矩阵加掩码，把 $j > i$ 的位置置为 $-\infty$，目的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">减少一半矩阵乘法，省算力</button>
+            <button class="quiz-option">防止点积数值过大导致溢出</button>
+            <button class="quiz-option">让第 i 个位置的输出只依赖 ≤ i 的 token——训练时整句同时喂入，必须靠掩码维持自回归性质</button>
+            <button class="quiz-option">让每一行权重的和正好等于 1</button>
+          </div>
+          <div class="quiz-explain" hidden>课件动画第 5 步「掩码」把上三角（$j > i$）置为 $-\infty$，第 6 步再做 Softmax——$-\infty$ 经 Softmax 后变成 0，等价于"这些位置无权参与"。论文 §3.1 说得很直接：decoder 的自注意力子层要 prevent positions from attending to subsequent positions，这样位置 i 的预测才只能依赖小于 i 的已知输出。"让每行权重和为 1"是 Softmax 的职责，不是掩码的。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 6 维的 Q/K/V 被切成 2 个头（每头 3 维），各自算完注意力后再拼接回 6 维。这样做的收益与代价是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">收益是让模型在不同表示子空间、不同位置上共同关注信息；代价是每个头只分到 $\mathrm{embed\_dim} / \mathrm{num\_heads}$ 维，单头维度变小</button>
+            <button class="quiz-option">收益是省掉 Softmax，代价是失去非线性</button>
+            <button class="quiz-option">收益是每个头能看到不同的 token 子集，代价是必须串行计算</button>
+            <button class="quiz-option">收益是参数量减少一个数量级，代价是精度下降</button>
+          </div>
+          <div class="quiz-explain" hidden>论文 §3.2.2：把 Q/K/V 用 h 组不同的可学习线性投影投到 $d_k$、$d_k$、$d_v$ 维，在这 h 份投影上<strong>并行</strong>执行注意力函数，再把各头输出拼接后投影一次——原文的收益表述是 multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions。PyTorch 官方文档同样写明：num_heads 会把 embed_dim 切分，每个头的维度就是 embed_dim // num_heads。课件动画第 3 步「多头注意力 — 切分」把 6 列切成两个 3 列的头，第 8 步把 Head 1 与 Head 2 拼成 MultiHead。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 某个 token 经 Softmax 后的权重是 $[0.5, 0.5, 0, 0]$（对应 4 个位置），$\mathbf{V}$ 的第 1、2 行分别是 $\mathbf{v}_1$、$\mathbf{v}_2$。这一步的输出是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$0.5\mathbf{v}_1 + 0.5\mathbf{v}_2$——注意力的输出是 V 的行按权重做的加权和</button>
+            <button class="quiz-option">$\mathbf{v}_1 + \mathbf{v}_2$（把权重加起来再乘）</button>
+            <button class="quiz-option">$0.5\mathbf{v}_1 \times 0.5\mathbf{v}_2$（逐元素相乘）</button>
+            <button class="quiz-option">$\max(\mathbf{v}_1, \mathbf{v}_2)$（取权重最大的那一个）</button>
+          </div>
+          <div class="quiz-explain" hidden>论文 §3.2 对 attention 的定义：output 是 values 的<strong>加权和</strong>，每个 value 分到的权重由 query 与对应 key 的兼容性函数算出。权重 $[0.5, 0.5, 0, 0]$ 意味着后两个位置权重为 0、完全不参与，输出就是前两行 V 各取一半相加，维度不变（单头是 3 维）。课件动画第 7 步「加权输出」画的正是 Softmax 后的权重矩阵与 V 相乘。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 同事让 AI 写训练用的 decoder 自注意力前向代码，AI 给出：<code>scores = Q @ K.transpose(-2, -1)</code> → <code>weights = torch.softmax(scores, dim=-1)</code> → <code>out = weights @ V</code>。审查这段代码，最要紧的问题是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">应该把 <code>dim=-1</code> 改成 <code>dim=-2</code></button>
+            <button class="quiz-option">没有问题，这段代码可以直接用于训练</button>
+            <button class="quiz-option">应该先转置 V 再与权重相乘</button>
+            <button class="quiz-option">缺两件事：没有按 $\sqrt{d_k}$ 缩放得分，也没有加因果掩码——训练时会看到"未来"位置</button>
+          </div>
+          <div class="quiz-explain" hidden>三处对照：论文 §3.2.1 明确要求 compute the dot products of the query with all keys, <strong>divide each by √d_k</strong>, and apply a softmax——不缩放时 $d_k$ 越大点积幅值越大，Softmax 会进入梯度极小的区域；§3.1 与 §3.2.3 要求 decoder 自注意力把未来位置置 $-∞$ 再 Softmax。PyTorch 官方实现 <code>F.scaled_dot_product_attention</code> 的文档里既有 <code>scale_factor = 1 / math.sqrt(query.size(-1))</code>，也有 <code>is_causal</code> 分支做 <code>masked_fill_(..., float("-inf"))</code>，可直接当对照答案。这个"AI 写注意力漏缩放和掩码"的错误在真实代码审查里非常高频。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0011-注意力机制',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事说：「自注意力就是把 Embedding 输出的那个 4×6 矩阵均分成三份，前两份当 Q 和 K，最后一份当 V，这样最省参数。」用本章的机制判断：这句话错在哪？照它实现，模型会损失什么？`,
+              source: `来源：Attention Is All You Need 论文 §3.2.2 Multi-Head Attention（"we found it beneficial to linearly project the queries, keys and values h times with different, learned linear projections to d_k, d_k and d_v dimensions, respectively."）https://arxiv.org/abs/1706.03762 · 检索 2026-10-02 · 层级：一手（原始论文）`,
+              breakdown: `错在把<strong>投影</strong>当成了<strong>切分</strong>。论文原文说的是用 h 组<strong>不同的、可学习的线性投影</strong>分别作用在 Q、K、V 上，落到本章的记号就是 $\mathbf{Q}=\mathbf{X}\mathbf{W}^{Q}$、$\mathbf{K}=\mathbf{X}\mathbf{W}^{K}$、$\mathbf{V}=\mathbf{X}\mathbf{W}^{V}$，三个权重矩阵是各自独立的可训练参数。而"均分成三份"是纯下标切片，<strong>一个参数都没有</strong>：三层角色被锁死在同一组数值上，模型没法把"我在找什么 / 我能被谁找到 / 我要传递什么"学成三种不同的语义空间。PyTorch 官方文档里 Multi-Head Attention 的定义同样写的是 $head_i = \mathrm{Attention}(QW_i^Q, KW_i^K, VW_i^V)$——三个投影矩阵带各自的下标，正是"各不相同"的意思。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `请你完整讲一遍：输入一个 4×6 的 Embedding 输出矩阵，注意力层是怎么一步步算出输出的？每一个中间结果的形状是多少？`,
+              source: `来源：Attention Is All You Need 论文 §3.2.1 Scaled Dot-Product Attention（"We compute the dot products of the query with all keys, divide each by √d_k, and apply a softmax function to obtain the weights on the values."）https://arxiv.org/abs/1706.03762 · 检索 2026-10-02 · 层级：一手（原始论文）+ 渡一源课程《11.注意力机制》课件（动画第 1–8 步）`,
+              breakdown: `链路与形状：<br>① <strong>投影</strong>：$\mathbf{Q}=\mathbf{X}\mathbf{W}^{Q}$、$\mathbf{K}=\mathbf{X}\mathbf{W}^{K}$、$\mathbf{V}=\mathbf{X}\mathbf{W}^{V}$，X 是 4×6、三个 W 都是 6×6，所以 Q/K/V 都是 <strong>4×6</strong>。<br>② <strong>打分</strong>：$\mathbf{Q}\mathbf{K}^{\top}$ 是 (4×6)(6×4) → <strong>4×4</strong>，第 i 行第 j 列是第 i 个 token 对第 j 个 token 的打分。<br>③ <strong>缩放</strong>：除以 $\sqrt{d_k}$，形状不变——论文特意把这一步写进公式，因为不缩放时点积幅值随 $d_k$ 变大，Softmax 会被推进梯度极小的区域。<br>④ <strong>掩码</strong>：把 $j>i$ 的位置置 $-∞$，形状不变。<br>⑤ <strong>Softmax</strong>：逐行归一化，仍是 4×4；被掩的位置权重为 0。<br>⑥ <strong>加权输出</strong>：权重 (4×4) × V (4×6) → <strong>4×6</strong>，与输入同形——这正对应课件那句"输出的矩阵要表达：每个 token 受到上下文的影响后，该如何调整自身的值"。<br>⑦ 若切了两个头，则每头是 4×3，最后拼接回 4×6。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `AI 给训练用的 decoder 自注意力写了核心三行：<code>scores = Q @ K.transpose(-2, -1)</code>、<code>weights = torch.softmax(scores, dim=-1)</code>、<code>out = weights @ V</code>（假设 Q/K/V 已经是投影后的张量）。请做代码审查：这段代码能不能直接进训练循环？缺什么？给出修法。`,
+              source: `来源：PyTorch 官方文档 torch.nn.functional.scaled_dot_product_attention（"scale_factor = 1 / math.sqrt(query.size(-1))"；"if is_causal: ... attn_bias.masked_fill_(temp_mask.logical_not(), float(\"-inf\"))"）https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `缺两件事，而且两件都会<strong>静默地</strong>把结果训坏：<br>① <strong>缩放</strong>：scores 之后要先除 $\sqrt{d_k}$。论文 §3.2.1 把 divide each by √d_k 写进了公式，并解释原因——$d_k$ 大时点积幅值变大，softmax 进入梯度极小的区域。官方实现里的 <code>scale_factor = 1 / math.sqrt(query.size(-1))</code> 就是这件事。<br>② <strong>因果掩码</strong>：decoder 自注意力必须 mask 掉未来位置。论文 §3.1 要求 prevent positions from attending to subsequent positions；官方实现的 <code>is_causal</code> 分支用 <code>tril</code> 造下三角、再 <code>masked_fill_(..., float("-inf"))</code>，然后在 softmax 前把 bias 加到 scores 上。<br>修法二选一：直接调用 <code>F.scaled_dot_product_attention(q, k, v, is_causal=True)</code>；或者手写 <code>scores = scores / math.sqrt(d_k)</code> → 用 <code>torch.triu(torch.ones(L, S), diagonal=1).bool()</code> 生成上三角并 <code>masked_fill(mask, float("-inf"))</code> → 再 softmax → <code>@ V</code>。<br>加分项：提醒对方注意掩码语义的坑——<code>scaled_dot_product_attention</code> 的布尔 <code>attn_mask</code> 里 <strong>True 表示参与</strong>，而 <code>MultiheadAttention</code> 的 <code>key_padding_mask</code> 里 <strong>True 表示被屏蔽</strong>，从 MHA 迁移过来时要取反。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `团队要搭一个只有 decoder 的小型生成式模型：$d_{model}=512$，要求 8 个注意力头，训练时一次喂入整句。请给出这一层自注意力的设计决策：头维度怎么定、Q/K/V 怎么来、为什么必须掩码、多头到底带来了什么。`,
+              source: `来源：Attention Is All You Need 论文 §3.2.2 Multi-Head Attention（"Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions."）https://arxiv.org/abs/1706.03762 · 检索 2026-10-02 · 层级：一手（原始论文）+ PyTorch 官方文档 torch.nn.MultiheadAttention（"Number of parallel attention heads. Note that embed_dim will be split across num_heads (i.e. each head will have dimension embed_dim // num_heads)."）https://docs.pytorch.org/docs/stable/generated/torch.nn.MultiheadAttention.html`,
+              breakdown: `四个决策点：<br>① <strong>头维度</strong>：8 头平分 $d_{model}=512$，每头 $d_k = d_v = 512/8 = 64$。官方文档把这层关系写得很死——embed_dim 按 num_heads 切分，每头维度就是 embed_dim // num_heads，所以选 num_heads 时先确认能整除。<br>② <strong>Q/K/V 的来源</strong>：自注意力里 Q、K、V 全部来自同一份输入（上一层输出）经三组不同可学习投影得到，不是把输入切三份。若采用多头实现，等价于每个头有自己的 $W_i^Q, W_i^K, W_i^V$，各投到 64 维。<br>③ <strong>必须掩码</strong>：训练时整句一次性喂入，如果不掩，位置 i 就能看到 i 之后的内容，模型会直接"抄答案"，损失看着很低但推理时完全不能用——因为推理时那些位置根本不存在。论文 §3.1 的表述是 prevent positions from attending to subsequent positions，做法是在 softmax 前把非法连接置 $-∞$。<br>④ <strong>多头的价值</strong>：论文的原文表述是 jointly attend to information from different representation subspaces at different positions——单个注意力头只能出一套权重分布，8 个头意味着 8 套并行的"关注方式"，各自在 64 维子空间里挑自己要的信息，拼起来再投影回 512 维。所以多头不是"把一个大头拆小以省算力"，而是增加可表达的关注模式。工程上这些头是并行矩阵运算，不是 8 次串行循环。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `用 AI 工具（建议 20 分钟内完成）把本章动画里的那一遍前向过程手工复现出来：从 4×6 的 X 出发，走完投影 → 打分 → 缩放 → 掩码 → Softmax → 加权输出 → 多头拼接。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '造一个 4×6 的 X 与三个 6×6 的 W_Q/W_K/W_V（或直接取题目给的矩阵）→ 算出 Q/K/V → 算 QK^T 得到 4×4 得分 → 除以 sqrt(d_k) → 把上三角（j>i）置为 -inf → 逐行 softmax → 与 V 相乘得到输出 → 把 6 列切成两个 3 列的头各算一遍再拼回 4×6。',
+                accept: ['每一步都打印出 shape，Q/K/V 是 4×6、得分矩阵是 4×4、最终输出仍是 4×6（多头拼接后）', '掩码后每行的 -inf 位置经 softmax 后权重恰好为 0，且每行权重之和为 1', '至少用一条断言验证：把整行权重与 V 显式相乘求和的结果，与矩阵乘法 scores @ V 的结果一致'],
+              },
+              source: `任务基于《11.注意力机制》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：照着课件动画的 8 步顺序走，每一步都打印 <code>shape</code>，形状是最便宜的自我校验。<br>最容易踩的三个坑：<br>① <strong>d_k 用错</strong>——缩放的 $\sqrt{d_k}$ 用的是<strong>每个头</strong>的维度（本章示例多头时是 3），不是整个模型的 6，也不是原始输入维度；用错会让 Softmax 的陡峭程度不对。<br>② <strong>掩码方向写反</strong>——要掩的是 <code>j > i</code>（右上三角，代表"未来"），写成 <code>j &lt; i</code> 就把上文全遮掉了，模型只剩自己一个 token。<br>③ <strong>先 softmax 后掩码</strong>——顺序必须是先置 $-∞$ 再 softmax，反过来的话被掩位置会变成一个正常概率、权重和也不再是 1。<br>想验证第 ③ 点，直接看第 i 行第 j（j>i）列的权重是不是 0，以及每行和是不是 1——这正是验收点里的两条。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need（arXiv:1706.03762）</a> · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.MultiheadAttention.html">PyTorch 官方文档 torch.nn.MultiheadAttention</a> · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html">PyTorch 官方文档 F.scaled_dot_product_attention</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/注意力机制速查表.html">注意力机制速查表</a>——QKV 三角色、五步链路与形状自检、多头与掩码要点一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/注意力机制">11.注意力机制</a> · 下一课 <a href="/agents/Agents底层逻辑/Transformer的完整训练流程">12.Transformer的完整训练流程</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

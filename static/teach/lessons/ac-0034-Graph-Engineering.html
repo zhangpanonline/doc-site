@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Graph Engineering：把 Agent 流程建模成图——State / Nodes / Edges、条件分支与状态流转——互动教学课程">
+  <title>Graph Engineering · 互动教学课程（Agents底层逻辑 ac-34）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Graph Engineering</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Graph-Engineering">34.Graph Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清图的三个组成部分——共享状态 State、节点 Nodes、边 Edges——各自的职责</li>
+        <li>判断什么时候线性 loop 够用、什么时候必须上条件分支与并行</li>
+        <li>解释「状态演进」为什么是图的核心，以及节点为什么应当是幂等的</li>
+        <li>复述图结构带来的工程约束：步数/递归上限、条件边的终止、状态可观测</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把这张图的三个零件认全——细节都在《34.Graph Engineering》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三个零件：State / Nodes / Edges（官方定义）</h3>
+        <ul class="pitfall-list">
+          <li><strong>State（状态）</strong>：一个<strong>共享数据结构</strong>，代表应用当前时刻的快照——通常用一个共享的 state schema 定义</li>
+          <li><strong>Nodes（节点）</strong>：编码 Agent 逻辑的<strong>函数</strong>——接收当前 state 作为输入，执行计算或副作用，返回更新后的 state</li>
+          <li><strong>Edges（边）</strong>：决定「下一个执行哪个节点」的<strong>函数</strong>——可以是条件分支，也可以是固定跳转</li>
+          <li>官方原话：把这些节点与边组合起来，就能构建<strong>会随时间演进状态的复杂循环工作流</strong>；真正的威力来自「如何管理这个状态」</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>图 vs 线性 loop：怎么选</h3>
+        <ul class="pitfall-list">
+          <li><strong>线性 loop 够用</strong>：任务只有一条主干（思考 → 调工具 → 再思考），终止条件简单——第 33 章的循环就能覆盖</li>
+          <li><strong>需要图</strong>：出现<strong>条件分支</strong>（按中间结果走不同处理链）、<strong>并行</strong>（多个子任务同时跑再汇合）、<strong>回退/重规划</strong>（失败回到上游节点）</li>
+          <li>判断标准是<strong>流程形状</strong>，不是任务大小：需要「多条路径 + 汇合点」时，用 while 循环硬写会迅速变成面条代码</li>
+          <li>与第 29 章呼应：子代理分派天然是图的一个分支；图只是把这种编排显式建模出来</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>图带来的三个工程约束</h3>
+        <ul class="pitfall-list">
+          <li><strong>终止必须显式</strong>：条件边要有能走到 END 的路径；否则图会在节点间无限打转——运行时通常有递归/步数上限，超限直接报错</li>
+          <li><strong>状态要可观测</strong>：节点只返回「对状态的更新」，调试时要能看到每一步状态怎么变的（回放/快照），否则出错只能靠猜</li>
+          <li><strong>节点应尽量幂等</strong>：失败重试、断点恢复都会重放节点；带副作用的节点（写文件、发请求）必须自己防重复</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《34.Graph Engineering》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. 在图式编排里，「状态 State」指的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型这次回复的文本内容</button>
+            <button class="quiz-option">数据库连接的会话对象</button>
+            <button class="quiz-option">每个节点自己私有的局部变量</button>
+            <button class="quiz-option">一份共享数据结构，代表应用当前时刻的快照</button>
+          </div>
+          <div class="quiz-explain" hidden>官方定义：State 是一个共享数据结构，表示应用当前状态的快照，通常由共享的 state schema 定义。它不是节点私有的，而是节点之间传递与更新的共同对象。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 「边 Edges」的职责是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">渲染流程图</button>
+            <button class="quiz-option">决定下一个执行哪个节点（可条件分支，也可固定跳转）</button>
+            <button class="quiz-option">执行工具调用</button>
+            <button class="quiz-option">存放全局配置</button>
+          </div>
+          <div class="quiz-explain" hidden>官方定义：Edges 是「根据当前状态决定下一个执行哪个节点」的函数，可以是条件分支或固定跳转。执行计算的是 Nodes，不是 Edges。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 官方说图的「真正威力」来自哪里？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">来自它如何管理那份共享状态</button>
+            <button class="quiz-option">来自节点数量足够多</button>
+            <button class="quiz-option">来自流程图能自动生成</button>
+            <button class="quiz-option">来自用了异步框架</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文强调：把节点与边组合起来能构建复杂循环流程，但真正的威力来自「如何管理这个状态」——状态设计才是图式编排的核心难点。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 下面哪种需求最需要从线性 loop 升级为图？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把模型从本地换成云端</button>
+            <button class="quiz-option">把工具数量从 3 个增加到 10 个</button>
+            <button class="quiz-option">按中间结果走不同处理链，最后再汇合到同一个收尾节点</button>
+            <button class="quiz-option">把系统提示词写得更结构化</button>
+          </div>
+          <div class="quiz-explain" hidden>判断标准是流程形状：出现条件分支 + 汇合点（或并行再汇总）时，while 循环会迅速退化成面条代码；工具数量、模型位置、提示词写法都不改变流程形状。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 节点函数从「接收当前 state」到「返回更新后的 state」，这个约定带来什么直接后果？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">节点之间无法共享信息</button>
+            <button class="quiz-option">节点不能再调用工具</button>
+            <button class="quiz-option">必须把所有状态存进数据库</button>
+            <button class="quiz-option">状态演进可被逐步追踪，也让节点更容易被重放/重试</button>
+          </div>
+          <div class="quiz-explain" hidden>节点只返回「对状态的更新」是图的关键契约：好处是每一步状态变化都可观测、节点可被重放与重试；代价是节点需要幂等（否则重放会重复副作用）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 一个图跑到「审查 → 修改 → 审查」的循环里停不下来，最终报了步数/递归超限。最可能的原因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">节点函数写成了 async</button>
+            <button class="quiz-option">没有画流程图</button>
+            <button class="quiz-option">条件边缺少能走到结束节点的出口</button>
+            <button class="quiz-option">状态字段太多</button>
+          </div>
+          <div class="quiz-explain" hidden>图里的循环必须有「满足条件就退出」的路径：条件边要能在某次判断后指向结束节点（或由状态里的计数/质量阈值决定退出）。否则运行时只能靠步数上限兜底并报错。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 把「并行三个子任务再汇合」建进图里，最需要在状态设计上考虑什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">让三个子任务共用同一个工具实例</button>
+            <button class="quiz-option">强制三个子任务按顺序执行</button>
+            <button class="quiz-option">把三个子任务的输出拼成一个长字符串</button>
+            <button class="quiz-option">各分支写回同一状态字段时的合并规则（避免互相覆盖）</button>
+          </div>
+          <div class="quiz-explain" hidden>并行分支会同时更新状态：如果没有约定合并规则（累加、按键合并、取最新等），后写的一方会覆盖前一方。状态 schema 里「字段如何合并」是并行图最容易踩的坑。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 团队要做一个「长周期代码迁移 Agent」：扫描 → 分批改造 → 每批跑测试 → 失败的批回到改造步骤，全部通过后产出报告。这里图的哪个特征最关键？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型必须支持流式输出</button>
+            <button class="quiz-option">节点数量足够多</button>
+            <button class="quiz-option">条件边构成的回退路径 + 状态里能表达「每批进度」</button>
+            <button class="quiz-option">工具必须用 MCP 提供</button>
+          </div>
+          <div class="quiz-explain" hidden>这个流程的核心是「按测试结果决定回退还是前进」，也就是条件边；同时状态里必须能表达批次进度与失败原因，否则回退后无法知道该从哪继续——这也是断点恢复的前提。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 为什么说「带副作用的节点必须自己防重复」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为工具调用总是失败</button>
+            <button class="quiz-option">因为图不支持异步</button>
+            <button class="quiz-option">因为节点可能被重放（重试、断点恢复），副作用会被重复执行</button>
+            <button class="quiz-option">因为状态是共享的，读取会加锁</button>
+          </div>
+          <div class="quiz-explain" hidden>图把节点当作可重放的纯函数来对待：失败重试、从快照恢复都会再次执行节点。写文件、发请求、下单这类副作用要么做成幂等（按 key 去重），要么挪出节点交给显式的人工检查点。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0034-Graph-Engineering',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事说：「我们用了图编排，所以每个节点可以有自己的私有状态，互不干扰。」审查：这个说法错在哪？`,
+              source: `来源：LangGraph 官方文档 Graph API（"LangGraph models agent workflows as graphs. You define the behavior of your agents using three key components: State: A shared data structure that represents the current snapshot of your application."）https://docs.langchain.com/oss/python/langgraph/graph-api · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方把 State 定义为<strong>共享（shared）</strong>数据结构，代表应用当前快照——它不是节点私有的。节点接收当前 state、返回更新后的 state，所有节点读写的是同一份状态。真正需要「私有」的是节点内部的局部变量（不写回状态就不共享）；把状态理解成「各节点私有」会导致状态设计失控：谁都能加字段、谁也说不清哪个字段是权威来源。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `用官方定义说明：图里 State、Nodes、Edges 三者的职责边界分别是什么？为什么说「边」也是函数？`,
+              source: `来源：LangGraph 官方文档 Graph API（"Nodes: Functions that encode the logic of your agents. They receive the current state as input, perform some computation or side-effect, and return an updated state. Edges: Functions that determine which Node to execute next based on the current state. They can be conditional branches or fixed transitions."）https://docs.langchain.com/oss/python/langgraph/graph-api · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `职责划分：<strong>State 是数据</strong>（共享快照）、<strong>Nodes 是计算</strong>（接收状态、执行逻辑/副作用、返回状态更新）、<strong>Edges 是控制流</strong>（基于当前状态决定下一个节点）。说「边也是函数」是因为条件边本质上就是「读状态 → 返回下一个节点名」的函数——所以控制流可以被建模、被测试、被可视化，而不是散落在 if/else 里。`,
+            },
+            {
+              type: 'review',
+              level: '高级岗常问',
+              prompt: `一个「生成 → 评审 → 修改」的图上线后偶发卡死：日志显示节点一直在评审与修改之间来回，直到运行时抛出步数超限才结束。审查：从图设计上，最该先检查哪一处？`,
+              source: `来源：LangGraph 官方文档 Graph API（"By composing Nodes and Edges, you can create complex, looping workflows that evolve the state over time."；同页 Recursion limit / Accessing and handling the recursion counter）https://docs.langchain.com/oss/python/langgraph/graph-api · 检索 2026-10-02 · 层级：一手（官方文档，场景化改写）`,
+              breakdown: `官方明确支持「循环工作流」，同时提供<strong>递归上限与计数器</strong>来兜底——说明循环图的退出条件必须由设计者给出，运行时上限只是安全网。检查顺序：① 评审 → 修改的条件边里，有没有「通过就走向结束节点」的分支；② 状态里有没有能表达收敛的量（轮次计数、问题清单是否清空、质量分阈值）；③ 修改节点是否真的把问题标记为已解决（否则每轮都判定「还有问题」）。把上限当退出机制，等于每次失败都烧满预算。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `要给团队选编排方式：一个「读懂需求 → 拆任务 → 并行改 5 个文件 → 汇总 → 跑测试 → 失败回退」的编码 Agent。请说明你会怎么判断用线性 loop 还是图，并给出状态设计要点。`,
+              source: `来源：LangGraph 官方文档 Graph API（"State: A shared data structure that represents the current snapshot of your application. It can be any data type, but is typically defined using a shared state schema."）https://docs.langchain.com/oss/python/langgraph/graph-api · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《34.Graph Engineering》课件`,
+              breakdown: `判据是<strong>流程形状</strong>：这里存在「并行 5 路 + 汇合 + 按测试结果回退」，三样都超出线性循环的表达力 → 用图。状态设计要点：① <strong>任务清单</strong>（哪些文件、各自状态）——回退时要知道从哪继续；② <strong>并行分支的合并规则</strong>——5 路都写「改动集合」时要约定合并而非覆盖；③ <strong>测试结果与轮次</strong>——条件边据此决定进汇总还是回退；④ 副作用（写文件）做成幂等，避免重放重复写。提醒：别为了「图很先进」而上图——只有一条主干时，第 33 章的循环更省事。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `把一个「线性 loop 版代码审查 Agent」重构成图，并说明重构理由（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '画出目标流程图 → 定义共享状态字段（待审文件、已发现问题、当前轮次、是否通过）→ 把原来的 while 循环拆成「分析节点 / 审查节点 / 修改节点 / 收尾节点」→ 用条件边实现「有问题且轮次未超上限 → 修改；否则 → 收尾」。',
+                accept: ['流程图能标出条件边与至少一个回退路径', '状态里能表达轮次与是否通过（不靠节点内部变量）', '存在能走到收尾节点的出口，不会只靠步数上限兜底', '能说出至少一处「写状态」的合并或幂等处理'],
+              },
+              source: `任务基于《34.Graph Engineering》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：先写状态（这是图的地基），再写节点（每个节点只做一件事、返回状态更新），最后连边（条件边的判断依据必须来自状态）。常见坑：① 把「是否通过」藏在节点局部变量里 → 条件边读不到；② 条件边只有「继续」，没有「结束」；③ 节点直接改全局变量而不返回状态更新，导致回放时结果不可复现。验收时重点看「出口是否存在」与「状态能否复现」。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://docs.langchain.com/oss/python/langgraph/graph-api">LangGraph 官方文档 · Graph API</a>（State / Nodes / Edges 的权威定义与递归上限）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/Graph-Engineering速查表.html">Graph-Engineering速查表</a>——三要素、图 vs 循环的判据、并行合并与幂等要点一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Graph-Engineering">34.Graph Engineering</a> · 这是本课程最后一章，可回到 <a href="/agents/Agents底层逻辑/必看导言">01.必看导言</a> 查看课程地图与学习路线</li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

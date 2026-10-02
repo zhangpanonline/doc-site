@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>注意力机制速查表 · 参考手册</title>
+  <meta name="description" content="注意力机制速查表 · 可打印参考手册：配合《注意力机制互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>注意力机制速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0011-注意力机制.html">《注意力机制互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>一句话定位</h2>
+      <p>注意力层解决的是：<strong>每个 token 受到上下文影响后，该如何调整自身的值</strong>。入口是 Embedding 输出的 $4 \times 6$ 矩阵（4 个 token × 6 维），出口仍是 $4 \times 6$——中间做的是一次「按相关度对信息加权求和」。前提：本章全部推演针对<strong>训练的前向传播</strong>，不是推理。</p>
+      <p>$\mathrm{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V}) = \mathrm{softmax}\!\left(\dfrac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}}\right)\mathbf{V}$</p>
+    </section>
+
+    <section>
+      <h2>五步链路与形状自检</h2>
+      <table class="cmp-table">
+        <tr><th>步</th><th>操作</th><th>形状（X 为 4×6）</th><th>要点</th></tr>
+        <tr><td>① 投影</td><td>$\mathbf{Q}=\mathbf{X}\mathbf{W}^{Q}$、$\mathbf{K}=\mathbf{X}\mathbf{W}^{K}$、$\mathbf{V}=\mathbf{X}\mathbf{W}^{V}$</td><td>4×6（W 均为 6×6）</td><td>三个 W 是可学习的<strong>不同</strong>参数，不是把 X 切三份</td></tr>
+        <tr><td>② 打分</td><td>$\mathbf{Q}\mathbf{K}^{\top}$</td><td>4×4</td><td>第 i 行第 j 列 = 第 i 个 token 对第 j 个 token 的关注打分（原始点积）</td></tr>
+        <tr><td>③ 缩放</td><td>除以 $\sqrt{d_k}$</td><td>4×4</td><td>$d_k$ 是<strong>每个头</strong>的维度；不缩放会把 Softmax 推向梯度极小区域</td></tr>
+        <tr><td>④ 掩码</td><td>把 $j > i$ 置为 $-\infty$</td><td>4×4</td><td>右上三角＝「未来」，必须遮住以维持自回归性质</td></tr>
+        <tr><td>⑤ Softmax</td><td>逐行归一化</td><td>4×4</td><td>每行和为 1；被掩位置权重恰为 0</td></tr>
+        <tr><td>⑥ 加权</td><td>权重矩阵 × $\mathbf{V}$</td><td>4×6（单头 4×3）</td><td>输出就是 V 的各行按权重做的加权和</td></tr>
+        <tr><td>⑦ 多头拼接</td><td>各头输出拼接</td><td>回到 4×6</td><td>例：6 维切 2 头（每头 3 维）→ 算完拼回 6 维</td></tr>
+      </table>
+      <p>形状口诀：<strong>(4×6)(6×4) → 4×4</strong> 打分，<strong>(4×4)(4×6) → 4×6</strong> 输出——两头都回到 4，中间那个维度被消掉。</p>
+    </section>
+
+    <section>
+      <h2>术语卡</h2>
+      <dl class="term-grid">
+        <dt>Q（Query）</dt>
+        <dd>我怎么去找别人？——拿着自己的问题去问全场。</dd>
+        <dt>K（Key）</dt>
+        <dd>别人怎么找到我？——我身上挂的标签，用来被别人匹配。注意 Q 与 K 的指向相反。</dd>
+        <dt>V（Value）</dt>
+        <dd>我找到别人后，对它施加怎样的影响？——真正被加权汇总进输出的内容。</dd>
+        <dt>$\mathbf{W}^{Q}/\mathbf{W}^{K}/\mathbf{W}^{V}$</dt>
+        <dd>三组独立的可学习投影矩阵（本章示例均为 6×6）；同一份 X 乘出三种角色的表示。</dd>
+        <dt>注意力得分</dt>
+        <dd>$\mathbf{Q}\mathbf{K}^{\top}$，形状 $L \times L$（L 为 token 数）；越大表示两个位置越相关。</dd>
+        <dt>缩放因子</dt>
+        <dd>$1/\sqrt{d_k}$，$d_k$ = 每个头的维度。点积方差随 $d_k$ 增长，不缩放会让 Softmax 过陡、梯度极小。</dd>
+        <dt>掩码（Masked）</dt>
+        <dd>把 $j > i$ 的位置置 $-\infty$ 再 Softmax，等价于该位置权重为 0；decoder 自注意力的必备件。</dd>
+        <dt>多头（Multi-Head）</dt>
+        <dd>把 $d_{model}$ 切成 h 份并行做注意力，让模型在不同表示子空间、不同位置上共同关注信息。</dd>
+        <dt>Add &amp; Norm</dt>
+        <dd>decoder 每一层的残差连接 + 层归一化，跟在注意力子层与 Feed Forward 子层之后。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>decoder 里它站在哪</h2>
+      <pre>inputs
+  → embedding
+  → N ×[ Masked Multi-Head Attention → Add &amp; Norm
+         → Feed Forward            → Add &amp; Norm ]
+  → Linear
+  → Softmax
+  → Output Probabilities</pre>
+      <p>本章只展开标着 <strong>Masked</strong> 的那一层注意力；<strong>N ×</strong> 表示这一段结构会重复堆叠 N 次。</p>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <table class="cmp-table">
+        <tr><th>写法</th><th>问题</th><th>正确做法</th></tr>
+        <tr><td>把 X 均分成三份当 Q/K/V</td><td>没有任何参数，三种角色被锁死在同一组数值上</td><td>分别乘 $\mathbf{W}^{Q}$、$\mathbf{W}^{K}$、$\mathbf{W}^{V}$ 三个可学习投影</td></tr>
+        <tr><td><code>softmax(Q @ K.T) @ V</code></td><td>缺缩放、缺掩码；训练时会看到"未来"，结果静默训坏</td><td>先 <code>/ sqrt(d_k)</code>，再 <code>masked_fill(j&gt;i, -inf)</code>，然后 softmax，最后 <code>@ V</code></td></tr>
+        <tr><td>先 Softmax 后掩码</td><td>被掩位置变成正常概率，每行权重和也不再是 1</td><td>先置 $-\infty$ 再 Softmax</td></tr>
+        <tr><td>掩码方向写反（遮 <code>j &lt; i</code>）</td><td>上文被遮光，只剩当前 token 自己</td><td>遮 <code>j &gt; i</code>（右上三角）</td></tr>
+        <tr><td>$\sqrt{d_k}$ 用了 $d_{model}$ 或输入维度</td><td>缩放系数偏大／偏小，Softmax 陡峭程度不对</td><td>用<strong>每个头</strong>的维度：$d_k = d_{model} / h$</td></tr>
+        <tr><td>布尔掩码语义记混</td><td><code>F.scaled_dot_product_attention</code> 的 <code>attn_mask</code> 里 True=参与；<code>MultiheadAttention</code> 的 <code>key_padding_mask</code> 里 True=屏蔽</td><td>从 MHA 迁移到 SDPA 时记得取反（<code>~mask</code>）</td></tr>
+      </table>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

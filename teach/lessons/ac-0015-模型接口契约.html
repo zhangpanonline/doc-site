@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 模型接口契约：本地模型选型、OpenAI SDK 调用、流式响应与视觉（多模态）输入——互动教学课程">
+  <title>模型接口契约 · 互动教学课程（Agents底层逻辑 ac-15）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>模型接口契约</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/模型接口契约">15.模型接口契约</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出七种本地模型运行方案的定位差异，并解释为什么本章选 Ollama 作为默认入口</li>
+        <li>用一串 CLI 命令把本地模型跑起来：<code>ollama pull / list / rm / show / run / ps</code>，并看懂 <code>http://localhost:11434/v1/</code> 这套 OpenAI 兼容接口</li>
+        <li>读懂一次调用的完整链路：<code>.env</code> → <code>utils/config.py</code> → <code>OpenAI()</code> → <code>chat.completions.create()</code> → <code>resp.json</code> 的字段结构</li>
+        <li>讲清流式响应里的 <code>delta</code>、推理与正文的「分车道」解析，以及视觉输入为什么要把图片转成 Base64 的 data URL</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「本地模型 → OpenAI 兼容接口 → SDK 调用 → 流式/视觉」这条链路走一遍——细节都在《15.模型接口契约》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>本地模型的七种打开方式</h3>
+        <ul class="pitfall-list">
+          <li><strong>Pytorch + Transformers</strong>：主要用于本地训练、微调，也能推理，但需要自行适配硬件加速</li>
+          <li><strong>Ollama</strong>：一键部署和运行开源大模型的命令行工具，内置量化支持和 GPU 加速——本章的主角</li>
+          <li><strong>llama.cpp</strong>：高性能 C/C++ 推理引擎，主打 CPU 推理和多种量化方案</li>
+          <li><strong>vLLM</strong>：高吞吐量推理框架，基于 PagedAttention 技术，适用于生产环境部署</li>
+          <li><strong>MLX</strong>：Apple 官方 ML 框架，专为 Apple Silicon 设计的本地推理方案</li>
+          <li><strong>LM Studio</strong>：带图形界面的桌面应用，一键下载和运行本地开源模型；<strong>LocalAI</strong>：提供 OpenAI 兼容 API 的本地推理服务，方便现有应用无缝切换</li>
+          <li>一句话抓手：<strong>训练微调找 Transformers，命令行体验找 Ollama，压榨 CPU 找 llama.cpp，上生产要吞吐找 vLLM</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>从 <code>.env</code> 到 <code>resp.json</code>：一次非流式调用的全链路</h3>
+        <ul class="pitfall-list">
+          <li><strong>准备模型</strong>：<code>ollama pull qwen3-vl</code> 拉取模型，<code>ollama list</code> 看已下载，<code>ollama show</code> 看信息，<code>ollama ps</code> 看服务；访问 <code>http://localhost:11434/</code> 确认服务在跑；可用 <code>OLLAMA_MODEL_SERVER</code> 环境变量换镜像源</li>
+          <li><strong>不写代码先测接口</strong>：<code>curl http://localhost:11434/v1/models</code> 列模型；<code>curl -X POST .../v1/chat/completions</code> 带 <code>{"model":"qwen3-vl","messages":[...],"stream":false}</code> 直接问一句</li>
+          <li><strong>装依赖</strong>：<code>uv add openai==1.74.0 python-dotenv==1.2.2</code>——SDK 负责协议，dotenv 负责把 <code>.env</code> 读进环境变量</li>
+          <li><strong>读配置</strong>：<code>utils/config.py</code> 用 <code>os.path.dirname(os.path.abspath(__file__))</code> 推出模块上一级的 <code>.env</code>，<code>load_dotenv()</code> 后导出 <code>OPENAI_API_KEY</code> / <code>OPENAI_BASE_URL</code> / <code>OPENAI_MODEL</code> 三个常量</li>
+          <li><strong>建客户端</strong>：<code>client = OpenAI()</code>——不传参时，SDK 自己从环境变量取 key、base_url，所以本地 Ollama 用的是同一套代码</li>
+          <li><strong>发请求</strong>：<code>client.models.list()</code> 拿模型清单（<code>.to_json()</code> 看原始结构）；<code>client.chat.completions.create(model=config.OPENAI_MODEL, messages=[{"role":"user","content":"你是谁"}])</code> 发起对话</li>
+          <li><strong>改非标准参数</strong>：关闭思考链要写 <code>extra_body={"thinking": {"type": "disabled"}}</code>；课件特别注明 <code>qwen3-vl</code> 无法直接关闭思考模式——不同模型的推理开关并不统一</li>
+          <li><strong>看返回</strong>：<code>resp.json</code> 里 <code>choices[0].message</code> 同时有 <code>content</code>（正文）与 <code>reasoning</code>（思考过程），另有 <code>finish_reason</code>；<code>usage</code> 给出 <code>prompt_tokens</code> / <code>completion_tokens</code> / <code>total_tokens</code>，满足 $total\_tokens = prompt\_tokens + completion\_tokens$</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>流式与视觉：把「打字机效果」和「看得见的输入」拆开</h3>
+        <ul class="pitfall-list">
+          <li><strong>开流式</strong>：<code>create(..., stream=True)</code> 之后得到的是可迭代的流对象，<code>for chunk in stream</code> 逐块消费；课件里还配了 <code>sys.stdout.flush()</code> 才能看到实时输出</li>
+          <li><strong>取文本的位置变了</strong>：非流式读 <code>choices[0].message.content</code>，流式要读 <code>choices[0].delta.content</code>——<code>delta</code> 里可能是一条 role 标记、一段 content，也可能是空的</li>
+          <li><strong>推理与正文分车道</strong>：<code>utils/stream_resp.py</code> 定义 <code>@dataclass Chunk(type, content)</code>，<code>chunk_generator</code> 用 <code>is_on_reasoning</code> 状态机把推理与正文分开，依次产出 <code>reasoning_start</code> → <code>reasoning</code>… → <code>reasoning_end</code> → <code>content_start</code> → <code>content</code>… → 最后固定一个 <code>content_end</code></li>
+          <li><strong>两个兼容细节</strong>：推理文本先取 <code>delta.reasoning_content</code>，取不到再退回 <code>delta.reasoning</code>（课件注释写的是「为了兼容性，尝试获取两个字段的值」）；循环开头 <code>if len(chunk.choices) == 0: continue</code> 是为了跳过没有 choices 的帧，避免 <code>choices[0]</code> 直接越界</li>
+          <li><strong>渲染层</strong>：<code>utils/stream_print.py</code> 的 <code>print_stream</code> 按 <code>chunk.type</code> 打印提示语，推理用青色、正文用红色（ANSI 转义），每块都 <code>flush</code></li>
+          <li><strong>视觉输入</strong>：<code>utils/img_base64.py</code> 的 <code>to_base64</code> 读文件并做 Base64 编码，<code>to_dataurl</code> 按扩展名推断 MIME，拼成 <code>data:image/png;base64,...</code>（认不出的扩展名退回 <code>image/octet-stream</code>）</li>
+          <li><strong>多模态消息</strong>：把 <code>content</code> 从字符串换成数组——<code>[{"type":"text","text":"请描述这张图片的内容"}, {"type":"image_url","image_url":{"url":dataurl}}]</code>，文本与图片是同一条 user 消息里的两个 part</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《15.模型接口契约》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 「一键部署和运行开源大模型的命令行工具，内置量化支持和 GPU 加速」——课件里这句话描述的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">llama.cpp</button>
+            <button class="quiz-option">vLLM</button>
+            <button class="quiz-option">Ollama</button>
+            <button class="quiz-option">LM Studio</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「本地模型」原文：<strong>Ollama</strong>——一键部署和运行开源大模型的命令行工具，内置量化支持和 GPU 加速。对照记忆：LM Studio 是带图形界面的桌面应用；llama.cpp 是 C/C++ 推理引擎、主打 CPU 推理与量化；vLLM 是高吞吐推理框架、基于 PagedAttention、面向生产部署。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 本地 Ollama 服务起来之后，本章用哪套地址测试它的 OpenAI 兼容接口？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>http://localhost:8000/v1/</code></button>
+            <button class="quiz-option"><code>http://localhost:5000/api/</code></button>
+            <button class="quiz-option"><code>http://localhost:3000/openai/</code></button>
+            <button class="quiz-option"><code>http://localhost:11434/v1/</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件「下载安装」：访问 <code>http://localhost:11434/</code> 查看服务是否正在运行；测试接口用的就是 <code>curl http://localhost:11434/v1/models</code> 与 <code>curl -X POST http://localhost:11434/v1/chat/completions</code>。OpenAI 兼容路径统一挂在 <code>/v1/</code> 下，端口是 Ollama 的默认 11434。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 开 <code>stream=True</code> 之后，想取这一块的正文文本，应该读哪个字段？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>chunk.delta.content</code></button>
+            <button class="quiz-option"><code>chunk.choices[0].message.content</code></button>
+            <button class="quiz-option"><code>chunk.choices[0].delta.content</code></button>
+            <button class="quiz-option"><code>chunk.content</code></button>
+          </div>
+          <div class="quiz-explain" hidden>非流式的返回值里正文在 <code>choices[0].message.content</code>；一旦开流式，返回的是一个个 chunk，正文增量在 <code>choices[0].delta.content</code>（课件 <code>utils/stream_resp.py</code>：<code>delta = chunk.choices[0].delta</code>，再取 <code>delta.content</code>）。<code>chunk.content</code>、<code>chunk.delta</code> 都不存在——chunk 不是 delta 本身。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. <code>utils/config.py</code> 里为什么用 <code>os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.env")</code> 来定位 <code>.env</code>，而不是直接写 <code>load_dotenv(".env")</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为这样能加密 <code>.env</code> 里的 API Key</button>
+            <button class="quiz-option">因为相对路径在 Python 3.12 之后被废弃了</button>
+            <button class="quiz-option">因为 <code>load_dotenv()</code> 不接受字符串参数，只能传绝对路径</button>
+            <button class="quiz-option">因为 <code>load_dotenv()</code> 的默认行为依赖「进程启动时的当前工作目录」，换成以模块文件位置为基准，Notebook 在哪个目录启动都能读到同一份 <code>.env</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件那三行就是干这件事：<code>_current_dir = os.path.dirname(os.path.abspath(__file__))</code> → 拼出上一级的 <code>.env</code> → <code>load_dotenv(_env_file)</code>。这样配置的锚点是<strong>模块自身的位置</strong>，与「从哪个目录启动 Notebook / 脚本」无关；直接写相对路径时，换个工作目录就会静默读到 0 个变量，后面 <code>OpenAI()</code> 拿不到 key 才报错。注意它不负责加密，也不改变 dotenv 的参数规则。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. 要把一张本地图片交给视觉模型，本章 <code>to_dataurl</code> + 消息组装的做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把图片字节直接塞进 <code>content</code> 字符串，与提示词用换行拼接</button>
+            <button class="quiz-option">把文件路径字符串直接塞进 <code>image_url</code>，模型自己去读盘</button>
+            <button class="quiz-option">读文件做 Base64 编码，按扩展名推断 MIME 拼成 <code>data:image/png;base64,...</code> 这样的 data URL，放进 <code>content</code> 数组里的 <code>image_url</code> part</button>
+            <button class="quiz-option">先上传到图床拿到公网 URL，再放进 <code>image_url</code>，这是唯一可行的方式</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「使用视觉能力」：<code>dataurl = to_dataurl("menu.png")</code>，消息里 <code>content</code> 变成数组——<code>{"type": "text", "text": "请描述这张图片的内容"}</code> 与 <code>{"type": "image_url", "image_url": {"url": dataurl}}</code> 两个 part。<code>to_dataurl</code> 内部先 <code>base64.b64encode</code>，再按 <code>.png/.jpg/.jpeg/.gif/.webp</code> 推断 MIME，兜底 <code>image/octet-stream</code>，最后拼成 <code>data:{mime};base64,{...}</code>。模型看不到你的本地磁盘，路径字符串对它没有意义；Base64 会把字节撑大约三分之一（$4 \times \lceil n/3 \rceil$ 个字符），这也是视觉请求更大的原因。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. <code>chunk_generator</code> 取推理文本时，先试 <code>delta.reasoning_content</code>，取不到再退回 <code>delta.reasoning</code>。课件注释写的是「为了兼容性」——这个兼容性指的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">兼容 Python 3.11 与 3.12 的 <code>getattr</code> 行为差异</button>
+            <button class="quiz-option">兼容流式与非流式两种返回：非流式只有 <code>reasoning</code>，流式只有 <code>reasoning_content</code></button>
+            <button class="quiz-option">兼容不同服务端/模型对「思考文本」字段命名的不统一：推理字段不是所有实现都叫同一个名字，所以要逐个探测、谁有值用谁</button>
+            <button class="quiz-option">兼容中英文输出，中文走 <code>reasoning</code>、英文走 <code>reasoning_content</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件那两行写得很直白：<code>reasoning_content = getattr(delta, "reasoning_content", None)</code>，<code>if not reasoning_content: reasoning_content = getattr(delta, "reasoning", None)</code>，注释是「推理内容，为了兼容性，尝试获取两个字段的值」。原因是<strong>思考文本属于各家扩展</strong>：OpenAI 兼容层只保证基础字段，推理字段名因服务端与模型而异（Ollama 的兼容文档也把推理控制描述成模型定义的取值）。所以工程上的稳妥写法是 <code>getattr</code> + 兜底，而不是假设字段一定存在——否则遇到叫另一个名字的服务端，思考内容会被静默丢掉。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 推演：某个模型这一次只输出正文、完全没有思考过程。<code>chunk_generator</code> 依次 yield 的 <code>type</code> 序列是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>reasoning</code>… → <code>content</code>… → 没有结束标记</button>
+            <button class="quiz-option"><code>content</code>…（若干块）→ <code>content_end</code></button>
+            <button class="quiz-option"><code>content_start</code> → <code>content</code>… → <code>content_end</code></button>
+            <button class="quiz-option"><code>reasoning_start</code> → <code>reasoning_end</code> → <code>content_start</code> → <code>content</code>… → <code>content_end</code></button>
+          </div>
+          <div class="quiz-explain" hidden>看状态机的两个条件：<code>reasoning_start</code> / <code>reasoning</code> / <code>reasoning_end</code> 只在 <code>reasoning_content</code> 有值时才产出；<code>content_start</code> 只在「从推理切到正文」的那一次翻转里产出（<code>if is_on_reasoning:</code> 分支内）。一次都没进过推理，<code>is_on_reasoning</code> 始终是 <code>False</code>，所以只有一串 <code>content</code> 加循环结束后固定 yield 的 <code>content_end</code>。这也意味着<strong>渲染层不能假设 <code>content_start</code> 一定会来</strong>——只按「收到什么画什么」写，才不会漏字或错位。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 关闭思考链时课件写的是 <code>extra_body={"thinking": {"type": "disabled"}}</code>。为什么走 <code>extra_body</code>，而不是在 <code>create()</code> 里直接写 <code>thinking={...}</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 <code>extra_body</code> 能自动重试，直传参数不会重试</button>
+            <button class="quiz-option">因为 <code>thinking</code> 与 <code>stream</code> 互斥，只能放在 body 里</button>
+            <button class="quiz-option"><code>extra_body</code> 是 SDK 为「协议之外、由服务端定义的参数」留的透传口：SDK 只认识标准字段，<code>thinking</code> 这类扩展直接传会被当成未知参数，透传则原样进请求体</button>
+            <button class="quiz-option">因为 <code>extra_body</code> 会把参数加密，避免思考开关被服务端记录</button>
+          </div>
+          <div class="quiz-explain" hidden><code>extra_body</code> 的语义就是「把这份字典直接合并进请求 JSON」。它的价值在协议分层：<code>model</code> / <code>messages</code> / <code>stream</code> / <code>tools</code> 这些是契约内的字段，SDK 有类型与校验；而「关掉思考」这种能力<strong>不在 OpenAI 契约里</strong>——课件自己都注明 <code>qwen3-vl</code> 无法直接关闭思考模式，Ollama 兼容文档也把推理控制列为由模型定义的取值。凡是要用某家服务端的扩展能力，就该走扩展通道，并且清楚这段代码换模型后可能失效（本地模型与云模型混用时，这类参数是最典型的「换供应商即失效」依赖）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 产品要求「边出字边展示，并且这次请求结束后要把真实 token 用量写进日志」。用流式请求时，用量该怎么拿？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">加 <code>stream_options={"include_usage": True}</code>：末尾会多出一个 chunk，它的 <code>choices</code> 是空数组、<code>usage</code> 是整次请求的统计，而其余 chunk 的 <code>usage</code> 都是 null</button>
+            <button class="quiz-option">流式请求不返回用量，只能靠 <code>len(文本)</code> 估算</button>
+            <button class="quiz-option">把每个 chunk 的 <code>usage</code> 字段加总起来</button>
+            <button class="quiz-option">先跑一次非流式请求拿到 <code>usage</code>，再把同一请求改成流式发一遍</button>
+          </div>
+          <div class="quiz-explain" hidden>这正好把本课的两处细节接在一起。① 拿用量：按官方 Cookbook 对 <code>stream_options={"include_usage": True}</code> 的说明，会额外流出一个作为收尾的 chunk——「除最后一个 chunk 外，所有 chunk 的 <code>usage</code> 字段都是 null」，而「最后一个 chunk 的 <code>choices</code> 字段永远是空数组」，全量统计在这个 chunk 的 <code>usage</code> 上。② 解析时不能崩：正是因为存在这种 <code>choices</code> 为空的帧，课件 <code>chunk_generator</code> 开头才写 <code>if len(chunk.choices) == 0: continue</code>——先跳过，再取 <code>choices[0]</code>。所以「加总每个 chunk 的 usage」拿到的是全 null，估算则会把答案变成猜的，重发一次非流式请求更是白白多算一遍钱。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0015-模型接口契约',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事接本地 Ollama 做图片问答：代码里 <code>content</code> 数组照 OpenAI 官方示例写，但 <code>image_url</code> 里放的是公司图床上的 <code>https://…/menu.png</code>。文本问答一切正常，一传图就报错或者模型说看不到图。按 Ollama 官方兼容文档，问题出在哪？本地应该怎么改？`,
+              source: `来源：Ollama 官方文档 OpenAI compatibility（"Connect OpenAI clients to Ollama. Ollama supports a subset of the OpenAI API."；Supported request fields → messages → Image content 列表里 "Base64 encoded image" 为已支持、"Image URL" 未勾选）https://docs.ollama.com/api/openai-compatibility · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方文档的兼容范围是以「子集」定义的：<strong>Ollama 支持 OpenAI API 的一个子集</strong>，并且逐项列出了支持与不支持的字段。在 <code>/v1/chat/completions</code> 的支持清单里，<code>messages</code> 的图片 <code>content</code> 一项，<code>Base64 encoded image</code> 是勾选的，而 <code>Image URL</code> 没有勾选——也就是说本地服务只吃 Base64，不吃远端 URL。所以「文本通、传图不通」不是网络问题，而是协议子集差异。<br>改法：本地读文件 → Base64 → 拼 <code>data:image/png;base64,…</code> 的 data URL，放进 <code>image_url</code>（本章 <code>utils/img_base64.py</code> 的 <code>to_base64</code> / <code>to_dataurl</code> 就是为这一步准备的），消息 <code>content</code> 用 text + image_url 两个 part。工程提醒：Base64 会把字节放大到原来的约 $4/3$，图片越大上下文与带宽压力越明显，该压缩就压缩；同时这类「某家支持的字段子集」差异，是本地模型与云模型混用时最容易踩的一类坑。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `同一个模型、同一个问题，「不用流式」和「用流式」拿到的数据结构到底差在哪？请说清为什么流式要读 <code>delta</code>，以及一个 chunk 的 <code>delta</code> 里可能出现哪些东西。`,
+              source: `来源：OpenAI Cookbook《How to stream completions》（"To stream completions, set stream=True when calling the chat completions or completions endpoints. This will return an object that streams back the response as data-only server-sent events. Extract chunks from the delta field rather than the message field."；"streaming responses have a delta field rather than a message field. delta can hold things like: a role token (e.g., {\"role\": \"assistant\"}), a content token (e.g., {\"content\": \"\\n\\n\"}), nothing (e.g., {}), when the stream is over"）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_stream_completions.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方给的机制是：默认情况下，整个补全生成完才一次性返回；把 <code>stream=True</code> 传给 chat completions（或 completions）接口后，返回的是一个<strong>以 data-only server-sent events 形式把响应流回来的对象</strong>，所以要从 <code>delta</code> 字段取块，而不是 <code>message</code> 字段。这就是本章为什么有两套读法：非流式 <code>choices[0].message.content</code>（<code>resp.json</code> 里那一整块），流式 <code>choices[0].delta.content</code>。<br>而 <code>delta</code> 里可能出现的，官方明确列了三类：一条 role 标记、一段 content、以及流结束时的空对象（<code>{}</code>）。由此推出本章解析器的两个必需动作：① 不能假设每帧都有正文——课件用 <code>if content:</code> 才 yield；② 不能假设 <code>choices</code> 一定非空——课件用 <code>if len(chunk.choices) == 0: continue</code> 挡住。官方同时点出代价：生产环境里开流式会让内容审核更麻烦，因为「部分补全更难评估」——流式换来的是首字延迟，付出的是「中途才发现问题」的风险。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查这段「简化版流式解析」：<code>for chunk in stream: delta = chunk.choices[0].delta</code>，接着 <code>if delta.content: yield delta.content</code>，循环外 <code>yield "content_end"</code>。请指出它在真实流式响应上会出的问题，并对照本章 <code>utils/stream_resp.py</code> 说明该怎么补。`,
+              source: `来源：OpenAI Cookbook《How to stream completions》（"The choices field on the last chunk will always be an empty array []"；"The value for the usage field on all chunks except for the last one will be null."）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_stream_completions.ipynb + 源课程《15.模型接口契约》课件（utils/stream_resp.py：chunk_generator 的空 choices 守卫与 reasoning_content/reasoning 兼容探测）`,
+              breakdown: `两个问题都不报错才最麻烦。<strong>① 空 <code>choices</code> 会直接越界</strong>：官方在讲 <code>stream_options={"include_usage": True}</code> 时明确说「最后一个 chunk 的 <code>choices</code> 字段永远是空数组 <code>[]</code>」，这种帧在 <code>chunk.choices[0]</code> 处会抛 <code>IndexError</code>——本章 <code>chunk_generator</code> 的第一道守卫就是为此而写：<code>if len(chunk.choices) == 0: continue</code>。<strong>② 只取 <code>delta.content</code> 会静默丢掉思考过程</strong>：推理模型把思考文本放在扩展字段里（课件先试 <code>reasoning_content</code>、再退回 <code>reasoning</code>，注释写「为了兼容性」），只读 <code>content</code> 的话，一段几百 token 的推理既不显示也不计入前端状态，用户看到的是「卡了很久然后忽然出字」。<br>补法就是本章的三件事：加空 <code>choices</code> 守卫；用 <code>getattr</code> 探测两个推理字段名；用 <code>is_on_reasoning</code> 状态机把推理与正文分成不同事件（<code>reasoning_start</code> / <code>reasoning</code> / <code>reasoning_end</code> / <code>content_start</code> / <code>content</code>），循环结束后固定补一个 <code>content_end</code>，让渲染层有确定的收尾信号。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `要设计一个「本地 Ollama 与云端 OpenAI 可一键切换」的模型接入层：要求同一套业务代码不改就能换后端，还要支持流式输出和图片输入。请说明接口子集怎么选、差异往哪收、视觉与用量统计怎么统一。`,
+              source: `来源：Ollama 官方文档 OpenAI compatibility（"Ollama supports a subset of the OpenAI API."；Endpoints 下 /v1/chat/completions 的 Supported features 逐项勾选：Chat completions / Streaming / Vision / Tools / Reasoning；Supported request fields 中 "Image URL" 未勾选）https://docs.ollama.com/api/openai-compatibility + OpenAI Cookbook《How to stream completions》（"Extract chunks from the delta field rather than the message field."；"The choices field on the last chunk will always be an empty array []"）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_stream_completions.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `<strong>① 契约取交集</strong>：官方文档对 Ollama 的定位是「支持 OpenAI API 的一个<strong>子集</strong>」，所以接入层只允许使用交集内的能力——<code>model</code> / <code>messages</code> / <code>stream</code> / <code>tools</code> / <code>temperature</code> 这类双方都有的字段；每个字段是否可用要照兼容清单核对，而不是照云端文档写。<br><strong>② 差异收在一处</strong>：base_url、api_key（本地客户端仍要求一个 key 值，但服务端会忽略）与模型名进配置；「关思考」这类协议外能力走 <code>extra_body</code> 之类的扩展通道，并明确标注「换后端可能失效」——本章 <code>extra_body={"thinking": {"type": "disabled"}}</code> 就是这种依赖。<br><strong>③ 视觉统一成 Base64</strong>：兼容清单里 <code>Base64 encoded image</code> 勾选、<code>Image URL</code> 未勾选，所以接入层应把「图片」统一抽象成「本地字节 → data URL」，云端若支持 URL 也只当作可选优化，不让业务代码直接依赖远端 URL。<br><strong>④ 流式统一成事件流</strong>：对外只暴露自己的 chunk 事件类型（对应本章 <code>Chunk(type, content)</code>），解析时守住两条官方事实——正文从 <code>delta</code> 取；最后一个 chunk 的 <code>choices</code> 是空数组、<code>usage</code> 在它身上（其余 chunk 的 <code>usage</code> 为 null）。用量统计因此在「收到空 choices 帧」时落库，而不是逐个累加。<br><strong>⑤ 验收</strong>：写一组跨后端的契约测试（同一段脚本分别指向本地与云端，断言事件序列、图片能返回描述、用量非 0），把「子集差异」变成可回归的测试，而不是等线上报错。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 25 分钟内接通本地 Ollama：配好 <code>.env</code>、跑通一次对话、把回复改成流式打印，最后让它描述一张本地图片。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: 'ollama pull qwen3-vl → 确认 http://localhost:11434/ 可用 → uv add openai==1.74.0 python-dotenv==1.2.2 → 写 utils/config.py（基于 __file__ 定位 .env，导出 OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL）→ client = OpenAI() 跑一次非流式对话并打印 resp.json → 改成 stream=True 流式打印 → 用 to_dataurl 把本地图片转成 data URL，按 text + image_url 两个 part 发起请求。',
+                accept: ['curl http://localhost:11434/v1/models 能列出本地模型', '非流式调用返回的 JSON 里能读到 choices[0].message.content 与 usage.total_tokens', '流式调用逐块输出、不因空 choices 帧报 IndexError，且推理与正文能分开显示', '图片请求返回对图片内容的合理描述（而不是「看不到图片」）'],
+              },
+              source: `任务基于《15.模型接口契约》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 模型与服务——<code>ollama pull qwen3-vl</code>，浏览器打开 <code>http://localhost:11434/</code>，再 <code>curl http://localhost:11434/v1/models</code> 确认兼容层可用（必要时用 <code>OLLAMA_MODEL_SERVER</code> 换镜像源）。② 配置——<code>.env</code> 里放 <code>OPENAI_API_KEY</code> / <code>OPENAI_BASE_URL=http://localhost:11434/v1/</code> / <code>OPENAI_MODEL=qwen3-vl</code>；<code>utils/config.py</code> 照课件用 <code>os.path.dirname(os.path.abspath(__file__))</code> 推 <code>.env</code> 位置，避免换目录启动就读不到。③ 调用——<code>OpenAI()</code> 不传参即可（SDK 从环境变量取），<code>chat.completions.create(model=config.OPENAI_MODEL, messages=[{"role":"user","content":"你是谁"}])</code>，先看 <code>resp.json</code> 摸清字段（<code>message.content</code> / <code>message.reasoning</code> / <code>finish_reason</code> / <code>usage</code>）。④ 流式——加 <code>stream=True</code>，照 <code>utils/stream_resp.py</code> 写解析：空 <code>choices</code> 先 <code>continue</code>，推理字段用 <code>getattr</code> 探测两个名字，正文从 <code>delta.content</code> 取，循环结束补 <code>content_end</code>；打印时 <code>flush</code>。⑤ 视觉——<code>to_dataurl("menu.png")</code> 得到 data URL，<code>content</code> 换成 text + image_url 数组。<br>常见坑：<code>.env</code> 路径写成相对路径（换目录就静默失效）；忘了 <code>stream=True</code> 却去读 <code>delta</code>（或反过来读 <code>message</code>）；把图片路径或公网 URL 直接交给本地服务（Ollama 兼容清单里图片 URL 未勾选，要用 Base64）；以为 <code>extra_body={"thinking": {"type": "disabled"}}</code> 对所有模型都生效（课件已注明 qwen3-vl 关不掉）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://docs.ollama.com/api/openai-compatibility">Ollama 官方文档 OpenAI compatibility</a>（兼容子集与支持字段清单）· <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_stream_completions.ipynb">OpenAI Cookbook《How to stream completions》</a>（delta、include_usage 与流式代价）· <a href="https://ollama.com/library">Ollama 官方模型仓库</a> · <a href="https://ollama.com/">Ollama 下载安装</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/模型接口契约速查表.html">模型接口契约速查表</a>——本地模型选型、CLI 与接口速查、resp.json 字段表、流式事件与视觉组装一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/模型接口契约">15.模型接口契约</a> · 下一课 <a href="/agents/Agents底层逻辑/系统提示词">16.系统提示词</a>（把接口调用升级成工程化的 Agent）。</li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

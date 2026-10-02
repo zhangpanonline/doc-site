@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>词嵌入速查表 · 参考手册</title>
+  <meta name="description" content="词嵌入速查表 · 可打印参考手册：配合《词嵌入互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>词嵌入速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0010-词嵌入.html">《词嵌入互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>为什么需要词嵌入</h2>
+      <table class="cmp-table">
+        <tr><th>Token ID 的问题</th><th>说明</th></tr>
+        <tr><td>不能表示语义</td><td>ID 只是一个文字符号的编号；单看编号无法表达它背后丰富的语义</td></tr>
+        <tr><td>不能做数学运算</td><td>$33256 + 11789$ 没有含义——ID 之间的加减乘除无意义</td></tr>
+        <tr><td>结论</td><td>需要用<strong>更多维度</strong>描述一个 token → 这就是词嵌入要解决的问题</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>核心概念</h2>
+      <dl class="term-grid">
+        <dt>词嵌入（word embedding）</dt>
+        <dd>把一个 token 转成多维度数字向量的过程；「嵌入」的本意是把低维离散对象<strong>镶嵌、植入</strong>到连续的高维几何空间。</dd>
+        <dt>向量空间中的「接近」</dt>
+        <dd>把维度值放进空间，语义相近的 token 距离更近（例：$苹果\approx Apple$）。</dd>
+        <dt>向量运算关系</dt>
+        <dd>$国王 - 王后 \approx 男人 - 女人$、$男人+医生\approx男医生$、$2×开心≈狂喜$——语义关系在向量空间里变成了算术关系。</dd>
+        <dt>工程形态</dt>
+        <dd>一张矩阵 $E \in \mathbb{R}^{|V| \times d}$：$|V|$ = 词表大小，$d$ = 每个 token 的维度；第 $i$ 行就是 ID 为 $i$ 的 token 向量。</dd>
+        <dt>只规定维度个数</dt>
+        <dd>我们<strong>只规定有多少个维度</strong>，每一维的含义与取值交给训练去学——永远不要告诉机器答案。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>上下文长度 vs 上下文窗口</h2>
+      <table class="cmp-table">
+        <tr><th>概念</th><th>含义</th><th>类比</th></tr>
+        <tr><td>上下文长度</td><td>本次实际传入模型的 token 数量</td><td>用量</td></tr>
+        <tr><td>上下文窗口长度</td><td>模型能容纳的最大 token 数量（硬上限）</td><td>容量</td></tr>
+      </table>
+      <pre>约束：上下文长度 ≤ 上下文窗口长度
+超出：被截断，或直接报错</pre>
+      <p>做长度预算时两个数都要看：<strong>模型上限</strong>决定能不能放，<strong>本次用量</strong>决定要花多少 token 与费用。</p>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <ul class="pitfall-list">
+        <li>把 Token ID 当特征直接喂给模型（丢掉语义与距离关系）</li>
+        <li>以为每一维的含义是人类指定的（实际只有维度个数是人为规定）</li>
+        <li>把「上下文长度」与「上下文窗口长度」混用，算错 token 预算</li>
+        <li>把「向量接近」理解成「字符串像」——它衡量的是语义，不是字面</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

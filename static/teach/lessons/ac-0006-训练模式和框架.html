@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 训练模式和框架：SGD/全批量/小批量三种训练模式、CNN 与 Transformer 架构、TensorFlow/PyTorch 框架与模型文件构成——互动教学课程">
+  <title>训练模式和框架 · 互动教学课程（Agents底层逻辑 ac-06）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>训练模式和框架</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/训练模式和框架">06.训练模式和框架</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 SGD / 全批量 / 小批量三种训练模式每一步各用多少样本算梯度</li>
+        <li>解释为什么大模型默认用小批量，而全批量几乎不用于大模型训练</li>
+        <li>说出 CNN 与 Transformer 各自的主场和核心思想</li>
+        <li>分清 TensorFlow 与 PyTorch 的现状定位，并说清模型文件里权重与配置各存什么</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先把本章的四块内容过一遍——细节都在《06.训练模式和框架》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>三种梯度下降训练模式（按「每一步用多少样本」分）</h3>
+        <ul class="pitfall-list">
+          <li><strong>随机梯度下降 SGD</strong>：每一步<strong>只取 1 个样本</strong>算梯度更新参数；梯度噪声极大、收敛震荡，早年小数据集用，现代大模型基本不用</li>
+          <li><strong>全批量梯度下降 Full Batch</strong>：每一轮更新参数时<strong>使用全部训练集所有样本</strong>算损失与梯度；梯度方向最稳定，但大数据集显存 / 内存爆炸、迭代极慢，几乎不用于大模型训练</li>
+          <li><strong>小批量梯度下降 Mini-Batch（大模型主流）</strong>：每一步取固定数量样本（<code>batch_size</code>，如 32/128/1024）算梯度更新；<strong>平衡稳定性与速度、显存可控</strong>，LLM 与 CV 模型全部默认使用</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>网络架构：CNN 与 Transformer</h3>
+        <ul class="pitfall-list">
+          <li><strong>卷积神经网络（CNN）</strong>：图像领域的经典架构。模仿人眼视觉——图像是<strong>局部关联</strong>的，不用一次性看整张图，只滑动小窗口（卷积核）提取局部纹理、边缘、色块</li>
+          <li><strong>Transformer</strong>：<strong>NLP 起家，现在是通用全能架构</strong>——本章只给定位，机制在后续章节展开</li>
+          <li>选型直觉：图像类任务想到 CNN 的「局部 + 滑窗」，序列/文本类任务想到 Transformer</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>深度学习框架与模型文件</h3>
+        <ul class="pitfall-list">
+          <li><strong>PyTorch</strong>：现在的主力训练框架</li>
+          <li><strong>TensorFlow</strong>：现在已经不再流行，通常用于做一些边缘计算</li>
+          <li><strong>模型是训练的结果</strong>，通常以<strong>多个文件</strong>的形式存储：<strong>核心权重文件</strong>（占 99% 体积）+ <strong>配置文件</strong>（网络的架构、隐藏层维度、权重精度等信息）</li>
+          <li>只有权重、没有配置，加载时就不知道这些数值该按什么结构摆——所以配置文件不能丢</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《06.训练模式和框架》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 现在 LLM、CV 模型训练时默认使用的梯度下降模式是哪一种？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">全批量梯度下降（每一轮用全部训练集样本）</button>
+            <button class="quiz-option">小批量梯度下降（每一步取固定数量样本，如 32/128/1024）</button>
+            <button class="quiz-option">随机梯度下降（每一步只取 1 个样本）</button>
+            <button class="quiz-option">三种模式轮流使用，没有默认</button>
+          </div>
+          <div class="quiz-explain" hidden>本章原文：Mini-Batch 每一步取固定数量样本（batch_size，如 32/128/1024）计算梯度更新，平衡稳定性与速度、显存可控，LLM、CV 模型全部默认使用。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 「模仿人眼视觉：图像是局部关联的，不用一次性看整张图，只滑动小窗口提取局部纹理、边缘、色块」——说的是哪个架构？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">全连接网络</button>
+            <button class="quiz-option">Transformer</button>
+            <button class="quiz-option">卷积神经网络（CNN）</button>
+            <button class="quiz-option">循环神经网络</button>
+          </div>
+          <div class="quiz-explain" hidden>本章《网络架构》原文：卷积神经网络（CNN）是图像领域经典架构，模仿人眼视觉——图像是局部关联的，不用一次性看整张图，只滑动小窗口（卷积核）提取局部纹理、边缘、色块。Transformer 则是 NLP 起家、现在通用全能架构，本章未展开其机制。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 关于两个深度学习框架的现状，符合本章说法的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">PyTorch 只能做图像，TensorFlow 只能做文本</button>
+            <button class="quiz-option">PyTorch 是现在的主力训练框架；TensorFlow 已不再流行，通常用于做一些边缘计算</button>
+            <button class="quiz-option">TensorFlow 是现在的主力训练框架，PyTorch 只用于边缘计算</button>
+            <button class="quiz-option">两者都已被淘汰，主流是用 NumPy 手写训练</button>
+          </div>
+          <div class="quiz-explain" hidden>本章《深度学习框架》原文：TensorFlow 现在已经不再流行，通常用于做一些边缘计算；PyTorch 是现在的主力训练框架。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 把一个训练脚本的 <code>batch_size</code> 从 1024 调小到 8，最符合本章机制的后果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有任何影响，batch_size 只影响日志打印的条数</button>
+            <button class="quiz-option">这个设置与全批量梯度下降等价</button>
+            <button class="quiz-option">每一步参与算梯度的样本变少，梯度噪声变大、收敛更震荡，但单步的显存开销更小</button>
+            <button class="quiz-option">梯度方向变得更稳定，收敛一定更快</button>
+          </div>
+          <div class="quiz-explain" hidden>本章的三种模式其实是同一条轴上的档位：样本越少越靠近 SGD（梯度噪声极大、收敛震荡），样本越多越靠近全批量（梯度方向最稳定，但显存 / 内存开销最大）。调小 batch_size 是「用更震荡的梯度换更小的显存占用」，所以既不是「一定更快」也不是「没影响」。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. 有人主张：「全批量梯度下降的梯度方向最稳定，所以大模型训练应该优先选它。」本章为什么不这么认为？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为全批量每一步只用一个样本，噪声太大</button>
+            <button class="quiz-option">因为全批量只适用于图像任务，不适用于语言模型</button>
+            <button class="quiz-option">因为全批量要用全部训练集样本算损失与梯度，大数据集显存 / 内存爆炸、迭代极慢，几乎不用于大模型训练</button>
+            <button class="quiz-option">因为全批量无法计算损失函数</button>
+          </div>
+          <div class="quiz-explain" hidden>本章原文：Full Batch 每一轮更新参数使用全部训练集所有样本计算损失与梯度，特点是梯度方向最稳定；但大数据集显存 / 内存爆炸，迭代极慢，几乎不用于大模型训练。「每一步只取 1 个样本」是 SGD 的特征，别把两者弄反。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 本章说模型「通常以多个文件的形式存储」，这两类文件分别是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">训练日志文件 + 断点续训文件</button>
+            <button class="quiz-option">训练集文件 + 测试集文件</button>
+            <button class="quiz-option">核心权重文件（占 99% 体积）+ 配置文件（网络架构、隐藏层维度、权重精度等信息）</button>
+            <button class="quiz-option">Python 源码文件 + 依赖清单文件</button>
+          </div>
+          <div class="quiz-explain" hidden>本章《模型》原文：模型是训练的结果，通常以多个文件的形式存储——核心权重文件占 99% 体积；配置文件记录模型的网络架构、隐藏层维度、权重精度等信息。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 一个产品既要识别图片里的商品，又要理解用户的文字评论。按本章的架构定位，合理的组合是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">图像走 CNN（局部关联、滑窗提特征），文本走 Transformer（NLP 起家、现在通用全能架构）</button>
+            <button class="quiz-option">图像走循环网络，文本走全连接层</button>
+            <button class="quiz-option">两类任务都用 Transformer，因为 CNN 只能处理文字</button>
+            <button class="quiz-option">两类任务都用 CNN，因为 CNN 是通用全能架构</button>
+          </div>
+          <div class="quiz-explain" hidden>本章给的是定位而非细节：CNN 是图像领域经典架构——图像局部关联，靠滑动小窗口（卷积核）提取纹理、边缘、色块；Transformer 从 NLP 起家，如今是通用全能架构。所以图像侧用 CNN、文本侧用 Transformer 是符合本章的落法；「CNN 是通用全能架构」这句张冠李戴。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 团队要做一个能在手机上离线推理的产品，同时还要继续训练更大的模型版本。按本章的框架格局，最合理的组合是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">训练与端侧都用 TensorFlow，因为它是现在的主力训练框架</button>
+            <button class="quiz-option">训练用 NumPy 手写，端侧用 PyTorch</button>
+            <button class="quiz-option">训练用 TensorFlow，端侧用 PyTorch</button>
+            <button class="quiz-option">训练用 PyTorch（现在的主力训练框架），端侧沿用 TensorFlow 一系的轻量运行时</button>
+          </div>
+          <div class="quiz-explain" hidden>本章原文：PyTorch 是现在的主力训练框架；TensorFlow 现在已经不再流行，通常用于做一些边缘计算。训练侧跟随主力框架（PyTorch），端侧（手机离线推理）落在 TensorFlow 一系的轻量运行时上——这正是「训练用 PyTorch、端侧用 TFLite/LiteRT」这一常见组合的来源。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 一个数据集有 100 万条样本。团队先按「每一步只取 1 个样本」跑了一晚，loss 剧烈震荡、迟迟降不下去；改成每步 128 个样本后曲线明显平稳。按本章的解释，最合理的结论是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">小批量之所以平稳，是因为它每一步都在完整训练集上算梯度</button>
+            <button class="quiz-option">每步只用 1 个样本就是 SGD，梯度噪声极大导致收敛震荡；换成固定数量样本的小批量后梯度更稳、显存也可控——这正是大模型默认小批量的原因</button>
+            <button class="quiz-option">震荡是数据集太小造成的，与每步用多少样本无关</button>
+            <button class="quiz-option">说明全批量才是唯一正确选择，应该把 batch_size 直接设成 100 万</button>
+          </div>
+          <div class="quiz-explain" hidden>本章《梯度下降的训练模式》原文：SGD 每一步只取 1 个样本算梯度更新参数，梯度噪声极大、收敛震荡，现代大模型基本不用；Mini-Batch 每一步取固定数量样本（如 32/128/1024），平衡稳定性与速度、显存可控，LLM、CV 全部默认使用。全批量虽然方向最稳，但要一次用完 100 万条样本，显存 / 内存会直接爆炸——所以「设成 100 万」是把结论推反了。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0006-训练模式和框架',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事让 AI 定训练脚本的超参，AI 回复：「<code>batch_size</code> 直接设成整个训练集最好——每一步都用全部样本算梯度，方向最稳定、收敛最快。」请审查这句话。`,
+              source: `来源：Keras 官方文档 Model training APIs（"batch_size: Integer or None. Number of samples per gradient update. If unspecified, batch_size will default to 32."）https://keras.io/api/models/model_training_apis/ · 检索 2026-10-02 · 层级：一手（官方文档）+ PyTorch 官方文档 torch.utils.data（"Automatic batching can also be enabled via batch_size and drop_last arguments."）https://docs.pytorch.org/docs/stable/data.html`,
+              breakdown: `结论：<strong>说对了一半，但结论是错的</strong>。把 batch_size 设成整个训练集，就是本章的<strong>全批量梯度下降</strong>——梯度方向确实最稳定（这句没错），但本章原文紧接着写了代价：<strong>大数据集显存 / 内存爆炸，迭代极慢，几乎不用于大模型训练</strong>。<br><br>官方文档也把 batch_size 定义成一个「每次梯度更新用多少样本」的可调参数，而不是越大越好的开关：Keras 原文是 <em>Number of samples per gradient update</em>，并且默认值是 32（默认值本身就是小批量的档位）；PyTorch 的 DataLoader 同样把这个量做成参数，官方还专门说明「自动分批」就是靠 batch_size 与 drop_last 这两个参数开启的。<br><br>正确姿势：<strong>在 32 / 128 / 1024 这类档位上起步</strong>，用显存和收敛曲线两头夹逼——batch 太小则梯度噪声大、震荡；batch 太大则显存吃不消、迭代变慢，而且超大 batch 往往需要配合别的手段（学习率、梯度累积）才训得动。面试里把「全批量的优点 + 它的两条硬代价」都讲出来，就比只会说「越大越好」高一档。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `请把 <strong>SGD、全批量梯度下降、小批量梯度下降</strong>三种训练模式讲清楚：每一步各用多少样本算梯度、梯度特性有什么不同、各自适合什么场景？为什么 LLM 和 CV 模型默认都用小批量？`,
+              source: `来源：PyTorch 官方文档 torch.optim.SGD（"Implements stochastic gradient descent (optionally with momentum)."）https://docs.pytorch.org/docs/stable/generated/torch.optim.SGD.html · 检索 2026-10-02 · 层级：一手（官方文档）+ Keras 官方文档 Model training APIs（"epochs: Integer. Number of epochs to train the model. An epoch is an iteration over the entire x and y data provided"）https://keras.io/api/models/model_training_apis/`,
+              breakdown: `三种模式只差一件事：<strong>每一步拿多少样本算梯度</strong>。<br><br><strong>SGD（随机梯度下降）</strong>：每步只取 1 个样本 → 梯度噪声极大、收敛震荡；早年小数据集用，现代大模型基本不用。<br><strong>全批量（Full Batch）</strong>：每一轮更新用全部训练集所有样本算损失与梯度 → 梯度方向最稳定，但大数据集显存 / 内存爆炸、迭代极慢，几乎不用于大模型训练。<br><strong>小批量（Mini-Batch）</strong>：每步取固定数量样本（batch_size，如 32/128/1024）→ 平衡稳定性与速度、显存可控，LLM 与 CV 模型全部默认使用。<br><br>三者不是三套算法，而是同一条轴上的档位：<strong>batch_size = 1 就是 SGD，batch_size = 整个训练集大小就是全批量</strong>，中间都是小批量。<br><br>官方对应物：PyTorch 把这件事做成优化器 <code>torch.optim.SGD</code>（官方定义：Implements stochastic gradient descent）；「用多少样本」在框架里由 batch_size 控制（Keras 官方定义：Number of samples per gradient update）；「把整个数据集跑一遍」则叫一个 epoch（官方定义：An epoch is an iteration over the entire x and y data provided）。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `从网上下载的模型目录里有一堆文件：权重文件、<code>config.json</code> 之类。请说清权重文件与配置文件各存什么，以及为什么只拷贝权重文件可能根本加载不起来。`,
+              source: `来源：PyTorch 官方文档 Saving and Loading Models（"Saving the model\'s state_dict with the torch.save() function will give you the most flexibility for restoring the model later, which is why it is the recommended method for saving models."；"A common PyTorch convention is to save models using either a .pt or .pth file extension."）https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html · 检索 2026-10-02 · 层级：一手（官方文档）+ Hugging Face transformers 官方文档 Configuration（"The base class PreTrainedConfig implements the common methods for loading/saving a configuration either from a local file or directory"；"Common attributes present in all config classes are: hidden_size, num_attention_heads, and num_hidden_layers."）https://raw.githubusercontent.com/huggingface/transformers/main/docs/source/en/main_classes/configuration.md + safetensors 官方仓库（"a new simple format for storing tensors safely (as opposed to pickle) and that is still fast (zero-copy)"）https://raw.githubusercontent.com/huggingface/safetensors/main/README.md`,
+              breakdown: `本章《模型》原文：模型是训练的结果，通常以多个文件的形式存储——<strong>核心权重文件</strong>占 99% 体积；<strong>配置文件</strong>记录模型的网络架构、隐藏层维度、权重精度等信息。<br><br>一句话区分：<strong>权重文件存的是「数值」，配置文件存的是「这些数值该按什么结构摆」</strong>。权重就是一堆张量（可以理解成训练结束后各层的参数矩阵），它本身不知道自己属于哪一层；配置文件才说明有几层、每层多宽、用什么精度。<br><br>官方对应物：PyTorch 推荐保存 <code>state_dict</code>（官方原文：保存它能在恢复模型时给你最大的灵活性，因此是推荐的保存方式），文件名约定用 <code>.pt</code> 或 <code>.pth</code>（官方原文：A common PyTorch convention is to save models using either a .pt or .pth file extension）；而「层宽、注意力头数、层数」这类结构信息在 Hugging Face 里由配置类承担——官方文档明确写了所有配置类都有的公共属性是 <code>hidden_size</code>、<code>num_attention_heads</code>、<code>num_hidden_layers</code>，正好对应本章说的「隐藏层维度」。<br><br>所以只拷权重会遇到什么：框架必须先按配置<strong>建好同构的网络</strong>，再把权重逐个填进去（<code>load_state_dict</code>）；缺了配置就只能靠猜层数 / 维度，形状对不上直接报错。工程上还有一个加分点：现在权重文件越来越多用 safetensors 这类格式，官方对它的定义是「以安全方式存储张量的新格式（取代 pickle）且依然很快（零拷贝）」——面试提到格式安全性与加载速度，是明显的实践痕迹。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 写了这样一段训练循环，并说明「这里用的是小批量梯度下降」。实际跑起来 loss 剧烈震荡、很久也不收敛，请找出根因：<pre><code>from torch.utils.data import DataLoader
+
+train_loader = DataLoader(train_dataset)        # 没有传 batch_size
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+for epoch in range(10):
+    for X, y in train_loader:
+        loss = loss_fn(model(X), y)
+        loss.backward()
+        optimizer.step()
+</code></pre>`,
+              source: `来源：PyTorch 官方文档 torch.utils.data（"DataLoader(dataset, batch_size=1, shuffle=False, sampler=None, batch_sampler=None, ...)"；"Automatic batching can also be enabled via batch_size and drop_last arguments."）https://docs.pytorch.org/docs/stable/data.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `根因：<strong>DataLoader 的 batch_size 默认是 1</strong>。官方签名原文就是 <code>DataLoader(dataset, batch_size=1, shuffle=False, ...)</code>——没传这个参数时，循环里的 <code>X, y</code> 每一步只有一个样本，于是这段代码实际跑的是本章的 <strong>SGD（随机梯度下降）</strong>，而不是注释里声称的小批量：每步只取 1 个样本算梯度，梯度噪声极大、收敛震荡，现代大模型基本不用。<br><br>修法：显式指定档位，例如 <code>DataLoader(train_dataset, batch_size=128, shuffle=True)</code>，让官方的「自动分批」真正生效（官方原文：Automatic batching can also be enabled via batch_size and drop_last arguments.）。<br><br>面试时把这条讲成通用经验更好用：<strong>库的默认值不会大声提醒你</strong>——batch_size=1 这种「最保守的默认」能跑通、不报错，但语义与预期完全不符。审查任何训练脚本，第一眼就该确认 batch_size 是否被显式指定、打印出来的 batch 形状第一维是否等于预期值。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `团队要做一个「拍图识别商品 + 理解用户文字评论」的应用，要求模型能在手机上离线推理，同时还要继续迭代训练更大的版本。请给出网络架构与深度学习框架的选型，并说明每一步的依据。`,
+              source: `来源：PyTorch 官方文档 torch.nn.Transformer（"This Transformer layer implements the original Transformer architecture described in the Attention Is All You Need paper."）https://docs.pytorch.org/docs/stable/generated/torch.nn.Transformer.html · 检索 2026-10-02 · 层级：一手（官方文档）+ Keras 官方文档 Conv2D（"This layer creates a convolution kernel that is convolved with the layer input over a 2D spatial (or temporal) dimension (height and width) to produce a tensor of outputs."）https://keras.io/api/layers/convolution_layers/convolution2d/ + LiteRT 官方仓库（"LiteRT Google\'s on-device runtime for high-performance ML & GenAI deployment on edge platforms."；"LiteRT continues the legacy of TensorFlow Lite as the trusted, high-performance runtime for on-device AI."）https://raw.githubusercontent.com/google-ai-edge/LiteRT/main/README.md`,
+              breakdown: `<strong>架构怎么分</strong>：图像侧用 <strong>CNN</strong>——本章给的理由是「图像是局部关联的，不用一次性看整张图，只滑动小窗口（卷积核）提取局部纹理、边缘、色块」，Keras 官方对卷积层的定义就是「用卷积核在输入的 2D 空间维度上做卷积，产出一个张量输出」，与本章说法同构；文本侧用 <strong>Transformer</strong>——本章定位是「NLP 起家，现在通用全能架构」，PyTorch 官方实现也明确写着它实现的是 <em>Attention Is All You Need</em> 论文里的原始 Transformer 架构。多模态就是两路特征拼起来（本章未展开，属于后续章节）。<br><br><strong>框架怎么选</strong>：训练侧用 <strong>PyTorch</strong>——本章原文就是「现在的主力训练框架」；端侧（手机离线推理）沿用 <strong>TensorFlow 一系的轻量运行时</strong>——本章原文是「TensorFlow 现在已经不再流行，通常用于做一些边缘计算」，而官方 LiteRT 的自我定位正是「面向边缘平台的高性能端侧运行时」，并明确说明自己是 TensorFlow Lite 的延续。<br><br><strong>取舍要点</strong>：训练框架看生态与迭代效率（PyTorch 侧研究 / 预训练权重最活跃），端侧运行时看体积、算子支持与硬件加速（TFLite/LiteRT 路线成熟）——所以「训练用 PyTorch、导出后交给端侧轻量运行时」是通行组合。面试加分项：说清这里出现的是<strong>两个不同的关注点</strong>（训练框架 ≠ 部署运行时），而不是同一个框架一站到底。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手写一段最小可跑的小批量训练脚本（建议用 Claude Code 完成），把本章三种训练模式的取舍体现在代码里，任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '用 PyTorch 在 MNIST 风格的小数据上写一个训练循环：DataLoader 显式设置 batch_size（在 32/128/1024 里选一个），优化器用 torch.optim.SGD，跑两个 epoch，并打印每个 batch 的形状与 loss。',
+                accept: ['DataLoader 显式传了 batch_size，且既不等于 1、也不等于整个训练集大小', '能口头说清「为什么不用 1（梯度噪声极大、收敛震荡）也不设成全集（显存 / 内存爆炸、迭代极慢）」', '每个 batch 打印出的形状第一维等于设定的 batch_size，最后一个 batch 可能不足这个数'],
+              },
+              source: `任务基于《06. 训练模式和框架》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路骨架：<code>train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)</code>；<code>optimizer = torch.optim.SGD(model.parameters(), lr=0.01)</code>；然后 <code>for epoch in range(2): for X, y in train_loader: ...</code>，逐 batch 前向 → 算 loss → backward → step，并打印 <code>X.shape</code> 与 loss。<br><br>三个验收点分别对应本章三条原文：batch_size = 1 就是 <strong>SGD</strong>（每一步只取 1 个样本，梯度噪声极大、收敛震荡，现代大模型基本不用）；batch_size = 整个训练集大小就是<strong>全批量</strong>（梯度方向最稳定，但大数据集显存 / 内存爆炸、迭代极慢，几乎不用于大模型训练）；32/128/1024 这类固定档位是<strong>小批量</strong>（平衡稳定性与速度、显存可控，LLM 与 CV 全部默认）。<br><br>最后一条验收点容易被忽略：数据集大小通常不是 batch_size 的整数倍，所以最后一个 batch 的形状会偏小（比如 <code>torch.Size([37, 1, 28, 28])</code>）——这不是 bug，而是 DataLoader 的正常行为。让 AI 生成脚本时，顺手让它把「每步样本数」和「一个 epoch 覆盖完整数据集」这两件事分开打印，是很好的自检习惯。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://docs.pytorch.org/docs/stable/generated/torch.optim.SGD.html">PyTorch torch.optim.SGD 官方文档</a>（SGD 的定义与更新式） · <a href="https://keras.io/api/models/model_training_apis/">Keras Model training APIs</a>（batch_size / epochs 的官方定义） · <a href="https://github.com/google-ai-edge/LiteRT">LiteRT（TensorFlow Lite 的延续，端侧运行时）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/训练模式和框架速查表.html">训练模式和框架速查表</a>——三种训练模式对照、架构与框架定位、模型文件构成一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/训练模式和框架">06.训练模式和框架</a> · 下一课 <a href="/agents/Agents底层逻辑/词元">07.词元</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

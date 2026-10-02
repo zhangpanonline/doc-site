@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · MCP协议：模型上下文协议的设计目标、stdio/http 传输方式与 JSON-RPC 2.0 通信格式、initialize 能力协商——互动教学课程">
+  <title>MCP协议 · 互动教学课程（Agents底层逻辑 ac-24）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>MCP协议</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/MCP协议">24.MCP协议</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 MCP 要解决什么问题——为什么 Agent 与外部工具之间需要一套<strong>通信标准</strong></li>
+        <li>复述协议内核三要素：通信角色（MCP Client / MCP Server）、通信方式（stdio / http）、通信格式（JSON-RPC 2.0）</li>
+        <li>解释 <code>initialize</code> 阶段的能力协商，以及 <code>initialize</code> → <code>tools/list</code> → <code>tools/call</code> 三条消息各自的分工</li>
+        <li>用 <code>@modelcontextprotocol/inspector</code> 充当 MCP Client，观察一次真实 MCP 通信并定位常见故障</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把本章的骨架过一遍——细节都在《24.MCP协议》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>MCP 要解决什么</h3>
+        <ul class="pitfall-list">
+          <li>课件第一句就是全部动机：<strong>MCP 定义了 Agent 和外部工具的通信标准</strong>（官网 <a href="https://modelcontextprotocol.io/">modelcontextprotocol.io</a>）</li>
+          <li>官方定义：「MCP (Model Context Protocol) is an open-source standard for connecting AI applications to external systems.」——它的自我类比是 <strong>「AI 应用的 USB-C 接口」</strong></li>
+          <li>没有标准时，每个 Agent 对接每个工具都要单独写一套适配代码，适配量是 $M \times N$；有了标准协议，双方各自实现协议即可，适配量降到 $M + N$</li>
+          <li>协议是分层的：<strong>Base Protocol</strong>（JSON-RPC 消息）与 <strong>Lifecycle Management</strong>（初始化、能力协商、会话控制）是所有实现<strong>必须</strong>支持的；Resources / Prompts / Tools、Sampling、Roots 等按需实现（<em>MUST / MAY</em> 是规范里的硬性分级）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>协议内核三要素</h3>
+        <ul class="pitfall-list">
+          <li><strong>通信角色</strong>：客户端 <strong>MCP Client</strong>（通常是 Agent）↔ 服务端 <strong>MCP Server</strong>（工具提供者）。任何匹配 MCP 协议的程序都可以作为 MCP Client——所以调试器 inspector 也能当 Client 用</li>
+          <li><strong>通信方式</strong>：<code>stdio</code>——Client 把 Server 作为子进程启动，通过 <code>stdin</code> / <code>stdout</code> 在本地进程间通信；<code>http</code>——通过 HTTP 协议通信（现行规范里叫 <strong>Streamable HTTP</strong>，是 2024-11-05 版 HTTP+SSE 的替代者）</li>
+          <li><strong>通信格式</strong>：<strong>JSON-RPC 2.0</strong>。信封固定四个字段——<code>jsonrpc</code> / <code>id</code> / <code>method</code> / <code>params</code>（<code>params</code> 可省略）；规范原文：「All messages between MCP clients and servers <strong>MUST</strong> follow the JSON-RPC 2.0 specification.」</li>
+          <li>MCP 在标准 JSON-RPC 之上加了两条约束：<code>id</code> <strong>不能为 <code>null</code></strong>，且同一会话内<strong>不得复用</strong>已用过的 <code>id</code>——它靠 <code>id</code> 把响应配回请求</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>通信内容与能力协商</h3>
+        <ul class="pitfall-list">
+          <li><code>initialize</code>（初始化）<strong>必须是 Client 与 Server 的第一次交互</strong>：一次谈定<strong>协议版本兼容性</strong>、<strong>双方能力（capabilities）</strong>、<strong>实现信息</strong>（<code>clientInfo</code> / <code>serverInfo</code>）——这个过程就叫<strong>能力协商</strong></li>
+          <li>能力只有<strong>声明过</strong>才允许使用：Server 支持工具，<strong>必须</strong>在 <code>initialize</code> 响应里声明 <code>tools</code> 能力；Client 看到之后才去调 <code>tools/list</code></li>
+          <li><code>tools/list</code>（发现工具列表）：拿到工具名、描述与<strong>参数 Schema</strong>；<code>tools/call</code>（调用工具）：<code>params</code> 里带工具名与实参</li>
+          <li>生命周期一共三段：<strong>Initialization（能力协商 + 版本协商）→ Operation（正常通信）→ Shutdown（优雅关闭）</strong></li>
+          <li>观测全程用 inspector（通常用于调试 MCP Server，可以清楚看到通信内容）：<code>npx -y @modelcontextprotocol/inspector@1.0.0</code>（课程口径；官方当前文档写作 <code>npx @modelcontextprotocol/inspector</code>，同一个包）；官方 time 测试服务器 <code>uvx mcp-server-time</code>；微软官方文档服务 <code>https://learn.microsoft.com/api/mcp</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《24.MCP协议》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. MCP（模型上下文协议）定义的是哪两者之间的通信标准？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型与训练数据之间</button>
+            <button class="quiz-option">前端页面与后端接口之间</button>
+            <button class="quiz-option">Agent 与外部工具之间</button>
+            <button class="quiz-option">GPU 与显存之间</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：「MCP 定义了 <strong>Agent</strong> 和 <strong>外部工具</strong> 的 <strong>通信标准</strong>」。官方文档的表述是「an open-source standard for connecting AI applications to external systems」——落点始终在「AI 应用 ↔ 外部系统（数据源、工具、工作流）」。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. MCP 规定的通信格式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">GraphQL</button>
+            <button class="quiz-option">gRPC + Protobuf</button>
+            <button class="quiz-option">RESTful JSON（GET / POST + 资源路径）</button>
+            <button class="quiz-option">JSON-RPC 2.0</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「协议内核」第三条：<strong>通信格式：JSON-RPC 2.0</strong>，并给出示例信封 <code>{"jsonrpc": "2.0", "id": "req-123", "method": "tools/call", "params": {...}}</code>。官方规范把这句写成了硬约束：「All messages between MCP clients and servers MUST follow the JSON-RPC 2.0 specification.」</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. MCP 标准里的两个通信角色分别是谁？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">浏览器与 Web 服务器</button>
+            <button class="quiz-option">客户端 MCP Client（通常是 Agent）与服务端 MCP Server（工具提供者）</button>
+            <button class="quiz-option">大模型与向量数据库</button>
+            <button class="quiz-option">训练集与验证集</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「协议内核 · 通信角色」原文：客户端 MCP Client——通常是 Agent；服务端 MCP Server——工具提供者。并且「<strong>任何匹配 MCP 协议的程序都可以作为 MCP Client</strong>」，所以课程里用 inspector 来充当 Client 调试 Server。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 在 stdio 传输下，一条 JSON-RPC 消息是怎么从 Client 走到 Server 的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">消息被编码成 HTTP POST 发到本地固定端口</button>
+            <button class="quiz-option">双方建立 WebSocket 长连接后互发帧</button>
+            <button class="quiz-option">消息写进共享文件，双方轮询读取</button>
+            <button class="quiz-option">Client 把 Server 当子进程启动，消息走 <code>stdin</code> / <code>stdout</code>，以换行分隔</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：stdio「通过 stdin、stdout 在本地进程间通信」。官方规范补充了细节：Client 启动 Server 子进程，消息是<strong>单行 JSON-RPC</strong>（以换行分隔，内部不得含换行），且 <strong>stdout 只允许出现合法的 MCP 消息</strong>。HTTP 是另一种传输，不是 stdio 的实现方式。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 下面四条里，哪一条是 MCP 在标准 JSON-RPC 2.0 之上<strong>额外加</strong>的约束？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">请求的 <code>id</code> 不能为 <code>null</code>，且同一会话内不得复用</button>
+            <button class="quiz-option"><code>params</code> 可以省略</button>
+            <button class="quiz-option"><code>jsonrpc</code> 字段必须等于 <code>"2.0"</code></button>
+            <button class="quiz-option"><code>method</code> 必须是字符串</button>
+          </div>
+          <div class="quiz-explain" hidden>官方 Base Protocol 原文：「Unlike base JSON-RPC, the ID <strong>MUST NOT</strong> be <code>null</code>.」「The request ID <strong>MUST NOT</strong> have been previously used by the requestor within the same session.」其余三条是 JSON-RPC 2.0 本身就有的通用规则，不是 MCP 的额外约束。<code>id</code> 的存在意义就是让响应能配回请求，所以不能为空、不能重号。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 一个 stdio 版 MCP Server，作者在工具函数里写了 <code>print("calling get_time")</code> 打调试日志。最可能的后果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">这行日志会进入模型上下文，浪费 token 而已</button>
+            <button class="quiz-option">这行日志混进 stdout，破坏 JSON-RPC 消息流，Client 可能解析失败或初始化超时</button>
+            <button class="quiz-option">没有影响，Client 会自动忽略非 JSON 行</button>
+            <button class="quiz-option">Server 进程会被操作系统直接杀掉</button>
+          </div>
+          <div class="quiz-explain" hidden>官方规范 stdio 一节：「The server <strong>MUST NOT</strong> write anything to its <code>stdout</code> that is not a valid MCP message.」「The server <strong>MAY</strong> write UTF-8 strings to its standard error (<code>stderr</code>) for logging purposes.」官方调试文档也说得很直白：「Local MCP servers should not log messages to stdout (standard out), as this will interfere with protocol operation.」——日志一律走 <code>stderr</code>。这类故障的表现往往离原因很远（表现为连不上、初始化失败），排查时要先怀疑 stdout 被污染。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 一个自研 Client 连上 MCP Server 后，跳过 <code>initialize</code> 直接发 <code>tools/call</code>。按规范的生命周期，问题出在哪？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">唯一的问题是 <code>id</code> 可能重复</button>
+            <button class="quiz-option">没问题——<code>tools/call</code> 是幂等操作，不需要前置步骤</button>
+            <button class="quiz-option">违反了「初始化阶段必须是首次交互」：协议版本与能力都没协商，Client 无从知道 Server 是否具备 <code>tools</code> 能力</button>
+            <button class="quiz-option">只影响性能，不影响正确性</button>
+          </div>
+          <div class="quiz-explain" hidden>官方 Lifecycle 原文：「The initialization phase <strong>MUST</strong> be the first interaction between client and server.」这一阶段建立<strong>协议版本兼容性</strong>、<strong>交换并协商能力</strong>、<strong>交换实现信息</strong>。而 Tools 一节规定：「Servers that support tools <strong>MUST</strong> declare the <code>tools</code> capability」——没有能力协商，Client 就无法判断该不该、能不能调用工具，也可能用错协议版本。生命周期只有三段：Initialization → Operation → Shutdown。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">8. 把一个原本本地 stdio 的 MCP Server 改造成 Streamable HTTP、暴露到内网给多个 Agent 共用。按官方安全要求，上线前<strong>必须</strong>补的措施是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把响应里的 <code>id</code> 改成 <code>null</code>，表示匿名访问</button>
+            <button class="quiz-option">校验 <code>Origin</code> 头防 DNS rebinding；仅本地运行时绑 <code>127.0.0.1</code> 而非 <code>0.0.0.0</code>；为所有连接实现认证</button>
+            <button class="quiz-option">把 <code>Accept</code> 头限制为仅 <code>application/json</code></button>
+            <button class="quiz-option">关闭 <code>stderr</code> 输出，避免日志泄露</button>
+          </div>
+          <div class="quiz-explain" hidden>官方规范 Streamable HTTP 的 Security Warning 三条原文：①「Servers <strong>MUST</strong> validate the <code>Origin</code> header on all incoming connections to prevent DNS rebinding attacks」；②「When running locally, servers <strong>SHOULD</strong> bind only to localhost (127.0.0.1) rather than all network interfaces (0.0.0.0)」；③「Servers <strong>SHOULD</strong> implement proper authentication for all connections」。另外，Client 发 POST 时 <strong>必须</strong>同时声明 <code>application/json</code> 与 <code>text/event-stream</code>，把 Accept 收窄成只允许 JSON 反而会让合规的 SSE 响应被拒——选项 D 与官方要求相反。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 用 inspector 连上一个 Server，按「协商能力 → 发现工具 → 调用 time 工具」的顺序操作。其中「调用 time 工具」这一步发出的请求，<code>method</code> 字段应该是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>tools/list</code></button>
+            <button class="quiz-option"><code>notifications/message</code></button>
+            <button class="quiz-option"><code>tools/call</code></button>
+            <button class="quiz-option"><code>initialize</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件「通信内容」表给出的就是这条主线：<code>initialize</code>（初始化）→ <code>tools/list</code>（发现工具列表）→ <code>tools/call</code>（调用工具）。「调用工具」一定落在 <code>tools/call</code>，其 <code>params</code> 里带工具名与实参。<code>initialize</code> 是会话第一步（能力协商），<code>tools/list</code> 只负责「有哪些工具」，<code>notifications/message</code> 是通知类消息、没有 <code>id</code>、不用于发起调用——四者职责互不重叠也是本节要记的点。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0024-MCP协议',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事说：「MCP 既然是 Agent 与外部工具的通信标准，那只有远程服务才算。本地用 stdio 拉起的工具（比如 <code>uvx mcp-server-time</code>）只是普通子进程调用，不算走 MCP 协议。」请审查这个说法。`,
+              source: `来源：MCP 官方规范 Transports（"The protocol currently defines two standard transport mechanisms for client-server communication: 1. stdio, communication over standard in and standard out 2. Streamable HTTP"；"Clients <strong>SHOULD</strong> support stdio whenever possible."）https://modelcontextprotocol.io/specification/2025-06-18/basic/transports · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `说法是错的。<strong>MCP 把「消息层」与「传输层」分开</strong>：消息层永远是 JSON-RPC 2.0 的 <code>initialize</code> / <code>tools/list</code> / <code>tools/call</code>，传输层目前有<strong>两条标准</strong>——stdio 与 Streamable HTTP，二者平级，没有谁更「正统」。官方还明确写了「Clients SHOULD support stdio whenever possible」，本地子进程恰恰是最常见的 MCP 形态。<br>判断一段通信是不是 MCP，看的是<strong>消息层</strong>而不是有没有网络：只要双方按 JSON-RPC 2.0 交换 MCP 方法，它就是 MCP 通信。stdio 与 HTTP 的真实差别在别处——stdio 由 Client 启动 Server 子进程、一对一、生命周期跟着宿主走，天然没有网络认证问题；Streamable HTTP 下的 Server 是独立进程、可处理多个客户端连接，因此必须补上 Origin 校验、认证与监听地址收紧。<br>面试里这类题考的是「有没有把传输与协议混为一谈」，顺带能问出你是否真的动手接过本地 MCP Server。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `一个 MCP Client 连上 Server 后，凭什么确定对方「有工具可列」？请说明 <code>initialize</code> 为什么必须最先发生、它在能力协商里到底交换了什么；如果 Server 没在 <code>initialize</code> 响应里声明 <code>tools</code> 能力，Client 应该怎么处理？`,
+              source: `来源：MCP 官方规范 Lifecycle（"The initialization phase <strong>MUST</strong> be the first interaction between client and server."；生命周期三步为 "Initialization: Capability negotiation and protocol version agreement" / "Operation: Normal protocol communication" / "Shutdown: Graceful termination of the connection"）https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle + Tools（"Servers that support tools <strong>MUST</strong> declare the <code>tools</code> capability"）https://modelcontextprotocol.io/specification/2025-06-18/server/tools · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方生命周期只有三段：<strong>Initialization（能力协商 + 协议版本协商）→ Operation → Shutdown</strong>，且初始化<strong>必须</strong>是双方第一次交互。<br><code>initialize</code> 一对请求/响应谈定三件事：<strong>① 协议版本兼容性</strong>（Client 给出自己支持的 <code>protocolVersion</code>，Server 回它能用的版本）；<strong>② 双方能力 capabilities</strong>（Server 侧如 <code>tools</code> / <code>resources</code> / <code>prompts</code>，Client 侧如 <code>roots</code> / <code>sampling</code>）；<strong>③ 实现信息</strong>（<code>clientInfo</code> / <code>serverInfo</code>，含名称与版本）。能力协商的本质是<strong>「声明才可用」</strong>：Server 支持工具就必须声明 <code>tools</code> 能力（可带 <code>listChanged</code>），Client 必须在看到该能力之后才去调 <code>tools/list</code>；没声明就调用属于越界，Server 可按「方法未实现」回错误。<br>工程上的用途非常直接：<strong>「工具怎么一个都没出来」的第一排查点就是 initialize 的 capabilities</strong>——先确认能力声明，再看 tools/list 的返回；顺序反了会把「Server 没声明能力」误判成「工具写错了」。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `下面是一个 stdio 版 MCP Server 的工具实现（节选）。请审查它在 MCP 通信上的问题，并给出正确写法。<pre><code>@mcp.tool()
+def get_time(timezone: str) -&gt; str:
+    print(f"calling get_time with {timezone}")   # 调试日志
+    return datetime.now(ZoneInfo(timezone)).isoformat()</code></pre>`,
+              source: `来源：MCP 官方规范 Transports / stdio（"The server <strong>MUST NOT</strong> write anything to its <code>stdout</code> that is not a valid MCP message."；"The server <strong>MAY</strong> write UTF-8 strings to its standard error (<code>stderr</code>) for logging purposes."）https://modelcontextprotocol.io/specification/2025-06-18/basic/transports + 官方 Debugging（"Local MCP servers should not log messages to stdout (standard out), as this will interfere with protocol operation."）https://modelcontextprotocol.io/docs/2026-07-28/tools/debugging · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `问题出在那行 <code>print</code>。stdio 传输下 Client 与 Server 共用一对管道：<code>stdin</code> 只进合法 MCP 消息，<code>stdout</code> 只出合法 MCP 消息，<strong>stdout 是协议专用信道</strong>。而 <code>print</code> 默认写 stdout——这行纯文本会插进消息流，既不是合法 JSON-RPC，又可能和上一条消息黏在同一行，Client 解析失败。典型症状是「函数单测完全正常，一挂到 Client 就连不上 / initialize 超时」，原因离现象很远。<br>正确写法：日志写 <code>stderr</code>（官方明确说 Server MAY 往 stderr 写 UTF-8 字符串做日志，Client 可以捕获、转发或忽略）；Python 里用 <code>logging</code> 并配置到 <code>sys.stderr</code>，或直接 <code>print(..., file=sys.stderr)</code>。<br>排查口径：凡是 stdio Server 「连不上 / 初始化失败」而函数本身没毛病，第一步就 grep 代码里的 <code>print</code> 以及任何第三方库往 stdout 的输出——这与「日志级别」无关，是信道纪律问题。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `你要为团队的工具平台做选型：A 方案是把现有 CLI 工具包一层 stdio MCP Server，随 Agent 进程在本地启动；B 方案是把同一批工具做成 Streamable HTTP MCP Server 部署到内网，供多个 Agent 与同事共用。请给出选型判据，并列出 B 方案上线前必须补齐的安全措施。`,
+              source: `来源：MCP 官方规范 Transports（"Clients <strong>SHOULD</strong> support stdio whenever possible."；"In the Streamable HTTP transport, the server operates as an independent process that can handle multiple client connections."；"Servers <strong>MUST</strong> validate the <code>Origin</code> header on all incoming connections to prevent DNS rebinding attacks"；"When running locally, servers <strong>SHOULD</strong> bind only to localhost (127.0.0.1) rather than all network interfaces (0.0.0.0)"）https://modelcontextprotocol.io/specification/2025-06-18/basic/transports · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `<strong>判据一：谁在用、几个客户端。</strong>stdio 是「Client 启动 Server 子进程」——一对一，生命周期跟着 Agent 走，天然隔离；Streamable HTTP 下 Server 是独立进程、<strong>可处理多个客户端连接</strong>，适合团队共享与集中升级。<br><strong>判据二：数据边界。</strong>工具要读本机文件、用本机凭据，就留在 stdio，别把文件系统搬到网络上；要接内网数据库、共享服务，HTTP 才合理。<br><strong>判据三：运维成本。</strong>stdio 零部署，但每台机器都要有运行环境（<code>uvx</code> / <code>npx</code>）；HTTP 要自己处理认证、限流、可观测性与版本灰度。<br><strong>B 方案上线前的安全底线</strong>（官方 Security Warning 逐条对应）：必须校验 <code>Origin</code> 头以防止 DNS rebinding——否则远端网页可以借浏览器去操作你内网的本地 Server；仅本地运行时<strong>只绑 <code>127.0.0.1</code></strong>，不要绑 <code>0.0.0.0</code>；为所有连接实现正经认证（对应规范的 Authorization 一节）。再补一条兼容性实践：Client 发 POST 时<strong>必须</strong>带 <code>Accept</code>，同时列 <code>application/json</code> 与 <code>text/event-stream</code>，否则合规的服务端可能直接拒绝——这是 HTTP 传输最容易踩的坑。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 inspector 充当 MCP Client，连上一个真实的 MCP Server 并跑通一次工具调用，任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: `用 <code>uvx mcp-server-time</code> 拉起官方 time 测试服务器，用 <code>npx -y @modelcontextprotocol/inspector@1.0.0</code>（官方当前文档口径：<code>npx @modelcontextprotocol/inspector</code>）作为 Client 连上去：完成 initialize → 看 tools/list 返回的工具与参数 Schema → 用 tools/call 查一次指定时区的时间 → 在通信面板里逐条对照三条消息。`,
+                accept: [
+                  '能看到 <code>initialize</code> 的一对请求与响应，且响应里 Server 声明了 <code>tools</code> 能力',
+                  '<code>tools/list</code> 返回至少一个时间相关工具，参数 Schema 里有 <code>timezone</code> 字段',
+                  '<code>tools/call</code> 的 <code>params</code> 里带工具名与 <code>arguments</code>，返回内容是 text 类型的时间字符串',
+                  '能指出三条消息分别属于 <code>initialize</code> / <code>tools/list</code> / <code>tools/call</code>，并说清请求与响应是靠 <code>id</code> 配对的',
+                ],
+              },
+              source: `任务基于《24.MCP协议》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：<strong>①</strong> 先确认 Node 与 <code>npx</code> 可用——inspector 走 <code>npx</code>，官方要求 Node 22.19.0 或更新；<strong>②</strong> 把「传输方式 + Server 启动命令」一起交给 inspector，本地 time 服务器就是 <code>uvx mcp-server-time</code>（更稳的做法是先在终端单跑一次这个命令，确认它能启动、不报缺依赖）；<strong>③</strong> 连上后先看 <code>initialize</code> 的请求/响应——这一步确认协议版本与能力协商成功，<code>tools</code> 能力在列才继续；<strong>④</strong> 点 <code>tools/list</code>，核对工具名与 <code>timezone</code> 参数；<strong>⑤</strong> 再 <code>tools/call</code>，<code>params</code> 按 Schema 填工具名与 <code>arguments</code>；<strong>⑥</strong> 回到通信面板，把「哪条是请求、哪条是响应、<code>id</code> 怎么配对」逐条说清楚。<br>常见坑：把 Server 打到 <code>stderr</code> 的日志当成协议错误（stderr 本来就是允许的日志通道）；Server 启动命令写错导致连不上，却去怀疑协议版本——官方调试指引的第一条就是「Inspector 应该是你的第一站」。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://modelcontextprotocol.io/docs/getting-started/intro">MCP 官方文档 What is MCP?</a>（设计与定位）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic">Base Protocol</a>（JSON-RPC 2.0 消息与 <code>id</code> 约束）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports">Transports</a>（stdio 与 Streamable HTTP）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle">Lifecycle</a>（能力协商三步）</li>
+        <li><strong>动手自检</strong>：启动 <code>npx -y @modelcontextprotocol/inspector@1.0.0</code>，连 <code>uvx mcp-server-time</code> 与 <code>https://learn.microsoft.com/api/mcp</code>，各跑一遍 <code>tools/list</code> 与 <code>tools/call</code>，把三条消息抄在纸上——通信内容记不牢，多半是没亲眼看过。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/MCP协议速查表.html">MCP协议速查表</a>——三要素、生命周期三步、stdio 与 HTTP 对照、必备命令一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/MCP协议">24.MCP协议</a> · 下一课 <a href="/agents/Agents底层逻辑/MCP-Client">25.MCP Client</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

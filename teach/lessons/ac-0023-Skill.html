@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Skill：把可复用能力封装成技能包，SKILL.md 结构与渐进式披露加载，以及技能安装的权限与信任边界——互动教学课程">
+  <title>Skill · 互动教学课程（Agents底层逻辑 ac-23）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Skill</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Skill">23.Skill</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 Skill 要解决的问题——为什么把大段场景化提示词全部塞进系统提示词会导致「严重的提示词膨胀」</li>
+        <li>复述 <code>SKILL.md</code> 的结构（YAML frontmatter + Markdown 正文）与两级加载：清单常驻、正文按需</li>
+        <li>读懂本章工程链路：<code>use_skill</code> 工具、<code>prompt.py</code> 的 <code>list_skills()</code>、<code>system.j2</code> 的技能清单循环、<code>skills-lock.json</code></li>
+        <li>判断技能加载里的典型故障——手工切分 frontmatter、技能名对不上、第三方 Skill 的信任边界</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「为什么需要 Skill、Skill 长什么样、本章怎么把它接进 Agent」这条线过一遍——细节都在《23.Skill》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>动机：提示词膨胀</h3>
+        <ul class="pitfall-list">
+          <li><strong>两个典型场景</strong>：SaaS 系统里用户「有时候」要销售数据分析，得告诉模型数据从哪来、字段什么含义、有哪些常见分析方式、结果怎么展现；智能客服系统里用户「经常」问产品，得告诉模型产品清单、参数、用法、价格、活动、购买链接、建议组合……</li>
+          <li><strong>直接后果</strong>：如果在系统提示词中完整地塞入这些内容，会导致<strong>严重的提示词膨胀</strong></li>
+          <li><strong>关键观察</strong>：像这些提示词<strong>只有在某些场景下才会触发</strong>——「有时候」要数据分析、「经常」问产品，都不是每一轮都需要</li>
+          <li><strong>结论</strong>：用更优雅的方式完成提示词的注入。课件给的定义是——Skill 是一套<strong>可插拔的专业提示词模块</strong>，每个 Skill 对应一个特定场景（如处理越权提问、数据分析、客服应答等），只有当用户问题匹配该场景时，Skill 的内容才会被注入上下文，<strong>这种按需加载的机制避免了系统提示词的无限膨胀</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>SKILL.md 的结构：清单常驻，正文按需</h3>
+        <ul class="pitfall-list">
+          <li><strong>落盘位置</strong>：<code>agent/.agents/skills/&lt;技能名&gt;/SKILL.md</code>；本章有两个——自写的 <code>no-permission</code>（description：「当用户和你和开发无关的问题时，使用此技能」，正文是统一回复话术）与安装来的 <code>frontend-design</code></li>
+          <li><strong>文件结构</strong>：文件开头是一段被 <code>---</code> 包住的 YAML frontmatter（本章用到 <code>name</code>、<code>description</code>），紧跟 Markdown 正文</li>
+          <li><strong>清单进系统提示词</strong>：<code>system.j2</code> 的「## 当前可用的 Skill」小节只渲染 <code>- **{{ skill_name }}**: {{ skill_meta.description }}</code>——模型第一眼看到的是「技能名 + 一句话说明」，而不是全文</li>
+          <li><strong>正文按需加载</strong>：模型判断用户问题属于某个 Skill 描述的场景时，调用 <code>use_skill</code> 工具，加载后该 Skill 的完整指令<strong>追加到当前上下文</strong>，模型需严格遵守其中的要求</li>
+          <li><strong>一句话记忆</strong>：<strong>description 决定「什么时候想起来」，正文决定「想起来之后怎么做」</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>本章工程链路（新增 2 个文件、修改 3 个文件）</h3>
+        <ul class="pitfall-list">
+          <li><strong>新增 <code>agent/tool/use_skill.py</code></strong>：<code>SKILL_BASE_DIR = Path(__file__).parent.parent / ".agents" / "skills"</code>；<code>parse_skill_file</code> 拼出 <code>SKILL_BASE_DIR / skill_name / "SKILL.md"</code>，不存在就 <code>raise FileNotFoundError(f"未找到 Skill: {skill_name}")</code>；再把内容按 <code>"---"</code> 切分、<code>yaml.safe_load(parts[1])</code> 取 meta，最终 <code>json.dumps</code> 出 <code>{meta, content, path}</code></li>
+          <li><strong>修改 <code>agent/prompt.py</code></strong>：新增 <code>list_skills()</code>——遍历 <code>SKILL_BASE_DIR</code> 下的每个目录，读到 <code>SKILL.md</code> 就把 <code>{技能目录名: meta}</code> 收集起来；<code>render_prompt</code> 把它作为 <code>skills</code> 变量传给模板</li>
+          <li><strong>修改 <code>agent/prompt/system.j2</code></strong>：用两层循环渲染清单——外层 <code>{% for skill_item in skills %}</code>，内层 <code>{% for skill_name, skill_meta in skill_item.items() %}</code>，所以模板层要配合 <code>list_skills()</code> 的「单键字典列表」形态</li>
+          <li><strong>修改 <code>agent/tool/__init__.py</code></strong>：<code>registry.register(use_skill)</code>——技能工具和 read_file / write_file / bash_command / web_search / fetch_url 一样，注册后由 registry 统一导出 schema、解析模型返回的 <code>tool_calls</code></li>
+          <li><strong>新增 <code>agent/skills-lock.json</code></strong>：登记公共 Skill 的来源与完整性——<code>source: "anthropics/skills"</code>、<code>sourceType: "github"</code>、<code>skillPath: "skills/frontend-design/SKILL.md"</code>、<code>computedHash: "4eabc661…"</code></li>
+          <li><strong>安装公共 Skill</strong>：<code>npx skills add https://github.com/anthropics/skills --skill frontend-design</code>（需要先装 node）；公共 Skill 可查 https://www.skills.sh/</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《23.Skill》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 课件开头用「SaaS 销售数据分析」和「智能客服产品知识」两个场景引出 Skill。这两个场景共同暴露的核心问题是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型读不懂中文提示词，必须换成英文</button>
+            <button class="quiz-option">工具调用比提示词昂贵，所以应该全部改写成工具</button>
+            <button class="quiz-option">这类提示词又长、又只在某些场景下才会触发，全部塞进系统提示词会导致严重的提示词膨胀</button>
+            <button class="quiz-option">系统提示词里不能出现 Markdown 标题</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：如果在系统提示词中完整地塞入这些内容，会导致严重的提示词膨胀；而实际上，像这些提示词只有在某些场景下才会触发——因此可以用更加优雅的方式完成提示词的注入。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 本章要求编写的 <code>agent/.agents/skills/no-permission/SKILL.md</code>，文件结构是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">开头一段被 <code>---</code> 包住的 YAML frontmatter（含 name、description），紧跟 Markdown 正文</button>
+            <button class="quiz-option">一份 YAML 文件，只包含 name 与 description 两个键</button>
+            <button class="quiz-option">纯 Markdown 正文，靠文件名当技能名</button>
+            <button class="quiz-option">一个 JSON 对象，字段为 name / description / content</button>
+          </div>
+          <div class="quiz-explain" hidden>课件里的 SKILL.md 正是这个形态：<code>---</code> 之间是 <code>name</code> 与 <code>description</code>，下面跟着正文「统一回复：我是一个编程助手……」。本章 <code>use_skill.py</code> 也是按 <code>"---"</code> 切分后用 <code>yaml.safe_load(parts[1])</code> 取这份 meta，同时把整份文件内容作为 <code>content</code> 返回。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 本章 <code>agent/prompt/system.j2</code> 的「## 当前可用的 Skill」小节，往系统提示词里注入的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每个 Skill 的 computedHash，用于校验完整性</button>
+            <button class="quiz-option">每个 Skill 的 SKILL.md 全文</button>
+            <button class="quiz-option">每个已安装 Skill 的名称与 description 组成的清单——正文要等模型调用 <code>use_skill</code> 时才加载</button>
+            <button class="quiz-option">所有 Skill 目录的绝对路径列表</button>
+          </div>
+          <div class="quiz-explain" hidden>模板里只有一层列表项：<code>- **{{ skill_name }}**: {{ skill_meta.description }}</code>。课件也把机制说明白了——「只有当用户问题匹配该场景时，Skill 的内容才会被注入到你的上下文中」，所以第一眼进入系统提示词的只能是清单，正文走按需加载。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 按本章 <code>agent/tool/use_skill.py</code> 的实现，<code>use_skill("frontend-design")</code> 会去读取哪个文件？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">工程根目录下的 <code>frontend-design/SKILL.md</code></button>
+            <button class="quiz-option"><code>agent/.agents/skills/frontend-design/SKILL.md</code>——路径由 <code>Path(__file__).parent.parent / ".agents" / "skills"</code> 拼出</button>
+            <button class="quiz-option"><code>agent/skills/frontend-design.md</code></button>
+            <button class="quiz-option"><code>skills-lock.json</code> 里 <code>skillPath</code> 指向的 GitHub 远程路径</button>
+          </div>
+          <div class="quiz-explain" hidden>本章实现：<code>SKILL_BASE_DIR = Path(__file__).parent.parent / ".agents" / "skills"</code>，再拼 <code>skill_name / "SKILL.md"</code>；文件不存在就 <code>raise FileNotFoundError(f"未找到 Skill: {skill_name}")</code>。<code>__file__</code> 是 <code>agent/tool/use_skill.py</code>，<code>parent.parent</code> 即 <code>agent/</code>——所以真正读取的永远是本地技能目录。<code>skills-lock.json</code> 里的 <code>skillPath</code> 只是「这份技能当初从哪来」的登记，不是运行时读取路径。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. <code>list_skills()</code> 的返回值形如 <code>[{"no-permission": {…}}, {"frontend-design": {…}}]</code>。system.j2 为什么必须写成两层 <code>for</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两层循环是为了顺便遍历 SKILL.md 正文的每个段落</button>
+            <button class="quiz-option">因为 Jinja2 不支持字典，必须先用 Python 把它转成列表</button>
+            <button class="quiz-option">外层遍历列表，内层用 <code>skill_item.items()</code> 取出「技能名 → 元信息」这一对</button>
+            <button class="quiz-option">因为一个 Skill 目录下可能有多个 SKILL.md，得按文件数循环</button>
+          </div>
+          <div class="quiz-explain" hidden><code>prompt.py</code> 里是 <code>skills.append({skill_dir.name: meta})</code>——列表的每个元素都是一个「单键字典」。要在模板里拿到技能名与 description，就必须先迭代这个字典的 <code>items()</code>，所以 <code>system.j2</code> 写成 <code>{% for skill_item in skills %}</code> 里再套 <code>{% for skill_name, skill_meta in skill_item.items() %}</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 把 <code>no-permission</code> 的 description 从「当用户和你和开发无关的问题时，使用此技能」改成「用于所有问题」。按本章机制推演，最可能的后果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">没有任何影响——description 只是给人看的注释</button>
+            <button class="quiz-option"><code>use_skill</code> 会因为描述过长而拒绝加载</button>
+            <button class="quiz-option">程序会直接抛 YAML 解析错误</button>
+            <button class="quiz-option">这个 Skill 会在几乎每类问题上都被判定为相关并加载，正文里的「统一回复」会把大量正常开发问题一起拦掉</button>
+          </div>
+          <div class="quiz-explain" hidden>进入系统提示词的只有「技能名 + description」，模型就是靠这份清单判断该不该加载——description 等于触发条件。课件里的测试用例 <code>agent.invoke("最近天气如何？")</code> 正是靠「和开发无关的问题」这句话命中 no-permission；把条件改成「所有问题」，拦截范围就从越权提问扩到全部开发问题。这也解释了为什么说写 Skill 时最该打磨的就是 name 与 description。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 同事写了个技能元信息解析器：<code>parts = content.split("---")</code>，<code>meta = yaml.safe_load(parts[1]) if len(parts) &gt;= 3 else {}</code>。以下哪种情况会让它<strong>静默</strong>给出错误结果（不报错、但元信息丢了）？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">description 里写了中文，<code>split</code> 会抛异常</button>
+            <button class="quiz-option">用了 <code>yaml.safe_load</code> 而不是 <code>yaml.load</code>，导致元信息被丢弃</button>
+            <button class="quiz-option">文件没有 frontmatter（或开头多了空行 / BOM）时 <code>len(parts) &gt;= 3</code> 不成立，meta 直接变成 <code>{}</code>，技能名与 description 静默消失</button>
+            <button class="quiz-option">SKILL.md 正文里出现 Markdown 水平线 <code>---</code> 时，meta 一定解析失败</button>
+          </div>
+          <div class="quiz-explain" hidden>规范要求的形态是「文件<strong>以</strong> YAML frontmatter 开头」，而这段代码判断的是「按 <code>---</code> 切出来至少三段」——两者并不等价：缺 frontmatter 时它不报错，只把 meta 悄悄变成 <code>{}</code>，于是 system.j2 的技能清单里少了一条触发线索。反过来，正文里出现 <code>---</code> 只会多切出几段，<code>parts[1]</code> 仍是 frontmatter，所以那条「一定解析失败」不成立（真正会截断 frontmatter 的是 <code>---</code> 出现在 frontmatter 内部）。而 <code>yaml.safe_load</code> 恰恰是更安全的选择——官方警告 <code>yaml.load</code> 与 <code>pickle.load</code> 一样能调用任意 Python 函数，不该用于任何外部数据，而第三方 SKILL.md 正是外部数据。更稳的写法：断言文件以 <code>---</code> 开头、用 <code>split("---", 2)</code> 限定切分次数或换成熟的 frontmatter 解析器，并对必需字段做非空校验。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 团队给 Agent 装了 5 个技能，每个 SKILL.md 正文约 3000 字。为保证「模型一定遵守」，他们把 5 份正文全部拼进 system.j2。相比本章的按需加载，代价最准确的描述是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只会多占磁盘空间，与上下文无关</button>
+            <button class="quiz-option">会导致 <code>use_skill</code> 无法注册进 registry</button>
+            <button class="quiz-option">每轮请求都被这 15000 字占满，且与当前任务无关的指令会互相干扰；而按需加载只在命中场景时读入对应正文——「技能名 + description」这一级已经足够让模型决定要不要加载</button>
+            <button class="quiz-option">完全等价，只是启动时慢一点</button>
+          </div>
+          <div class="quiz-explain" hidden>课件对按需加载的定位很明确：「这种按需加载的机制避免了系统提示词的无限膨胀」。官方把渐进式披露拆成三级——启动时只预载每个 Skill 的 name 与 description（第一级），SKILL.md 正文在判定相关时读入（第二级），技能目录里被正文引用的附加文件再按需读取（第三级）；并指出带文件系统的 Agent「不必把整个技能读进上下文窗口」，因此可打包的上下文「effectively unbounded」。全部预载等于把第二、三级常驻化：既让每一轮都背上无关指令，也把这份「可插拔模块」重新变成膨胀的系统提示词。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 用 <code>npx skills add https://github.com/anthropics/skills --skill frontend-design</code> 装好技能后，工程里多了 <code>agent/skills-lock.json</code>，其中记着 <code>source</code>、<code>skillPath</code> 与 <code>computedHash</code>。关于这道「权限与信任边界」，说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">公共 Skill 都经过平台审核，不存在信任问题</button>
+            <button class="quiz-option">只要 computedHash 校验通过，就可以放心让技能读取任何密钥</button>
+            <button class="quiz-option">锁文件只能证明「这份技能与你锁定的来源版本一致」，不能证明它无害；只应从可信来源安装，来源不够可信时先审计文件内容与脚本依赖，并警惕让模型访问不可信外部网络的指令</button>
+            <button class="quiz-option">锁文件会自动拦下技能里的一切危险指令，因此无需人工审计</button>
+          </div>
+          <div class="quiz-explain" hidden>课件把 Skill 定义为「可插拔的专业提示词模块」——插进来的正文会逐字进入模型上下文，它和代码一样有权限面。官方在安全一节说得很直接：恶意 skill 可能在使用它的环境里引入漏洞，或指使模型外泄数据、执行意外操作；建议只从可信来源安装，来源不够可信时先彻底审计，「特别注意代码依赖以及图片、脚本这类捆绑资源」，并留意技能里那些让模型连接不可信外部网络源的指令。skills-lock.json 的 computedHash 解决的是「装的是不是同一个版本」（可复现、可追溯、可对账），并不回答「这个版本是否安全」。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0023-Skill',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事为了让技能「一定生效」，把每个 SKILL.md 的正文全部拼进 system.j2 的「当前可用的 Skill」小节，同时把 frontmatter 里的 description 写成了空字符串。上线后 frontend-design 从不触发，越权提问也照样被正常回答。按官方对 SKILL.md 与渐进式披露的定义，这两处分别错在哪？`,
+              source: `来源：Anthropic 工程博客《Equipping agents for the real world with Agent Skills》（"This file must start with YAML frontmatter that contains some required metadata: name and description. At startup, the agent pre-loads the name and description of every installed skill into its system prompt."；"This metadata is the first level of progressive disclosure: it provides just enough information for Claude to know when each skill should be used without loading all of it into context."）https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills + Agent Skills 规范（description 字段："Max 1024 characters. Non-empty. Describes what the skill does and when to use it."）https://agentskills.io/specification · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `两处错在同一个机制的两端。<strong>① description 是触发开关。</strong>官方把 <code>name</code> 与 <code>description</code> 定为必需元数据，并明确启动时「每个已安装技能的 name 与 description 会被预载进系统提示词」；规范对 description 的定义是「说明这个技能做什么、什么时候用它」。写成空串等于删掉模型唯一的判断线索——技能躺在目录里，模型永远想不起来调用它。本章 <code>no-permission</code> 的 description「当用户和你和开发无关的问题时，使用此技能」就是正面样板：它同时说清了「做什么」和「何时用」。<strong>② 正文属于第二级披露，不该常驻。</strong>官方原话是：元数据是渐进式披露的第一级，「刚好够 Claude 判断每个技能何时该用，而不必把整个技能加载进上下文」；正文是第二级，「如果 Claude 认为技能与当前任务相关，它会通过读取完整 SKILL.md 把技能载入上下文」。全部预载等于把第二级常驻化——课件讲的提示词膨胀原样复现，还额外引入了互相干扰的指令。正确链路就是本章这套：<code>prompt.py</code> 的 <code>list_skills()</code> 只把「技能名 + description」交给 <code>system.j2</code>，正文留给 <code>use_skill</code> 按需返回（官方第三级是技能目录里被 SKILL.md 引用的附加文件）。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `把本章的技能加载链路按「谁在哪一级看到什么」讲清楚：起点是 agent/.agents/skills 目录，中间经过 prompt.py 与 system.j2，终点是 use_skill 工具。为什么模型第一次回答时看不到 SKILL.md 的正文？`,
+              source: `来源：Anthropic 工程博客《Equipping agents for the real world with Agent Skills》（"At its simplest, a skill is a directory that contains a SKILL.md file."；"The actual body of this file is the second level of detail. If Claude thinks the skill is relevant to the current task, it will load the skill by reading its full SKILL.md into context."；"These additional linked files are the third level (and beyond) of detail, which Claude can choose to navigate and discover only as needed."）https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《23.Skill》课件（list_skills / use_skill / system.j2）`,
+              breakdown: `链路四步。<strong>① 目录就是技能（第一级）</strong>：官方定义「一个技能就是一个包含 SKILL.md 的目录」；本章把技能放在 <code>agent/.agents/skills/&lt;技能名&gt;/SKILL.md</code>。<strong>② 服务器侧收集清单</strong>：<code>prompt.py</code> 的 <code>list_skills()</code> 遍历技能目录，读到 SKILL.md 就用 <code>yaml.safe_load(parts[1])</code> 取 frontmatter，收集成 <code>{技能目录名: meta}</code>，随 <code>render_prompt</code> 传给模板。<strong>③ 清单进系统提示词</strong>：<code>system.j2</code> 只用两层 for 渲染出「技能名 + description」，再加一段使用说明——「当用户的问题属于某个 Skill 所描述的场景时，你可以使用 use_skill 工具加载对应的 Skill」。这就是模型第一眼能看到的全部。<strong>④ 正文按需加载（第二级）</strong>：模型决定要用时调用 <code>use_skill(skill_name=…)</code>，工具把整份 SKILL.md 读出来、作为工具结果追加进上下文，模型再「严格遵守其中的要求来执行任务」。<strong>为什么第一次看不到正文</strong>：因为系统提示词这一层是「全局、常驻、每轮都在」的位置，正文只在特定场景才需要——把两类内容分开，才有课件说的「避免了系统提示词的无限膨胀」。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `技能正文最终是靠一次工具调用加载进来的。请说明这条链路上「技能名」为什么是硬约束，以及 use_skill 的返回结果里为什么同时给 meta、content 和 path 三样东西。`,
+              source: `来源：Agent Skills 规范（"A skill is a directory containing, at minimum, a SKILL.md file"；name 字段约束 "Max 64 characters. Lowercase letters, numbers, and hyphens only."；allowed-tools 字段 "Space-separated string of pre-approved tools the skill may use."）https://agentskills.io/specification · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《23.Skill》课件（agent/tool/use_skill.py）`,
+              breakdown: `<strong>技能名是唯一路由键。</strong>本章实现是 <code>SKILL_BASE_DIR / skill_name / "SKILL.md"</code>，路径完全由这个名字拼出来；模型从清单里看到的名字与磁盘上的目录名一旦不一致，就直接撞上 <code>raise FileNotFoundError(f"未找到 Skill: {skill_name}")</code>——而这段实现没有兜底，工具异常会一路冒到调用方。官方规范把这条约束写进了格式本身：技能名是必需字段、限 64 字符、只能用「小写字母、数字、连字符」，并给出 <code>skill-name/SKILL.md</code> 的目录结构——名字既是元数据也是路径，二者必须严格对应。<strong>三样返回值各有用途。</strong><code>content</code> 是给模型的完整指令（严格来说包含 frontmatter 与正文，模型读到的是原文）；<code>meta</code> 是给程序/模型继续决策的结构化字段——规范里 <code>license</code>、<code>compatibility</code>、<code>allowed-tools</code>、<code>metadata</code> 都属于这一层，能支持权限检查、环境校验之类的后续动作；<code>path</code> 是技能在磁盘上的坐标，让模型或代码能顺着它找到技能目录里的其它文件——这正是官方说的第三级披露：脚本、参考文档、模板，只在需要时按名引用、按需读取。也正因为它把整份文件（而不是只把正文）交出去，frontmatter 里的元信息才不会在加载瞬间丢掉。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查本章 agent/tool/use_skill.py 的实现：<code>parts = markdown_content.split("---")</code>，<code>meta = yaml.safe_load(parts[1]) if len(parts) &gt;= 3 else {}</code>，读不到文件时 <code>raise FileNotFoundError(f"未找到 Skill: {skill_name}")</code>。请指出会在生产里翻车的点，并给出修法。`,
+              source: `来源：Agent Skills 规范（"The SKILL.md file must contain YAML frontmatter followed by Markdown content."；name 与 description 为必需字段）https://agentskills.io/specification + PyYAML 官方文档（"Documents are separated with ---."；"safe_load(stream) parses the given stream and returns a Python object constructed from for the first document in the stream."；"Warning: It is not safe to call yaml.load with any data received from an untrusted source!"）https://pyyaml.org/wiki/PyYAMLDocumentation · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《23.Skill》课件（use_skill 工具实现）`,
+              breakdown: `<strong>① 手工按 "---" 切分 frontmatter 是脆弱解析。</strong>规范只保证文件「必须以 YAML frontmatter 开头、后接 Markdown 正文」，而这段代码判断的是「切出来至少三段」——两者不等价：没有 frontmatter、或开头多出空行 / BOM 时，<code>len(parts) &gt;= 3</code> 不成立，<code>meta</code> 静默变成 <code>{}</code>，技能清单里就少一条触发线索（和技能根本没装进来效果一样）。另外 YAML 官方语义里 <code>---</code> 是「文档分隔符」（PyYAML 原文：Documents are separated with ---），所以这个字符串在 frontmatter 内部出现时会把 <code>parts[1]</code> 截成半个 YAML；正文里出现则只是多切几段。修法：先断言 <code>content.startswith("---")</code>，用 <code>split("---", 2)</code> 限定切分次数，或直接用成熟的 frontmatter 解析器；再对规范里的必需字段 <code>name</code> / <code>description</code> 做非空断言。顺带一提，这里选 <code>yaml.safe_load</code> 是对的——官方明确警告 <code>yaml.load</code>「和 pickle.load 一样强大，可能调用任意 Python 函数」，第三方 SKILL.md 属于外部数据，绝不能用它。<strong>② 错误处理缺失，工具失败会炸掉整轮。</strong><code>parse_skill_file</code> 的 <code>FileNotFoundError</code> 会直接穿过 tool 调用（本章 <code>registry.invoke</code> 既没有兜住 <code>self._tools[name]</code> 的 <code>KeyError</code>，也没用 try/except 包住 <code>tool(**args)</code>）——模型只是把技能名写错一个字符，整轮请求就中断了。<strong>工具调用的正确姿态是把失败当成可读的工具结果返回给模型</strong>：例如回一段「未找到 Skill: xxx，当前可用：no-permission, frontend-design」，让模型自我纠正；如果模型反复传错名，再在提示词里强调清单中的名字必须逐字使用。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `设计一套「团队级 Skill 资产与权限方案」：技能从哪来、能用哪些工具、版本与完整性怎么管、上线后怎么审计。请说明每一环用什么机制落地，并区分哪一环靠技术强制、哪一环只能靠流程。`,
+              source: `来源：Anthropic 工程博客《Equipping agents for the real world with Agent Skills》（"malicious skills may introduce vulnerabilities in the environment where they are used or direct Claude to exfiltrate data and take unintended actions."；"We recommend installing skills only from trusted sources. When installing a skill from a less-trusted source, thoroughly audit it before use."；"paying particular attention to code dependencies and bundled resources like images or scripts"）https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills + Agent Skills 规范（allowed-tools："Space-separated string of pre-approved tools the skill may use. (Experimental)"；license / compatibility / metadata 字段）https://agentskills.io/specification · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `分四环，前两环能强制、后两环主要是流程。<strong>① 来源与准入（流程 + 文件可追溯）。</strong>官方建议只从可信来源安装技能，来源不够可信就先彻底审计，且审计重点明确：代码依赖、图片/脚本这类捆绑资源、以及技能里让模型连接不可信外部网络的指令。落到工程里就是本章的 <code>skills-lock.json</code>：<code>source</code> / <code>sourceType</code> / <code>skillPath</code> / <code>computedHash</code> 把「这份技能来自哪个仓库的哪条路径、内容哈希是多少」钉死，进 git 后任何变更都在 code review 里现形。技术能管的是「可复现、可对账」，管不了「这个来源是否可信」——所以准入必须配人工审计与白名单仓库，并像课件第 32 章讲的最小权限原则那样，只放行完成当前任务所需的资源。注意 <code>computedHash</code> 常被误解：它保证一致性，不保证安全性。<strong>② 工具预授权（可技术强制）。</strong>规范里的 <code>allowed-tools</code> 字段是「该技能可以使用的、预先批准的工具，空格分隔的字符串」，另有 <code>compatibility</code> 声明环境要求、<code>license</code> 声明许可。设计上应遵循最小权限：技能只声明它真正需要的工具，宿主侧在执行前做一次白名单校验，而不是让技能正文「说服」模型去用某个高危工具——正文是提示、权限是闸门，二者不能混同。教学上可以把它类比成给新人的门禁卡：说明书里写了什么，不等于他有权刷哪扇门。<strong>③ 版本与完整性（技术 + 流程）。</strong>锁文件固定哈希、技能目录进版本库、升级走 PR；对外部技能做「先审计后升级」，禁止静默更新。<strong>④ 运行期审计与熔断（技术）。</strong>技能加载要留痕——记录「哪个技能在哪个会话被加载、之后调用了哪些工具、访问了哪些路径/网络」，让事后追溯与事前熔断（异常工具序列直接掐断）都成为可能；同时给技能加载加超时与失败降级，别让一个坏技能把整轮对话拖死。最后一条经验：把技能当依赖而不是当文案——它会逐字进入模型上下文，因此天然带着权限面。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `任务卡：用 AI 助手在 25 分钟内给 agent 工程接入技能包，并跑通「越权提问被拦下」与「frontend-design 生成页面」两条路径。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '新建 agent/.agents/skills/no-permission/SKILL.md（frontmatter 写清 name 与 description，正文给统一回复话术）→ 确认 prompt.py 的 list_skills() 能扫到它、system.j2 的技能清单里出现技能名与 description → agent.invoke("最近天气如何？") 验证按需加载生效 → 用 npx skills add https://github.com/anthropics/skills --skill frontend-design 安装公共 Skill（需先装 node），检查 skills-lock.json 落盘 → agent.invoke("帮我在 ./demo 中创建一个 html 页面，创建一个漂亮的分页表格，请使用 frontend-design skill")，最后 agent.session.save()。',
+                accept: ['agent/.agents/skills/no-permission/SKILL.md 有合法 YAML frontmatter（name、description 非空）', '渲染后的系统提示词里出现该技能的「技能名 + description」，但没有它的正文', '「最近天气如何？」被 no-permission 接管，回复落在统一话术上', 'skills-lock.json 记录了 frontend-design 的 source / skillPath / computedHash', './demo 下生成了分页表格 HTML，且能打开正常显示'],
+              },
+              source: `任务基于《23.Skill》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路照本章链路走。<strong>① 写技能</strong>：<code>---</code> 之间写 <code>name: no-permission</code> 与 <code>description: 当用户和你和开发无关的问题时，使用此技能</code>，正文是课件那句统一回复。description 要写得像触发条件——它是模型唯一的判断依据。<strong>② 接进系统提示词</strong>：<code>prompt.py</code> 用 <code>list_skills()</code> 遍历技能目录、解析 frontmatter，模板 <code>system.j2</code> 的两层 for 就会把它渲染成一行清单。验收时注意看：清单里只有名字与描述，正文不在里面。<strong>③ 验证触发</strong>：<code>agent.invoke("最近天气如何？")</code>——课件正是用这个问题测 no-permission；如果技能没被调用，先查 description 是否写成了空或过于含糊。<strong>④ 装公共技能</strong>：先装 node，再 <code>npx skills add https://github.com/anthropics/skills --skill frontend-design</code>，装完检查 <code>agent/skills-lock.json</code> 是否记下了 source 与 computedHash。<strong>⑤ 跑真实任务</strong>：让 Agent 用 frontend-design 在 <code>./demo</code> 里生成分页表格页面，最后 <code>agent.session.save()</code> 存档。<strong>常见坑</strong>：技能目录层级写错（少了 <code>.agents</code> 或 <code>skills</code>）导致 FileNotFoundError；frontmatter 的 <code>---</code> 被删掉或用了中文全角破折号，<code>parts[1]</code> 取不到、meta 静默为空；技能名与目录名不一致；把正文直接抄进 system.j2，等于把这一章的收益全部还回去。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills">Anthropic《Equipping agents for the real world with Agent Skills》</a> · <a href="https://agentskills.io/specification">Agent Skills 规范（SKILL.md 格式、allowed-tools、渐进式披露）</a> · <a href="https://pyyaml.org/wiki/PyYAMLDocumentation">PyYAML 官方文档（safe_load / 文档分隔符 ---）</a> · <a href="https://www.skills.sh/">skills.sh 公共技能检索</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Skill速查表.html">Skill速查表</a>——SKILL.md 格式、渐进式披露两级、本章工程链路与信任边界一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Skill">23.Skill</a> · 下一课 <a href="/agents/Agents底层逻辑/MCP协议">24.MCP协议</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

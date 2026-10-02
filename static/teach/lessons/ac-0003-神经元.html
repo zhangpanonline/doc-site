@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 神经元：神经元的数学模型、权重与偏置、激活函数与参数——互动教学课程">
+  <title>神经元 · 互动教学课程（Agents底层逻辑 ac-03）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>神经元</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/神经元">03.神经元</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>写出单个神经元的数学模型 $y = \sigma(\sum_{i=1}^n w_i x_i + b)$，说清输入值、输出值、权重、偏置各是什么</li>
+        <li>解释「参数」为什么只是权重和偏置的统称，激活函数为什么不算参数</li>
+        <li>说明偏置如何改变被激活的阈值，以及 ReLU 这个经典激活函数在做什么</li>
+        <li>复述 1943 年 McCulloch–Pitts 模型的历史定位，以及本章总结的三条核心结论</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>神经网络是目前机器学习领域最常见、最重要的实现智能的手段，而学习神经网络，一切要从神经元开始。先用几分钟把本章的骨架过一遍——细节都在《03.神经元》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>神经元的数学模型</h3>
+        <ul class="pitfall-list">
+          <li><strong>起点</strong>：1943 年，Warren McCulloch（神经科学家）与 Walter Pitts（逻辑学家）为神经元建立了数学模型；经过几十年发展，今天每个神经元的数学模型是 $y = \sigma(\sum_{i=1}^n w_i x_i + b) = \sigma(w_1 x_1 + w_2 x_2 + ... + w_n x_n + b)$</li>
+          <li><strong>输入值</strong>：$[x_1, x_2, ... x_n]$——输入值中的每一个分量表示某一个维度的信息</li>
+          <li><strong>输出值 / 激活值</strong>：一个标量——单个神经元接受一个向量、输出一个标量</li>
+          <li>公式是<strong>逐分量配对</strong>的：$w_i$ 只和第 $i$ 个输入分量 $x_i$ 相乘；求和的顺序不影响结果，但权重与维度的对应关系不能打乱</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>权重、偏置与参数</h3>
+        <ul class="pitfall-list">
+          <li><strong>权重</strong> $[w_1, w_2, ... w_n]$：每个权重表示该维度信息的重要程度（它是带符号的——负权重表示该维度与输出负相关，不是「不重要」）</li>
+          <li><strong>偏置</strong> $b$：改变被激活的阈值——加上 $b$ 之后，加权和要越过 $-b$ 这个门槛，神经元才输出有效值</li>
+          <li><strong>参数</strong>：权重和偏置的统称。参数（权重和偏置）唯一决定了该神经元的输出是否正确</li>
+          <li>易错：偏置必须加在<strong>加权和里面</strong>再送进激活函数，也就是 $\sigma(\sum w_i x_i + b)$；写成 $\sigma(\sum w_i x_i) + b$ 是另一回事（见第 9 题）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>激活函数与三条总结</h3>
+        <ul class="pitfall-list">
+          <li>$\sigma$ 是<strong>激活函数</strong>，决定了是否输出有效值；经典激活函数 $ReLU(z)=max(0, z)$</li>
+          <li><strong>激活函数是固定的</strong>——它不是参数，不参与训练；能与梯度一起被更新的只有权重和偏置</li>
+          <li>本章「总结」三条：① 单个神经元，接受一个向量，输出一个标量；② 激活函数是固定的；③ 参数（权重和偏置）唯一决定了该神经元的输出是否正确</li>
+          <li>换个说法记住分工：<strong>σ 决定「怎么判断」，参数决定「判断得对不对」</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《03.神经元》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 在公式 $y = \sigma(\sum_{i=1}^n w_i x_i + b)$ 中，$b$ 是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">输出值（激活值）</button>
+            <button class="quiz-option">激活函数</button>
+            <button class="quiz-option">偏置，用来改变被激活的阈值</button>
+            <button class="quiz-option">输入向量中的第一个分量</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「神经元」小节的定义：偏置 b 的作用是「改变被激活的阈值」。输入值是 $[x_1, ..., x_n]$，σ 是激活函数，y 是输出值/激活值。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 「单个神经元」接收什么、输出什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">接收一个标量，输出一个标量</button>
+            <button class="quiz-option">接收一个标量，输出一个向量</button>
+            <button class="quiz-option">接收一个向量，输出一个向量</button>
+            <button class="quiz-option">接收一个向量，输出一个标量</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「总结」第一条：单个神经元，接受一个向量，输出一个标量。输入 $[x_1, ..., x_n]$ 是 n 个分量，输出 y 是标量——第 8、9 题都建立在这条上。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 课件里说的「参数」指的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">权重和偏置的统称</button>
+            <button class="quiz-option">神经元的个数</button>
+            <button class="quiz-option">输入值和输出值</button>
+            <button class="quiz-option">激活函数的系数</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：参数——权重和偏置的统称。激活函数 σ 是固定的，输入与输出更不是参数。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 某神经元先用 ReLU 做激活，加权和记为 $z = \sum_{i=1}^n w_i x_i + b$。把 $b$ 从 0 调到 $-3$，同一个输入 x 的输出会怎样变化？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">不影响输出，b 只决定训练时参数更新的步长</button>
+            <button class="quiz-option">被激活的阈值降低：任何输入都会输出非零值</button>
+            <button class="quiz-option">一定变成 0，因为偏置是负数</button>
+            <button class="quiz-option">被激活的阈值提高：加权和要大于 3 才会输出非零值</button>
+          </div>
+          <div class="quiz-explain" hidden>ReLU 只在输入为正时才有非零输出（$max(0, z)$），所以输出非零的条件是 $\sum w_i x_i + b &gt; 0$，即 $\sum w_i x_i &gt; -b$——门槛是 $-b$。$b=0$ 时门槛是 0；$b=-3$ 时门槛变成 3，同一个输入更难被「激活」。这正是课件说的「偏置改变被激活的阈值」。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 同事引用「每个权重表示该维度信息的重要程度」，接着说：「所以权重为负的维度就是不重要的维度，等于被忽略了」。这个推论哪里错了？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">权重带符号：负权重表示该维度与输出负相关，绝对值大小才体现影响力；被截断的是整个加权和，不是单个维度</button>
+            <button class="quiz-option">说对了，只有正权重才代表重要</button>
+            <button class="quiz-option">权重不可能是负数</button>
+            <button class="quiz-option">权重为负时该维度会被激活函数单独清零</button>
+          </div>
+          <div class="quiz-explain" hidden>在 $z = \sum w_i x_i + b$ 里，$w_i$ 是带符号的系数：$w_i$ 为负意味着 $x_i$ 越大 z 越小，这是方向，不是「不重要」。激活函数作用在<strong>整个加权和</strong>上（ReLU 把 z 为负的样本整体压成 0），不会去单独处理某一个维度。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 一个训练好的神经元，权重 $w = [0.5, -1, 2]$ 依次对应输入维度 $[年龄, 收入, 点击次数]$。现在只把权重顺序改成 $[2, -1, 0.5]$（把「年龄」和「点击次数」的权重对调），输入不变，输出会怎样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会变：第 i 个权重专门作用于第 i 个输入分量，打乱顺序就破坏了这种逐分量对应</button>
+            <button class="quiz-option">变成 0，因为权重被打乱了</button>
+            <button class="quiz-option">不变，因为权重只表示重要程度，求和与顺序无关</button>
+            <button class="quiz-option">只有把激活函数一起换掉才会变</button>
+          </div>
+          <div class="quiz-explain" hidden>公式 $y = \sigma(\sum_{i=1}^n w_i x_i + b)$ 是逐分量配对求和：$w_i$ 只与 $x_i$ 相乘。加法本身有交换律，但「哪个权重配哪个维度」不对应，加权和就换了含义、数值也随之改变。这也是课件「参数唯一决定了该神经元的输出是否正确」的具体体现。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 某神经元 σ 取 ReLU，$w = [1, 1]$、$b = -1$。输入 $x = [0.4, 0.4]$ 与 $x = [2, 2]$ 时，输出分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">0 和 4</button>
+            <button class="quiz-option">0.8 和 4</button>
+            <button class="quiz-option">-0.2 和 3</button>
+            <button class="quiz-option">0 和 3</button>
+          </div>
+          <div class="quiz-explain" hidden>先算加权和、再加偏置、最后整体过激活函数：$x=[0.4,0.4]$ 时 $z = 0.4+0.4-1 = -0.2$，ReLU 把负值压成 0；$x=[2,2]$ 时 $z = 2+2-1 = 3$，ReLU 原样输出 3。选 0.8/4 是漏了偏置，选 -0.2 是漏了激活函数。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 一个神经元的输入 x 有 768 维，业务上只希望「年龄」这一维影响输出。应当怎么设置参数？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">年龄对应的权重取非零，其余维度的权重全部设为 0；偏置按需要的阈值设置</button>
+            <button class="quiz-option">把偏置设为 0 即可，权重的值无关紧要</button>
+            <button class="quiz-option">做不到，单个神经元一定会用到所有维度</button>
+            <button class="quiz-option">把年龄对应的权重设成 1，其余权重也都设成 1——权重只表示重要程度</button>
+          </div>
+          <div class="quiz-explain" hidden>$z = \sum w_i x_i + b$：$w_i = 0$ 意味着该维度贡献恒为 $0 \times x_i = 0$，与 $x_i$ 的取值无关，于是只有非零权重的维度真正进入加权和。剩下的由偏置决定被激活的阈值（见第 4 题）。这也说明权重不是「装饰性」的重要程度——它直接决定哪个维度参与计算。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. AI 写了一个神经元，代码是 <code>return np.maximum(0, w @ x) + b</code>（先激活再加偏置）。判断这段代码。</div>
+          <div class="quiz-options">
+            <button class="quiz-option">bug 是 w @ x 必须改成 np.dot(w, x)，两者不等价</button>
+            <button class="quiz-option">bug 是应该用 max 而不是 np.maximum</button>
+            <button class="quiz-option">bug：偏置必须先并入加权和再整体过激活函数；现在加权和为负时结果会变成 b 而不是 0</button>
+            <button class="quiz-option">没有 bug，加偏置的位置不影响结果</button>
+          </div>
+          <div class="quiz-explain" hidden>课件的公式是 $y = \sigma(\sum w_i x_i + b)$：σ 作用在「加权和 + 偏置」这个整体上。写成 $\sigma(\sum w_i x_i) + b$ 时，本该输出 0 的负样本会输出 b（偏置被放到了截断之外），神经元失去「不激活就不输出有效值」的语义。另外 <code>w @ x</code> 与 <code>np.dot(w, x)</code> 对 1-D 数组是等价的，不是 bug。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0003-神经元',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事让 AI 解释单个神经元，AI 的结论是：「激活函数 σ 也是这个神经元的参数之一，会和权重、偏置一起被训练、一起更新」。请判断这个说法，并说清这个神经元里到底哪些量是参数。`,
+              source: `来源：Keras 官方文档 Dense layer（"Dense implements the operation: output = activation(dot(input, kernel) + bias) where activation is the element-wise activation function passed as the activation argument, kernel is a weights matrix created by the layer, and bias is a bias vector created by the layer"；"activation: Activation function to use."）https://keras.io/api/layers/core_layers/dense/ · 检索 2026-10-02 · 层级：一手（官方文档）+ PyTorch 官方文档 torch.nn.Linear（"Variables: weight (torch.Tensor) – the learnable weights of the module"；"bias – the learnable bias of the module"）https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html`,
+              breakdown: `说法<strong>错了</strong>。课件定义得很直白：<strong>参数——权重和偏置的统称</strong>；σ 是激活函数，作用是「决定了是否输出有效值」，而且课件「总结」第二条明确写着<strong>激活函数是固定的</strong>。<br><br>官方框架里的写法是同一件事的两种表达：Keras 的 Dense 把 activation 作为<strong>构造时传入的 argument</strong>（超参），由 layer 真正创建出来的可训练量只有 kernel（权重矩阵）和 bias（偏置向量）；PyTorch 的 nn.Linear 在 Variables 里也只列出 weight 与 bias 两个 learnable tensor。<br><br>所以「会被训练更新」的只有 <code>w</code> 和 <code>b</code>；换激活函数是换一个<strong>固定的映射</strong>（例如 ReLU 的 <code>max(0, z)</code>），并不会多出可学的自由度。反过来说，正因为 σ 不由数据决定，换了 σ 之后同一个 <code>w</code>、<code>b</code> 给出的输出就变了——参数必须重新确定（要重训），不能只换 σ 就上线。`,
+            },
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `AI 在讲「每个权重表示该维度信息的重要程度」时补了一句：「所以权重为负的维度就是不重要的维度，等于被忽略了」。这个补充对吗？请用本章的公式说明负权重到底意味着什么。`,
+              source: `来源：PyTorch 官方文档 torch.nn.ReLU（"Applies the rectified linear unit function element-wise. ReLU(x) = (x)^+ = max(0, x)"）https://docs.pytorch.org/docs/stable/generated/torch.nn.ReLU.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《03.神经元》课件（权重表示该维度信息的重要程度；激活函数决定了是否输出有效值）`,
+              breakdown: `不对。权重是<strong>带符号</strong>的系数：在 <code>z = Σ wᵢ xᵢ + b</code> 里，<code>wᵢ</code> 为负表示该维度与输出<strong>负相关</strong>——这个分量越大，加权和反而越小；它的<strong>绝对值</strong>大小才体现这个维度的影响力，「负」是方向而不是「忽略」。<br><br>真正把东西压成 0 的是激活函数作用在<strong>整个加权和</strong>上的结果：PyTorch 官方对 ReLU 的定义是 <code>ReLU(x) = max(0, x)</code>，逐元素把负的 z 截断成 0。也就是说，一个神经元是否「输出有效值」（课件原话）取决于加权和加偏置的整体，单个维度既不会被单独忽略，也不会单独决定输出。<br><br>面试加分点：不能靠「权重正负」判断特征重要性，要做重要性分析得看量级、看激活分布，或者用专门的解释工具——一句话，权重的符号是方向，绝对值才是强度。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `课件说偏置 b 的作用是「改变被激活的阈值」。请从 <code>y = σ(Σ wᵢ xᵢ + b)</code> 出发解释这句话：以 ReLU 为例，b 取 0 和 b 取 -3 时，神经元「什么条件下才输出非零值」有什么不同？如果没有 b 会怎样？`,
+              source: `来源：PyTorch 官方文档 torch.nn.Linear（"Applies an affine linear transformation to the incoming data: y = xA^T + b"；"bias (bool) – If set to False, the layer will not learn an additive bias. Default: True"）https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《03.神经元》课件（偏置：改变被激活的阈值）`,
+              breakdown: `关键是把「激活发生与否」翻译成一个不等式。ReLU 只在输入为正时输出非零，所以这个神经元输出非零的条件是 <code>Σ wᵢ xᵢ + b &gt; 0</code>，移项得 <code>Σ wᵢ xᵢ &gt; -b</code>：<strong>门槛就是 -b</strong>。<br><br><code>b = 0</code> 时门槛是 0，加权和为正就激活；<code>b = -3</code> 时门槛抬到 3——同样的输入更难被激活，这就是「改变被激活的阈值」。<br><br>如果没有 b（等价于把 b 钉死在 0），门槛永远卡在 0 上，神经元就少了一个整体平移决策边界的自由度，表达能力受限。官方框架把这个量做成了显式开关：nn.Linear 的 <code>bias=False</code> 就是「这一层不学 additive bias」（官方原文：the layer will not learn an additive bias）。<br><br>顺带把「线性变换」这个词接上：官方把 <code>y = xA^T + b</code> 叫 affine linear transformation——仿射的意思正是「线性变换 + 平移」，那个平移项就是偏置。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 写了一个「单个神经元」的实现，运行不报错，但它的返回值和本章定义对不上。请找出根因，并说明它实际算出了什么：<pre><code>import numpy as np
+
+def neuron(x, w, b):
+    """x: (n,) 输入向量, w: (n,) 权重向量, b: 标量偏置"""
+    z = w * x + b            # 加权和
+    return np.maximum(0, z)  # ReLU
+
+w = np.array([0.5, -1.0, 2.0])
+x = np.array([1.0, 1.0, 2.0])
+b = -0.5
+print(neuron(x, w, b))</code></pre>`,
+              source: `来源：NumPy 官方文档 numpy.dot（"Dot product of two arrays. Specifically, If both a and b are 1-D arrays, it is inner product of vectors (without complex conjugation)."）https://numpy.org/doc/stable/reference/generated/numpy.dot.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《03.神经元》课件（单个神经元，接受一个向量，输出一个标量）`,
+              breakdown: `根因只有一处：<code>w * x</code> 是<strong>逐元素相乘</strong>，不是点积。NumPy 官方对两者的区分很明确——两个 1-D 数组的正确运算是 inner product of vectors（<code>np.dot(w, x)</code>，等价简写 <code>w @ x</code>），结果是一个标量；<code>*</code> 则是 element-wise 相乘。<br><br>于是 <code>z</code> 是一个形状 (3,) 的向量，<code>np.maximum(0, z)</code> 逐元素 ReLU 之后返回的还是 (3,)——这其实是「一个输入配一个输出」的逐元素门，而不是课件定义的「<strong>接受一个向量，输出一个标量</strong>」的神经元。用当前数据核对：正确写法 <code>w @ x + b = 3.0</code>，ReLU 后仍是标量 3.0；错误写法返回 <code>[0. 0. 3.5]</code>（三个分量各自算了一次）。<br><br>修法：<code>z = w @ x + b</code>，并加一行形状自检 <code>assert np.ndim(z) == 0</code>。这类 bug 的危险在于「不报错、只是形状和语义悄悄错」——一旦把它的输出当作标量去接偏置、接下一层，错误会一路传播到训练结果。`,
+            },
+            {
+              type: 'design',
+              level: '中级岗常问',
+              prompt: `要给 Agent 里的一个「关键词命中打分」单元选激活函数：输入是 n 维加权求和后的分数 z，业务上只关心「正向命中的强度」，负分一律当作 0 分。你会选什么激活函数？为什么它不需要（也不该）当成参数参与训练？`,
+              source: `来源：PyTorch 官方文档 torch.nn.ReLU（"Applies the rectified linear unit function element-wise. ReLU(x) = (x)^+ = max(0, x)"）https://docs.pytorch.org/docs/stable/generated/torch.nn.ReLU.html · 检索 2026-10-02 · 层级：一手（官方文档）+ Keras 官方文档 Dense layer（"activation: Activation function to use. If you don’t specify anything, no activation is applied"）https://keras.io/api/layers/core_layers/dense/`,
+              breakdown: `选 <strong>ReLU</strong>。官方定义是 <code>ReLU(x) = max(0, x)</code>，逐元素作用在 z 上：负分被压成 0、正分原样保留——正好是「负分一律当 0 分、只保留正向命中强度」这个业务语义的最直接实现。课件对激活函数的定位也是这个意思：它<strong>决定了是否输出有效值</strong>，ReLU 就是这条判据的极简形式。<br><br>为什么不该当参数训：Keras 的 Dense 里 activation 是构造时传入的 argument，layer 创建出的可训练量只有 kernel（权重）与 bias（偏置）；PyTorch 的 Linear 同样只把 weight/bias 列为 learnable。换激活函数是换一个固定的映射，不是增加可学的自由度——课件「总结」第二条写的就是「激活函数是固定的」。<br><br>选型时还要交代代价：ReLU 把负值全部截断，落在负区的样本梯度为 0（这是它的已知代价）；而在本章范围内，关键结论是——<strong>σ 一换，同一组权重和偏置给出的输出就变了</strong>，所以线上换激活函数必须连同参数一起重新确定，不能只改 σ。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 NumPy 手写课件定义的单个神经元并核对行为（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 15 分钟',
+                goal: '只用 numpy 实现 <code>y = σ(Σ wᵢ xᵢ + b)</code>：x 与 w 取长度相同的 1-D 数组、b 取标量；σ 分别用 ReLU 与恒等（线性）各跑一次；打印加权和 z 与两个输出，并断言输出是标量。',
+                accept: ['实现里用的是点积（np.dot 或 @），不是逐元素 *', '输出 np.ndim(y) == 0（标量），不是长度为 n 的向量', '把偏置从 0 改成 -3 后能观察到阈值移动：同一个输入从「输出非零」变成「输出 0」'],
+              },
+              source: `任务基于《03.神经元》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：<code>z = w @ x + b</code>；<code>relu = lambda t: np.maximum(0, t)</code>；再用 <code>identity = z</code> 做对照——两者一比就能讲清课件那句「激活函数决定了是否输出有效值」。<br><br>自检三件事：① <code>assert np.ndim(z) == 0</code>，点积必须是标量（写成 <code>w * x + b</code> 会得到 (n,) 向量，返回的当然也是向量）；② 打印 z 与 y，确认 σ 作用在<strong>加权和加偏置的整体</strong>上，而不是加在 σ 外面；③ 固定 w、x，把 b 从 0 改成 -3，观察同一个输入下 ReLU 输出从非零变成 0——这就是「偏置改变被激活的阈值」的实验版，也可以顺手算出门槛 <code>-b</code> 与输入的加权和比较。<br><br>进阶一步（可选）：把 b 加到 -1、权重取 <code>[1, 1]</code>，输入取 <code>[0.4, 0.4]</code> 与 <code>[2, 2]</code>，验证输出是 0 和 3——和第 7 题是同一组数字。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html">PyTorch torch.nn.Linear 官方文档</a>（仿射变换 $y = xA^T + b$、weight/bias 的形状） · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.ReLU.html">PyTorch torch.nn.ReLU 官方文档</a>（$ReLU(x) = max(0, x)$） · <a href="https://keras.io/api/layers/core_layers/dense/">Keras Dense layer 官方文档</a>（activation 是构造参数，kernel/bias 才是可训练量） · <a href="https://numpy.org/doc/stable/reference/generated/numpy.dot.html">NumPy numpy.dot 官方文档</a>（点积 vs 逐元素乘）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/神经元速查表.html">神经元速查表</a>——数学模型、六个符号的含义、偏置阈值与三个易错点一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/神经元">03.神经元</a> · 下一课 <a href="/agents/Agents底层逻辑/前向传播">04.前向传播</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>推理机制速查表 · 参考手册</title>
+  <meta name="description" content="推理机制速查表 · 可打印参考手册：配合《推理机制互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>推理机制速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0013-推理机制.html">《推理机制互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>两个阶段：Prefill 与 Decode</h2>
+      <table class="cmp-table">
+        <tr><th>阶段</th><th>在算什么</th><th>运算形态</th><th>瓶颈</th><th>对应延迟指标</th></tr>
+        <tr><td>预填充 Prefill</td><td>把整段输入一次送进模型，算出中间状态（keys/values），用来生成第一个新 token</td><td>矩阵 × 矩阵，高度并行，能把 GPU 吃满</td><td>算力</td><td>首 token 延迟 <strong>TTFT</strong></td></tr>
+        <tr><td>解码 Decode</td><td>自回归地一次生成一个 token，直到命中停止条件</td><td>矩阵 × 向量，算力用不满</td><td><strong>访存受限</strong>（数据从显存搬到计算单元的速度）</td><td>相邻 token 间隔 <strong>ITL</strong></td></tr>
+      </table>
+      <p>两个指标<strong>必须分开看、分开调</strong>——用一个「平均速度」混着算会掩盖真实瓶颈。</p>
+    </section>
+
+    <section>
+      <h2>K-V 缓存：用显存换计算</h2>
+      <pre>bytes per token = 2 × n_layers × (n_heads × d_head) × dtype_bytes
+                 └─ K 与 V 两份
+
+算例：Llama 2 7B（n_layers=32，d_model=4096，FP16 即 2 字节）
+     2 × 32 × 4096 × 2 = 512 KB / token</pre>
+      <dl class="term-grid">
+        <dt>为什么需要</dt>
+        <dd>Decode 每一步都要用到前面所有 token 的 K/V；不缓存就要每步重算，重复计算随序列长度急剧膨胀。</dd>
+        <dt>常见形态</dt>
+        <dd>多数实现里<strong>每一层都有自己的 K-V 缓存</strong>。</dd>
+        <dt>代价</dt>
+        <dd>批量推理时每个请求单独分配，占用随<strong>批量大小 × 序列长度</strong>线性增长——长上下文与 RAG 的吞吐瓶颈就在这里。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>采样策略：Temperature / Top-K / Top-P</h2>
+      <table class="cmp-table">
+        <tr><th>策略</th><th>机制</th><th>关键点</th></tr>
+        <tr><td>温度 Temperature</td><td>Softmax 前把 logits 除以 $T$：$p_i = \dfrac{\exp(z_i/T)}{\sum_j \exp(z_j/T)}$</td><td>$T=1$ 不干预；$T&lt;1$ 更确定、$T&gt;1$ 更随机；$T=0$ 即贪心</td></tr>
+        <tr><td>Top-K</td><td>只从概率最高的 K 个词里采样，其余置零</td><td>K 是<strong>固定数量</strong>（如 K=50）</td></tr>
+        <tr><td>Top-P（核采样）</td><td>按概率从高到低累加，达到 P 即停，只从这个动态「核心」集合采样</td><td>集合大小<strong>随分布自适应</strong>，所以比 Top-K 灵活</td></tr>
+      </table>
+      <pre>官方 API 口径：
+  top_k：为下一个 token 考虑的最可能候选的“数量”
+  top_p：考虑的最可能候选的“百分比”（如 0.8 → 概率分布的前 80%）
+
+vLLM 工程细节：
+  temperature=0 → 贪心，实现上强制 top_p=1.0、top_k=0、min_p=0.0
+  top_k=0（或 -1）→ 含义是“考虑全部 token”</pre>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <ul class="pitfall-list">
+        <li>把 Prefill 与 Decode 混为一谈，用一个吞吐数字评估两种负载</li>
+        <li>以为 K-V 缓存是「免费的加速」——它用显存换计算，长上下文下显存先爆</li>
+        <li>同时开 Top-K 与 Top-P 却不清楚谁先生效（先按 K 截断、再按 P 截断，语义会叠加）</li>
+        <li>把「首 token 延迟」的优化手段用在「逐 token 间隔」上（两者瓶颈不同：算力 vs 访存）</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

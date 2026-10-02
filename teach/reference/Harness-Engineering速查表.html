@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Harness-Engineering速查表 · 参考手册</title>
+  <meta name="description" content="Harness-Engineering速查表 · 可打印参考手册：配合《Harness-Engineering互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>Harness-Engineering速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0032-Harness-Engineering.html">《Harness-Engineering互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>Harness 是什么：从「选马」到「做马具」</h2>
+      <dl class="term-grid">
+        <dt>词源</dt>
+        <dd>Harness 意为<strong>马具</strong>；原作者的判断是「马具对骑乘的影响非常大」，因此也被译为「驾驭工程 / 缰绳工程」。</dd>
+        <dt>核心主张</dt>
+        <dd>把注意力从「选什么马（模型）」转移到「<strong>怎么驾驭模型</strong>」——同一匹马，马具不同，结果可以完全不同。</dd>
+        <dt>工程化定义</dt>
+        <dd>「每当发现 agent 犯错，就花时间设计一个方案，让 agent <strong>永远不再犯同一个错</strong>。」</dd>
+        <dt>两种落地形态</dt>
+        <dd>① 更好的隐式提示（把每条错误沉淀成 AGENTS.md 里的一行）；② 真正的可编程工具（给 agent 自己验证「我做对了」的脚本，例如跑过滤后的测试、截图对比）。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>三大核心关注点（一条链，不是三张清单）</h2>
+      <table class="cmp-table">
+        <tr><th>关注点</th><th>要解决什么</th><th>关键判据</th></tr>
+        <tr><td>情境与状态管理</td><td>复杂长周期任务里拿到正确上下文、记住任务状态，避免「失忆」与「跑偏」</td><td>顺序是 <strong>召回 → 规划 → 行动</strong></td></tr>
+        <tr><td>护栏</td><td>严格管理 AI 能调用哪些工具、访问哪些数据</td><td><strong>最小权限原则</strong>：只给完成当前任务所必需的权限</td></tr>
+        <tr><td>可观测</td><td>三个问题都要有答案：模型知道是否完成了吗？判断依据是什么？从哪里获取判断所需信息？</td><td>判据的信息必须来自<strong>环境</strong>（工具真实返回、测试结果），不是模型自述</td></tr>
+      </table>
+      <p>串起来：<strong>知道自己知道什么（情境）→ 只被允许做该做的（护栏）→ 能证明自己做对了（可观测）</strong>。</p>
+    </section>
+
+    <section>
+      <h2>落到课程代码：外壳的五个部件</h2>
+      <table class="cmp-table">
+        <tr><th>部件</th><th>在本课程 agent/ 里的落点</th></tr>
+        <tr><td>工具面</td><td>18 章的工具 Schema（<code>type: "function"</code> + name / description / parameters / required）；19 章用 Pydantic 动态建模参数</td></tr>
+        <tr><td>权限</td><td>「只注册当前任务需要的工具」——<code>session.tools = registry.schemas()</code> 决定模型能看见什么；执行前参数校验（<code>Tool.__call__</code> 先校验再执行）</td></tr>
+        <tr><td>可观测</td><td><code>EventEmitter</code> + <code>ModelListener</code> 事件流（一次挂全事件）、<code>Session.print_friendly()</code> 轨迹复盘</td></tr>
+        <tr><td>错误处理</td><td><code>Tool.__call__</code> 用 try/except + <code>traceback.format_exception</code> 把异常转成字符串回灌会话：单个工具失败不崩进程，模型能读到错误自我修正；<strong>代价</strong>是失败被「正常化」，需要日志与指标兜住</td></tr>
+        <tr><td>人工检查点</td><td>有副作用的动作（写文件、跑命令）要能停下来等人拍板；用 <code>Session.save()</code> / <code>Session.load()</code> 落盘恢复，避免重跑烧掉长任务的时间与成本</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <ul class="pitfall-list">
+        <li>把 Harness 当成「把提示词写长一点」——它主要是<strong>工程约束</strong>（权限、状态、可观测、检查点）</li>
+        <li>可观测只记录模型自述（「我完成了」），而没有环境证据（工具返回、测试输出）</li>
+        <li>给 Agent 一次性开放全部工具（违反最小权限），出事时无法界定影响面</li>
+        <li>工具失败一律吞掉回灌、不做失败率统计——问题被静默化，最后表现为「Agent 一直重试」</li>
+        <li>长任务没有落盘/恢复机制，一次中断就要从头再来</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

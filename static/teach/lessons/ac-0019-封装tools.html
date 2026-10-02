@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 封装tools：用 Pydantic 校验参数并生成 Schema，把工具封装成可注册的 Tool 类与调度中心——互动教学课程">
+  <title>封装tools · 互动教学课程（Agents底层逻辑 ac-19）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>封装tools</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/封装tools">19.封装tools</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清「函数 → 参数模型 → Schema → session.tools → 模型 → 执行 → 结果回灌」这条流水线的每一环由谁负责</li>
+        <li>用 Pydantic 的 <code>BaseModel</code> 与 <code>create_model</code> 动态生成参数模型，既做参数校验又产出 JSON Schema</li>
+        <li>读懂 <code>Tool</code> 类的三件套——<code>name</code> / <code>description</code> / <code>schema()</code> 与 <code>__call__</code>——以及 <code>tool</code> 装饰器如何把参数描述聚合到函数定义处</li>
+        <li>说明 <code>_ToolRegistry</code> 的 <code>register</code> / <code>schemas</code> / <code>invoke</code> 各自解决哪段距离，并识别其中的错误处理陷阱</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把本章的骨架过一遍——细节都在《19.封装tools》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>要封装的那条流水线</h3>
+        <ul class="pitfall-list">
+          <li>上一章的完整流程是：<strong>定义函数 → 手动拼 JSON Schema → 绑定到 <code>session.tools</code> → 调用模型 → 执行工具</strong>；手拼 Schema 又长又容易写错</li>
+          <li>本章的目标只有一句话：<strong>「希望在代码层面更加简洁优雅地完成这条流水线」</strong></li>
+          <li>封装后的分工：<code>Tool</code> 负责「一个函数 ↔ 一份 Schema」，<code>_ToolRegistry</code> 负责「工具 ↔ session ↔ 模型返回的 tool_calls」</li>
+          <li>工具入口收敛到 <code>agent/tool/</code>：<code>core/tool.py</code>（<code>Tool</code> + 装饰器）、<code>core/utils.py</code>（<code>create_params_model</code>）、<code>read_file.py</code> / <code>write_file.py</code>（具体工具）、<code>__init__.py</code>（<code>registry</code> 单例 + 注册）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Pydantic：校验与 Schema 一步到位</h3>
+        <ul class="pitfall-list">
+          <li><code>uv add pydantic==2.13.4</code> 装依赖；<code>BaseModel</code> + <code>Field(description=…, default=…)</code> 定义参数</li>
+          <li>实例化即校验：自动适配默认值（<code>Counter()</code> → n=0）、自动转换类型（<code>Counter(n="123")</code> → 123）、无法转换则报错（<code>Counter(n=[1,2,3])</code> → <code>ValidationError</code>）</li>
+          <li><code>model_dump()</code> 拿字典喂给原函数，<code>model_json_schema()</code> 直接拿参数 Schema——<strong>一次定义，两处复用</strong></li>
+          <li><code>create_model("dynamic_model", filepath=(str, Field(description="…")), …)</code> 让模型名和字段在运行时才确定：字段定义是「(类型, 默认值或 Field)」的元组，这正是 <code>create_params_model</code> 的骨架</li>
+          <li><code>create_params_model</code> 用 <code>inspect.signature</code> 遍历参数：<code>param.default is param.empty</code> → 必填（<code>Field(description=desc)</code>，<strong>不设默认值</strong>）；有默认值 → 可选（<code>Field(default=param.default, …)</code>）。模型名取 <code>f"{func.__name__}_params"</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Tool 类、装饰器与调度中心</h3>
+        <ul class="pitfall-list">
+          <li><code>Tool(func, param_descriptions={…})</code>：<code>name=func.__name__</code>、<code>description=inspect.getdoc(func) or ""</code>、<code>param_model=create_params_model(func, param_descriptions)</code></li>
+          <li><code>schema()</code> 返回 <code>{"type": "function", "function": {name, description, parameters}}</code>；<code>parameters.properties</code> 是遍历 <code>param_model.model_json_schema()</code> 后<strong>只保留 <code>type</code> 与 <code>description</code></strong>（<code>prop.get("type", "string")</code>），<code>required</code> 沿用参数模型的 <code>required</code></li>
+          <li><code>__call__</code>：「调用 tool 和调用原函数行为一致」——先 <code>param_model(**kwargs)</code> 校验，再 <code>str(self.func(**validated.model_dump()))</code> 把结果<strong>转成字符串</strong>；异常时用 <code>traceback.format_exception</code> 把完整堆栈作为结果返回，工具链不会因一次失败而中断</li>
+          <li><code>@tool(filepath="…", content="…")</code> 是语法糖：<code>tool(**args)</code> 返回 <code>decorator</code>，它把被装饰函数包成 <code>Tool(func, param_descriptions=args)</code> 并<strong>替换掉原函数名</strong>——从此函数定义处就是参数描述的归属地</li>
+          <li><code>_ToolRegistry</code>：<code>register(tool)</code> 按 <code>tool.name</code> 存进 <code>_tools</code>；<code>schemas()</code> 返回列表可直接赋给 <code>session.tools</code>；<code>invoke(message)</code> 从助手消息里取 <code>tool_calls</code>，逐条 <code>json.loads(arguments)</code> 后执行，产出 <code>{"role": "tool", "tool_call_id", "name", "content"}</code> 列表；<strong>没有 tool_calls 时返回 <code>None</code>（表示此次无须调用工具）</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《19.封装tools》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. <code>create_params_model(func, param_descriptions)</code> 内部实际调用的 Pydantic API 是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>BaseModel.parse_obj()</code></button>
+            <button class="quiz-option"><code>create_model()</code></button>
+            <button class="quiz-option"><code>Field()</code></button>
+            <button class="quiz-option"><code>TypeAdapter</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件「再次认识 Pydantic」先演示 <code>create_model("dynamic_model", filepath=(str, Field(description="…")), …)</code>「动态创建模型」，再在「实现 create_params_model 函数」里把签名结果拼成字段元组后 <code>return create_model(model_name, **args)</code>。<code>Field</code> 只是字段定义的零件，真正造模型的是 <code>create_model</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. <code>Tool.schema()</code> 返回的字典，最外层是什么形状？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>{"title": …, "type": "object", "properties": …}</code></button>
+            <button class="quiz-option"><code>{"type": "function", "function": {"name", "description", "parameters"}}</code></button>
+            <button class="quiz-option"><code>{"role": "tool", "tool_call_id": …, "content": …}</code></button>
+            <button class="quiz-option"><code>{"name": …, "description": …, "parameters": …}</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件 <code>schema()</code> 原文：外层是 <code>"type": "function"</code>，内层 <code>"function"</code> 里才是 <code>name</code> / <code>description</code> / <code>parameters</code>；<code>parameters</code> 再按 <code>properties</code> 与 <code>required</code> 展开。第四个选项是 <code>registry.invoke()</code> 产出的工具结果消息，别混淆。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. <code>Tool</code> 的 <code>name</code> 与 <code>description</code> 分别从哪里来？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">参数模型 <code>model_json_schema()</code> 里的 <code>title</code> 字段</button>
+            <button class="quiz-option">函数自身的 <code>__name__</code> 与 <code>inspect.getdoc(func)</code>（即 docstring）</button>
+            <button class="quiz-option">构造 <code>Tool()</code> 时手工传入的两个参数</button>
+            <button class="quiz-option"><code>param_descriptions</code> 字典的键与值</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 <code>Tool.__init__</code> 原文：<code>self.name = func.__name__</code>、<code>self.description = inspect.getdoc(func) or ""</code>、<code>self.param_descriptions = param_descriptions or {}</code>。也就是说 <code>param_descriptions</code> 只提供<strong>参数级</strong>的描述文本，工具名与工具描述必须来自函数本体——这也是后面要做装饰器的动因之一。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 用 <code>create_params_model</code> 处理 <code>def read_file(filepath: str, limit: int = 100)</code>，生成的参数模型 Schema 里 <code>required</code> 是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>[]</code>——Pydantic 默认所有字段都可选</button>
+            <button class="quiz-option"><code>["filepath", "limit"]</code>——两个参数都会出现在函数签名里</button>
+            <button class="quiz-option"><code>["filepath"]</code>——只有 <code>param.default is param.empty</code> 的参数才不设默认值</button>
+            <button class="quiz-option">没有 <code>required</code> 键——动态模型的 Schema 不含这个字段</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文把两种情况分得很清楚：无默认值的参数走 <code>args[pname] = (py_type, Field(description=desc))</code>（必填，不设默认值），有默认值的走 <code>Field(default=param.default, description=desc)</code>（可选）。所以 <code>filepath</code> 进 <code>required</code>、<code>limit</code> 不进。若题目里两个参数都有默认值，<code>required</code> 会是空列表——但绝不会「没有这个键」，<code>schema()</code> 里写的是 <code>param_schema.get("required", [])</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 下面这段代码执行后，模块里的 <code>write_file</code> 变成了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一个 <code>functools.partial</code> 对象，参数描述被预先绑定</button>
+            <button class="quiz-option">一个仍然可被 <code>inspect.signature()</code> 反射出原签名的函数</button>
+            <button class="quiz-option">一个普通函数，只是多挂了一个 <code>param_descriptions</code> 属性</button>
+            <button class="quiz-option">一个 <code>Tool</code> 实例，<code>write_file.schema()</code> 能直接出 Schema</button>
+          </div>
+          <div class="quiz-explain" hidden>课件装饰器原文只有三行：<code>def decorator(func): return Tool(func, param_descriptions=args)</code>——返回值是 <strong>Tool 实例</strong>，名字被替换。这带来两个直接后果：① 工具方法可以直接 <code>registry.register(write_file)</code>，并且 <code>write_file.schema()</code> 随时可用；② 它<strong>不再是函数</strong>，后续想再拿它做 <code>inspect.signature()</code> 反射（比如再包一层装饰器）会失败；同时它在模块级被调用时只会走 <code>Tool.__call__</code> 的关键字参数路径。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. <code>Tool.schema()</code> 组装 <code>parameters.properties</code> 时，对参数模型 Schema 里的每个字段做了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只取 <code>type</code> 与 <code>description</code>（缺失时回落到 <code>"string"</code> / 空字符串）</button>
+            <button class="quiz-option">把 <code>title</code> 拼进去作为参数名，其余丢弃</button>
+            <button class="quiz-option">原样透传整个字段字典，包括 <code>title</code>、<code>default</code> 等键</button>
+            <button class="quiz-option">只保留 <code>default</code>，让模型按默认值填充</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文是一个字典推导：<code>{name: {"type": prop.get("type", "string"), "description": prop.get("description", "")} for name, prop in param_schema.get("properties", {}).items()}</code>。所以 <code>title</code>、<code>default</code> 这类 Pydantic 附加键会被丢掉——参数是否可选由顶层 <code>required</code> 列表表达，不在单个 <code>properties</code> 里。若参数没有类型标注，<code>create_params_model</code> 会退回 <code>Any</code>，其 Schema 不含 <code>type</code>，于是这里回落到 <code>"string"</code>。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 一轮对话里模型同时返回了 3 个 <code>tool_calls</code>。<code>registry.invoke(session.messages[-1])</code> 的返回值形状是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只返回最后一条工具结果，前两条被覆盖</button>
+            <button class="quiz-option">一个长度 3 的列表，每项含 <code>role: "tool"</code> / <code>tool_call_id</code> / <code>name</code> / <code>content</code></button>
+            <button class="quiz-option">一个以工具名为键、结果为值的字典</button>
+            <button class="quiz-option">直接返回模型的原始消息，等下一次 <code>invoke</code> 再执行</button>
+          </div>
+          <div class="quiz-explain" hidden><code>invoke</code> 先做 <code>tool_calls = message.get("tool_calls", [])</code>，空则返回 <code>None</code>；否则 <code>for tc in message.get("tool_calls", [])</code> 逐条执行并 <code>results.append({...})</code>——所以是「一次调用、批量执行、列表返回」，每项靠 <code>tool_call_id</code> 与请求配对。注意这正说明了返回类型为啥写成 <code>list[dict] | None</code>：<strong>调用方必须处理 <code>None</code></strong>（第 9 题就踩在这上面）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. AI 把工具改成类方法后，Agent 启动时报错，日志里能看到 <code>Field required [type=missing]</code>。最可能的根因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>traceback.format_exception</code> 把正常调用也当异常记录了</button>
+            <button class="quiz-option">Pydantic 没装好，<code>ValidationError</code> 是导入失败引起的</button>
+            <button class="quiz-option">JS 那层缺参数：模型给的键名与函数参数名对不上，或该参数本就有默认值却被当成必填</button>
+            <button class="quiz-option">模型返回的 <code>arguments</code> JSON 里 <code>tool_call_id</code> 写错了</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Field required [type=missing]</code> 是 Pydantic 校验失败的提示，说明 <code>param_model(**kwargs)</code> 收到了缺字段的输入。链路只有三处可能：① 模型给的 <code>arguments</code> 键名与函数参数名不一致（<code>param_descriptions</code> 只改描述、<strong>不改参数名</strong>）；② 该参数在函数里有默认值，但 <code>create_params_model</code> 没走 <code>param.default is param.empty</code> 的分支，于是被当成必填；③ 调用方把 <code>arguments</code> 解析错了。注意 <code>Tool.__call__</code> 的 <code>except</code> 会把 <strong>完整堆栈字符串</strong>当结果返回，所以这类错误往往不抛异常，而是悄悄回灌进上下文——排查时要去工具结果里读堆栈。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 课件完整流程里的这段代码有什么隐患？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>invoke</code> 应当直接抛异常，让上层崩溃以便发现无工具可调用</button>
+            <button class="quiz-option">应该改成 <code>session.messages = call_msg</code>，避免上下文被追加污染</button>
+            <button class="quiz-option">对普通对话（无 <code>tool_calls</code>）会执行 <code>session.messages += None</code>——要靠 <code>if</code> 拦，或让 <code>invoke</code> 返回空列表</button>
+            <button class="quiz-option">没有隐患，<code>if call_msg:</code> 已经处理了所有情况</button>
+          </div>
+          <div class="quiz-explain" hidden><code>call_msg = registry.invoke(session.messages[-1])</code> 在模型<strong>没有</strong>发起工具调用时返回 <code>None</code>（课件注释原文：「工具调用结果，None 表示此次无须调用工具」）。而 <code>session.messages += call_msg</code> 是 <code>__iadd__</code>，本质等价于 <code>list.extend(None)</code> → <code>TypeError: 'NoneType' object is not iterable</code>。课件完整流程里用的是 <code>if call_msg:</code> 做守卫，所以示例本身是安全的；但把这段逻辑搬进循环或写成无守卫版本，就会在「纯聊天轮」上炸掉。改法二选一：保留 <code>None</code> 语义 + 调用方判空，或让 <code>invoke</code> 统一返回空列表（调用方就不用记「可能为 None」）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0019-封装tools',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事说：「我读了一版 Pydantic 的文档，现在给工具参数都套上了模型，<strong>类型不对就会直接报错</strong>——模型传 <code>{"limit": "50"}</code> 这种一定被拦下来。」让你 review 这套论断。你会指出哪个坑？`,
+              source: `来源：Pydantic 官方文档 Models（"Note that the string ’123’ was coerced to an integer and its value is 123."；"Pydantic guarantees the types and constraints of the output, not the input data."）https://pydantic.dev/docs/validation/2.12/concepts/models/ · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方文档明确写了输入 <code>'123'</code> 会被强制转换成整数 <code>123</code>，而且强调 Pydantic「保证的是<strong>输出</strong>的类型与约束，不是输入数据」——所以「类型不对就报错」是错的：<strong>默认是宽松转换，不是严格校验</strong>。真正会报错的是「转换不了」的输入（课件注释里的 <code>Counter(n=[1,2,3])</code>，以及实测中 <code>str</code> 字段收到 <code>123</code> 这种反向不兼容）。给工具封装时的实际影响：模型传 <code>"limit": "50"</code> 会被静默变成 <code>50</code> 然后照常执行，你以为拦住的东西没拦住。要真拦截得开严格模式（<code>strict=True</code> / <code>Strict</code> 类型），或在 <code>Field</code> 上补约束（<code>gt</code>/<code>max_length</code> 等）——约束才是「校验」，类型转换只是「转换」。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `课件里明明可以先写 <code>Tool(read_file, param_descriptions={...})</code>，为什么还要再做一个 <code>@tool(...)</code> 装饰器？它多解决了什么工程问题？`,
+              source: `来源：Pydantic 官方文档 Dynamic models（"Models can be created dynamically using the create_model() factory function."）https://pydantic.dev/docs/validation/2.12/examples/dynamic_models/ · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《19.封装tools》课件（「实现装饰器」小节，含 <code>agent/tool/core/tool.py</code> 与 <code>read_file.py</code> / <code>write_file.py</code> 全文）`,
+              breakdown: `课件给的理由是「希望<strong>对函数的描述能够聚合到函数所在的位置</strong>」。对比两种写法就明白了：<br>· 手工版：<code>read_file</code> 定义在一个文件里，<code>Tool(read_file, param_descriptions={...})</code> 与 <code>registry.register(...)</code> 在另一个文件里——改一个参数名要跳三个地方，且注册表容易漏注册。<br>· 装饰器版：<code>@tool(filepath="文件绝对路径或相对于cwd的路径")</code> 直接压在 <code>def read_file</code> 头上，<strong>定义、描述、包装合成一处</strong>；新加工具只需新建一个文件写好函数 + 装饰器，再在 <code>agent/tool/__init__.py</code> 里 <code>registry.register(...)</code> 一行。<br>本质上它和 <code>@app.route</code>、<code>@pytest.fixture</code> 同一套路：把「注册/包装」这种横切动作变成声明式的。代价也要知道：被装饰后的名字是 <code>Tool</code> 实例而不是函数，之后不能再靠 <code>inspect.signature</code> 反射它。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 生成了下面这段调度中心的代码，让你在合并前 review。请指出其中的 <strong>错误处理缺陷</strong>，并说明什么输入会触发它。<br><code>tool = self._tools[name]</code><br><code>result = ""</code><br><code>if not tool:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;result = "无此工具，请仔细检查你传递的工具名称是否正确"</code><br><code>else:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;result = tool(**args)</code>`,
+              source: `来源：Python 官方文档 Built-in Types · Mapping Types — dict（"d[key]: Return the item of d with key key. Raises a KeyError if key is not in the map."）https://docs.python.org/3/library/stdtypes.html#mapping-types-dict · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《19.封装tools》课件（<code>_ToolRegistry.invoke</code> 原文）`,
+              breakdown: `缺陷是<strong>下标的 KeyError 抢在判空之前</strong>：<code>self._tools[name]</code> 在工具名不存在时直接抛 <code>KeyError</code>，后面的 <code>if not tool:</code> 永远看不到 <code>None</code>——那段「无此工具」的友好提示是<strong>死代码</strong>，而 <code>invoke</code> 一旦遇到模型幻觉出来的工具名就会把整轮对话打断（而且这个异常发生在 <code>Tool.__call__</code> 的 try 之外，不会变成堆栈字符串回灌给模型）。触发输入很常见：模型把 <code>read_file</code> 写成 <code>ReadFile</code> 或 <code>readfile</code>。修法：<code>tool = self._tools.get(name)</code> 再判空（或 <code>try/except KeyError</code> 包住），把「无此工具」真正变成一条 <code>role: "tool"</code> 的观察结果回灌给模型，让它自己纠错——这才符合「工具错误应当作为工具结果返回」的设计。顺带一个同源小问题：<code>if not tool</code> 只在工具对象本身为假值时才成立，用 <code>is None</code> 表达意图更准确。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `你要给团队的工具调度中心定「错误语义」：<code>invoke</code> 在没有 <code>tool_calls</code> 时返回 <code>None</code>、执行出错时返回堆栈字符串。有人提议统一改成「永远返回列表、出错就 raise」。请结合调用方代码（<code>session.messages += call_msg</code>）说明你会怎么定，以及理由。`,
+              source: `来源：Python 官方文档 Built-in Exceptions（"exception KeyError: Raised when a mapping (dictionary) key is not found in the set of existing keys."）https://docs.python.org/3/library/exceptions.html#KeyError · 检索 2026-10-02 · 层级：一手（官方文档）+ PEP 20 · The Zen of Python（"Errors should never pass silently."）https://peps.python.org/pep-0020/ · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《19.封装tools》课件（<code>invoke</code> 返回 <code>list[dict] | None</code> 与 <code>Tool.__call__</code> 的 traceback 回灌设计）`,
+              breakdown: `先分清两类「错误」，它们的归属完全不同：<br><strong>① 工具执行失败</strong>（文件不存在、参数不合法）：这是<strong>模型的观察结果</strong>，不是程序的异常。课件让它返回 <code>traceback.format_exception(...)</code> 的完整堆栈字符串，再由 <code>invoke</code> 包成 <code>role: "tool"</code> 消息回灌——模型看到堆栈就能自己改参数重试。若改成 raise，一次参数写错就炸掉整个 Agent 循环，ReAct 式的自我修正能力直接消失。<br><strong>② 没有工具调用</strong>（普通聊天轮）：这是<strong>正常的控制流</strong>，不是错误。返回 <code>None</code> 是合理表达（类型标注 <code>list[dict] | None</code> 已经声明了这点），代价是每个调用方都要判空——课件示例用 <code>if call_msg:</code> 兜住了。<br><strong>我的定法</strong>：保留「错误即观察」的语义，但把 <code>None</code> 收敛掉——<code>invoke</code> 统一返回 <code>list[dict]</code>（无 tool_calls 时返回 <code>[]</code>），让 <code>session.messages += call_msg</code> 天然安全，同时保留 <code>Tool.__call__</code> 不抛异常、堆栈进 content 的行为。另外建议把「工具名不存在」也归到①，用 <code>.get()</code> 产出友好提示；真正该 raise 的只有「调度中心自身被误用」这类编程错误（比如 message 不是 dict）。判据一句话：<strong>凡是模型能靠自己修正的，回灌；凡是模型改不了的，抛异常。</strong>`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `给现有 Agent 工程补一个 <code>list_dir</code> 工具，并接到调度中心里跑通一轮真实调用（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: `在 <code>agent/tool/</code> 下新建 <code>list_dir.py</code>：用 <code>@tool(...)</code> 装饰一个 <code>list_dir(path: str, pattern: str = "*")</code> 函数，docstring 写清用途，两个参数各给中文描述；在 <code>agent/tool/__init__.py</code> 里 <code>registry.register(list_dir)</code>；然后在 notebook 里发一句「列出当前目录下所有 .md 文件」，让模型调用它并打印结果。`,
+                accept: [
+                  '<code>registry.schemas()</code> 里出现 <code>name == "list_dir"</code>，其 <code>parameters.required</code> 只有 <code>["path"]</code>（<code>pattern</code> 有默认值，不该进 required）',
+                  '<code>registry.invoke(session.messages[-1])</code> 返回的每条结果都带正确的 <code>tool_call_id</code> 与 <code>name</code>，且 <code>content</code> 是字符串',
+                  '故意让模型传一个不存在的目录：工具结果里应是完整堆栈字符串（而不是抛异常中断本轮对话）',
+                ],
+              },
+              source: `任务基于《19.封装tools》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 照着现成的 <code>agent/tool/read_file.py</code> 抄骨架——<code>from agent.tool.core import tool</code> + <code>@tool(path="…", pattern="…")</code> + 普通函数；② 在 <code>__init__.py</code> 里 import 并 <code>registry.register(list_dir)</code>（漏了这步，Schema 里就没有它，模型自然永远不调用）；③ <code>session.tools = registry.schemas()</code> 之后发问，<code>registry.invoke(...)</code> 拿结果，<code>session.messages += call_msg</code>，再 <code>model.invoke_stream(session)</code> 让模型总结。<br>最容易踩的两个点：<strong>(a)</strong> 忘了给 <code>pattern</code> 默认值，于是它进了 <code>required</code>，模型每次必须显式编一个值；<strong>(b)</strong> 用 <code>list_dir</code> 当函数名、却在 prompt 或 Schema 里写成别的名字，于是 <code>invoke</code> 走不到这个工具。<br>自检顺序：先 <code>list_dir.schema()</code> 看名字与 required 对不对，再 <code>list_dir(path=".")</code> 单测执行，最后才进对话——别一上来就调模型，出错了分不清是模型的问题还是工具的问题。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://pydantic.dev/docs/validation/2.12/concepts/models/">Pydantic 官方文档 Models</a>（校验与类型转换的真实语义）· <a href="https://pydantic.dev/docs/validation/2.12/examples/dynamic_models/">Dynamic models</a>（<code>create_model</code> 工厂）· <a href="https://pydantic.dev/docs/validation/2.12/concepts/json_schema/">Json schema</a>（<code>model_json_schema()</code> 的产出规范）</li>
+        <li><strong>动手自检</strong>：把 <code>create_params_model</code>、<code>Tool</code>、<code>_ToolRegistry</code> 三个片段抄进一个 notebook 跑通——重点验证「必填/可选 → <code>required</code>」与「异常变堆栈字符串」两件事，再对照 <a href="../reference/封装tools速查表.html">封装tools速查表</a> 勾一遍。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/封装tools速查表.html">封装tools速查表</a>——流水线分工、Pydantic API、Tool/装饰器/调度中心速记一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/tools">18.tools</a> · 本课 <a href="/agents/Agents底层逻辑/封装tools">19.封装tools</a> · 下一课 <a href="/agents/Agents底层逻辑/ReAct">20.ReAct</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

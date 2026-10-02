@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Agent 搜索引擎：给 Agent 接入联网搜索工具（Tavily 等）、检索结果处理与引用组织——互动教学课程">
+  <title>Agent 搜索引擎 · 互动教学课程（Agents底层逻辑 ac-22）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Agent 搜索引擎</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Agent-搜索引擎">22.Agent 搜索引擎</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 <code>web_search</code> 工具到底该把什么返回给 AI——为什么传统搜索引擎的页面不能直接喂给 Agent</li>
+        <li>复述本章列出的五个 Agent 专用搜索引擎，以及 Tavily 三类能力（<code>search</code> / <code>extract</code> / <code>crawl</code>）各自的输入与输出</li>
+        <li>读懂 <code>agent/tool/web.py</code> 与 <code>agent/config.py</code> 里 <code>TavilySettings</code> 的配合：环境变量前缀、<code>@tool</code> 装饰器、<code>registry.register</code></li>
+        <li>走通「注册工具 → 模型发起 tool_call → registry 执行 → 结构化 JSON 回填上下文」的完整链路，并识别其中常见的静默失败点</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「为什么要换搜索引擎、换完之后工具长什么样」过一遍——细节都在《22.Agent 搜索引擎》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>问题的关键：<code>web_search</code> 该返回什么</h3>
+        <ul class="pitfall-list">
+          <li>本章开篇就点题：<strong>问题的关键是，<code>web_search</code> 工具应该返回给 AI 什么调用结果？</strong></li>
+          <li>直接把传统搜索引擎的结果页（或被大量标签、样式、JS 代码污染的网页）交给 Agent，会踩一串坑：<strong>更多的 token 消耗</strong>、<strong>注意力被分散</strong>、<strong>很多 CSR 的页面无法得到内容</strong>、<strong>包含大量无关信息（广告图片、菜单、banner 等）</strong>、<strong>深层链接无法一次性获取</strong></li>
+          <li>结论：需要一个<strong>更适合 Agent 调用</strong>的搜索引擎——本章列了五个：<strong>Firecrawl</strong>、<strong>Tavily</strong>、<strong>AnySearch</strong>、<strong>Brave</strong>、<strong>Exa</strong></li>
+          <li>一句话记忆：Agent 要的不是「网页」，而是<strong>已经洗干净的、结构化的、带来源的结果</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Tavily 的三类能力（本章用到的全部 API）</h3>
+        <ul class="pitfall-list">
+          <li><strong><code>client.search(query="…")</code></strong>：用关键词搜索，返回结构化搜索结果——这是 <code>web_search</code> 工具的主体</li>
+          <li><strong><code>client.extract(urls=[…], include_images=…)</code></strong>：给定 URL 数组，抓取网页内容——这是 <code>fetch_url</code> 工具的主体；本章集成版里显式写了 <code>include_images=False</code>，不要图片</li>
+          <li><strong><code>client.crawl(url=…, max_depth=…, limit=…, instructions="…")</code></strong>：从根 URL 出发按深度与数量上限遍历站点，可以用自然语言 <code>instructions</code> 说明想找什么（课件示例：<code>max_depth=3, limit=50, instructions="找到所有和网络相关的知识"</code>）</li>
+          <li><strong>依赖与密钥</strong>：<code>uv add tavily-python==0.7.26</code>；API KEY 从 Tavily 官网获取后<strong>保存到环境变量</strong>，代码里经 <code>tavily_settings.api_key</code> 读取——绝不写进源码</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>集成进 Agent：从原理图到注册代码</h3>
+        <ul class="pitfall-list">
+          <li><strong>原理图（AI搜索原理）的链路</strong>：用户问题 → 模型（上下文 + 工具）→ 发起 <code>web_search</code> 工具调用 → 调用结果回填 → 进入 <strong>Reasoning / Acting</strong> 循环 → 得到普通回复 → 退出循环</li>
+          <li><strong>两个工具的定义</strong>（新增文件 <code>agent/tool/web.py</code>）：<code>@tool(query="搜索关键字")</code> 修饰 <code>web_search</code>、<code>@tool(urls="要抓取的url链接数组")</code> 修饰 <code>fetch_url</code>；装饰器里的说明就是给模型看的参数描述</li>
+          <li><strong>注册进 registry</strong>：<code>registry.register(web_search)</code>、<code>registry.register(fetch_url)</code>；<code>agent/tool/__init__.py</code> 里 <code>from agent.tool.web import web_search, fetch_url</code> 并完成注册</li>
+          <li><strong>返回值一定是字符串</strong>：两个工具都用 <code>return json.dumps(response, ensure_ascii=False)</code>——<code>ensure_ascii=False</code> 让中文原样输出，不转成 <code>\uXXXX</code></li>
+          <li><strong>配置层新增</strong>：<code>agent/config.py</code> 加 <code>TavilySettings</code>（<code>model_config = {"env_prefix": "TAVILY_"}</code>，即读 <code>TAVILY_API_KEY</code>），本章 <code>agent/</code> 变更 = 新增 1 个文件（<code>tool/web.py</code>）、修改 3 个（<code>config.py</code>、<code>model.py</code>、<code>tool/__init__.py</code>）、删除 1 个（<code>分析.md</code>）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《22.Agent 搜索引擎》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 本章开篇提出的「问题的关键」是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">如何绕过搜索引擎的反爬限制</button>
+            <button class="quiz-option">如何把网页 HTML 压缩得更短</button>
+            <button class="quiz-option"><code>web_search</code> 工具应该返回给 AI 什么调用结果</button>
+            <button class="quiz-option">如何给模型换一个更大的上下文窗口</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文第一句：问题的关键是，<code>web_search</code> 工具应该返回给 AI 什么调用结果？后面列出的五个痛点（token 消耗、注意力分散、CSR 页面抓不到、无关信息、深层链接）都是在回答这个问题——所以才需要「更适合 Agent 调用的搜索引擎」。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 下列哪一项<strong>不属于</strong>本章列出的、更适合 Agent 调用的搜索引擎？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Firecrawl</button>
+            <button class="quiz-option">Exa</button>
+            <button class="quiz-option">Tavily</button>
+            <button class="quiz-option">带大量标签与 JS 代码的传统搜索引擎结果页</button>
+          </div>
+          <div class="quiz-explain" hidden>本章清单是 <strong>Firecrawl、Tavily、AnySearch、Brave、Exa</strong> 五个。选项 D 描述的正是本章要抛弃的东西——「内容被大量的标签、样式、JS代码污染」，它带来的恰是 token 消耗、注意力分散、无关信息这些被列出的问题。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 本章的 Tavily API KEY 存在哪里、由谁读取？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">存进工具 Schema，由模型选择使用</button>
+            <button class="quiz-option">写在系统提示词里，由模型在调用工具时传进来</button>
+            <button class="quiz-option">写死在 <code>agent/tool/web.py</code> 里，由 <code>TavilyClient</code> 直接读</button>
+            <button class="quiz-option">获取后保存到环境变量，由 <code>agent/config.py</code> 的 <code>TavilySettings</code>（前缀 <code>TAVILY_</code>）读取</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「获取 API-KEY」一节明确要求：<strong>将获取到的 API KEY 保存到环境变量</strong>。本章 <code>agent/config.py</code> 新增的 <code>TavilySettings(BaseSettingsWithEnv)</code> 里 <code>model_config = {"env_prefix": "TAVILY_"}</code>，配合基类从 <code>.env</code> 读取，所以工具里只写 <code>TavilyClient(api_key=tavily_settings.api_key)</code>。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 用户对 Agent 说「帮我查一查苹果最新发布了哪些产品？」。按本章的实现，<strong>最先</strong>被调用的是哪个工具、它拿到什么参数？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>fetch_url</code>，参数是模型凭空想出来的一串苹果官网链接</button>
+            <button class="quiz-option">不需要工具，模型凭参数里自带的知识直接回答</button>
+            <button class="quiz-option"><code>bash_command</code>，参数是 <code>curl</code> 苹果官网首页</button>
+            <button class="quiz-option"><code>web_search</code>，参数是 <code>query</code>（课件里描述为「搜索关键字」）</button>
+          </div>
+          <div class="quiz-explain" hidden>本章 <code>fetch_url</code> 的入参是 <strong>URL 数组</strong>（<code>@tool(urls="要抓取的url链接数组")</code>）——模型手里一开始并没有 URL，必须先由 <code>web_search</code> 用关键词检索出候选链接。这正是为什么本章要同时注册两个工具，也是原理图里第一跳是 <code>web_search</code> 的原因。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 本章的 <code>fetch_url</code> 用的是 <code>client.extract</code> 而不是 <code>client.search</code>，两者的分工是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>search</code> 用关键词检索、返回结构化搜索结果；<code>extract</code> 针对<strong>你给定的 URL 列表</strong>抓取网页内容</button>
+            <button class="quiz-option">两者完全等价，只是 SDK 里换了名字</button>
+            <button class="quiz-option"><code>extract</code> 会从根 URL 出发遍历整个站点</button>
+            <button class="quiz-option"><code>extract</code> 一次只能抓一个 URL，<code>search</code> 才能批量</button>
+          </div>
+          <div class="quiz-explain" hidden>课件里三个 API 的入参一目了然：<code>search(query=…)</code> 吃关键词；<code>extract(urls=[…])</code> 吃 URL 列表（示例一次传了两个百度百科链接）；<code>crawl(url=…, max_depth=…, limit=…)</code> 才是从根 URL 出发的站点遍历。所以 <code>web_search</code> 对应 <code>search</code>、<code>fetch_url</code> 对应 <code>extract</code>，D 描述的是 <code>crawl</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. <code>web_search</code> 的最后一行是 <code>return json.dumps(response, ensure_ascii=False)</code>。这个字符串最终去了哪里？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">写进 <code>.env</code>，供下一次调用复用</button>
+            <button class="quiz-option">作为 assistant 消息的 content 进入上下文</button>
+            <button class="quiz-option">被 registry 包装成 <code>role</code> 为 <code>tool</code> 的消息（带 <code>tool_call_id</code> 与 <code>name</code>）回填进会话，模型下一轮就能看到</button>
+            <button class="quiz-option">只打印到控制台，模型看不到</button>
+          </div>
+          <div class="quiz-explain" hidden>本章 <code>agent/tool/__init__.py</code> 的 <code>_ToolRegistry.invoke</code> 里，工具返回值被组装成 <code>{"role": "tool", "tool_call_id": id, "name": name, "content": result}</code>——也就是说工具结果以 <strong>tool 消息</strong>的形式回到会话，成为模型下一轮推理看到的上下文。这也解释了为什么两个工具都要返回字符串：<code>content</code> 字段承载的就是这段文本。（<code>ensure_ascii=False</code> 保证中文原样输出。）</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 审查本章 <code>_ToolRegistry.invoke</code> 里的这段代码：<code>tool = self._tools[name]</code>，紧接着 <code>result = ""</code>、<code>if not tool: result = "无此工具，请仔细检查你传递的工具名称是否正确"</code>。当模型给出一个不存在的工具名（幻觉）时，实际会发生什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">会返回「无此工具」的提示，模型据此自行改正</button>
+            <button class="quiz-option">会静默跳过这个 tool_call，继续执行下一个</button>
+            <button class="quiz-option">会把工具名当成参数传给 <code>web_search</code></button>
+            <button class="quiz-option">会先抛 <code>KeyError</code> 中断这一轮：<code>self._tools[name]</code> 在判断之前就执行了，<code>if not tool</code> 是永远走不到的死分支；应改成 <code>self._tools.get(name)</code></button>
+          </div>
+          <div class="quiz-explain" hidden>字典下标访问在键不存在时直接抛 <code>KeyError</code>，而 <code>if not tool</code> 只有在取值成功之后才有机会执行——索引不到时根本走不到那一行，所以这行兜底文案是<strong>死代码</strong>。用 <code>.get(name)</code> 才会得到 <code>None</code>，兜底分支才真正生效。这类「看着有容错、实际不生效」的写法在工具层很危险：Agent 一旦幻觉出工具名，整轮直接崩在异常上，而不是把纠错信息回给模型。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 假设把 <code>agent/tool/web.py</code> 里的 <code>fetch_url</code> 删掉，只留 <code>web_search</code>。这会带来什么后果？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">Tavily 不允许只注册一个工具</button>
+            <button class="quiz-option">会直接编译报错，因为两个工具必须成对注册</button>
+            <button class="quiz-option">没问题，<code>search</code> 返回的结果里已经包含完整网页正文</button>
+            <button class="quiz-option">模型拿不到网页正文——<code>search</code> 给的是检索结果条目，要正文还得按 URL 再抓；反过来只留 <code>fetch_url</code> 也不行，那时模型手里根本没有 URL</button>
+          </div>
+          <div class="quiz-explain" hidden>两个工具是<strong>互补</strong>的：<code>search</code> 负责「按关键词找候选来源」，<code>extract</code> 负责「按已知 URL 取正文」，本章正是用 <code>web_search</code> + <code>fetch_url</code> 覆盖这两跳。只留检索，Agent 只能看到标题与摘要，遇到需要读细节的问题就答不实；只留抓取，模型无链接可抓——这与本章开头「深层链接无法一次性获取」的痛点呼应。注意二者是独立函数，少一个只是能力缺失，不会报错。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 用户问「苹果最新发布了哪些产品？」，模型连发 3 次 <code>web_search</code>、又抓了 5 个页面，最后把 Tavily 的<strong>完整响应 JSON</strong>（每条都带 <code>raw_content</code>、还开了图片）原样留在会话里。这个做法的主要问题是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">JSON 格式模型无法理解，必须先转成自然语言</button>
+            <button class="quiz-option">没有问题——上下文里信息越多，模型答得越准</button>
+            <button class="quiz-option">会导致 Tavily 账号因请求量过大被封</button>
+            <button class="quiz-option">每次工具调用的结果都会以 tool 消息常驻会话，完整 JSON（尤其整页正文与图片）会持续吃 token、稀释注意力；本章让 <code>extract(..., include_images=False)</code>、只回传结构化结果，正是对同一问题的处理思路</button>
+          </div>
+          <div class="quiz-explain" hidden>本章把传统搜索的第一条罪状就列为「<strong>更多的 token 消耗</strong>」，第二条是「<strong>注意力被分散</strong>」；换成 Tavily 只是让结果更干净，并不等于可以把 <code>raw_content</code> 整页正文和各种附加字段统统塞回上下文。工具结果在会话里是<strong>累积</strong>的：多轮检索后，噪声会一直占着窗口，还会把真正相关的几条结果淹掉。本章集成版 <code>extract(..., include_images=False)</code> 的思路就是「只拿我要的字段」——需要正文时再按需抓取、并只回传必要片段。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0022-Agent-搜索引擎',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事让 AI 写「用 Tavily 搜索」的函数，AI 交出来的是 <code>client.search(query=query, include_raw_content=True, max_results=20)</code>，而 <code>query</code> 直接传的是用户那段 2000 字的原始需求。按 Tavily 官方最佳实践，这段代码在两处会出问题，分别给出修法。`,
+              source: `来源：Tavily 官方文档 Best Practices for Search（"Keep queries concise—under <strong>1500 characters</strong>. Think of it as a query for an agent performing web search, not long-form prompts."；"For complex or multi-topic queries, send separate focused requests"；<code>max_results</code>："Limits results returned (default: 5). Setting too high may return lower-quality results."；<code>include_raw_content</code>："Returns full extracted page content. For comprehensive extraction, consider a two-step process: 1. Search to retrieve relevant URLs 2. Use Extract API to get content"）https://docs.tavily.com/documentation/best-practices/best-practices-search · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《22.Agent 搜索引擎》课件（web_search 只做 client.search(query=query) 并把结构化结果回给模型）`,
+              breakdown: `两处问题正对应本章那句「<code>web_search</code> 该返回什么」。<strong>① 查询本身不是搜索式查询</strong>：官方把 <code>query</code> 定位成「给 agent 做 web search 的查询，而不是长篇 prompt」，明确要求控制在 1500 字符以内；多主题的复杂需求应当<strong>拆成若干条聚焦的子查询分别发</strong>（官方给的例子就是把「公司 ABC 的竞品 / 财务表现 / 近期动态」拆成三条）。把用户 2000 字原文整段丢进去，检索意图被稀释，召回质量反而下降。<strong>② 响应体量失控</strong>：<code>include_raw_content=True</code> 会为每条结果附上完整正文，20 条 × 整页正文会瞬间占满上下文（对照本章开头「更多的 token 消耗 / 注意力被分散」两条罪状）；官方对「需要正文」的推荐做法是<strong>两段式</strong>——先 search 拿 URL，再按需用 Extract 取内容。修法：先用一次便宜的改写把用户需求转成一句短查询（必要时拆子查询并行发），<code>max_results</code> 收到 3–5，去掉 <code>include_raw_content</code>；确实要正文时，单独调用 <code>extract(urls=[...], query=..., chunks_per_source=...)</code> 只取相关片段。`,
+            },
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `一位同事本地没配 <code>TAVILY_API_KEY</code>，代码 <code>client = TavilyClient()</code> 却「跑通了」搜索，于是他接着写 <code>client.crawl(...)</code>，结果直接抛异常。按 tavily-python 官方 README，keyless 模式的边界在哪？另外本章 <code>agent/tool/web.py</code> 里 <code>from tavily import TavilyClient</code>（课件探索版还 import 了 <code>TavilyKeylessLimitError</code>）却没有任何 try/except，这埋了什么隐患？`,
+              source: `来源：tavily-python 官方 README（"Instantiate <code>TavilyClient()</code> with no arguments and the SDK runs in keyless mode against the public Tavily API. Keyless mode supports <code>search()</code> and <code>extract()</code> only; other methods raise an error explaining that an API key is required."；"Keyless usage is rate-limited."；<code>TavilyKeylessLimitError</code>："Rate-limit cap reached. The exception carries the human-readable message plus structured fields (code, window, retry_after_seconds, next_actions) returned by the Tavily API."）https://github.com/tavily-ai/tavily-python · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《22.Agent 搜索引擎》课件（web.py 的 import 与 TavilyClient 构造）`,
+              breakdown: `keyless 模式只覆盖 <code>search()</code> 与 <code>extract()</code>：<strong>其它方法会抛错并提示需要 API key</strong>，所以「search 能跑」完全不能证明配置正确——这恰恰是最典型的假绿信号，本地的 <code>crawl</code> 调用或线上环境一上来就会炸。第二层隐患在错误处理：本章课件探索版 import 了 <code>TavilyKeylessLimitError</code> 却从未接住它，而官方定义了这个异常——keyless <strong>有速率限制</strong>，触发时异常里会带 <code>code</code>、<code>window</code>、<code>retry_after_seconds</code>、<code>next_actions</code> 这些结构化字段。工具函数把它一路抛到 Agent 循环外面，等于把一次<strong>可退避重试</strong>的限流，变成了整轮崩溃。工程上正确的做法是：① 生产环境显式传入 <code>TavilyClient(api_key=tavily_settings.api_key)</code>，并把 key 的缺失当作启动期错误（配置缺失就该 fail fast，而不是掉进 keyless）；② 在工具内捕获限流异常，读 <code>retry_after_seconds</code> 做退避，或把错误信息作为工具结果回给模型，让 Agent 自己决定换查询还是稍后重试。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `Tavily 的 <code>search_depth</code> 有 <code>basic</code> 与 <code>advanced</code> 等档位。请说明它对「延迟—相关性—成本」三者的影响，并在 Agent 里说清什么样的查询该上 <code>advanced</code>、什么该留在 <code>basic</code>。`,
+              source: `来源：Tavily 官方 API Reference Search（<code>search_depth</code>："<code>advanced</code>: Highest relevance with increased latency. Best for detailed, high-precision queries."；"<code>basic</code>: A balanced option for relevance and latency. Ideal for general-purpose searches."；"<strong>Cost</strong>: <code>basic</code>, <code>fast</code>, <code>ultra-fast</code>: 1 API Credit；<code>advanced</code>: 2 API Credits"；默认值为 <code>basic</code>）https://docs.tavily.com/documentation/api-reference/endpoint/search + Tavily 官方文档 Best Practices for Search（"<code>advanced</code> searches more broadly and reaches more sources per query, delivering the highest relevance at higher latency. Reach for it when coverage matters most: niche topics, very recently published pages, or questions with several distinct facets."；"<code>basic</code> covers less ground for a lower latency budget, making it the right default for general-purpose lookups"）https://docs.tavily.com/documentation/best-practices/best-practices-search · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方把它定义为一个<strong>延迟与相关性的权衡</strong>，而且直接把成本写在参数说明里：<code>basic</code>（默认）1 credit，<code>advanced</code> 2 credits——深度不是免费的。<code>advanced</code> 会搜得更广、每次查询触及更多来源，因此相关性最高、延迟也更高，适合<strong>覆盖率最重要</strong>的场合：冷门主题、刚发布的内容、或者一个问题包含好几个不同侧面；<code>basic</code> 覆盖面小、延迟预算低，是通用型查询的默认档。落到 Agent 工程里有两点值得注意：① 这是<strong>每调用一次就计一次</strong>的成本，Agent 一轮里可能自发调用多次搜索，档位选择直接决定账单，所以「默认 basic、按需 advanced」比全局开 advanced 更合理；② 官方还给了 <code>auto_parameters</code>——它会根据查询意图自动配置参数，但可能把 <code>search_depth</code> 自动提到 <code>advanced</code>（2 credits），想控成本就显式传 <code>search_depth</code> 覆盖它。回答时把「延迟、相关性、成本」三个维度都点到，并给出一个可判定的取舍规则，比背档位表更能得分。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查本章新增的 <code>fetch_url</code>：<code>@tool(urls="要抓取的url链接数组")</code> 修饰它，内部 <code>response = client.extract(urls=urls, include_images=False)</code>，最后 <code>return json.dumps(response, ensure_ascii=False)</code>。某一轮模型在 <code>urls</code> 里填了 30 个链接，其中 2 个页面抓取失败。按 Tavily Extract 官方文档，会发生哪两件事？这段工具还漏了哪些能让结果更可控的参数？`,
+              source: `来源：Tavily 官方 API Reference Extract（"Extract content from one URL or batch up to 20 URLs in one request. Successful URLs appear in results; per-URL failures appear in failed_results. Check both arrays even when the response is HTTP 200."；"HTTP 200 can have an empty results array when all valid URLs fail during extraction"；400 错误示例："Max 20 URLs are allowed."；<code>chunks_per_source</code>："Available only when <code>query</code> is provided. Must be between 1 and 5."）https://docs.tavily.com/documentation/api-reference/endpoint/extract + Tavily 官方文档 Best Practices for Extract（"Control the amount of content returned per URL to prevent context window explosion"；"Extract accepts up to 20 URLs in one request."）https://docs.tavily.com/documentation/best-practices/best-practices-extract · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《22.Agent 搜索引擎》课件（agent/tool/web.py 的 fetch_url 实现）`,
+              breakdown: `两件事：<strong>① 30 个 URL 会被直接拒绝</strong>——官方规定一次请求最多 20 个 URL，超限返回 400，错误信息就是 <code>Max 20 URLs are allowed.</code>；工具里没有分片逻辑，整批全废。<strong>② 就算压到 20 个以内，也绝不能用 <code>response["results"]</code> 判断成败</strong>：官方强调成功的 URL 出现在 <code>results</code>，<strong>逐个失败的信息在 <code>failed_results</code></strong>，且「即使 HTTP 200 也要检查两个数组」——极端情况下所有 URL 都失败，<code>results</code> 会是空数组而请求仍然 200。本章的 <code>json.dumps(response)</code> 把整个响应交给模型，幸运的是 <code>failed_results</code> 也在里面，模型有机会自己发现；但更好的做法是显式分流，把「2 条抓取失败 + 原因」明确告诉模型。遗漏的参数：<code>query</code> + <code>chunks_per_source</code>（官方：给 <code>query</code> 后返回按相关性重排的片段，<code>chunks_per_source</code> 1–5，用于「防止上下文窗口爆炸」）、<code>extract_depth</code>（表格/动态渲染页用 <code>advanced</code>，成本 2 credits / 5 个成功 URL）、<code>timeout</code> 与分批（<code>urls=urls[i:i+20]</code>）。<code>include_images=False</code> 这一处是对的——不要图片，少占 token。这次代码审查的答题骨架就是：<strong>先判输入约束（≤20），再判输出契约（两个数组都要看），最后补参数与成本</strong>。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `为内部 Agent 设计一套「联网检索」工具链，面向每天几千次问答、预算有限。请说明：工具怎么切（几个、各自职责）、参数怎么定、检索回来的 URL 怎么筛、成本与失败怎么控、多步调用之间怎么串联。`,
+              source: `来源：Tavily 官方文档 Best Practices for Extract（"<strong>Search</strong> to discover relevant URLs → <strong>Filter</strong> by relevance score, domain, or content snippet → <strong>Re-rank</strong> if needed → <strong>Extract</strong> from top-ranked sources with query and chunks_per_source → <strong>Validate</strong> extracted content quality"；"Extract accepts up to 20 URLs in one request."；"<code>results</code> contains successful extractions and <code>failed_results</code> contains per-URL failures."；"pass a consistent <code>session_id</code> across all related calls"）https://docs.tavily.com/documentation/best-practices/best-practices-extract + Tavily 官方文档 Best Practices for Search（"Dedupe the results to save tokens and avoid repetitive context"；"Run queries in parallel, but cap how many run at once"；"Handle failures per query... retry only the failed ones with backoff"）https://docs.tavily.com/documentation/best-practices/best-practices-search + Tavily 官方 API Reference Search（成本："<code>basic</code>, <code>fast</code>, <code>ultra-fast</code>: 1 API Credit；<code>advanced</code>: 2 API Credits"）https://docs.tavily.com/documentation/api-reference/endpoint/search · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `按官方给出的「最优工作流」来设计，思路是<strong>两段式 + 中间筛选</strong>，而不是让模型一上来就抓网页。<strong>① 工具切分</strong>：<code>web_search</code>（发现来源，对应本章的 <code>client.search</code>）与 <code>fetch_url</code>（按 URL 取正文，对应 <code>client.extract</code>），职责单一、参数好描述——这正是本章 <code>agent/tool/web.py</code> 的切法。<strong>② 参数基线</strong>：<code>search</code> 默认 <code>search_depth=basic</code>（1 credit），只在冷门主题、刚发布内容、多侧面问题上升级到 <code>advanced</code>（2 credits）；查询按官方建议控制长度、复杂需求拆子查询并行发；<code>max_results</code> 收到 3–5，避免召回一堆低质结果。<strong>③ URL 筛选</strong>：先按 <code>score</code> 阈值（官方示例用 <code>&gt; 0.5</code>）过滤，再按域名信任度取舍，然后<strong>按 URL 规范化后去重</strong>（官方：去重是为了「省 token、避免重复上下文」）；官方还列了 re-ranking、LLM 相关度判断、聚类等策略。<strong>④ 成本量级</strong>：如果一轮里有 $N_{\\text{adv}}$ 次 advanced 搜索、$N_{\\text{basic}}$ 次 basic 搜索、成功抽取 $U$ 个 URL（basic 抽取每 5 个成功 URL 计 1 credit），粗略成本就是 $C \\approx 2N_{\\text{adv}} + N_{\\text{basic}} + \\lceil U/5 \\rceil$（单位 credit）——把公式写进设计文档，才能跟业务量对上账。<strong>⑤ 失败与串联</strong>：<code>extract</code> 要同时读 <code>results</code> 与 <code>failed_results</code>（HTTP 200 也可能是空 <code>results</code>），批次切到 ≤20 个 URL；批量搜索时限制并发、按查询单独标记成败、只重试失败的（指数退避），并给单次调用设 <code>timeout</code>；同一个用户任务的所有调用带上<strong>一致的 <code>session_id</code></strong>（多用户共用一把 key 时再加 <code>human_id</code>），这样「检索 → 抽取 → 追问」能被串成一条可观测、可复盘的链路。回答里如果能把「≤20 个 URL」「两个数组都要看」「两段式」「去重」「session_id」这几条官方约束点到，基本就覆盖了生产环境的主要坑。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 25 分钟内给 agent 工程补上「联网搜索」这两个工具：Tavily 接入 + 工具注册 + 跑通一次联网问答。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '把 API KEY 写进工程根目录的 .env（TAVILY_API_KEY=…）→ 在 agent/config.py 加 TavilySettings（env_prefix 为 TAVILY_）→ 新建 agent/tool/web.py，用 @tool 写 web_search(query) 与 fetch_url(urls)，返回 json.dumps(response, ensure_ascii=False) → 在 agent/tool/__init__.py 里 import 并在 registry 注册两个工具 → 用 Agent.invoke("帮我查一查苹果最新发布了哪些产品？") 跑通，并打印会话看 tool 消息',
+                accept: ['uv add tavily-python==0.7.26 后能 from tavily import TavilyClient 成功', '代码里没有任何硬编码的 API KEY，key 来自 tavily_settings.api_key（.env 缺 key 时能立刻发现）', '两个工具都出现在 registry.schemas() 里，且返回值为字符串', '一次 invoke 的会话里能看到 web_search 的 tool_call 与 role=tool 的结果消息，最终得到带来源的回答'],
+              },
+              source: `任务基于《22.Agent 搜索引擎》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 安装 <code>uv add tavily-python==0.7.26</code>（课件锁的版本），把 <code>TAVILY_API_KEY</code> 写进 <code>.env</code>；② <code>agent/config.py</code> 照本章加 <code>class TavilySettings(BaseSettingsWithEnv)</code>，<code>model_config = {"env_prefix": "TAVILY_"}</code>，导出 <code>tavily_settings</code>；③ <code>agent/tool/web.py</code> 里两个函数照抄课件结构，注意 <code>@tool(query="搜索关键字")</code> 的说明就是给模型看的参数描述，返回值统一 <code>json.dumps(response, ensure_ascii=False)</code>；④ <code>agent/tool/__init__.py</code> 里 <code>from agent.tool.web import web_search, fetch_url</code> 并 <code>registry.register(...)</code> 各一次——漏了注册，模型侧根本看不到工具；⑤ <code>Agent(model_listener=ModelPrinterListener())</code> 后 <code>agent.invoke("帮我查一查苹果最新发布了哪些产品？")</code>，再用 <code>agent.session.print_friendly()</code> 检查会话。常见坑：key 硬编码进源码（本章要求存环境变量）；只 <code>import</code> 忘了 <code>register</code>；工具直接 <code>return response</code>（dict）而不是 JSON 字符串；<code>ensure_ascii=True</code> 导致中文全变成转义字符，既难读又多花 token；以及没接住 Tavily 的限流异常，让一次限流变成整轮崩溃。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://docs.tavily.com/documentation/best-practices/best-practices-search">Tavily Best Practices for Search</a> · <a href="https://docs.tavily.com/documentation/api-reference/endpoint/search">Tavily API Reference：Search</a> · <a href="https://docs.tavily.com/documentation/api-reference/endpoint/extract">Tavily API Reference：Extract</a> · <a href="https://docs.tavily.com/documentation/about">Tavily About（为什么需要 AI 搜索引擎）</a> · <a href="https://github.com/tavily-ai/tavily-python">tavily-python 官方仓库</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Agent-搜索引擎速查表.html">Agent 搜索引擎速查表</a>——三类 API 对照、集成链路与官方参数约束一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Agent-搜索引擎">22.Agent 搜索引擎</a> · 下一课 <a href="/agents/Agents底层逻辑/Skill">23.Skill</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

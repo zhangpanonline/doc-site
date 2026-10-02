@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Transformer的完整训练流程：Block 六步、残差与 RMSNorm、FFN 与 MoE、线性变换层与反向传播——互动教学课程">
+  <title>Transformer的完整训练流程 · 互动教学课程（Agents底层逻辑 ac-12）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Transformer的完整训练流程</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Transformer的完整训练流程">12.Transformer的完整训练流程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>按顺序说清单个 Transformer Block 的六个阶段：多头注意力（含 RoPE）→ 残差（Add）→ 归一化（Norm）→ FFN → 残差（Add）→ 归一化（Norm）</li>
+        <li>解释两次残差连接与 RMSNorm 各自解决什么问题，以及为什么 Block 的输入输出都是 $4×6$</li>
+        <li>算出线性变换层把 $4×6$ 变成 $4×120000$ 时权重矩阵的形状与参数量，并说清 Softmax 之后得到的是什么</li>
+        <li>复述「原始语料 → 下一个 token 作标签 → 反向传播更新全部参数」这条自监督训练闭环</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把一个 Block 的六步、形状契约与训练闭环过一遍——细节都在《12.Transformer的完整训练流程》里，测验和面试会考。</p>
+
+      <figure style="margin:0 0 1.2rem">
+        <img src="https://resource.duyiedu.com/yuanjin/202607201528441.svg" alt="Transformer 结构图（transformer_decoder）：从输入矩阵到下一个 token 的链路" style="max-width:100%;height:auto">
+        <figcaption style="font-size:.85rem;opacity:.7">课件结构图（transformer_decoder）：输入矩阵 → Transformer Block 堆叠 → 线性变换 → 下一个 token。</figcaption>
+      </figure>
+
+      <div class="card">
+        <h3>一个 Transformer Block 的六个阶段（顺序不能乱）</h3>
+        <ul class="pitfall-list">
+          <li>① <strong>多头注意力</strong>：现代大模型还会在这一步注入 <code>token</code> 位置信息，算法是旋转位置编码（RoPE），针对的矩阵是 <strong>Q 和 K</strong>，时机是<strong>多头切分之后、注意力得分计算之前</strong></li>
+          <li>② <strong>残差连接（Add）</strong>：把注意力阶段得到的「残差」和它的输入相加，得到 $4×6$ 的矩阵</li>
+          <li>③ <strong>归一化（Norm）</strong>：用 RMSNorm（均方根归一化）把<strong>大部分</strong>数据归一化到 $[-3,3]$ 之间，主要是为了防止梯度爆炸和梯度消失，得到 $4×6$ 的矩阵</li>
+          <li>④ <strong>前馈网络 FFN</strong>：为了提升模型复杂度、引入非线性激活函数。FFN 权重矩阵里不同行（神经元）相当于存了不同的「知识片段」或「模式模板」，上下文命中就激活对应输出；不同大模型在这一层设计不同，比如 DeepSeek V4 Pro 在这里用了 MoE（混合专家模型）。输出 $4×6$ 的矩阵（它仍然表达一个残差）</li>
+          <li>⑤ <strong>残差连接（Add）</strong>：把 FFN 阶段的残差和它的输入相加，得到 $4×6$ 的矩阵</li>
+          <li>⑥ <strong>归一化（Norm）</strong>：再一次 RMSNorm，把大部分数据归到 $[-3,3]$，得到 $4×6$ 的矩阵 —— ✅ 单个 Transformer Block 全部完成</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>形状契约与「上下文」是怎么攒出来的</h3>
+        <ul class="pitfall-list">
+          <li><strong>进出一致</strong>：单个 block 接收 $4×6$ 的矩阵、输出 $4×6$ 的矩阵。中间经过大量运算，可以让输出的<strong>每一行都包含大量上下文信息</strong></li>
+          <li><strong>逐层堆叠</strong>：把输出再传给下一个 block，循环往复。DeepSeek v4 pro 拥有 <strong>61 个</strong> Transformer Block</li>
+          <li><strong>最后一行信息最全</strong>：最终最后一个 block 的输出，它的每一行都表达了一个<strong>完整的上下文</strong></li>
+          <li><strong>契约稳定</strong>：注意力负责把别的位置的信息混进来，残差负责把原信息原样带下去——所以 block 内部怎么改（例如把 FFN 换成 MoE），对外仍是 $4×6$ 进、$4×6$ 出，61 层才串得起来</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>从隐藏状态到「下一个 token 的概率」，再到反向传播</h3>
+        <ul class="pitfall-list">
+          <li><strong>线性变换层</strong>：大多数模型的这一层就是一个单层全连接神经网络，它把一个 $4 × 6$ 的矩阵变成 $4 × 120000$ 的矩阵（120000 就是词表大小）</li>
+          <li><strong>权重矩阵形状</strong>：按 $y = xW$ 的写法，$x$ 是 $4×6$、输出是 $4×120000$，所以 $W$ 是 $6×120000$（参数量 720000，不含偏置）；PyTorch 的 <code>nn.Linear(6, 120000)</code> 算的是 $y = xA^T + b$，内部存的是转置后的 $A$，形状 $120000×6$——同一组参数的两种写法</li>
+          <li><strong>每一行的含义</strong>：该层输出的每一行表达了「对于当前上下文，下一个 token 的可能性」，<strong>数值越大、可能性越高</strong>；线性变换之后再经过 Softmax 归一化，就得到下一个 token 的概率分布</li>
+          <li><strong>自监督 + 反向传播</strong>：程序读取原始语料，拿到每一个上下文对应的<strong>下一个 token 作为标签</strong>，进行反向传播，从而调整整个 Transformer 架构里边的<strong>所有参数</strong>——标签由语料自己错开一位产生，不需要人工标注</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《12.Transformer的完整训练流程》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. Transformer Block 里，「多头注意力」之后紧接着的两步，顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">归一化（Norm）→ 残差连接（Add）</button>
+            <button class="quiz-option">残差连接（Add）→ 归一化（Norm）</button>
+            <button class="quiz-option">线性变换 → Softmax</button>
+            <button class="quiz-option">前馈网络（FFN）→ 残差连接（Add）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「Transformer Block」的六步顺序：① 多头注意力 → ② 残差连接（Add）→ ③ 归一化（Norm）→ ④ FFN → ⑤ 残差连接（Add）→ ⑥ 归一化（Norm）。注意每一步都得到 $4×6$ 的矩阵，残差加的是子层的输入，归一化跟在残差之后。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 单个 Transformer Block 接收一个 $4×6$ 的矩阵，它输出的矩阵形状是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$120000×4$</button>
+            <button class="quiz-option">$4×6$</button>
+            <button class="quiz-option">$6×4$</button>
+            <button class="quiz-option">$4×120000$</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：对于单个 Transformer block，它接收一个 4×6 的矩阵，输出一个 4×6 的矩阵；经过中间的大量运算，它可以让输出结果的矩阵每一行都包含大量的上下文信息。变成 $4×120000$ 是最后<strong>线性变换层</strong>干的事，不是 block 内部的事。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">3. 课件说 RMSNorm（均方根归一化）把「大部分」数据归一化到哪个区间？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$(-\infty,+\infty)$ 全区间不变</button>
+            <button class="quiz-option">$[-3,3]$</button>
+            <button class="quiz-option">$[-1,1]$</button>
+            <button class="quiz-option">$[0,1]$</button>
+          </div>
+          <div class="quiz-explain" hidden>课件两步归一化的原文都是「将大部分数据归一化到 $[-3,3]$ 之间」——注意是「大部分」而不是「保证全部落在区间内」，这是数值量级的经验观察，不是硬约束；它的目的是防止梯度爆炸和梯度消失。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 线性变换层把 $4×6$ 的矩阵变成 $4×120000$ 的矩阵。按 $y = xW$ 的写法，这一层权重矩阵 $W$ 的形状应该是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$120000×6$</button>
+            <button class="quiz-option">$4×4$</button>
+            <button class="quiz-option">$4×120000$</button>
+            <button class="quiz-option">$6×120000$</button>
+          </div>
+          <div class="quiz-explain" hidden>形状必须能乘起来：$x$ 是 $4×6$，要得到 $4×120000$，$W$ 只能是 $6×120000$（参数量 720000，不含偏置）。写成 PyTorch 的 <code>nn.Linear(6, 120000)</code> 时，官方文档定义它算的是 $y = xA^T + b$，所以内部存的是 $A$、形状 $120000×6$——这与 $6×120000$ 是同一组参数的转置写法，别把两者当成两组参数。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. 现代大模型在多头注意力阶段注入位置信息，用的是 RoPE（旋转位置编码）。按课件口径，它作用在哪些矩阵、在什么时机？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">作用在 Q 和 K 上，在多得切分之后、注意力得分计算之前</button>
+            <button class="quiz-option">作用在输入词嵌入上，在进入第一个 block 之前</button>
+            <button class="quiz-option">作用在 FFN 的输出上，在残差相加之前</button>
+            <button class="quiz-option">作用在 V 上，在 Softmax 之后</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：使用的算法是旋转位置编码（RoPE），针对的矩阵是 Q 和 K，时机是<strong>多头切分之后、注意力得分计算之前</strong>。因为注意力得分由 Q 与 K 的点积决定，位置信息写进 Q、K 才能影响「谁该关注谁」；V 负责被加权汇总，不参与打分。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">6. 输出层得到 $4×120000$ 的矩阵，其中第 3 行数值最大的那一列是「猫」。对整张矩阵做 Softmax（在词表维上归一化）之后，关于第 3 行的说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只有「猫」的概率非零，其余列都被压成 0</button>
+            <button class="quiz-option">「猫」的概率最大，其余列也都是非零概率，整行求和为 1</button>
+            <button class="quiz-option">整行概率之和等于 120000，因为每一列各自归一化</button>
+            <button class="quiz-option">概率分布与原来数值的大小排序无关</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：线性变换后，再经过 Softmax 进行归一化，就可以得到下一个 Token 的概率分布。Softmax 是单调的指数归一化——它<strong>保持大小排序</strong>（最大值仍是最大值），把整行压成非负且求和为 1 的概率。它不会把其他列清零，也不是按列归一化，更不会改变排序。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 把 61 个结构相同的 block 串起来，为什么「最后一个 block 的输出，每一行都表达了一个完整的上下文」？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每个 block 都用注意力把其他位置的信息混入每一行、再用残差把原信息保留下来，层层累积</button>
+            <button class="quiz-option">因为输出层会把最后一行的结果复制成 61 份</button>
+            <button class="quiz-option">因为 Softmax 只在最后一个 block 里执行</button>
+            <button class="quiz-option">因为最后一个 block 的参数量最大，能记住全部信息</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：单个 block 经过大量运算可以让输出的每一行都包含大量上下文信息，然后传给下一个 block，循环往复。机理是「注意力混合信息 + 残差保留信息」逐层叠加：注意力让每个位置看到别的位置，残差让原始信息不被冲掉，61 层下来每一行就攒满了上下文。这与参数量、复制、Softmax 位置都无关。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 课件说不同大模型在第 ④ 步 FFN 上设计不一样，比如 DeepSeek V4 Pro 用了 MoE。从「形状契约」看，下面哪句最准确？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">MoE 换掉的是这一层内部「怎么算、激活多少参数」，block 依然是 $4×6$ 进、$4×6$ 出</button>
+            <button class="quiz-option">MoE 会改变 block 的输入输出形状，因为专家数量会影响词表大小</button>
+            <button class="quiz-option">用了 MoE 就不再需要残差连接了</button>
+            <button class="quiz-option">用了 MoE 就必须去掉归一化</button>
+          </div>
+          <div class="quiz-explain" hidden>课件把 FFN 描述为「提升模型复杂度」的子层，并明确「不同的大模型在这一层设计的不一样」，MoE 是其中一种设计。因为 FFN 的输出要拿去做残差相加（⑤ 步），它必须输出和输入同形状的 $4×6$；专家数量只影响这一层内部的参数与计算方式，不影响 block 对外的形状契约，也不影响残差与归一化的存在。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 训练代码在构造标签时写错了：把「当前 token」当成标签，而不是「下一个 token」。最可能的后果是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">效果反而更好，因为任务被简化了</button>
+            <button class="quiz-option">模型会学到把输入原样复制出来，推理时并不会真正预测下一个 token</button>
+            <button class="quiz-option">训练完全无法进行，第一步就会报形状错误</button>
+            <button class="quiz-option">只影响 Softmax 的数值稳定性，不影响学到的东西</button>
+          </div>
+          <div class="quiz-explain" hidden>课件的训练闭环是「拿到每一个上下文对应的<strong>下一个</strong> token 作为标签」。标签与输入同一个位置时，正确答案就摆在了输入里，模型只要学会复制当前 token 就能把 loss 压下去，于是学不到「根据上下文预测下一个」的能力；形状完全合法，所以不会报错——这正是它危险的地方。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0012-Transformer的完整训练流程',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `同事说：「Transformer Block 里最后那两个归一化（RMSNorm）就是用来把输出变成下一个 token 的概率分布，好直接算 loss。」请指出这句话错在哪，并说清「归一化」和「变成概率分布」分别由哪一步负责。`,
+              source: `来源：PyTorch 官方文档 torch.nn.Softmax（"Applies the Softmax function to an n-dimensional input Tensor. Rescales them so that the elements of the n-dimensional output Tensor lie in the range [0,1] and sum to 1."）https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html + RMSNorm 论文《Root Mean Square Layer Normalization》（"RMSNorm regularizes the summed inputs to a neuron in one layer according to root mean square (RMS), giving the model re-scaling invariance property and implicit learning rate adaptation ability."）https://arxiv.org/abs/1910.07467 · 检索 2026-10-02 · 层级：一手（官方文档 / 原论文）`,
+              breakdown: `两件事被混成了一件。<strong>归一化（RMSNorm）在 block 内部</strong>：课件口径是把大部分数据归到 $[-3,3]$，主要目的是防止梯度爆炸和梯度消失；它<strong>不改变维度</strong>（$4×6$ 进、$4×6$ 出），也不产生概率。RMSNorm 原论文的定义也只是「按均方根正则化一层里某个神经元的求和输入」，换来的是 re-scaling 不变性与隐式学习率自适应。<strong>变成概率分布是线性变换层之后的 Softmax</strong>：先把 $4×6$ 送到输出头得到 $4×120000$ 的 logits，再在词表维上做 Softmax——官方文档写的正是「把元素压缩到 $[0,1]$ 范围且求和为 1」。所以：block 里的 Norm 管<strong>数值稳定</strong>，输出头之后的 Softmax 管<strong>概率分布</strong>。算 loss 用 Softmax 之后的分布（或直接拿 logits 走交叉熵），跟 RMSNorm 没有直接关系。`,
+            },
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `做预训练语料工程时，AI 建议：「安排标注团队把每条语料的下一个 token 标出来，再拿去反向传播。」请审查这个方案，并说明正确的标签是怎么来的。`,
+              source: `来源：Vaswani 等《Attention Is All You Need》（"At each step the model is auto-regressive, consuming the previously generated symbols as additional input when generating the next."）https://arxiv.org/html/1706.03762v7 + DeepSeek-V3 技术报告（"we compute a cross-entropy loss ... where T denotes the input sequence length, t_i denotes the ground-truth token at the i-th position"）https://arxiv.org/html/2412.19437v2 · 检索 2026-10-02 · 层级：一手（原论文）`,
+              breakdown: `标签<strong>不需要人工标注</strong>，这是自监督的核心。课件原文：「程序通过读取原始语料，拿到每一个上下文对应的下一个 token 作为标签，进行反向传播，从而调整整个 Transformer 架构里边的所有参数。」同一段原始文本向右错开一位，「下一个 token」这个标签就自动得到了——几十亿、上万亿 token 的语料靠人工标注成本上根本无法接受，而且标注员给出的「下一个词」只会污染原始分布。原论文对解码器的描述也是自回归的：每一步把<strong>已经生成的符号</strong>当作额外输入来生成下一个；DeepSeek-V3 的多 token 预测目标同样是用每个位置的真实 token 去算交叉熵损失。要注意区分：预训练目标（本章讲的自监督）不需要人工；后面的偏好对齐 / RLHF 才需要人类反馈参与，那是另一回事。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `一个 Transformer Block 接收 $4×6$ 的矩阵，经过六个阶段后仍然输出 $4×6$。请按顺序说出这六个阶段，并解释残差连接（Add）为什么必须存在。`,
+              source: `来源：Vaswani 等《Attention Is All You Need》（"We employ a residual connection around each of the two sub-layers, followed by layer normalization. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x))"）https://arxiv.org/html/1706.03762v7 + PyTorch 官方文档 torch.nn.TransformerEncoderLayer（"TransformerEncoderLayer is made up of self-attn and feedforward network."）https://pytorch.org/docs/stable/generated/torch.nn.TransformerEncoderLayer.html · 检索 2026-10-02 · 层级：一手（原论文 / 官方文档）`,
+              breakdown: `六步：① 多头注意力（含 RoPE 注入 Q、K）→ ② 残差连接（Add）→ ③ 归一化（Norm，RMSNorm）→ ④ 前馈网络 FFN → ⑤ 残差连接（Add）→ ⑥ 归一化（Norm）。残差为什么必须有：子层（注意力 / FFN）只负责产出「增量」，把它与<strong>子层的输入</strong>相加，形状才不会变——这正是 block 能保持 $4×6$ 进、$4×6$ 出的前提，也是原论文强调「为了让残差连接成立，所有子层与嵌入层都输出同一维度」的原因。另一个作用是梯度：相加让梯度有一条恒等路径可以直接回传到浅层，61 层堆叠时才不至于梯度消失——这与课件把残差和归一化并列、并说明「防止梯度爆炸和梯度消失」是同一个工程动机。PyTorch 的 TransformerEncoderLayer 实现里也正是「self-attn + feedforward」两个子层。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `线性变换层把 $4×6$ 的矩阵变成 $4×120000$ 的矩阵。请写出这一层权重矩阵的形状与参数量（不含偏置），并解释输出里的「一行」和「一列」分别代表什么。`,
+              source: `来源：DeepSeek-V3 技术报告（"The output head OutHead(·) linearly maps the representation to logits and subsequently applies the Softmax(·) function to compute the prediction probabilities"）https://arxiv.org/html/2412.19437v2 + PyTorch 官方文档 torch.nn.Linear（"Applies an affine linear transformation to the incoming data: y = xA^T + b"，"Input: (*, H_in) where H_in = in_features"）https://pytorch.org/docs/stable/generated/torch.nn.Linear.html · 检索 2026-10-02 · 层级：一手（原论文 / 官方文档）`,
+              breakdown: `按 $y = xW$ 的写法：$x$ 是 $4×6$、输出是 $4×120000$，所以 $W$ 只能是 $6×120000$，参数量 $6×120000 = 720000$（加偏置再加 120000）。写成 PyTorch 的 <code>nn.Linear(6, 120000)</code> 时，官方定义是 $y = xA^T + b$，内部存的是 $A$、形状 $120000×6$——是同一组参数的转置，别以为多了一层。含义上：<strong>行 = 上下文中一个位置</strong>，<strong>列 = 词表里的一个 token</strong>；某一行那 120000 个数就是「这个位置之后，下一个 token 取到每个词的可能性」，数值越大可能性越高。再过 Softmax（DeepSeek-V3 官方描述也是「输出头先把表示线性映射成 logits，随后用 Softmax 计算预测概率」）就得到概率分布——自回归解码时用的就是最后一个位置那一行。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查 AI 写的这段「Block 前向 + 输出头 + 训练一步」代码，按课件的六步流程与官方 API 语义找出至少三处问题并给修法：<code>class Block(nn.Module):</code> 的 <code>forward</code> 里是 <code>x = self.norm1(x + self.attn(x))</code> 然后 <code>x = self.norm2(self.ffn(x))</code>；外面是 <code>head = nn.Linear(120000, 6)</code>；<code>probs = torch.softmax(logits)</code>；<code>loss = F.cross_entropy(probs, labels)</code>。`,
+              source: `来源：Vaswani 等《Attention Is All You Need》（"the output of each sub-layer is LayerNorm(x + Sublayer(x))"）https://arxiv.org/html/1706.03762v7 + PyTorch 官方文档 torch.nn.Linear（"Applies an affine linear transformation to the incoming data: y = xA^T + b"）https://pytorch.org/docs/stable/generated/torch.nn.Linear.html + PyTorch 官方文档 torch.nn.Softmax（"dim (int) – A dimension along which Softmax will be computed"）https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html · 检索 2026-10-02 · 层级：一手（原论文 / 官方文档）`,
+              breakdown: `① <strong>FFN 子层漏了残差</strong>：按论文的 $\\mathrm{LayerNorm}(x+\\mathrm{Sublayer}(x))$，应写成 <code>x = self.norm2(x + self.ffn(x))</code>。现在 FFN 的输出既不与输入相加，还会被下一次归一化直接覆盖掉——block 的形状虽然还是 $4×6$，但残差通路断了，堆 61 层时浅层几乎收不到有效梯度。② <strong>输出头维度写反</strong>：课件是 $4×6 \\to 4×120000$，应该写 <code>nn.Linear(6, 120000)</code>；官方文档规定输入的最后一维必须等于 <code>in_features</code>，写成 <code>nn.Linear(120000, 6)</code> 时喂进 6 维直接形状报错（就算凑对形状，也变成把词表压回 6 维，语义完全反了）。③ <strong>Softmax 没给 dim</strong>：官方文档写明 dim 是「沿哪一维做 Softmax」，120000 是最后一维，必须写 <code>torch.softmax(logits, dim=-1)</code>；不给 dim 时 <code>nn.Softmax</code> 会退回自行推断的旧行为，输入形状一变就会归错维。④ <strong>交叉熵不要喂概率</strong>：<code>F.cross_entropy</code> 内部自带 log-softmax，应先手工 softmax 再传进去等于归一化了两次、梯度被压平；正确做法是直接传 logits（或改用 <code>F.nll_loss(torch.log(probs), labels)</code>）。顺带一提：课件六步是「残差在前、归一化在后」，如果训练时想用 pre-norm（PyTorch 的 <code>norm_first=True</code>），全模型必须统一，不能只改一半。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `要给一个 61 层、隐藏维度 $d$ 的 Transformer 配 120000 词表的输出头，并且希望「总参数多、但每个 token 的计算量可控」。请给出输出头与 FFN 层的设计取舍（参数量、激活量、权重共享），并说明为什么 block 的形状契约不能变。`,
+              source: `来源：DeepSeek-V3 技术报告摘要（"We present DeepSeek-V3, a strong Mixture-of-Experts (MoE) language model with 671B total parameters with 37B activated for each token."）https://arxiv.org/abs/2412.19437 + Vaswani 等《Attention Is All You Need》前馈网络定义（"This consists of two linear transformations with a ReLU activation in between."）https://arxiv.org/html/1706.03762v7 + PyTorch 官方文档 torch.nn.Linear https://pytorch.org/docs/stable/generated/torch.nn.Linear.html · 检索 2026-10-02 · 层级：一手（原论文 / 官方文档）`,
+              breakdown: `① <strong>输出头</strong>：$d×120000$ 的参数矩阵（PyTorch 里 <code>nn.Linear(d, 120000)</code> 存 $120000×d$），加偏置约 $120000×(d+1)$ 个参数；词表一大，它就能和大模型主体一个量级。常见取舍：<strong>权重共享</strong>（嵌入矩阵与输出头共用一份参数）、按词表并行切分、或者对低频词做更小的输出空间。② <strong>FFN</strong>：原论文是「两层线性 + 中间一个 ReLU 非线性」，两个矩阵约 $2×d×d_{ff}$ 个参数，是 block 里参数最集中的地方，课件的口径是「提升模型复杂度」；它必须输出 $d$ 维，才能做第 ⑤ 步的残差相加。③ <strong>MoE 换激活量</strong>：把 FFN 从「所有参数都参与每个 token」改成「按 token 路由到少数专家」，总参数量可以很大、而每 token 激活的参数量很小——DeepSeek-V3 官方摘要给的口径是 <strong>671B 总参数 / 每 token 激活 37B</strong>，这正是「参数多但计算量可控」。④ <strong>契约不能变</strong>：block 的输入输出必须同形状（$d$ 进 $d$ 出），残差相加才有意义、61 层才串得起来；MoE 只动第 ④ 步<strong>内部</strong>的算法与激活参数，不能动它的输入输出维度，也不能因此删掉残差或归一化。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 25 分钟内手搭一个 Transformer Block 的前向 + 输出头，把课件的六步流程和形状、概率两个验收点跑通。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '用 PyTorch 写一个 Block（多头注意力 → 残差 → 归一化 → FFN → 残差 → 归一化），输入 torch.randn(4, 6) 并逐段打印形状；再接一个输出头把 4×6 变成 4×120000，过 softmax(dim=-1) 打印每行概率和；最后用「下一个 token」当标签算一次交叉熵并 backward，确认参数拿到梯度。',
+                accept: ['每一步打印的形状符合课件：4×6 → … → 4×6，接输出头后为 4×120000', 'softmax(dim=-1) 后每一行求和约等于 1，且最大值位置与 logits 的最大值位置一致', '交叉熵 loss 能 backward()，且至少一个参数（如输出头权重）的 grad 非零', '能指出代码里哪一句对应课件六步中的哪一步，以及每次残差加的是哪个张量'],
+              },
+              source: `任务基于《12.Transformer的完整训练流程》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 注意力用 <code>nn.MultiheadAttention(embed_dim=6, num_heads=2, batch_first=True)</code>——官方文档要求 <code>embed_dim</code> 能被 <code>num_heads</code> 整除（每个头拿到 embed_dim // num_heads 维），开 <code>batch_first=True</code> 后课件里的 4×6 就对应 4 个位置 × 6 维；② 第 ② 步残差写在子层外面：<code>x = x + attn_out</code>，形状不变，这是 4×6 进 4×6 出的关键；③ 归一化用 <code>nn.RMSNorm(6)</code>（新版本 PyTorch 已内置）或 <code>nn.LayerNorm(6)</code> 做演示，每步 <code>print(x.shape)</code> 对照课件；④ FFN 用 <code>nn.Sequential(nn.Linear(6, 24), nn.ReLU(), nn.Linear(24, 6))</code>——两层之间要有非线性，输出必须回到 6 维才加得上残差（对应论文的 FFN 定义）；⑤ 输出头 <code>nn.Linear(6, 120000)</code>，注意别写反；softmax 一定写 <code>dim=-1</code>；⑥ 标签用错位写法（如 <code>input_ids[:, 1:]</code> 对齐 <code>logits[:, :-1]</code>）拿到「下一个 token」，loss 直接传 logits 给 <code>F.cross_entropy</code>，然后 <code>loss.backward()</code> 并检查 <code>head.weight.grad</code> 非空。常见坑：忘记残差（深堆叠训不动）、输出头写成 <code>nn.Linear(120000, 6)</code>、softmax 不写 dim、把 softmax 之后的概率再喂给 cross_entropy。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://arxiv.org/abs/1706.03762">《Attention Is All You Need》</a> · <a href="https://pytorch.org/docs/stable/generated/torch.nn.Transformer.html">PyTorch <code>nn.Transformer</code></a> · <a href="https://pytorch.org/docs/stable/generated/torch.nn.TransformerEncoderLayer.html">PyTorch <code>nn.TransformerEncoderLayer</code></a> · <a href="https://arxiv.org/abs/1910.07467">RMSNorm 原论文</a> · <a href="https://arxiv.org/abs/2104.09864">RoFormer（RoPE）</a> · <a href="https://arxiv.org/abs/2412.19437">DeepSeek-V3 技术报告（MoE）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Transformer的完整训练流程速查表.html">Transformer的完整训练流程速查表</a>——六步流程、形状与参数量、训练闭环一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Transformer的完整训练流程">12.Transformer的完整训练流程</a> · 上一课 <a href="/agents/Agents底层逻辑/注意力机制">11.注意力机制</a> · 下一课 <a href="/agents/Agents底层逻辑/推理机制">13.推理机制</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

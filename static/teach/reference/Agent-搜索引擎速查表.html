@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent-搜索引擎速查表 · 参考手册</title>
+  <meta name="description" content="Agent-搜索引擎速查表 · 可打印参考手册：配合《Agent-搜索引擎互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>Agent-搜索引擎速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0022-Agent-搜索引擎.html">《Agent-搜索引擎互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>为什么要换搜索引擎</h2>
+      <p>本章的问题意识：<strong>问题的关键是，<code>web_search</code> 工具应该返回给 AI 什么调用结果？</strong>把传统搜索引擎的结果页直接交给 Agent，会遇到下面这串问题。</p>
+      <table class="cmp-table">
+        <tr><th>传统结果页的问题</th><th>对 Agent 的实际影响</th></tr>
+        <tr><td>内容被大量标签、样式、JS 代码污染</td><td>更多的 token 消耗</td></tr>
+        <tr><td>页面里塞满广告图片、菜单、banner</td><td>注意力被分散；包含大量无关信息</td></tr>
+        <tr><td>很多 CSR（客户端渲染）页面</td><td>抓不到内容</td></tr>
+        <tr><td>链接层级深</td><td>深层链接无法一次性获取</td></tr>
+      </table>
+      <p>本章列出的、更适合 Agent 调用的搜索引擎：<strong>Firecrawl</strong> · <strong>Tavily</strong> · <strong>AnySearch</strong> · <strong>Brave</strong> · <strong>Exa</strong>。本章实战用 <strong>Tavily</strong>。</p>
+    </section>
+
+    <section>
+      <h2>Tavily 三类能力 → 两个工具</h2>
+      <table class="cmp-table">
+        <tr><th>能力</th><th>入参（本章课件）</th><th>返回什么</th><th>封装成的工具</th></tr>
+        <tr><td><code>client.search</code></td><td><code>query="可控核聚变最新研究进展"</code></td><td>结构化搜索结果</td><td><code>web_search</code>（<code>@tool(query="搜索关键字")</code>）</td></tr>
+        <tr><td><code>client.extract</code></td><td><code>urls=[…]</code>、<code>include_images=…</code></td><td>指定 URL 的网页内容</td><td><code>fetch_url</code>（<code>@tool(urls="要抓取的url链接数组")</code>）</td></tr>
+        <tr><td><code>client.crawl</code></td><td><code>url=…</code>、<code>max_depth=3</code>、<code>limit=50</code>、<code>instructions="找到所有和网络相关的知识"</code></td><td>站点遍历结果</td><td>本章未封装成工具，仅演示用法</td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>安装</dt>
+        <dd><code>uv add tavily-python==0.7.26</code>（课件锁定版本）。</dd>
+        <dt>密钥</dt>
+        <dd>官网获取 API KEY 后<strong>保存到环境变量</strong>；<code>agent/config.py</code> 新增 <code>TavilySettings</code>，<code>model_config = {"env_prefix": "TAVILY_"}</code>，代码里只写 <code>TavilyClient(api_key=tavily_settings.api_key)</code>。</dd>
+        <dt>为什么两个工具都要</dt>
+        <dd><code>search</code> 用关键词<strong>发现来源</strong>，模型此时手里没有 URL；<code>extract</code> 按<strong>已知 URL</strong>取正文。少任何一个，链路都是断的。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>集成链路（本章 <code>agent/</code> 变更）</h2>
+      <pre># 新增 agent/tool/web.py
+@tool(query="搜索关键字")
+def web_search(query: str):
+    "根据关键字进行网络搜索，返回结构化的搜索结果"
+    client = TavilyClient(api_key=tavily_settings.api_key)
+    response = client.search(query=query)
+    return json.dumps(response, ensure_ascii=False)
+
+@tool(urls="要抓取的url链接数组")
+def fetch_url(urls: list[str]):
+    "根据提供的url数组，抓取网页内容，返回结构化的搜索结果"
+    client = TavilyClient(api_key=tavily_settings.api_key)
+    response = client.extract(urls=urls, include_images=False)
+    return json.dumps(response, ensure_ascii=False)
+
+# 修改 agent/tool/__init__.py
+from agent.tool.web import web_search, fetch_url
+registry.register(web_search)
+registry.register(fetch_url)</pre>
+      <table class="cmp-table">
+        <tr><th>文件</th><th>类型</th><th>要点</th></tr>
+        <tr><td><code>agent/tool/web.py</code></td><td>新增</td><td>两个联网工具，返回值统一是 JSON 字符串</td></tr>
+        <tr><td><code>agent/config.py</code></td><td>修改</td><td>新增 <code>TavilySettings</code>（<code>env_prefix = "TAVILY_"</code>）与 <code>tavily_settings</code></td></tr>
+        <tr><td><code>agent/model.py</code></td><td>修改</td><td>流式/非流式响应的归一化处理，供工具调用链路使用</td></tr>
+        <tr><td><code>agent/tool/__init__.py</code></td><td>修改</td><td>import 两个新工具并 <code>registry.register</code></td></tr>
+        <tr><td><code>分析.md</code></td><td>删除</td><td>本次工程清理</td></tr>
+      </table>
+      <p>合计：<strong>新增 1、修改 3、删除 1</strong>。运行链路（原理图）：用户问题 → 模型（上下文 + 工具）→ <code>web_search</code> 工具调用 → 调用结果回填 → Reasoning / Acting 循环 → 普通回复 → 退出循环。</p>
+    </section>
+
+    <section>
+      <h2>官方参数与成本速查（Tavily）</h2>
+      <table class="cmp-table">
+        <tr><th>项目</th><th>官方约束</th><th>什么时候调</th></tr>
+        <tr><td><code>query</code></td><td>官方建议 &lt; 1500 字符；多主题需求拆子查询分别发</td><td>查询变长、意图变杂时先改写</td></tr>
+        <tr><td><code>search_depth</code></td><td><code>basic</code>（默认）1 credit；<code>advanced</code> 2 credits、相关性最高延迟更高</td><td>冷门主题 / 刚发布内容 / 多侧面问题才上 <code>advanced</code></td></tr>
+        <tr><td><code>max_results</code></td><td>官方提示设得过高可能返回更低质的结果</td><td>Agent 场景常用 3–5 条</td></tr>
+        <tr><td><code>include_raw_content</code></td><td>返回完整正文；官方推荐「先 search 拿 URL，再 Extract 取内容」的两段式</td><td>需要正文时改用 Extract，不要批量开</td></tr>
+        <tr><td>Extract <code>urls</code></td><td>一次最多 <strong>20</strong> 个 URL，超限 400（<code>Max 20 URLs are allowed.</code>）</td><td>超过就分批 <code>urls[i:i+20]</code></td></tr>
+        <tr><td>Extract 返回结构</td><td>成功在 <code>results</code>，逐个失败在 <code>failed_results</code>；<strong>HTTP 200 也要同时检查两个数组</strong></td><td>存在 <code>failed_results</code> 时显式告知模型</td></tr>
+        <tr><td><code>query</code> + <code>chunks_per_source</code>（Extract）</td><td>给 <code>query</code> 后返回按相关性重排的片段，<code>chunks_per_source</code> 1–5（每片 ≤500 字符）</td><td>长文档只取相关片段，防止上下文爆炸</td></tr>
+        <tr><td>成本量级</td><td>$C \approx 2N_{\text{adv}} + N_{\text{basic}} + \lceil U/5 \rceil$（basic 抽取每 5 个成功 URL 计 1 credit）</td><td>估算日调用量对应的预算</td></tr>
+      </table>
+      <p>官方文档：<a href="https://docs.tavily.com/documentation/api-reference/endpoint/search">Search</a> · <a href="https://docs.tavily.com/documentation/api-reference/endpoint/extract">Extract</a> · <a href="https://docs.tavily.com/documentation/best-practices/best-practices-search">Best Practices for Search</a> · <a href="https://docs.tavily.com/documentation/best-practices/best-practices-extract">Best Practices for Extract</a> · <a href="https://github.com/tavily-ai/tavily-python">tavily-python</a></p>
+    </section>
+
+    <section>
+      <h2>易错点清单</h2>
+      <ul class="pitfall-list">
+        <li>把用户整段长需求直接当 <code>query</code>（官方上限 1500 字符），检索意图被稀释</li>
+        <li>API KEY 硬编码进源码——本章要求存环境变量，由 <code>TavilySettings</code> 读取</li>
+        <li>写了 <code>@tool</code> 却忘记 <code>registry.register</code>，模型侧看不到工具</li>
+        <li>工具返回 <code>dict</code> 而不是字符串：tool 消息的 <code>content</code> 需要文本（本章统一 <code>json.dumps</code>）</li>
+        <li><code>ensure_ascii=True</code>（默认）会把中文转成 <code>\uXXXX</code>，难读又费 token</li>
+        <li>一次性给 <code>extract</code> 超过 20 个 URL，整批被 400 拒绝</li>
+        <li>只看 <code>results</code> 不看 <code>failed_results</code>，静默丢掉失败来源</li>
+        <li>把完整响应（含 <code>raw_content</code>、图片）长期留在上下文——工具结果会累积，token 与注意力双重损耗</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 推理机制：预填充 Prefill、K-V 缓存与温度/Top-K/Top-P 采样策略——互动教学课程">
+  <title>推理机制 · 互动教学课程（Agents底层逻辑 ac-13）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>推理机制</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/推理机制">13.推理机制</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清一次自回归推理为什么分成预填充 Prefill 与解码 Decode 两个阶段，各自在算什么、瓶颈在哪</li>
+        <li>解释 K-V 缓存省掉了哪些重复计算，它的显存代价随什么增长，并会算每 token 的缓存大小</li>
+        <li>复述温度、Top-K、Top-P 三种采样策略的机制差异，说清 Top-P 为什么比 Top-K 更灵活</li>
+        <li>用官方参数定义审查 AI 给出的推理配置，并把首 token 延迟与逐 token 间隔分开看待</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把推理的三个关键词过一遍——预填充、K-V 缓存、采样策略，细节都在《13.推理机制》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>推理的两个阶段：预填充 Prefill 与解码 Decode</h3>
+        <ul class="pitfall-list">
+          <li>自回归生成分成两个阶段：先 <strong>预填充 Prefill</strong> 处理输入，再 <strong>解码 Decode</strong> 逐个吐字（官方原文：This process involves two phases: the prefill phase and the decode phase）</li>
+          <li><strong>Prefill</strong>：把整段输入 token 一次送进模型，算出中间状态（keys 和 values），用来生成<strong>第一个</strong>新 token。因为输入全长已知，这是一次<strong>矩阵×矩阵</strong>运算，高度并行，能把 GPU 吃满</li>
+          <li><strong>Decode</strong>：自回归地一次生成一个 token，直到命中停止条件。每个新 token 都要看之前所有轮次的输出状态（K/V），本质是<strong>矩阵×向量</strong>运算，算力用不满；延迟由「数据从显存搬到计算单元」的速度主导——也就是<strong>访存受限（memory-bound）</strong></li>
+          <li>两个阶段的延迟指标必须分开看：Prefill 决定<strong>首 token 延迟 TTFT</strong>，Decode 决定<strong>相邻 token 间隔 ITL</strong>；调参时也要分开调，不能用一个「平均速度」混着算</li>
+          <li>想直观感受逐 token 生成，用课件给的 <a href="https://poloclub.github.io/transformer-explainer/">transformer-explainer</a>，能看到概率分布怎么随参数变化</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>K-V 缓存：用显存换计算</h3>
+        <ul class="pitfall-list">
+          <li><strong>它解决什么</strong>：Decode 每一步都要用到前面所有 token 的 K/V；如果每步都重算，重复计算会随序列长度急剧膨胀。把已算出的 K/V 张量留在显存里，新元素直接追加进缓存，下一步直接复用（官方原文：To avoid recomputing all these tensors for all tokens at each time step, it is possible to cache them in GPU memory）</li>
+          <li><strong>常见形态</strong>：多数实现里<strong>每一层都有自己的 K-V 缓存</strong></li>
+          <li><strong>代价是显存</strong>：批量推理时每个请求的缓存要<strong>单独分配</strong>，占用随<strong>批量大小</strong>与<strong>序列长度</strong>线性增长——长上下文与 RAG 场景的吞吐瓶颈就在这里</li>
+          <li><strong>每 token 缓存大小</strong>：$$\text{bytes per token} = 2 \times n_{\text{layers}} \times (n_{\text{heads}} \times d_{\text{head}}) \times \text{precision\_in\_bytes}$$ 第一个因子 $2$ 是 K 与 V 两份；$(n_{\text{heads}} \times d_{\text{head}})$ 通常等于 $d_{\text{model}}$</li>
+          <li><strong>算例</strong>：Llama 2 7B（$n_{\text{layers}}=32$、$d_{\text{model}}=4096$、FP16 即 2 字节）→ $2 \times 32 \times 4096 \times 2 = 524288$ 字节 ≈ <strong>512 KB/token</strong>；单条 8192 上下文 ≈ <strong>4 GB</strong>，并发 16 条 ≈ <strong>64 GB</strong>——而 FP16 的 7B 权重才约 14 GB</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>采样策略：温度 Temperature / Top-K / Top-P</h3>
+        <ul class="pitfall-list">
+          <li>模型每一步输出的是<strong>整个词表上的概率分布</strong>（logits 经 Softmax）；「采样策略」决定怎么从这张分布里挑出下一个 token</li>
+          <li><strong>温度 Temperature</strong>：在 Softmax 之前把所有 logits 除以 $T$，即 $p_i = \dfrac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}$。$T=1$ 不作干预；<strong>$T&lt;1$（如 0.5）</strong>分布更尖锐，高概率的词更高、低概率的词更低，文本更稳定、保守、确定；<strong>$T&gt;1$（如 1.5）</strong>分布更平滑，词间概率差距缩小，文本更随机、多样、有创造力。官方表述：温度调制概率质量函数，低温把函数变陡（steepens）→ 更确定，高温把它压平（flattens）→ 更随机</li>
+          <li><strong>Top-K 采样</strong>：只从概率最高的 <strong>K</strong> 个词里随机抽取，其余词的采样概率直接置零。比如 <code>K = 50</code>：先选出概率最高的 50 个词，过滤掉剩余海量词汇，再在这 50 个词的新分布上采样。K 是<strong>固定值</strong></li>
+          <li><strong>Top-P（核采样，Nucleus Sampling）</strong>：按概率从高到低累加，直到累积概率超过 <strong>P</strong>，只从这个动态的「核心」词集合里采样。比如 <code>P = 0.9</code>，就只从累积概率超过 0.9 的最小词集合中采样。课件说它是目前最主流、效果最好的采样方式之一，<strong>比 Top-K 更灵活</strong>：K 固定，而 P 是动态的——分布集中时采样集很小、输出更确定，分布分散时采样集很大、输出更多样</li>
+          <li><strong>官方 API 口径</strong>：Top K 是「模型为下一个 token 考虑的最可能候选的<strong>数量</strong>」，Top P 是「考虑的最可能候选的<strong>百分比</strong>」（如 0.8 就是从概率分布的前 80% 里选）</li>
+          <li><strong>工程细节</strong>：vLLM 里 <code>temperature=0</code> 即<strong>贪心（greedy）</strong>，实现上会把 <code>top_p</code> 强制为 1.0、<code>top_k</code> 强制为 0、<code>min_p</code> 强制为 0.0；<code>top_k=0</code>（或 <code>-1</code>）的含义是「考虑<strong>全部</strong> token」而不是「不考虑任何 token」。另外，推理模型（如 GPT-5 系列）根本不支持 temperature / top_p 这些采样参数</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《13.推理机制》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 一次自回归推理被分成哪两个阶段？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">预填充 Prefill 与解码 Decode</button>
+            <button class="quiz-option">训练与推理</button>
+            <button class="quiz-option">编码与解码</button>
+            <button class="quiz-option">前向传播与反向传播</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「理解」一节列出的第一件事就是<strong>预填充 Prefill</strong>；官方原文把这个过程说成两个阶段：This process involves two phases: the prefill phase and the decode phase。前半段处理输入（算 K/V、生成第一个 token），后半段自回归地一个个吐 token。反向传播是训练阶段的事，不属于推理。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 温度 Temperature 控制的是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型参数量的多少</button>
+            <button class="quiz-option">上下文窗口的长度</button>
+            <button class="quiz-option">一次最多生成多少 token</button>
+            <button class="quiz-option">输出概率分布的「锐利」或「平滑」程度</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：温度控制输出概率分布的「锐利」或「平滑」程度——<strong>在 Softmax 之前，将所有 Logits 除以温度值 T</strong>。它不动参数量、不动窗口、也不动生成长度，只重塑这张概率分布的形状。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. 设置 Top-P（核采样）为 <code>P = 0.9</code>，模型实际是从哪里采样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先以 90% 的概率选最高词，剩下 10% 的概率随机选</button>
+            <button class="quiz-option">只从概率最高的 9 个词里随机抽取</button>
+            <button class="quiz-option">按概率从高到低累加，只从累积概率超过 0.9 的那个最小词集合里采样</button>
+            <button class="quiz-option">把概率最低的 10% 的词按顺序丢掉</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：从累积概率达到 P 的最小词集合中采样；比如 P = 0.9，模型会按概率从高到低累加词，直到累积概率超过 0.9，然后仅从这个动态的「核心」词汇子集中采样。它不是固定个数（那是 Top-K 的 9 个词），也不是「以 P 的概率走贪心」。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 关于 K-V 缓存的作用与代价，下面哪一条正确？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">让 Decode 变成矩阵×矩阵运算，代价是数值精度下降</button>
+            <button class="quiz-option">把模型权重缓存到显存，代价是首次加载变慢</button>
+            <button class="quiz-option">把用户的历史提问缓存到磁盘，代价是磁盘空间</button>
+            <button class="quiz-option">把已算过的 K/V 张量留在显存里复用，省掉每步重算；代价是显存占用随批量大小与序列长度线性增长</button>
+          </div>
+          <div class="quiz-explain" hidden>官方原文说得很清楚：为了避免每个时间步对所有 token 重算这些张量，把它们缓存进 GPU 显存，每轮新算出的元素直接追加到运行中的缓存。代价是显存——批量推理时每个请求的缓存要单独分配，占用随批量与序列长度线性增长。缓存只影响<strong>计算复用与显存</strong>，不改变 Decode 的矩阵×向量本质，也不影响精度。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. 一个客服 Agent 要把用户问题分类成固定 JSON 字段（希望同样的输入尽量给同样的输出）；另一个营销文案 Agent 要同题出多稿。温度该怎么设？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">分类用 $T&gt;1$ 增加多样性，文案用 $T&lt;1$ 保证稳定</button>
+            <button class="quiz-option">分类用 $T&lt;1$（如 0.2，分布更尖锐、更确定），文案用 $T&gt;1$（如 1.2，分布更平滑、更多样）</button>
+            <button class="quiz-option">两个都设 $T=2$，让输出更有创造力</button>
+            <button class="quiz-option">温度只影响输出长度，与稳定性和多样性无关</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：T &lt; 1（如 0.5）分布变得更尖锐，高概率的词概率更高、低概率的词更低，文本更稳定、保守、确定；T &gt; 1（如 1.5）分布变得更平滑，各词之间的概率差距缩小，文本更具随机性、多样性、创造力。官方也把这件事说成低温 steepens（更陡 → 更确定）、高温 flattens（更平 → 更随机）。所以结构化分类要低温，创意文案要高温，方向别弄反。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 课件为什么说 Top-P 比 Top-K 更灵活？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 K 是固定值，而 P 是动态的：分布很集中时采样集很小、输出更确定；分布很分散时采样集很大、输出更多样</button>
+            <button class="quiz-option">因为 Top-P 不需要经过 Softmax</button>
+            <button class="quiz-option">因为 Top-P 会把概率最高的词直接选中，不做随机</button>
+            <button class="quiz-option">因为 Top-P 的计算量比 Top-K 小</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：它比 Top-K 更灵活，因为 K 是固定的，而 P 是动态的——当概率分布很集中时，采样集很小，输出更确定；当分布很分散时，采样集很大，输出更多样。两者都是在缩小候选池，都要先有 Softmax 后的概率，也都保留随机性。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 用户反馈：问一个 3 万字文档的问题，「第一个字要等 8 秒，之后每个字出得挺快」。按 Prefill / Decode 的分工，诊断与优化方向是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">8 秒主要花在 Prefill（首 token 延迟 TTFT）——输入长，是一次高度并行的矩阵×矩阵运算；出字快说明 Decode 的逐 token 间隔（ITL）没问题。方向是分块预填充、复用公共前缀的 K-V 缓存，或把 Prefill 与 Decode 分实例分别调优</button>
+            <button class="quiz-option">Decode 阶段算力不足，应该加 GPU 或减小批量</button>
+            <button class="quiz-option">这是采样策略的问题，调大 top_p 即可</button>
+            <button class="quiz-option">Prefill 阶段访存受限，把温度调低就能变快</button>
+          </div>
+          <div class="quiz-explain" hidden>官方把两件事分得很清楚：Prefill 把输入并行处理完（矩阵×矩阵，吃满 GPU），Decode 才是一个个吐 token 且访存受限。长输入导致首字慢，病灶在 Prefill / TTFT，跟采样参数无关（温度、top_p 只改变采样分布，不减少 Prefill 的计算量）。vLLM 官方文档给出的正是这两条路：把 prefill 与 decode 放进不同实例以<strong>分别调 TTFT 与 ITL</strong>；以及用分块预填充避免 prefill 任务插进解码过程、抬高尾部延迟。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. Llama 2 7B：32 层、hidden size 4096、FP16（2 字节）、K 与 V 各一份。按官方公式，K-V 缓存每 token 多大？batch = 16、上下文 8192 时是什么量级？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">每 token 约 512 KB；但缓存只在 Prefill 阶段占用，进入 Decode 就会被释放</button>
+            <button class="quiz-option">每 token 约 4 KB；16 条并发合计约 64 MB，可以忽略</button>
+            <button class="quiz-option">每 token 约 512 KB；单条 8192 上下文约 4 GB，16 条并发约 64 GB——远大于约 14 GB 的模型权重</button>
+            <button class="quiz-option">每 token 约 512 KB；但缓存总量只与 batch 有关，与上下文长度无关</button>
+          </div>
+          <div class="quiz-explain" hidden>官方公式：Size of KV cache per token in bytes = 2 * (num_layers) * (num_heads * dim_head) * precision_in_bytes，第一个 2 是 K 和 V 两份。代入 $2 \times 32 \times 4096 \times 2 = 524288$ 字节 ≈ 512 KB/token；再乘序列长度 8192 ≈ 4 GB，乘 batch 16 ≈ 64 GB。官方同时给了一个对照：FP16 的 7B 权重约 14 GB。所以长上下文 + 高并发的瓶颈往往不是权重而是缓存；缓存也不是只在 Prefill 用——它本来就是给 Decode 复用才存在的。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 有人想「跑 5 次拿 5 个候选再投票选最佳」，写下 <code>SamplingParams(temperature=0.0, top_p=0.9, top_k=50, n=5)</code>，结果 5 条输出完全一样。根因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>n</code> 在 vLLM 里表示并发请求数，本来就不会产出多份输出</button>
+            <button class="quiz-option"><code>top_k=50</code> 太小，应该设成 0 才能拿到多样输出</button>
+            <button class="quiz-option"><code>temperature=0</code> 是贪心采样——官方实现会在 temperature 低于阈值时强制 <code>top_p=1.0</code>、<code>top_k=0</code>、<code>min_p=0.0</code>，此时 top_p / top_k 都不起作用，<code>n</code> 份输出走同一条贪心路径，必然一模一样</button>
+            <button class="quiz-option">必须同时设置 <code>use_beam_search=True</code> 才能产生差异</button>
+          </div>
+          <div class="quiz-explain" hidden>vLLM 官方文档对 temperature 的定义最后一句就是 Zero means greedy sampling；源码里更直接：temperature 低于阈值时先执行 <code>self.top_p = 1.0</code>、<code>self.top_k = 0</code>、<code>self.min_p = 0.0</code>，再做贪心校验——也就是说贪心下你写的 top_p / top_k 会被覆盖。<code>n</code> 的官方定义是「为同一个 prompt 返回的输出条数」，路径只有一条时自然 5 条全同。要多样性得让 temperature &gt; 0（或设 seed 后采样），而不是靠叠加过滤参数。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0013-推理机制',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事让 AI 助手调一个客服机器人的推理参数，AI 给了两条建议：① 把新上线的 GPT-5 系列模型的 temperature 设成 0.2、top_p 设成 0.9，这样输出更严谨；② 另外写 <code>top_k=0</code>，表示「不使用 top-k 过滤」。请用官方文档审查这两条建议。`,
+              source: `来源：Microsoft Learn《Work with chat completion models》（"Note Reasoning models, such as the GPT-5 series, behave differently on this API. They use max_completion_tokens instead of max_tokens, and they don’t support temperature, top_p, or the penalty parameters."）https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/chatgpt + vLLM 官方文档 SamplingParams（top_k："Controls the number of top tokens to consider. Set to 0 (or -1) to consider all tokens."；temperature："Zero means greedy sampling."）https://docs.vllm.ai/en/latest/api/vllm/sampling_params.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `两条建议各有一处硬伤。① <strong>推理模型不吃采样参数</strong>：官方明确写着 GPT-5 系列这类推理模型「不支持 temperature、top_p 或 penalty 参数」，用 max_completion_tokens 取代 max_tokens。给它们配 temperature 要么被忽略、要么直接报错，稳定性得靠别的抓手（提示词约束、结构化输出、推理强度设置），而不是温度。② <strong>字面结果对，但解释要更精确</strong>：官方对 top_k 的定义是「Set to 0 (or -1) to consider all tokens」——0 的含义是<strong>考虑全部 token</strong>（等于不做 top-k 截断），和「不使用 top-k 过滤」效果上确实等价。但真正危险的是<strong>组合</strong>：一旦 temperature=0，官方实现会把 top_p 强制成 1.0、top_k 强制成 0、min_p 强制成 0.0（贪心），你写的 top_p=0.9 同样失效。正确姿势：先确认目标模型支持哪些参数，再按目标选一组——要确定性就 temperature=0，要多样性就 temperature 配 top_p，别让多个过滤参数互相打架。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `面试官问：同一个模型，为什么「处理 3 万字输入」和「一个字一个字往外吐」被当成两个阶段分别优化？各自在算什么、瓶颈分别在哪、对应哪些线上指标？`,
+              source: `来源：NVIDIA 官方技术博客《Mastering LLM Techniques: Inference Optimization》（"This process involves two phases: the prefill phase and the decode phase."；"In the prefill phase, the LLM processes the input tokens to compute the intermediate states (keys and values), which are used to generate the ’first’ new token... at a high level this is a matrix-matrix operation that’s highly parallelized. It effectively saturates GPU utilization."；"In the decode phase, the LLM generates output tokens autoregressively one at a time, until a stopping criteria is met... In other words, this is a memory-bound operation."）https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/ + vLLM 官方文档 Disaggregated Prefilling（"Tuning time-to-first-token (TTFT) and inter-token-latency (ITL) separately."）https://docs.vllm.ai/en/latest/features/disagg_prefill.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `<strong>Prefill（处理输入）</strong>：把整段输入 token 一次算完，得到中间状态（keys 和 values）并据此生成第一个新 token。因为输入全长已知，这是一次矩阵×矩阵运算、高度并行，能把 GPU 利用率吃满——所以它拼的是<strong>吞吐/算力</strong>，输入越长这一阶段越久。它对应线上的<strong>首 token 延迟 TTFT</strong>。<strong>Decode（生成输出）</strong>：自回归地一次只产一个 token，直到命中停止条件。每个新 token 都要用到之前所有轮次的 K/V，本质是矩阵×向量运算，GPU 算力用不满，延迟由显存带宽（把权重、K/V、激活搬进计算单元的速度）主导——官方原话就是 memory-bound。它对应<strong>相邻 token 间隔 ITL</strong>。所以两阶段要分开观测、分开调：线上同时报 TTFT 与 ITL，才不至于把「首字慢」和「吐字慢」混成一个平均数；vLLM 的 disaggregated prefilling 干脆把两个阶段放进不同实例，用各自的并行策略单独调 TTFT 或 ITL。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `面试官问：Decode 每一步只多算一个 token，为什么还这么慢？K-V 缓存到底省掉了什么，它的显存代价又随什么增长？请把每 token 的缓存大小算出来。`,
+              source: `来源：NVIDIA 官方技术博客《Mastering LLM Techniques: Inference Optimization》（"To avoid recomputing all these tensors for all tokens at each time step, it’s possible to cache them in GPU memory."；"In some implementations, there is one KV cache for each layer of the model."；"With batching, the KV cache of each of the requests in the batch must still be allocated separately, and can have a large memory footprint."；"Size of KV cache per token in bytes = 2 * (num_layers) * (num_heads * dim_head) * precision_in_bytes"；"a model with 7 billion parameters (such as Llama 2 7B), loaded in 16-bit precision (FP16 or BF16) would take roughly 7B * sizeof(FP16) ~= 14 GB in memory."）https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/ · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `慢的原因有两层。① <strong>算得少不等于跑得快</strong>：Decode 每步的计算是矩阵×向量，GPU 的算力根本喂不饱，瓶颈在把权重和缓存从显存搬到计算单元的带宽上——官方称之为 memory-bound。② <strong>不能重算</strong>：每个新 token 都要看之前所有 token 的 K/V，如果每步重算，计算量会随序列长度急剧膨胀；K-V 缓存把这些张量留在显存里，每轮新算出的元素直接追加复用（多数实现每层各有一份缓存）。代价全部落在显存：批量推理时每个请求的缓存要<strong>单独分配</strong>，占用随批量大小与序列长度<strong>线性增长</strong>。算一下：Llama 2 7B（32 层、hidden 4096、FP16）每 token 是 $2 \\times 32 \\times 4096 \\times 2 = 524288$ 字节 ≈ 512 KB；8192 上下文 ≈ 4 GB；并发 16 条 ≈ 64 GB，而权重才约 14 GB。所以长上下文服务的容量规划，先算缓存再定并发与 max_model_len，思路就是「权重 + 并发×序列长度×每 token 缓存 ≤ 显存」。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `面试官问：temperature、Top-K、Top-P 分别在动什么？为什么课件说 Top-P 比 Top-K 更灵活？在官方 API 的口径里，K 和 P 分别是什么单位？同一个请求里这几个参数一起写会怎样？`,
+              source: `来源：AWS 官方文档《Influence response generation with inference parameters》（"Temperature – Affects the shape of the probability distribution for the predicted output..."；"A lower temperature steepens the function and leads to more deterministic responses, and a higher temperature flattens the function and leads to more random responses."；"Top K – The number of most-likely candidates that the model considers for the next token."；"Top P – The percentage of most-likely candidates that the model considers for the next token."）https://docs.aws.amazon.com/bedrock/latest/userguide/inference-parameters.html + vLLM 官方文档 SamplingParams（top_p："Controls the cumulative probability of the top tokens to consider. Must be in (0, 1]. Set to 1 to consider all tokens."）https://docs.vllm.ai/en/latest/api/vllm/sampling_params.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《13.推理机制》课件（采样策略一节）`,
+              breakdown: `先分清「重排分布」和「裁剪候选池」两类动作。<strong>温度</strong>重排整张分布的形状：在 Softmax 前把 logits 除以 T，低温让分布更尖锐（官方：steepens → 更确定），高温让它更平（flattens → 更随机），它一个词都不删。<strong>Top-K</strong> 是硬裁剪：只留概率最高的 K 个词，其余采样概率置零，在这 K 个词的新分布上采样，K 是<strong>数量</strong>。<strong>Top-P</strong> 是软裁剪：按概率从高到低累加，直到累积概率超过 P，只在这个最小词集合里采样，P 是<strong>概率质量百分比</strong>（vLLM 官方要求取值在 (0, 1]，取 1 表示考虑全部 token）。灵活性差异正来自这一点：K 固定，分布无论集中还是分散都取同样多的候选；P 动态，分布集中时候选集自动变小（更确定）、分散时自动变大（更多样）。工程提醒：三个参数同时给会层层裁剪同一个分布，实际候选集比你以为的小得多，通常只用 temperature + 一个过滤参数（优先 top_p）；另外 temperature=0 会覆盖 top_p / top_k / min_p 变成贪心。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查这段「多候选 + 速度上报」的推理配置与统计代码：<pre><code>params = SamplingParams(temperature=0.9, top_k=50, top_p=0.9, min_p=0.05, n=4)
+# 目标：从 4 个候选里挑一个最稳的答案给用户
+
+elapsed = time.perf_counter() - t0
+speed = output_tokens / elapsed      # 上报为「模型速度」</code></pre>请指出问题并给出修法。`,
+              source: `来源：vLLM 官方文档 SamplingParams（temperature："Lower values make the model more deterministic, while higher values make the model more random. Zero means greedy sampling."；top_p："Must be in (0, 1]."；top_k："Set to 0 (or -1) to consider all tokens."；n："Number of outputs to return for the given prompt request."）https://docs.vllm.ai/en/latest/api/vllm/sampling_params.html + NVIDIA 官方技术博客《Mastering LLM Techniques: Inference Optimization》（"In the decode phase, the LLM generates output tokens autoregressively one at a time"；"this is a memory-bound operation"）https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/ · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `四处问题。① <strong>过滤参数打架</strong>：temperature、top_k、top_p、min_p 会依次作用在同一张分布上，四重裁剪后的候选集远小于直觉，调参也失去了可解释性；工程惯例是 temperature + 一个过滤参数（优先 top_p），需要「最小值兜底」时才加 min_p。② <strong>n=4 的代价没算</strong>：官方对 n 的定义是「为同一个 prompt 返回的输出条数」，每份输出都要各自维护生成部分的 K-V 缓存并独立跑完 Decode——为「挑一个最稳的」付出约 4 倍解码成本与显存，通常不如 n=1 加后处理校验（或直接降温）。③ <strong>指标口径错了</strong>：output_tokens / elapsed 把 Prefill（主导首 token 延迟 TTFT）与 Decode（主导逐 token 间隔 ITL）混成一个数，输入长度一变这个「速度」就剧烈漂移，正好掩盖真正要优化的那一半。修法：分别上报 TTFT 与 ITL，再加一个 tokens/s 的吞吐指标；压测时固定输入长度分类统计。④ <strong>目标与参数自相矛盾</strong>：既然要「最稳」，就该用 temperature=0 的贪心；而它会让 top_p / top_k / min_p 全部失效（官方实现强制 top_p=1.0、top_k=0、min_p=0.0），此时 n=4 只会返回 4 条一模一样的输出——想要多样就得接受 temperature>0，并在候选之间做真正的排序/校验。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `设计一个长上下文 Agent 的推理服务：系统提示约 4k token + 用户文档约 3 万 token + 多轮追问。要求首字尽量快、逐字输出稳定、单卡显存不炸。请给出 Prefill / Decode 两侧的优化手段、缓存策略与采样参数口径。`,
+              source: `来源：vLLM 官方文档 Disaggregated Prefilling（"Disaggregated prefilling put prefill and decode phase of LLM inference inside different vLLM instances. This gives you the flexibility to assign different parallel strategies (e.g. tp and pp) to tune TTFT without affecting ITL, or to tune ITL without affecting TTFT."；"Without disaggregated prefilling, vLLM may insert some prefill jobs during the decoding of one request. This results in higher tail latency."）https://docs.vllm.ai/en/latest/features/disagg_prefill.html + NVIDIA 官方技术博客《Mastering LLM Techniques: Inference Optimization》（"Size of KV cache per token in bytes = 2 * (num_layers) * (num_heads * dim_head) * precision_in_bytes"；"the KV cache of each of the requests in the batch must still be allocated separately"）https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/ + AWS 官方文档《Influence response generation with inference parameters》（"A lower temperature steepens the function and leads to more deterministic responses"）https://docs.aws.amazon.com/bedrock/latest/userguide/inference-parameters.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《13.推理机制》课件（Prefill / K-V 缓存 / 采样策略三节）`,
+              breakdown: `先立两个指标再谈优化：首字快 = <strong>TTFT</strong>（Prefill 主导，输入 3 万字时它才是大头），逐字稳 = <strong>ITL</strong>（Decode 主导，访存受限）。<strong>Prefill 侧</strong>：把 system prompt 与固定文档前缀做成可复用的前缀缓存，避免每轮重算；用分块预填充（chunked prefill）避免一个超大 prefill 长时间占住 GPU、把正在解码的请求挤到尾部（官方原话：非分离部署时，prefill 任务可能插入解码过程，抬高尾部延迟）；流量规模上来后走 disaggregated prefilling，把 prefill 与 decode 放进不同实例，各自用合适的并行策略（tp / pp）单独调 TTFT 与 ITL。<strong>Decode 侧</strong>：容量规划的公式是「权重 + 并发 × 序列长度 × 每 token 缓存 ≤ 显存」，每 token 缓存按官方公式 $2 \\times n_{layers} \\times (n_{heads} \\times d_{head}) \\times precision$ 估算（7B/FP16 约 512 KB/token）；据此反推 max_model_len 与并发上限——3 万 token 的文档单条就要十几 GB 缓存，所以要么限制同时挂载的长文档数，要么降精度（FP8/INT8）、改用 GQA 这类缓存更小的结构，或把冷缓存放 CPU / 分层存储。<strong>采样口径</strong>：Agent 的结构化输出用 temperature=0（贪心、可复现）；需要多样性的文案场景用 temperature 配 top_p，别把 top_k / min_p 一起堆上；注意推理模型（GPT-5 系列等）不支持 temperature / top_p，配置层要做模型能力分支。<strong>验收</strong>：分别压测 TTFT 与 ITL，画出并发上升时的显存曲线并找到 OOM 拐点，同时验证前缀命中率与尾部延迟。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 20 分钟内做一次「推理机制观察实验」：一边用可视化看逐 token 生成，一边用脚本对比不同采样参数，并把首 token 延迟与逐 token 间隔分开记录。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '打开课件给出的 transformer 推理可视化页面，观察一次生成里概率分布如何随温度 / 采样策略变化 → 用同一段提示词分别跑 temperature=0、temperature=1.5、top_p=0.5 三种配置 → 每次分别记录「首 token 耗时」与「后续每个 token 的平均间隔」两个指标（禁止用一个总耗时代替）→ 用一句话分别说明这两个指标对应 Prefill 还是 Decode。',
+                accept: ['三种配置都能跑出输出，并能指出哪一次概率分布最尖锐、哪一次最平', '记录里 TTFT（首 token 耗时）与 ITL（逐 token 间隔）是两个分开的数', '能说明 TTFT 由 Prefill 主导、ITL 由 Decode 主导，并把 K-V 缓存与 Decode 的访存受限联系起来', '能说出 $T&lt;1$、$T=1$、$T&gt;1$ 三种情况下分布形状的变化方向'],
+              },
+              source: `任务基于《13.推理机制》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 先看可视化——课件给的 transformer-explainer 能逐 token 展示候选概率，把温度调高调低各看一遍，你能直接看到「尖锐 / 平滑」的形状变化；② 再跑对照实验——同一段提示词分别用 temperature=0（贪心）、temperature=1.5（更随机）、top_p=0.5（只保留累积概率前 50% 的核心词）跑三次，把输出贴在一起比较；③ 关键在计时口径：分别记录<strong>第一个 token 到达的耗时</strong>（TTFT，对应 Prefill）和<strong>之后每两个 token 之间的平均间隔</strong>（ITL，对应 Decode），不要用「总耗时 ÷ token 数」糊过去；④ 最后把结论落到机制上：长输入时 TTFT 明显变长 → Prefill 是矩阵×矩阵的并行计算，输入越长越久；ITL 相对稳定但与模型访问显存的速度绑定 → Decode 一次只算一个 token 且访存受限，K-V 缓存存在的意义正是避免每步重算。常见坑：只报一个「平均速度」（两个阶段被混在一起）；把 top_p 当成「按概率随机取 50%」；以为温度只影响长度。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/">NVIDIA《Mastering LLM Techniques: Inference Optimization》</a> · <a href="https://docs.vllm.ai/en/latest/api/vllm/sampling_params.html">vLLM 官方文档 SamplingParams</a> · <a href="https://docs.vllm.ai/en/latest/features/disagg_prefill.html">vLLM Disaggregated Prefilling</a> · <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/inference-parameters.html">AWS Bedrock 推理参数</a> · <a href="https://poloclub.github.io/transformer-explainer/">Transformer Explainer（逐 token 可视化）</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/推理机制速查表.html">推理机制速查表</a>——Prefill/Decode 对照、K-V 缓存算例与三种采样策略的官方定义一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/推理机制">13.推理机制</a> · 下一课 <a href="/agents/Agents底层逻辑/训练阶段">14.训练阶段</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Graph-Engineering速查表 · 参考手册</title>
+  <meta name="description" content="Graph-Engineering速查表 · 可打印参考手册：配合《Graph-Engineering互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>Graph-Engineering速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0034-Graph-Engineering.html">《Graph-Engineering互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>三要素（官方定义）</h2>
+      <table class="cmp-table">
+        <tr><th>组成</th><th>官方定义</th><th>职责归属</th></tr>
+        <tr><td><strong>State</strong></td><td>共享数据结构，代表应用当前时刻的快照；通常用共享的 state schema 定义</td><td>数据</td></tr>
+        <tr><td><strong>Nodes</strong></td><td>编码 Agent 逻辑的函数：接收当前 state → 计算或副作用 → 返回更新后的 state</td><td>计算</td></tr>
+        <tr><td><strong>Edges</strong></td><td>决定下一个执行哪个节点的函数；可以是条件分支或固定跳转</td><td>控制流</td></tr>
+      </table>
+      <p>官方原话：把这些节点与边组合起来，就能构建<strong>会随时间演进状态的复杂循环工作流</strong>；真正的威力来自「如何管理这个状态」。</p>
+    </section>
+
+    <section>
+      <h2>图 vs 线性 loop：怎么选</h2>
+      <table class="cmp-table">
+        <tr><th>流程形状</th><th>用什么</th><th>理由</th></tr>
+        <tr><td>单主干：思考 → 调工具 → 再思考</td><td>线性 loop（第 33 章）</td><td>终止条件简单，while 循环足够</td></tr>
+        <tr><td>条件分支：按中间结果走不同处理链</td><td>图</td><td>分支必须显式建模，否则退化成嵌套 if</td></tr>
+        <tr><td>并行 + 汇合：多子任务同时跑再汇总</td><td>图</td><td>需要汇合点与状态合并规则</td></tr>
+        <tr><td>回退/重规划：失败回到上游节点</td><td>图</td><td>需要回到指定节点而不是重跑整条链</td></tr>
+      </table>
+      <p>判断标准是<strong>流程形状</strong>，不是任务大小；只有一条主干时，上图反而增加复杂度。</p>
+    </section>
+
+    <section>
+      <h2>三个工程约束</h2>
+      <dl class="term-grid">
+        <dt>终止必须显式</dt>
+        <dd>条件边要有能走到结束节点的路径；否则循环只能靠运行时的步数/递归上限兜底并报错。</dd>
+        <dt>状态要可观测</dt>
+        <dd>节点只返回「对状态的更新」，因此每一步变化都可追踪；调试与回放依赖状态快照。</dd>
+        <dt>节点应尽量幂等</dt>
+        <dd>失败重试与断点恢复都会重放节点——副作用（写文件、发请求）要自己防重复，或挪到人工检查点。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>落地检查清单</h2>
+      <pre>状态设计
+  □ 每个字段都有明确归属与写入者（避免多人乱写）
+  □ 能表达「进度 / 轮次 / 是否通过」——条件边的判据必须来自状态
+  □ 并行分支写同一字段时，定义了合并规则（累加 / 按键合并 / 取最新）
+
+节点设计
+  □ 一个节点只做一件事，返回状态更新而不是改全局变量
+  □ 带副作用的节点做了幂等或去重（key 唯一化）
+  □ 节点的失败语义明确：抛错中断，还是写进状态交给条件边处理
+
+连接与终止
+  □ 至少有一个人工可达的结束出口
+  □ 循环分支有收敛判据（质量阈值 / 问题清单清空 / 轮次上限）
+  □ 断点恢复：能从快照继续，而不是重跑整图</pre>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <ul class="pitfall-list">
+        <li>把 State 当节点私有变量——它是共享快照，所有人都读写同一份</li>
+        <li>条件边只写「继续」，没有「结束」，靠步数上限收场</li>
+        <li>判断依据藏在节点局部变量里，条件边读不到</li>
+        <li>并行分支各写各的、后写覆盖前写（缺合并规则）</li>
+        <li>为了「看起来先进」而上图：单主干任务用循环更简单可靠</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

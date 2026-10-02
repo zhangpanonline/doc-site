@@ -135,8 +135,8 @@
 袁进《Agents底层逻辑》共 **34 章**：01–02 起点 → 03–09 神经网络与训练 → 10–15 Transformer 与大模型 → 16–23 Agent 工程（tools/ReAct/Agent/Skill）→ 24–29 MCP 与子代理 → 30–34 五类工程方法论。
 
 - **详细交接见 `teach/capsule-agents-core.md`（时间胶囊：已完成清单 + 下一步 + 已踩的坑 + 源课件重取方法）**
-- 已完成：34 章文档（含 13 章「本章代码」附录、11 张图落盘）、课程登记（`key: 'agentcore'`、`sidebar: 'agentsCore'`）、构建通过
-- **待办**：34 节互动课 `ac-0001..ac-0034` + 34 张速查表 + 文档入口小节 + 洗牌/同步/构建/提交
+- 已完成：34 章文档（含 13 章「本章代码」附录、11 张图落盘）、课程登记（`key: 'agentcore'`、`sidebar: 'agentsCore'`）、34 节互动课与速查表、构建通过
+- **已完成（2026-10-02）**：34 节互动课 `ac-0001..ac-0034` + 34 张速查表 + 34 章文档入口小节 + 确定性洗牌 + 同步 static + 构建通过（结构验收 0 错误）
 - **本课程带来的新站点能力**：数学公式渲染（`remark-math` + `rehype-katex` + `katex`）。注意配置必须写在 **preset 的 `docs`/`pages`** 里，顶层 `markdown.remarkPlugins` 不被 schema 接受；样式在 `src/css/custom.css` 顶部 `@import 'katex/dist/katex.min.css'`（本地打包，非 CDN）
 - **转换器已入库**：`teach/tools/agentcore2mdx.py`（单章）+ `teach/tools/agentcore_build_docs.py`（34 章一键重生成）；源课件解压目录 `.scratch/agent-core/`（gitignore，重取方法见胶囊 §5）
 

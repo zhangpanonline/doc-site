@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 实现MCP服务器：用 FastMCP 从零写出可被 Agent 调用的 MCP 服务，覆盖工具注册、streamable-http 传输与 Inspector 测试——互动教学课程">
+  <title>实现MCP服务器 · 互动教学课程（Agents底层逻辑 ac-27）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>实现MCP服务器</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/实现MCP服务器">27.实现MCP服务器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说出 <code>FastMCP</code> 替你接管了哪些活：<strong>连接管理、协议合规、消息路由</strong></li>
+        <li>解释一个普通 <code>async def</code> 函数是怎么变成 <code>tools/list</code> 里的工具定义：函数名 → <code>name</code>、类型标注 → <code>inputSchema</code>、docstring → <code>description</code></li>
+        <li>说清 <code>run(transport="streamable-http")</code> 为什么是生产部署首选的传输方式，以及默认端点是 <code>/mcp</code></li>
+        <li>用 MCP Inspector 连上自己的服务、列出工具并实调一次 <code>get_weather</code>，并指出生产上线前必须补的安全边界</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「服务端最小形态 → 协议定义 → 传输方式 → 上线边界」这条链路过一遍——细节都在《27.实现MCP服务器》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>服务端最小形态：四步走</h3>
+        <ul class="pitfall-list">
+          <li><strong>装包</strong>：<code>uv add mcp==1.28.1</code>——课程锁定 <code>mcp 1.28.1</code>（对应 python-sdk 的 <code>v1.28.1</code> 标签），安装前先看清对应版本的官方文档</li>
+          <li><strong>建服务</strong>：<code>from mcp.server.fastmcp import FastMCP</code> → <code>mcp = FastMCP("Weather Service", json_response=True)</code></li>
+          <li><strong>注册工具</strong>：<code>@mcp.tool()</code> 装饰一个<strong>带类型标注和文档字符串</strong>的函数（本章是 <code>async def get_weather(city: str = "成都") -&gt; dict[str, str]</code>）</li>
+          <li><strong>跑起来</strong>：<code>mcp.run(transport="streamable-http")</code>——底层用 <strong>starlette + uvicorn</strong> 起一个 HTTP 服务；Notebook 里则把它丢进独立线程（<code>threading.Thread(target=run).start()</code>），否则会阻塞整个单元格</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>一个装饰器，换来一份协议级工具定义</h3>
+        <ul class="pitfall-list">
+          <li><strong>你不用写 JSON Schema</strong>：官方原话是「no JSON Schema、no request parsing、no validation code、no protocol handling」——<strong>类型标注就是 schema</strong>（<code>a: int, b: int</code> is the schema），docstring 就是给模型看的工具描述</li>
+          <li><strong>协议侧长什么样</strong>：服务端在 <code>tools/list</code> 里回给你 <code>name</code> / <code>title</code> / <code>description</code> / <code>inputSchema</code> / <code>outputSchema</code>；<strong><code>description</code> 与 <code>inputSchema</code> 里每个参数的说明，直接决定模型选不选这个工具、参数填得对不对</strong></li>
+          <li><strong>返回类型不是装饰品</strong>：返回类型标注与结构化输出、<code>outputSchema</code> 校验直接相关——返回值「是提示符、还是结构化数据」，取决于标注</li>
+          <li><strong>能暴露的不止工具</strong>：<code>@mcp.tool()</code> 是「执行动作、可能有副作用」，<code>@mcp.resource()</code> 是「读数据、别做重计算、别有副作用」，<code>@mcp.prompt()</code> 是「可复用的提示词模板」——三者对应服务端三张能力表</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>传输方式与运行地址</h3>
+        <ul class="pitfall-list">
+          <li><strong>三种标准传输</strong>：<code>stdio</code>（客户端把服务端当子进程拉起，走 stdin/stdout）、<strong>Streamable HTTP</strong>（HTTP POST + 可选 SSE 流）、以及被它取代的 SSE</li>
+          <li><strong>为什么选它</strong>：官方把 Streamable HTTP 标为「the recommended transport for production deployments」，好处是<strong>有状态/无状态两种运行模式、支持断线重连（resumability）、JSON 或 SSE 两种响应格式、多节点部署扩展性更好</strong>；<code>json_response=True</code> 让响应直接从 SSE 流切到 JSON，<code>stateless_http=True</code> 则进一步去掉会话状态</li>
+          <li><strong>记住端点</strong>：Streamable HTTP 默认挂在 <strong><code>/mcp</code></strong>（SSE 默认 <code>/sse</code>），本地默认 <code>http://localhost:8000/mcp</code></li>
+          <li><strong>Inspector 是参考工具</strong>：<code>npx -y @modelcontextprotocol/inspector</code> 起 Web UI，在界面里连 <code>http://localhost:8000/mcp</code>；也可以 <code>--cli</code> / <code>--tui</code>，CI 里常用 <code>npx @modelcontextprotocol/inspector --cli ... --method tools/list</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>上线前必须补的边界（课程代码没写，但面试会问）</h3>
+        <ul class="pitfall-list">
+          <li><strong>传输安全</strong>：规范要求服务端<strong>必须校验 <code>Origin</code> 头</strong>（防 DNS rebinding），本地运行<strong>应只绑 127.0.0.1</strong>，并对所有连接做认证</li>
+          <li><strong>工具安全</strong>：服务端必须校验全部工具入参、做访问控制、对调用限流、清洗工具输出；客户端侧则应弹确认、向用户展示调用参数、做超时与审计日志</li>
+          <li><strong>错误分两层</strong>：<strong>协议错误</strong>（未知工具、参数不合法）走 JSON-RPC <code>error</code>；<strong>执行错误</strong>（API 失败、业务逻辑失败）走结果里的 <code>isError: true</code>——别把业务失败当成协议失败抛出去</li>
+          <li><strong><code>npx</code> 版本要对齐</strong>：课程用的是 <code>@modelcontextprotocol/inspector@1.0.0</code>，而官方文档已演进到需要 Node 22.19.0+ 的新版本——老版本连新协议的服务端可能握手失败，先统一版本再排查业务代码</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《27.实现MCP服务器》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 给 <code>get_weather</code> 加上 <code>@mcp.tool()</code> 之后，客户端在 <code>tools/list</code> 里看到的工具描述与参数结构（JSON Schema）从哪来？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">由最先连上来的客户端在 initialize 时提供</button>
+            <button class="quiz-option">从函数的类型标注（<code>city: str</code>）和文档字符串（<code>"""Get weather data for a city"""</code>）自动生成</button>
+            <button class="quiz-option">由 FastMCP 从服务名 <code>"Weather Service"</code> 推断出来</button>
+            <button class="quiz-option">必须另外手写一份 JSON Schema 并注册进去</button>
+          </div>
+          <div class="quiz-explain" hidden>官方 SDK 文档把这点写得很直白：你<strong>没有</strong>写 JSON Schema、没有写请求解析、没有写校验代码、没有写协议处理——「两个带类型标注的 Python 函数加一个 docstring」（<code>a: int, b: int</code> is the schema）就是全部。所以工具的<strong>名字来自函数名、参数结构来自类型标注、给模型看的描述来自 docstring</strong>。本章的 <code>get_weather</code> 正是这个套路。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 关于 <code>mcp = FastMCP("Weather Service", json_response=True)</code> 这个实例的职责，下列说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">它是服务端核心接口：接管连接管理、协议合规与消息路由</button>
+            <button class="quiz-option">它只做参数校验，连接与协议消息要自己用 socket 实现</button>
+            <button class="quiz-option">它只是一个配置容器，注册进来的工具函数永远不会被真正执行</button>
+            <button class="quiz-option">它负责调用大模型，并根据用户提问决定调用哪个工具</button>
+          </div>
+          <div class="quiz-explain" hidden>官方文档对 FastMCP 的定义是：it handles <strong>connection management, protocol compliance, and message routing</strong>。决策与工具选择是<strong>客户端/模型侧</strong>的事（工具在 MCP 里是 model-controlled），服务端只负责把工具按协议暴露出去并在被调用时执行；本章注册的 <code>get_weather</code> 会在 <code>tools/call</code> 到达时真正被调用。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 本章的 <code>json_response=True</code> 与 <code>mcp.run(transport="streamable-http")</code> 配套使用，它改变的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">工具结果的返回格式：从 SSE 事件流改为一次性 JSON 响应</button>
+            <button class="quiz-option">工具的返回值类型：把 <code>dict</code> 自动转成 <code>str</code></button>
+            <button class="quiz-option">传输方式：把 Streamable HTTP 换成 stdio</button>
+            <button class="quiz-option">协议版本：强制回退到 2024-11-05</button>
+          </div>
+          <div class="quiz-explain" hidden>官方在 Streamable HTTP 一节给出的配置示例就是 <code>FastMCP("StatelessServer", stateless_http=True, json_response=True)</code>，并列出该传输支持的四种能力：状态/无状态两种模式、可恢复（resumability）、<strong>JSON 或 SSE 两种响应格式</strong>、更好的多节点扩展性。<code>json_response=True</code> 命中的正是响应格式这一项——它既不改返回值类型，也不换传输，更不会动协议版本。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 接第 3 题：Streamable HTTP 的「两种响应格式」是客户端能自由选择、还是服务端已经定死的？规范怎么说？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两种格式可以随机混用，客户端靠 <code>id</code> 字段自动识别</button>
+            <button class="quiz-option">服务端自己决定：对 JSON-RPC 请求要么回 <code>text/event-stream</code> 开 SSE 流，要么回 <code>application/json</code> 返回一个 JSON 对象——客户端两种都必须支持</button>
+            <button class="quiz-option">由客户端在 initialize 里选，服务端必须照做</button>
+            <button class="quiz-option">由协议版本决定，与服务端实现无关</button>
+          </div>
+          <div class="quiz-explain" hidden>规范原文：对 JSON-RPC <em>request</em>，服务端「MUST either return <code>Content-Type: text/event-stream</code>, to initiate an SSE stream, or <code>Content-Type: application/json</code>, to return one JSON object. The client MUST support both these cases.」也就是说<strong>选择权在服务端，兼容义务在客户端</strong>。这正好解释了 <code>json_response=True</code> 的意义：它把服务端从默认的 SSE 流切换到一次性 JSON——写本地工具、接简单客户端时最省事，但要清楚这是<strong>服务端的配置决定</strong>，不是客户端点菜。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. <code>get_weather</code> 内部调用真实天气 API 时被限流，报错信息应该怎么给到客户端？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">走<strong>工具执行错误</strong>：结果里带 <code>isError: true</code> 和说明文本（FastMCP 里抛 <code>ToolError</code> 即可）</button>
+            <button class="quiz-option">一律返回 JSON-RPC 协议级 <code>error</code> 对象，让客户端以为工具不存在</button>
+            <button class="quiz-option">返回 <code>{"city": "", "temperature": "-1"}</code>，让模型自己发现数据不对</button>
+            <button class="quiz-option">直接让异常抛穿服务进程，客户端自然会看到连接断开</button>
+          </div>
+          <div class="quiz-explain" hidden>规范把错误分成两层：<strong>协议错误</strong>（未知工具、参数不合法、服务端错误）走 JSON-RPC <code>error</code>；<strong>工具执行错误</strong>（API 失败、输入数据问题、业务逻辑错误）走结果里的 <code>isError: true</code> + 文本内容。限流属于典型的执行期失败。FastMCP 的三种写法是：抛 <code>ToolError("...")</code>（推荐）、让异常自然抛出（框架会捕获并转成 <code>isError=True</code> 的响应，<strong>不会</strong>弄崩服务端）、或直接返回 <code>CallToolResult(isError=True)</code>。假造成功数据是最糟的选项——模型会把脏数据当成事实继续推理。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 你要为 Agent 再暴露一份「城市气候说明文本」，它只是被读、不做计算也没有副作用。该用哪个装饰器，为什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>@mcp.prompt()</code>——只要是文本就该走提示词模板</button>
+            <button class="quiz-option">不用注册，直接写进 docstring 里让模型背下来</button>
+            <button class="quiz-option"><code>@mcp.resource("config://...")</code>——资源就是给 LLM 读数据的，设计上类似 GET：提供数据，不应做重计算或产生副作用</button>
+            <button class="quiz-option"><code>@mcp.tool()</code>——所有能被 Agent 用的东西都必须注册为工具</button>
+          </div>
+          <div class="quiz-explain" hidden>官方文档给三种原语划了边界：<strong>Resources</strong>「similar to GET endpoints in a REST API - they provide data but shouldn't perform significant computation or have side effects」；<strong>Tools</strong>「let LLMs take actions through your server. Unlike resources, tools are expected to perform computation and have side effects」；<strong>Prompts</strong> 是「reusable templates」。所以「只读数据」选 <code>@mcp.resource()</code>。选工具并不会报错，但会让模型以为这是一个「动作」并可能在没有必要时调用它，也丢掉了资源订阅、变更通知这一层语义。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 你按本章把服务跑起来（<code>transport="streamable-http"</code>，其余保持默认），同事用 <code>curl</code> 打 <code>http://localhost:8000/</code> 得到 404，于是断定服务没起来。最站得住脚的判断是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">服务很可能正常：Streamable HTTP 挂在单一 MCP 端点 <code>/mcp</code> 上，<code>/</code> 本来就不是它的路径；应改打 <code>http://localhost:8000/mcp</code></button>
+            <button class="quiz-option">无法判断，必须先重启 uvicorn 才能确定端口</button>
+            <button class="quiz-option">服务确实没起来，因为 Streamable HTTP 只监听 stdio，不监听 HTTP 端口</button>
+            <button class="quiz-option">服务确实没起来，因为 FastMCP 默认端点是 <code>/sse</code></button>
+          </div>
+          <div class="quiz-explain" hidden>官方文档写明默认挂载路径：<strong>「By default, SSE servers are mounted at <code>/sse</code> and Streamable HTTP servers are mounted at <code>/mcp</code>」</strong>；SDK README 给的客户端示例也直接连 <code>http://localhost:8000/mcp</code>。规范进一步要求 Streamable HTTP 服务端<strong>提供单一 MCP 端点</strong>同时支持 POST 与 GET（POST 送消息、GET 可选开 SSE 流），所以根路径 404 完全正常。另外用裸 <code>curl</code> 直接 POST 还缺规范要求的 <code>Accept</code> 头（必须同时列出 <code>application/json</code> 与 <code>text/event-stream</code>）——真要用命令行验证，用 Inspector 的 CLI 模式更省事。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 服务上线后 Agent 反馈：想查「北京」的天气，模型却始终只拿到成都数据。按本章代码找根因，并给出最小修法。</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>json_response=True</code> 把参数吞掉了，应改成 <code>False</code></button>
+            <button class="quiz-option">返回类型写成 <code>dict[str, str]</code> 导致 <code>inputSchema</code> 生成失败，改成 <code>str</code> 即可</button>
+            <button class="quiz-option"><code>city</code> 带了默认值 <code>"成都"</code>，在 <code>inputSchema</code> 里它就不是必填项，模型完全可以不传；修法是去掉默认值（或明确写进 docstring 告诉模型「不传则默认成都」）</button>
+            <button class="quiz-option">Streamable HTTP 不支持带参工具，必须换回 stdio</button>
+          </div>
+          <div class="quiz-explain" hidden>FastMCP 直接把函数签名映射成 <code>inputSchema</code>，而 JSON Schema 的规矩是：<strong>有默认值的参数不会进 <code>required</code></strong>。于是 <code>city: str = "成都"</code> 在模型眼里变成了「可选参数」，它不传就是合法的，服务端照文档原样回成都。这不是传输、也不是 <code>json_response</code> 的问题，更与返回类型无关。修法有两种：<strong>真必填</strong>就去掉默认值让 <code>city</code> 进 <code>required</code>；<strong>确实想留默认值</strong>，就得让 docstring/描述把默认语义讲清楚——因为工具的 <code>description</code> 与参数说明是模型决定「传什么」的全部依据，这也是官方强调「docstring 就是你唯一的说明书」的原因。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 这个天气服务要提供给公司内网的其他 Agent 调用，你打算把 <code>host</code> 改成 <code>0.0.0.0</code> 并跳过认证「先跑通再说」。按规范与官方文档，最该指出的问题是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">规范明确要求校验 <code>Origin</code> 头防 DNS rebinding、本地运行应只绑 127.0.0.1、并应对所有连接做认证——裸奔全网卡正是它点名要防的攻击面</button>
+            <button class="quiz-option">没问题，Streamable HTTP 本来就是给多客户端并发连接设计的，绑全网卡是标准做法</button>
+            <button class="quiz-option">问题只在于性能：<code>0.0.0.0</code> 会让 uvicorn 单线程处理请求</button>
+            <button class="quiz-option">问题只在于端口冲突，换一个端口即可</button>
+          </div>
+          <div class="quiz-explain" hidden>规范在 Streamable HTTP 的 Security Warning 里写了三条硬要求：① 服务端 <strong>MUST</strong> validate the <code>Origin</code> header on all incoming connections to prevent DNS rebinding attacks；② 本地运行时 <strong>SHOULD</strong> bind only to localhost (127.0.0.1) rather than all network interfaces (0.0.0.0)；③ <strong>SHOULD</strong> implement proper authentication for all connections。原理很直白：本地 MCP 服务端对浏览器里的任意网页来说都是可达的，没有 <code>Origin</code> 校验就可能被恶意站点借你的服务去调工具。再叠加工具一节的要求（校验入参、访问控制、限流、清洗输出），「先跑通再说」在内网同样不成立。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0027-实现MCP服务器',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事说「写 MCP 服务器比写普通工具函数麻烦多了，光 JSON Schema 就得手写一份，还要对齐参数名」。请用本章代码判断这句话对不对，并说清真正的成本在哪。`,
+              source: `来源：MCP Python SDK v1.28.1 官方 README（"Notice what you did not write: no JSON Schema (\`a: int, b: int\` is the schema), no request parsing, no validation code, no protocol handling. Two type-hinted Python functions and a docstring."）https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/v1.28.1/README.md · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `这句话是错的——官方用「你没写什么」直接否掉了手写 Schema：<strong>类型标注就是 schema</strong>，docstring 就是描述，请求解析、入参校验、协议处理、消息路由都由 FastMCP 接管（官方对它的定义是 handles connection management, protocol compliance, and message routing）。本章 <code>get_weather</code> 的全部「登记成本」就是一个装饰器加一份类型标注。<br>真正的成本不在样板代码，而在<strong>语义质量</strong>：工具的 <code>description</code>（docstring）与每个参数的说明，是模型在 <code>tools/list</code> 之后决定「选不选、怎么填」的唯一依据。写「Get weather data for a city」和写清「城市名，中文或英文；不传时返回成都」，直接决定工具被正确调用的比例。所谓「麻烦」其实是把功夫从写 Schema 挪到了写文档——这一点在<strong>第 8 题（<code>city</code> 带默认值导致模型不传参）</strong>里会以故障的形式再出现一次。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `一个全新的 MCP 客户端第一次连上你写的 <code>Weather Service</code>：在它能调用 <code>get_weather</code> 之前，客户端与服务端之间必须先完成哪些步骤？请按 MCP 定义的生命周期三阶段讲清楚，并说明这些步骤在 FastMCP 里由谁执行。`,
+              source: `来源：MCP 官方规范 2025-06-18《Lifecycle》（"The Model Context Protocol (MCP) defines a rigorous lifecycle for client-server connections that ensures proper capability negotiation and state management."；"The initialization phase MUST be the first interaction between client and server."；"1. Initialization: Capability negotiation and protocol version agreement 2. Operation: Normal protocol communication 3. Shutdown: Graceful termination of the connection"）https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《27.实现MCP服务器》课件（FastMCP 构造与 mcp.run）`,
+              breakdown: `规范把连接生命周期定为三阶段：<strong>① Initialization（能力协商 + 协议版本约定，且 MUST 是双方第一次交互）→ ② Operation（按协商结果正常通信）→ ③ Shutdown（优雅终止）</strong>。<br>初始化这一步是「三次握手」式的：客户端先发 <code>initialize</code> 请求，带<strong>它支持的协议版本、客户端能力、客户端实现信息</strong>；服务端回自己的协议版本、<strong>能力表</strong>（本章服务端会声明 <code>tools</code>，可能还有 <code>resources</code> / <code>prompts</code> / <code>logging</code>）与 <code>serverInfo</code>、可选的 <code>instructions</code>；客户端再发一条 <code>initialized</code> 通知表示准备就绪——在此之前双方除 ping/logging 外都不该发别的请求。<br>这一整套在你的项目里<strong>一行代码都没写</strong>：<code>FastMCP("Weather Service")</code> 负责按注册的工具生成能力表与 <code>initialize</code> 响应，<code>mcp.run(transport="streamable-http")</code> 负责把协议挂到 HTTP 端点并做消息路由——这正是「protocol compliance + message routing」的含义。真正需要你知道的是<strong>版本协商失败会怎样</strong>：客户端发来的版本服务端不支持时，服务端要回一个自己支持的版本；客户端也不支持就应断开——排查「连不上」时，先看这一步，再看工具逻辑。补充一句 HTTP 传输特有的要求：版本协商完成后，客户端必须在后续每个请求上带 <code>MCP-Protocol-Version</code> 头，服务端收到非法或不支持的版本必须回 400。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 帮你写了一个查询邮编写天气的工具，评审时你发现下面这段代码。指出里面至少两个问题，并给出符合官方 SDK 与 MCP 规范错误模型的改法：<br><code>@mcp.tool()</code><br><code>async def get_weather_by_zip(zip: str) -&gt; dict:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;resp = await httpx.get(f"https://api.example.com/w?zip={zip}")</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;if resp.status_code != 200:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;raise Exception("天气接口失败: " + str(resp.status_code))</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;return resp.json()</code>`,
+              source: `来源：MCP Python SDK v1.28.1 官方文档《Building MCP Servers》Tool Error Handling（"\`ToolError\` is the preferred approach for most cases — raise it with a descriptive message and the framework handles the rest."；"Unhandled exceptions are caught automatically, so tools won’t crash the server."）+ MCP 官方规范 2025-06-18《Tools》Error Handling（"Tool Execution Errors: Reported in tool results with \`isError: true\`"）https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/v1.28.1/docs/server.md · https://modelcontextprotocol.io/specification/2025-06-18/server/tools · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `至少这几处要改。<br><strong>① 异常类型用错。</strong>官方推荐抛 <code>ToolError</code>（from <code>mcp.server.fastmcp.exceptions</code>）来表达「可预期的失败」，框架会把它转成带 <code>isError=True</code> 的结果；而你这里 <code>raise Exception(...)</code> 属于「未处理异常」——官方说它会被自动捕获、不会弄崩服务端，消息也会转发给客户端，但语义与可预期失败混在一起，还会把堆栈风格的内部信息暴露出去（<code>"Error executing tool ..."</code>）。规范侧的分类是：未知工具/参数不合法属于<strong>协议错误</strong>（JSON-RPC <code>error</code>），API 失败、业务逻辑失败属于<strong>工具执行错误</strong>（<code>isError: true</code>）——这里属于后者，应当走 <code>ToolError</code>。<br><strong>② 漏了 await。</strong><code>httpx.get(...)</code> 是<strong>同步</strong>调用，却被 <code>await</code> 了；在 <code>async def</code> 工具里这会直接抛错（or 运行时类型错误），正确写法是用 <code>httpx.AsyncClient</code> 配 <code>await client.get(...)</code>，或去掉 <code>await</code> 改成同步调用。这个坑在「AI 把同步代码塞进 async 函数」时高频出现。<br><strong>③ 缺超时与降级。</strong>外部 HTTP 调用必须设超时：MCP 规范要求实现为请求建立超时以避免挂死与资源耗尽，工具内部也一样——否则一个慢接口会把这次 <code>tools/call</code> 拖住。<br><strong>④ 返回值与标注不符。</strong>标注是 <code>dict</code>（无参数化），返回的却是 <code>resp.json()</code> 的原样结构；写成 <code>dict[str, str]</code> 或 pydantic 模型/TypedDict 才能让结构化输出与 <code>outputSchema</code> 校验真正生效——官方说明结构化输出支持 <code>dict[str, T]</code>、Pydantic 模型、TypedDict、带类型标注的普通类等，<strong>没有类型标注的类无法用于结构化输出</strong>。<br><strong>⑤ 回显未清洗。</strong>把第三方接口的错误原文直接塞进返回内容，相当于让不可信输出进入模型上下文；规范要求服务端「Sanitize tool outputs」。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `团队要把本章这个天气工具做成对内部多个 Agent 提供服务的正式 MCP 服务端。请说明：为什么选 Streamable HTTP 而不是 stdio？对比 SSE 与 stdio 说清取舍；并给出上线前必须补的安全与可运维清单。`,
+              source: `来源：MCP Python SDK v1.28.1 官方文档《Building MCP Servers》Streamable HTTP Transport（"Streamable HTTP transport is the recommended transport for production deployments. Use \`stateless_http=True\` and \`json_response=True\` for optimal scalability."；"The streamable HTTP transport supports: Stateful and stateless operation modes / Resumability with event stores / JSON or SSE response formats / Better scalability for multi-node deployments"）+ MCP 官方规范 2025-06-18《Transports》Security Warning（"Servers MUST validate the \`Origin\` header on all incoming connections to prevent DNS rebinding attacks"；"When running locally, servers SHOULD bind only to localhost (127.0.0.1) rather than all network interfaces (0.0.0.0)"）https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/v1.28.1/docs/server.md · https://modelcontextprotocol.io/specification/2025-06-18/basic/transports · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `<strong>为什么 Streamable HTTP。</strong>官方把它标为生产部署的推荐传输，给出的四条理由是：有状态/无状态两种运行模式、可恢复（resumability，配合 event store）、JSON 或 SSE 两种响应格式、多节点部署扩展性更好。更本质的差别在<strong>进程模型</strong>：stdio 是「客户端把服务端当子进程拉起，消息走 stdin/stdout，换行分隔且 stdout 只能出现合法 MCP 消息」——一对一、随客户端生死；Streamable HTTP 是「独立进程，可处理多个客户端连接」，天然对应「一个天气服务给多个 Agent 用」。官方对高并发场景的配置建议是 <code>stateless_http=True</code> + <code>json_response=True</code>。<br><strong>SSE 呢。</strong>SSE 传输已被 Streamable HTTP 取代（官方明确标注 superseded），它只有单向事件流、端点分离（默认 <code>/sse</code>），没有这套「单端点 POST+GET + 会话 ID」的设计，除非要兼容老客户端，否则不该作为新项目起点。<br><strong>安全清单（规范原话优先）。</strong>① 校验 <code>Origin</code> 头——防 DNS rebinding，规范用的是 <strong>MUST</strong>；② 本地运行只绑 127.0.0.1，不要 0.0.0.0；③ 对所有连接做认证，HTTP 场景可用 SDK 的 OAuth 2.1 支持；④ 工具入参校验、访问控制、调用限流、输出清洗（规范在 Tools 一节全部列为服务端 MUST/SHOULD）；⑤ 浏览器直连时按官方示例配置 CORS 并 <code>expose_headers=["Mcp-Session-Id"]</code>，否则浏览器读不到会话 ID。<br><strong>可运维清单。</strong>会话管理要接上——有状态模式下服务端在 initialize 响应里带 <code>Mcp-Session-Id</code>，客户端后续请求必须带；服务端终止会话后对该 ID 要回 404，客户端收到 404 必须重新走 initialize。再加：为每个请求设超时（规范要求）、审计每次 <code>tools/call</code>、把外部依赖失败映射成 <code>isError: true</code> 而不是崩服务、用日志/通知上报（<code>ctx.info</code> 等），以及部署形态上的取舍——单机 uvicorn、还是把 <code>streamable_http_app()</code> 挂到已有 ASGI 应用上（官方给了 Starlette 的 Mount 示例，多服务可用不同挂载路径，默认仍是 <code>/mcp</code>）。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 30 分钟内从零写出本章的天气 MCP 服务并实测通过：安装依赖 → 建服务 → 注册工具 → 跑起来 → 用 Inspector 列出工具并调用一次。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '在 uv 工程里 <code>uv add mcp==1.28.1</code> → 从 <code>mcp.server.fastmcp</code> 导入 <code>FastMCP</code> → <code>mcp = FastMCP("Weather Service", json_response=True)</code> → 用 <code>@mcp.tool()</code> 注册 <code>async def get_weather(city: str = "成都") -&gt; dict[str, str]</code>（docstring 写 <code>Get weather data for a city</code>，返回 city/temperature/condition/humidity）→ <code>mcp.run(transport="streamable-http")</code>（Notebook 里放进独立线程）→ 另开终端 <code>npx -y @modelcontextprotocol/inspector@1.0.0</code> → 在 UI 里连 <code>http://localhost:8000/mcp</code>。',
+                accept: ['服务端启动后 <code>http://localhost:8000/mcp</code> 可连通（根路径 404 属正常）', 'Inspector 的 Tools 列表里出现 <code>get_weather</code>，描述是 docstring、参数结构里有 <code>city</code>', '在 Inspector 里实调 <code>get_weather(city="北京")</code>，返回的 JSON 里 city 为「北京」', 'Notebook 场景下内核没有被 <code>mcp.run</code> 阻塞（服务器在子线程里）'],
+              },
+              source: `任务基于《27.实现MCP服务器》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路按四步走，每一步都对着官方文档。<strong>① 建服务</strong>照本章：<code>FastMCP("Weather Service", json_response=True)</code>——官方 quickstart 的 <code>FastMCP("Demo", json_response=True)</code> 就是这个形态。<strong>② 注册工具</strong>：装饰器加类型标注加 docstring，别写 JSON Schema；返回 <code>dict[str, str]</code> 而不是裸 <code>dict</code>，让结构化输出与 <code>outputSchema</code> 真正生效。<strong>③ 跑起来</strong>：<code>mcp.run(transport="streamable-http")</code> 在普通脚本里会阻塞主线程（它基于 starlette + uvicorn），所以本章 Notebook 版本用 <code>threading.Thread(target=run).start()</code> 把服务器放后台——忘了这一步的典型症状是「单元格一直转圈、后面的测试代码永远轮不到执行」。<strong>④ 测</strong>：<code>npx -y @modelcontextprotocol/inspector@1.0.0</code> 打开 Web UI，连 <code>http://localhost:8000/mcp</code>（不是根路径，Streamable HTTP 默认挂 <code>/mcp</code>），先 <code>tools/list</code> 看工具定义是否与函数签名一致，再 <code>tools/call</code> 传 <code>city="北京"</code>。<br><strong>常见坑</strong>：① 端口被上次没杀掉的进程占用 → Inspector 连上的是旧版本代码；② 只改了 docstring 却在看旧的工具描述 → 重启服务端；③ 一上来就往工具里接真实第三方 API，结果网络/密钥把问题混在一起 → 先用本章的假数据把链路跑通；④ Inspector 版本与协议对不上导致握手失败 → 先对齐 <code>@1.0.0</code> 再怀疑业务代码。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://modelcontextprotocol.io/specification/2025-06-18/server/tools">MCP 规范 Tools</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports">MCP 规范 Transports</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle">MCP 规范 Lifecycle</a> · <a href="https://modelcontextprotocol.io/docs/2026-07-28/tools/inspector">MCP Inspector 官方文档</a> · <a href="https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/v1.28.1/docs/server.md">MCP Python SDK v1.28.1《Building MCP Servers》</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/实现MCP服务器速查表.html">实现MCP服务器速查表</a>——四步建服务、装饰器映射、传输对比与易错点一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/实现MCP服务器">27.实现MCP服务器</a> · 上一课 <a href="/agents/Agents底层逻辑/Agent接入MCP">26.Agent接入MCP</a> · 下一课 <a href="/agents/Agents底层逻辑/Skill-VS-MCP">28.Skill VS MCP</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

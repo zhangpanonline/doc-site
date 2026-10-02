@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 词元：从 UTF-8 字符编码到 BPE 词表训练、最长匹配分词与 token 量级估算——互动教学课程">
+  <title>词元 · 互动教学课程（Agents底层逻辑 ac-07）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>词元</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/词元">07.词元</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清「直接把 UTF-8 字节数字当分词结果」为什么不行，以及分词表（Vocab）要解决的问题</li>
+        <li>复述 BPE 训练词表的核心循环：统计高频相邻对 → 合并 → 写入新 id，直到达到目标词表大小</li>
+        <li>用「查表 + 最长匹配」解释分词阶段为什么不再改动词表，并读懂分词结果里的字节片段</li>
+        <li>会用课件比率表估算中文／英文文本的 token 量级，判断「一个汉字一个 token」这类说法对不对</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把词元的来龙去脉过一遍——细节都在《07.词元》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>从字符编码到词元</h3>
+        <ul class="pitfall-list">
+          <li>最简单的中文「分词」方案是把文字转成 <strong>UTF-8 编码的数字</strong>：<code>"你好Hello!123"</code> → 15 个数字</li>
+          <li>不能直接用它的三个原因：<strong>长度膨胀</strong>（中文一字 = 3 个字节数字，计算量／显存／训练速度全恶化）、<strong>信息浪费</strong>（每层都要重复学「228,189,160 = 你」）、<strong>语义不明</strong>（很难学到字、词的边界规律）</li>
+          <li>目标形态是「每个有意义的字／词对应一个数字」：你好 → 10000、Hello → 10001、! → 10002、123 → 10003；整句只要 4 个数字，且每个数字对应可被学习的语义</li>
+          <li>要实现这种映射，必须建立一张「词典」——<strong>分词表（token vocabulary，Vocab）</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>BPE：词表是怎么长出来的</h3>
+        <ul class="pitfall-list">
+          <li>统计大量文字，<strong>合并高频出现的组合</strong>——这就是 BPE（字节对编码）的核心</li>
+          <li>初始词表是 <strong>256 个单字节</strong>（<code>vocab = {i: bytes([i]) for i in range(256)}</code>），这样任何文本都不会出现「未知字符」</li>
+          <li>循环里的每一轮做三件事：① 统计当前序列中<strong>相邻对的出现次数</strong>；② 取最高频的一对，把「两个 id 的字节拼起来」作为<strong>新 id</strong> 加进词表；③ 在序列里把这一对全部替换成新 id</li>
+          <li>反复执行到 <code>len(vocab)</code> 达到 <code>target_vocab_size</code> 为止。实测课件 <code>corpus.txt</code>（8268 字符 / 23616 字节）：合并 <strong>144 次</strong>，词表 <strong>256 → 400</strong>，序列压缩 23616 → 12786（<strong>54.1%</strong>）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>分词：查表 + 最长匹配</h3>
+        <ul class="pitfall-list">
+          <li><strong>词表固定下来后就不再改动</strong>：分词阶段只读词表做匹配，就能高效把文本变成 token 序列</li>
+          <li>课件实现是<strong>贪心最长匹配</strong>：从可匹配的最长片段往下试，命中就前进相应字节数</li>
+          <li>单个汉字被拆成多个 token 的两个原因：<strong>词表太小</strong>（有些词还没收录就到了词表上限）、<strong>训练语料里没出现过该词</strong></li>
+          <li>token 量级估算（课件比率表）：1 个汉字 = 海外模型 1.3～1.5 token、国产模型 0.8～1 token；1 个英文字母平均 0.25～0.33 token；1 个英文单词平均 1.3 token</li>
+          <li>不同的训练语料、不同的分词算法 → 不同格式与内容的词表 → <strong>不同的分词结果</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《07.词元》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">1. 把 <code>"你好Hello!123"</code> 按 UTF-8 编码，会得到多少个字节数字？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">4 个（每个「有意义单元」一个）</button>
+            <button class="quiz-option">20 个</button>
+            <button class="quiz-option">11 个（等于字符数）</button>
+            <button class="quiz-option">15 个</button>
+          </div>
+          <div class="quiz-explain" hidden>课件示例1：中文一个汉字 = 3 个 UTF-8 字节数字，「你好」6 个 + Hello 5 个 + ! 1 个 + 123 3 个 = 15 个数字，即 [228, 189, 160, 229, 165, 189, 72, 101, 108, 108, 111, 33, 49, 50, 51]。这正是「长度膨胀」的直观来源。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 分词表（token vocabulary，Vocab）是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">训练语料的原文备份，用于随时回查数据来源</button>
+            <button class="quiz-option">模型权重矩阵中每一列的编号表</button>
+            <button class="quiz-option">一张「有意义的字／词 → 数字」的对照表，让每个数字对应可被学习的语义</button>
+            <button class="quiz-option">一张 UTF-8 字节值（0～255）到字符的映射表</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：想实现「你好 → 10000、Hello → 10001」这类映射，就必须建立一个"词典"，称之为分词表（token vocabulary，Vocab）。有了它，整句只要 4 个数字就能表达，同时每个数字对应一个可以被学习的语义。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 为什么不直接把 UTF-8 的数字序列当作分词结果？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">UTF-8 的数字会超出词表 0～255 的范围</button>
+            <button class="quiz-option">UTF-8 无法编码中文，必须先转成 GBK</button>
+            <button class="quiz-option">UTF-8 编码不可逆，解码后无法还原原文</button>
+            <button class="quiz-option">长度膨胀、模型重复学习固定字节组合、难以学到字词边界</button>
+          </div>
+          <div class="quiz-explain" hidden>课件给出的三条原因：长度膨胀——中文一个汉字 = 3 个 UTF-8 字节数字，将来的计算量、显存占用、训练速度全部恶化；信息浪费——模型每一层都要重复学习「228,189,160 = 你」这种固定组合；语义不明——模型很难学到词语、字的边界规律。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 课件 <code>bpe_train(corpus, target_vocab_size=400)</code> 的初始词表是 256 个单字节。训练结束时，词表大小与合并次数分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">词表 400、合并 144 次</button>
+            <button class="quiz-option">词表 400、合并 256 次</button>
+            <button class="quiz-option">词表 256、合并 400 次</button>
+            <button class="quiz-option">词表 400、合并 400 次</button>
+          </div>
+          <div class="quiz-explain" hidden>每合并一次只往词表里加 1 个新 id，所以合并次数 = 目标 400 − 初始 256 = 144。实测课件 corpus.txt（8268 字符 / 23616 字节）的输出正是「合并次数: 144」「词表: 256 → 400」，序列压缩 23616 → 12786（54.1%）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 词表训练完成以后，对一句新文本分词时，为什么不需要重新统计相邻对、重新合并？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为新文本一定在训练语料里出现过</button>
+            <button class="quiz-option">因为分词是离线任务，和词表没有关系</button>
+            <button class="quiz-option">因为重新跑一遍 BPE 训练的开销可以忽略</button>
+            <button class="quiz-option">词表固定后不再改动，分词只需读词表做最长匹配</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：「词表固定下来后，就不再改动了。后续的分词动作，只需要读取词表进行匹配，就能高效完成分词。」课件实现用的是贪心最长匹配：<code>for length in range(min(max_len, 剩余字节数), 0, -1)</code>，从最长片段往下试，命中就前进对应字节数。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 用这份 400 词表切「人工智能模型通过深度学习来理解自然语言。」，结果里出现了 <code>&lt;字节 e6&gt;</code>、<code>&lt;字节 e887&gt;</code> 这样的片段。这说明什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">该汉字的多字节组合没进词表，只能按部分字节切开</button>
+            <button class="quiz-option">文本的 UTF-8 编码损坏了</button>
+            <button class="quiz-option">词表 JSON 读取失败，分词退化成逐字节</button>
+            <button class="quiz-option">这些片段对应的汉字不在 Unicode 字符集里</button>
+          </div>
+          <div class="quiz-explain" hidden>课件给的原因：词表太小，有些词还没收录就已经达到了词表上限；或者训练语料中没有出现过该词。实测这句话 20 字 / 60 字节 → 18 个 token，其中「深」被切成 &lt;字节 e6&gt;&lt;字节 b7&gt;&lt;字节 b1&gt;，「自」切成 &lt;字节 e887&gt;&lt;字节 aa&gt;，「然」切成 &lt;字节 e7&gt;&lt;字节 84&gt;&lt;字节 b6&gt;；而「人工智能」「模型」「通过」「学习」「语言」都是一次命中的整词 token。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. 同一份语料、同一份分词代码，只把 <code>target_vocab_size</code> 从 400 提到 4000，对同一段测试文本最可能发生的整体变化是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">分词数量变少，而且词表越大效果越是单调线性提升</button>
+            <button class="quiz-option">分词数量变少（更多高频组合被收录，最长匹配一次吃掉更长片段），但词表变大也带来参数与计算量上升</button>
+            <button class="quiz-option">分词数量完全不变，词表大小只影响训练速度</button>
+            <button class="quiz-option">分词数量变多，但每个 token 的语义更细</button>
+          </div>
+          <div class="quiz-explain" hidden>课件指出汉字被拆成多个 token 的原因之一是「词表太小，有些词还未收录就已经达到了词表上限」——词表变大，被切碎的片段减少，序列更短。但词表变大意味着 embedding 与输出层的参数、计算量上升，而且语料里没出现过的高频组合依然进不来（总结：不同语料、不同算法 → 不同词表），所以这是权衡，不是单调收益。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 一份 1 万汉字的中文文档，按课件的比率表，海外模型与国产模型的 token 数大致落在哪个区间？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">海外模型 1.3 万～1.5 万；国产模型 0.8 万～1 万</button>
+            <button class="quiz-option">海外模型 2 万～3 万；国产模型 1.3 万～1.5 万</button>
+            <button class="quiz-option">都是一万——一个汉字正好一个 token</button>
+            <button class="quiz-option">海外模型 0.8 万～1 万；国产模型 1.3 万～1.5 万</button>
+          </div>
+          <div class="quiz-explain" hidden>课件比率表：1 个汉字 = 海外模型 1.3～1.5 token、国产模型 0.8～1 token；1 个英文字母平均 0.25～0.33 token；1 个英文单词平均 1.3 token。所以「一个汉字 = 一个 token」的直觉是错的，中文文本按 token 计费或做长度拦截时，要用 1.3～1.5 倍（海外模型）来估。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 两个团队各自用不同语料训练了词表大小同为 400 的 BPE 词表，用同一份分词代码切同一句话，结果不一样。最合理的判断是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一定是分词代码里有 bug</button>
+            <button class="quiz-option">一定是有个词表没训到 400</button>
+            <button class="quiz-option">分词结果应该逐 token 相同，不同说明模型权重被改了</button>
+            <button class="quiz-option">正常现象——词表不同，最长匹配能命中的片段就不同</button>
+          </div>
+          <div class="quiz-explain" hidden>课件总结原文：「不同的训练语料、不同的分词算法，得到不同的格式和内容的词表，从而得到不同的分词结果」。分词阶段是「查表 + 最长匹配」：查的表不一样，切出来的序列自然不一样——这也是换了模型之后必须重新统计 token 数的原因。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0007-词元',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `团队在给中文文档做 token 预算，有人给出经验法则：<strong>「一个汉字就是一个 token，所以 1 万字的合同约 1 万 token，按这个数向用户报价就行」</strong>。请用官方文档的说法审查这条法则。`,
+              source: `来源：OpenAI Cookbook《How to count tokens with tiktoken》（"Different encodings vary in how they split words, group spaces, and handle non-English characters."；日语例子「お誕生日おめでとう」在 r50k_base 下 14 tokens、cl100k_base 下 9 tokens、o200k_base 下 8 tokens）https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken（原文抓取：https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_count_tokens_with_tiktoken.ipynb） · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《07.词元》token 比率表`,
+              breakdown: `官方原文只说「不同编码切法不同、对非英文的处理不同」，并没有「一个汉字一个 token」这回事：同一句 9 个字符的日文，在官方示例里既能切成 14 个 token，也能切成 8 个 token。课件比率表给了可用的估算区间：1 个汉字 = 海外模型 1.3～1.5 token、国产模型 0.8～1 token。所以这个报价会系统性低估 30%～50%，直接关系到上下文窗口拦截和账单。正确做法：用目标模型的 tokenizer（<code>encoding.encode</code> 取 <code>len</code>，或 transformers 的 tokenizer）在真实业务语料上实测，再乘单价；字符数、字数都不能代替 token 数。`,
+            },
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事说：「tiktoken 官方说了 BPE 是<strong>可逆无损</strong>的，所以我们可以把每个 token 单独 <code>decode</code> 出来，拼成原文做逐 token 高亮展示。」这个方案有什么问题？`,
+              source: `来源：OpenAI Cookbook《How to count tokens with tiktoken》（"Warning: although .decode() can be applied to single tokens, beware that it can be lossy for tokens that aren’t on utf-8 boundaries."）https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken（原文抓取：https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_count_tokens_with_tiktoken.ipynb）+ tiktoken 官方仓库 README（"It’s reversible and lossless, so you can convert tokens back into the original text"）https://github.com/openai/tiktoken（原文抓取：https://raw.githubusercontent.com/openai/tiktoken/main/README.md） · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `「无损」是对<strong>整条 token 序列</strong>说的：<code>decode(encode(text)) == text</code>。但单个 token 可能只是 UTF-8 序列的一部分——官方原话就是「decode 用在单个 token 上时，遇到不在 UTF-8 边界上的 token 会有损」。官方示例里能直接看到 <code>b'\\xe3\\x81'</code>、<code>b'\\x8a'</code> 这种「半个假名」的字节。逐个 token 解码再拼接，非边界片段会变成替换符或乱码；要安全处理单 token，用 <code>decode_single_token_bytes()</code> 拿字节，或直接用 tokenizer 的 offset mapping 做高亮。本课 400 词表里的 <code>&lt;字节 e6&gt;</code>、<code>&lt;字节 e887&gt;</code>，就是同一个现象在字节级 BPE 上的表现。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `为什么本课的 BPE 从 <strong>256 个单字节</strong>开始建词表，而不是从「所有汉字 + 所有英文单词」开始？这样做换来了什么、又付出了什么代价？`,
+              source: `来源：Hugging Face Transformers 官方文档《Tokenization algorithms》（"Including all Unicode characters would make the base vocabulary enormous. Byte-level BPE uses 256 byte values as the base vocabulary instead, ensuring every word can be tokenized without the &lt;unk&gt; token."）https://huggingface.co/docs/transformers/en/tokenizer_summary（原文抓取：https://raw.githubusercontent.com/huggingface/transformers/main/docs/source/en/tokenizer_summary.md） · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方给了两层理由：① 把全部 Unicode 字符塞进基础词表会让词表<strong>巨大</strong>；② 用 256 个字节值兜底之后，<strong>任何文本都能被切分</strong>，不会出现 <code>&lt;unk&gt;</code>（这就是 byte-level BPE）。这正是本课 <code>vocab = {i: bytes([i]) for i in range(256)}</code> 的出处，官方例子是 GPT-2：256 个字节 token + 50,000 次合并 + 1 个特殊 token = 50,257。代价是「一个汉字先要占 3 个字节 token」，必须靠合并高频相邻对把常用字词重新「长」成一个 token——这正是本课训练循环在做的事。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `用一句话说清 BPE 训练每一步「在优化什么」。并回答：官方说 GPT 的词表 40,478 = 478 个基础 token + 40,000 次合并，那么「词表大小」和「合并次数」是什么关系？本课目标 400 的词表对应多少次合并、为什么？`,
+              source: `来源：Hugging Face LLM Course 官方教程《Byte-Pair Encoding tokenization》（"At any step during the tokenizer training, the BPE algorithm will search for the most frequent pair of existing tokens ... That most frequent pair is the one that will be merged"）+ Hugging Face Transformers 官方文档《Tokenization algorithms》（"BPE continues learning merge rules until it reaches the target vocabulary size, which equals the base vocabulary size plus the number of merges."）https://huggingface.co/learn/llm-course/chapter6/5（原文抓取：https://raw.githubusercontent.com/huggingface/course/main/chapters/en/chapter6/5.mdx）；《Tokenization algorithms》原文抓取：https://raw.githubusercontent.com/huggingface/transformers/main/docs/source/en/tokenizer_summary.md） · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `每一步都是在<strong>当前序列里找出现次数最多的相邻对</strong>（官方原文：most frequent pair of existing tokens），把它合并成一个新 token 并全序列替换——注意它优化的是<strong>频次</strong>，不是「语义」或「信息量」（后者是 WordPiece/Unigram 的选法）。官方给出恒等式：<strong>目标词表大小 = 基础词表 + 合并次数</strong>，所以 GPT 是 478 + 40,000 = 40,478。本课从 256 个字节起步、目标 400，循环条件 <code>while len(vocab) &lt; target_vocab_size</code> 决定了合并 <strong>144 次</strong>——与实测输出「合并次数: 144」「词表: 256 → 400」完全对应。反过来说：想让词表变大，就必须多学合并规则，而不是把 400 这个数字改大就自动生效。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `一个 Agent 工程换了底模。AI 给出的「省事改法」是：分词器完全不动，继续沿用工程里那份旧词表（旧 <code>bpe_vocab.json</code> / 旧的 BERT tokenizer）来给新模型算 token 数、拼 prompt、做长度截断。请审查这个改法。`,
+              source: `来源：Hugging Face LLM Course 官方教程《Tokenizers》（"we need to instantiate the tokenizer using the name of the model, to make sure we use the same rules that were used when the model was pretrained."；"we need to use the same vocabulary used when the model was pretrained."）https://huggingface.co/learn/llm-course/chapter2/4（原文抓取：https://raw.githubusercontent.com/huggingface/course/main/chapters/en/chapter2/4.mdx） · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方把 tokenizer 的算法比作模型的 <em>architecture</em>、词表比作 <em>weights</em>：加载时必须与预训练时保持一致，「要用和模型预训练时同一份词表」。沿用旧词表意味着：切出来的 token 序列和新模型训练时看到的不是一回事，token 计数会系统性偏错，直接影响上下文窗口判断、截断位置和成本预估——本课实测也显示，不同词表对同一句话能切出 18 个 token 或一堆 <code>&lt;字节 e6&gt;</code> 碎片。正确改法：按新模型名加载配套 tokenizer（transformers 的 <code>AutoTokenizer.from_pretrained(&lt;模型名&gt;)</code>，tiktoken 的 <code>encoding_for_model</code>），用新 tokenizer 重跑长度统计、重设截断与预算，并把「换模型必须换 tokenizer」写进升级清单。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `要给一个中文占比很高的 Agent 产品定分词方案：自训一份 BPE 词表、直接沿用某个开源模型的 tokenizer、还是上 SentencePiece？请给出选型依据（中文无空格、词表大小、未知词、成本）。`,
+              source: `来源：Hugging Face Transformers 官方文档《Tokenization algorithms》（"Standard BPE and Unigram assume whitespace separates words, which doesn’t work for languages like Chinese and Japanese that don’t use spaces."；"Words not in the vocabulary map to an &lt;unk&gt; token"；"Character-level ... sequences become much longer"）https://huggingface.co/docs/transformers/en/tokenizer_summary（原文抓取：https://raw.githubusercontent.com/huggingface/transformers/main/docs/source/en/tokenizer_summary.md） · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《07.词元》词表压缩实测`,
+              breakdown: `按四条判据过一遍：① <strong>中文无空格</strong>——官方明确指出标准 BPE/Unigram 依赖空格分词，对中文、日文这类不用空格的语言不适用；SentencePiece 直接在原始字符流上做，并把空格显式编码成 <code>▁</code>，是中文场景的常见选择。② <strong>词表大小的权衡</strong>——词表小会让序列变长（官方对字符级的原话：sequences become much longer），词表大则 embedding 与输出层参数、计算量上升；本课实测也验证了 400 词表能把 23616 字节压到 12786（54.1%），但继续放大是收益递减。③ <strong>未知词</strong>——word-level 遇到表外词会退化成 <code>&lt;unk&gt;</code>，byte-level BPE/SentencePiece 基本消除了这个问题，适合中文新词与网络用语。④ <strong>成本与兼容</strong>——沿用目标模型的 tokenizer 最省事、切法与原模型一致（换模型才需要换）；只有在业务语料分布与现成词表差异极大、且你确实要训自己的模型时，才值得自训词表。落地建议：抽样业务语料实测「压缩比 + 表外字符率」，用数据定方案，别凭感觉定词表大小。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 30 分钟内复刻一个「迷你 BPE 分词器」：从零训练词表、保存成 JSON、再用它切一段中文并解释切出来的字节片段。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '用课件 corpus.txt 训练 target_vocab_size=400 的 BPE 词表 → 导出 bpe_vocab.json（无法按 UTF-8 解码的字节序列存十六进制）→ 重新读取词表，用「最长匹配」对「人工智能模型通过深度学习来理解自然语言。」分词 → 打印 token 数、压缩比与解码结果。',
+                accept: ['训练输出里合并次数 = 目标 400 − 初始 256 = 144，词表 256 → 400', 'bpe_vocab.json 能被重新读回并还原出「字节串 → id」的映射（十六进制项要正确还原成字节）', '测试句 20 字 / 60 字节 → 18 个 token，且能指出哪些汉字被拆成了多个字节片段', '能说出「词表太小 / 语料没出现过该词」是汉字被拆的原因'],
+              },
+              source: `任务基于《07.词元》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 先把语料读进来，<code>open("corpus.txt", encoding="utf-8").read()</code>；② 初始 <code>vocab = {i: bytes([i]) for i in range(256)}</code>，用 <code>Counter</code> 统计相邻对，循环合并最高频对并写新 id，直到 <code>len(vocab) &lt; target_vocab_size</code> 不成立；③ 导出时对每个 id 的字节 <code>try: decode("utf-8")</code>，失败就存 <code>raw.hex()</code>；④ 读回时反过来判断：能按 UTF-8 解码的当文本编码，十六进制串当字节还原，再建「字节串 → id」并求最长片段长度；⑤ 分词时从最长片段往下试，命中就前进。常见坑：忘记初表是 256 个字节导致汉字直接 <code>&lt;unk&gt;</code>；导出时没接住 <code>UnicodeDecodeError</code>，<code>json.dump</code> 直接崩；读回 hex 时用 <code>s.encode()</code> 把十六进制串当普通文本（应 <code>bytes.fromhex</code>），于是切出错误片段；匹配顺序写成从短到长，切出更多碎片；<code>target_vocab_size</code> 设得比 256 小，循环一次都不进。跑完后对照验收点自查，尤其要能解释「深」为什么变成 <code>&lt;字节 e6&gt;&lt;字节 b7&gt;&lt;字节 b1&gt;</code>。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://huggingface.co/docs/transformers/en/tokenizer_summary">Hugging Face Transformers 官方文档《Tokenization algorithms》</a> · <a href="https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken">OpenAI Cookbook《How to count tokens with tiktoken》</a> · <a href="https://huggingface.co/learn/llm-course/chapter6/5">HF 课程《Byte-Pair Encoding tokenization》</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/词元速查表.html">词元速查表</a>——术语、BPE 流程、实测数字与 token 估算一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/词元">07.词元</a> · 下一课 <a href="/agents/Agents底层逻辑/token统计">08.token统计</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

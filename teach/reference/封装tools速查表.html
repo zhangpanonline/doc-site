@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>封装tools速查表 · 参考手册</title>
+  <meta name="description" content="封装tools速查表 · 可打印参考手册：配合《封装tools互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>封装tools速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0019-封装tools.html">《封装tools互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>流水线分工：谁解决哪段距离</h2>
+      <table class="cmp-table">
+        <tr><th>环节</th><th>由谁负责</th><th>关键调用</th></tr>
+        <tr><td>函数签名 → 参数模型</td><td><code>create_params_model</code>（<code>core/utils.py</code>）</td><td><code>inspect.signature</code> + <code>create_model</code></td></tr>
+        <tr><td>参数模型 → 工具 Schema</td><td><code>Tool.schema()</code>（<code>core/tool.py</code>）</td><td><code>param_model.model_json_schema()</code></td></tr>
+        <tr><td>参数校验 + 执行 + 异常兜底</td><td><code>Tool.__call__</code></td><td><code>param_model(**kwargs)</code> → <code>func(**validated.model_dump())</code></td></tr>
+        <tr><td>声明式包装（描述聚合到定义处）</td><td><code>@tool(**param_descriptions)</code></td><td><code>Tool(func, param_descriptions=args)</code></td></tr>
+        <tr><td>工具 → session</td><td><code>registry.schemas()</code></td><td><code>session.tools = registry.schemas()</code></td></tr>
+        <tr><td>模型 tool_calls → 工具执行 → 结果消息</td><td><code>registry.invoke(message)</code></td><td><code>json.loads(tc["function"]["arguments"])</code> → <code>tool(**args)</code></td></tr>
+      </table>
+      <p>一句话：<strong><code>Tool</code> 管「一个函数 ↔ 一份 Schema」，<code>_ToolRegistry</code> 管「工具 ↔ session ↔ tool_calls」</strong>。</p>
+    </section>
+
+    <section>
+      <h2>Pydantic 速查（校验与 Schema 一次定义、两处复用）</h2>
+      <pre>uv add pydantic==2.13.4
+
+class Counter(BaseModel):
+    n: int = Field(description="计数值", default=0)
+
+Counter()                    # 自动适配默认值 → n=0
+Counter(n="123")             # 自动转换类型 → n=123（int，不是字符串）
+Counter(n=[1,2,3])           # 无法转换 → ValidationError
+Counter().model_dump()       # {'n': 0} —— 喂给原函数
+Counter.model_json_schema()  # {'properties': {'n': {...}}, 'title': 'Counter', 'type': 'object'}
+
+# 动态建模型：字段定义 = (类型, 默认值或 Field)
+create_model("dynamic_model",
+    filepath=(str, Field(description="文件的绝对路径或相对于cwd的路径")),
+    content=(str, Field(description="待写入的文件内容")))
+
+# 从函数签名动态生成参数模型
+def create_params_model(func, param_descriptions={}):
+    model_name = f"{func.__name__}_params"
+    args = {}
+    for pname, param in inspect.signature(func).parameters.items():
+        py_type = param.annotation if param.annotation is not param.empty else Any
+        desc = param_descriptions.get(pname, "")
+        if param.default is param.empty:            # 必填：不设默认值
+            args[pname] = (py_type, Field(description=desc))
+        else:                                       # 可选：带上默认值
+            args[pname] = (py_type, Field(default=param.default, description=desc))
+    return create_model(model_name, **args)</pre>
+      <dl class="term-grid">
+        <dt>「校验」的真实含义</dt>
+        <dd>Pydantic 保证的是<strong>输出</strong>的类型与约束，不是输入数据；默认宽松转换（<code>"123"</code> → <code>123</code>），只有「转换不了」才报 <code>ValidationError</code>。</dd>
+        <dt>必填 / 可选的分界</dt>
+        <dd><code>param.default is param.empty</code> → 进 <code>required</code>；有默认值 → 不进。有默认值的参数<strong>绝不能</strong>写成 <code>Field(description=…)</code>，否则模型必须每次显式编值。</dd>
+        <dt>无类型标注的参数</dt>
+        <dd>退回 <code>Any</code>，其 Schema 里没有 <code>type</code> 键，最终在 <code>Tool.schema()</code> 中回落到 <code>"string"</code>。</dd>
+        <dt>模型名</dt>
+        <dd>固定为 <code>f"{func.__name__}_params"</code>，方便在报错信息里认领是哪个工具的参数炸了。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>Tool 类 / 装饰器 / 调度中心</h2>
+      <pre>class Tool:
+    def __init__(self, func, param_descriptions={}):
+        self.func = func
+        self.name = func.__name__                      # 名字来自函数
+        self.description = inspect.getdoc(func) or ""  # 描述来自 docstring
+        self.param_descriptions = param_descriptions or {}
+        self.param_model = create_params_model(func, param_descriptions)
+
+    def schema(self) -> dict:      # {"type": "function", "function": {name, description, parameters}}
+    def __call__(self, **kwargs):  # 校验 → 执行 → str(结果)；异常 → traceback 堆栈字符串
+
+def tool(**args):
+    def decorator(func):
+        return Tool(func, param_descriptions=args)
+    return decorator
+
+class _ToolRegistry:
+    def register(self, tool): self._tools[tool.name] = tool
+    def schemas(self): return [t.schema() for t in self._tools.values()]
+    def invoke(self, message):   # 无 tool_calls → None；否则逐条执行 → list[dict]</pre>
+      <table class="cmp-table">
+        <tr><th>点</th><th>要记住的行为</th></tr>
+        <tr><td><code>schema()</code> 的 parameters</td><td>遍历 <code>model_json_schema()["properties"]</code>，<strong>只保留 <code>type</code> 与 <code>description</code></strong>（<code>prop.get("type","string")</code>）；<code>required</code> 直接沿用参数模型的 <code>required</code></td></tr>
+        <tr><td><code>__call__</code> 的返回值</td><td>永远是<strong>字符串</strong>（<code>str(self.func(...))</code>）；失败时是完整堆栈字符串，<strong>不抛异常</strong>——让模型自己看堆栈纠错</td></tr>
+        <tr><td><code>invoke()</code> 的返回形状</td><td><code>list[dict] | None</code>：每项 <code>{"role": "tool", "tool_call_id", "name", "content"}</code>，靠 <code>tool_call_id</code> 与请求配对；<strong><code>None</code> 表示本次无须调用工具</strong></td></tr>
+        <tr><td><code>@tool</code> 的代价</td><td>被装饰的名字变成 <code>Tool</code> 实例，<strong>不再是函数</strong>——别指望后续还能对它做 <code>inspect.signature()</code> 反射</td></tr>
+        <tr><td><code>@tool</code> 的位置</td><td>工具本身是普通模块级函数，装饰器直接压在 <code>def</code> 上即可；不要和 <code>@staticmethod</code> 之类描述符混着叠，顺序会悄悄改变拿到手的东西</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>易错点清单</h2>
+      <ul class="pitfall-list">
+        <li><strong>KeyError 抢在判空之前</strong>：<code>tool = self._tools[name]</code> 对不存在的工具名直接抛 <code>KeyError</code>，后面 <code>if not tool:</code> 的「无此工具」提示是<strong>死代码</strong>；应改用 <code>self._tools.get(name)</code>，把幻觉出来的工具名变成一条可回灌的观察结果。</li>
+        <li><strong>忘注册</strong>：工具写好了但没在 <code>agent/tool/__init__.py</code> 里 <code>registry.register(...)</code>，Schema 里就没有它 → 模型永远不会调用。排查第一步永远先 <code>registry.schemas()</code>。</li>
+        <li><strong>默认值漏写</strong>：可选参数没走 <code>Field(default=param.default, ...)</code>，于是进了 <code>required</code>，模型每次都被迫编一个值。</li>
+        <li><strong>对普通聊天轮漏判空</strong>：<code>session.messages += call_msg</code> 在 <code>call_msg is None</code> 时等于 <code>list.extend(None)</code> → <code>TypeError</code>。要么保留 <code>None</code> 语义 + 调用方 <code>if call_msg:</code>，要么让 <code>invoke</code> 统一返回空列表。</li>
+        <li><strong>把类型转换当校验</strong>：<code>"50"</code> → <code>50</code> 会被静默接受；要真拦截得开严格模式或在 <code>Field</code> 上加约束。</li>
+        <li><strong>prompt 里的描述 ≠ 参数名</strong>：<code>param_descriptions</code> 只改描述文本，改不了参数名；模型按 Schema 里的名字回传，对不上就会收到 <code>Field required [type=missing]</code>。</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

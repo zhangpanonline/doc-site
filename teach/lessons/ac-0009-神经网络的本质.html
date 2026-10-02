@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 神经网络的本质：矩阵相加、点乘与转置的维度规则，向量方向与「每层只是一次矩阵运算」——互动教学课程">
+  <title>神经网络的本质 · 互动教学课程（Agents底层逻辑 ac-09）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>神经网络的本质</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/神经网络的本质">09.神经网络的本质</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清矩阵相加、矩阵的点乘、矩阵的转置三种运算各自的规则与形状变化</li>
+        <li>按课件的三条向量规则，判断向量当作 $n\times 1$ 还是 $1\times n$ 时哪次乘法成立、哪次直接 error</li>
+        <li>复述本章结论「每一层实际上做的是矩阵运算」，并写出 $\mathbf{a}^{(l)}=\sigma(\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)})$ 中每个符号的维度</li>
+        <li>用课件的维度规则核对 AI 写出的矩阵运算代码：形状对不对、能不能乘得起来</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>本章是纯数学打底：把「神经网络」拆成三种矩阵运算。公式看起来多，规则其实只有三条——形状对得上才能算。</p>
+
+      <div class="card">
+        <h3>三种矩阵运算：相加、点乘、转置</h3>
+        <ul class="pitfall-list">
+          <li><strong>相加</strong>：$c_{ij}=(a_{ij}+b_{ij})$，两个矩阵必须同为 $m\times n$，对应位置相加，结果仍是 $m\times n$：$A_{(m\times n)} + B_{(m\times n)} = AB_{(m\times n)}$</li>
+          <li><strong>点乘（矩阵乘法）</strong>：$c_{ij}=\sum_{k=1}^{n} a_{ik}b_{kj}$——第 i 行第 j 列的结果，是 A 的第 i 行与 B 的第 j 列「对应相乘再求和」；形状规则 $A_{(m\times n)} \cdot B_{(n\times p)} = AB_{(m\times p)}$，<strong>中间维 n 被求和消掉</strong>，所以左边列数必须等于右边行数</li>
+          <li><strong>转置</strong>：行列互换，$A$ 是 $m\times n$ 时 $A^T$ 就是 $n\times m$，元素满足 $(A^T)_{ij}=a_{ji}$</li>
+        </ul>
+        <p>课件的三个算例（点乘那个请亲手算一遍，中级测验会考）：</p>
+        <p>$$\begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} + \begin{bmatrix} 7 & 8 & 9 \\ 10 & 11 & 12 \end{bmatrix} = \begin{bmatrix} 8 & 10 & 12 \\ 14 & 16 & 18 \end{bmatrix}$$</p>
+        <p>$$\begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} \cdot \begin{bmatrix} 7 & 8 \\ 9 & 10 \\ 11 & 12 \end{bmatrix} = \begin{bmatrix} 1\cdot7+2\cdot9+3\cdot11 & 1\cdot8+2\cdot10+3\cdot12 \\ 4\cdot7+5\cdot9+6\cdot11 & 4\cdot8+5\cdot10+6\cdot12 \end{bmatrix} = \begin{bmatrix} 58 & 64 \\ 139 & 154 \end{bmatrix}$$</p>
+      </div>
+
+      <div class="card">
+        <h3>向量与矩阵：方向决定成败</h3>
+        <p>课件原文：向量可以和矩阵进行运算，运算时，可以把向量看作是 $n\times1$ 的矩阵，也可以看作是 $1\times n$ 的矩阵，<strong>如何看待根据算法而不同</strong>。</p>
+        <ul class="pitfall-list">
+          <li>$A_{(m\times n)} \cdot x_{(n\times 1)} = y_{(m\times 1)}$——中间维 n↔n 匹配，成立</li>
+          <li>$A_{(m\times n)} \cdot x_{(1\times n)} = error$——中间维 n↔1 对不上，直接错</li>
+          <li>$x_{(1\times n)} \cdot y_{(n\times 1)} = 标量_{(1\times 1)}$——中间维 n 被消掉，只剩 $1\times1$，也就是标量</li>
+          <li>算例：$\begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} \cdot \begin{bmatrix} 7 \\ 8 \\ 9 \end{bmatrix} = \begin{bmatrix} 1\cdot7+2\cdot8+3\cdot9 \\ 4\cdot7+5\cdot8+6\cdot9 \end{bmatrix} = \begin{bmatrix} 50 \\ 122 \end{bmatrix}$</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>神经网络的本质：一层 = 一次矩阵运算</h3>
+        <p>课件结论：<strong>神经网络中的每一层，实际上做的是矩阵运算，并不存在所谓「神经元」。</strong></p>
+        <p>$$\begin{bmatrix} a_1^{(l)} \\ a_2^{(l)} \\ \vdots \\ a_n^{(l)} \end{bmatrix} = \sigma\left( \begin{bmatrix} w_{11}^{(l)} & w_{12}^{(l)} & \cdots & w_{1m}^{(l)} \\ w_{21}^{(l)} & w_{22}^{(l)} & \cdots & w_{2m}^{(l)} \\ \vdots & \vdots & \ddots & \vdots \\ w_{n1}^{(l)} & w_{n2}^{(l)} & \cdots & w_{nm}^{(l)} \end{bmatrix} \begin{bmatrix} a_1^{(l-1)} \\ a_2^{(l-1)} \\ \vdots \\ a_m^{(l-1)} \end{bmatrix} + \begin{bmatrix} b_1^{(l)} \\ b_2^{(l)} \\ \vdots \\ b_n^{(l)} \end{bmatrix} \right)$$</p>
+        <p>$$\text{简写形式：} \quad \mathbf{a}^{(l)} = \sigma\left( \mathbf{W}^{(l)} \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)} \right)$$</p>
+        <ul class="pitfall-list">
+          <li>$\mathbf{a}^{(l)}$：第 $l$ 层的输出向量（$n \times 1$）</li>
+          <li>$\mathbf{a}^{(l-1)}$：第 $l-1$ 层的输出向量（$m \times 1$）</li>
+          <li>$\mathbf{W}^{(l)}$：第 $l$ 层的权重矩阵（$n \times m$）</li>
+          <li>$\mathbf{b}^{(l)}$：第 $l$ 层的偏置向量（$n \times 1$）；$\sigma(\cdot)$：激活函数（如 Sigmoid、ReLU 等）</li>
+          <li>维度自检：$(n\times m)(m\times 1) + (n\times 1) \to (n\times 1)$——中间维 m 必须相等，输出行数由 $\mathbf{W}$ 的行数 n 决定</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《09.神经网络的本质》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 课件对「矩阵相加」的定义是 $c_{ij}=(a_{ij}+b_{ij})$。据此，$A_{(m\times n)} + B_{(m\times n)} = AB_{(m\times n)}$ 的含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">结果的行数由 A 决定、列数由 B 决定，所以两个矩阵形状可以不同</button>
+            <button class="quiz-option">对应位置的元素相加，两个矩阵必须同为 $m\times n$，结果仍是 $m\times n$</button>
+            <button class="quiz-option">先把两个矩阵各转置一次，再对应位置相加</button>
+            <button class="quiz-option">相加会消掉中间维，所以要求中间维相等</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文就是 $c_{ij}=(a_{ij}+b_{ij})$：逐元素相加，两个矩阵必须同为 $m\times n$，结果也是 $m\times n$。课件算例 $\begin{bmatrix}1&amp;2&amp;3\\4&amp;5&amp;6\end{bmatrix}+\begin{bmatrix}7&amp;8&amp;9\\10&amp;11&amp;12\end{bmatrix}=\begin{bmatrix}8&amp;10&amp;12\\14&amp;16&amp;18\end{bmatrix}$ 就是对应位置相加（1+7=8、2+8=10……）。「消掉中间维」是点乘才有的特征，不是相加。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">2. 「矩阵的点乘」$c_{ij}=\sum_{k=1}^{n} a_{ik}b_{kj}$ 配合形状规则 $A_{(m\times n)} \cdot B_{(n\times p)} = AB_{(m\times p)}$，说明的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$c_{ij}$ 是 A 第 i 列与 B 第 j 行的内积，中间维 p 必须相等</button>
+            <button class="quiz-option">$c_{ij}$ 是 A 第 i 行与 B 第 j 列「对应相乘再求和」，A 的列数必须等于 B 的行数，结果是 $m\times p$</button>
+            <button class="quiz-option">两个矩阵形状必须完全相同，结果也一定是 $m\times n$</button>
+            <button class="quiz-option">点乘就是逐元素相乘（对应位置相乘），形状保持不变</button>
+          </div>
+          <div class="quiz-explain" hidden>求和下标 k 走遍中间维 n，所以 $c_{ij}$ 是 A 的第 i 行与 B 的第 j 列对应相乘再求和；形状 $A_{(m\times n)}\cdot B_{(n\times p)}$ 里中间那个 n 必须相等并被消掉，结果行数来自 A（m）、列数来自 B（p），是 $m\times p$。课件算例：$\begin{bmatrix}1&amp;2&amp;3\\4&amp;5&amp;6\end{bmatrix}\cdot\begin{bmatrix}7&amp;8\\9&amp;10\\11&amp;12\end{bmatrix}=\begin{bmatrix}58&amp;64\\139&amp;154\end{bmatrix}$，其中 $58=1\cdot7+2\cdot9+3\cdot11$。逐元素相乘是另一种运算，不是本章说的点乘。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 课件「向量矩阵」一节给了三条式子：$A_{(m\times n)} \cdot x_{(n\times 1)} = y_{(m\times 1)}$、$A_{(m\times n)} \cdot x_{(1\times n)} = error$、$x_{(1\times n)} \cdot y_{(n\times 1)} = 标量_{(1\times 1)}$。下面哪种说法符合课件？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">向量既可看作 $n\times 1$ 也可看作 $1\times n$，如何看待「根据算法而不同」；方向取错时中间维对不上，结果就是 error</button>
+            <button class="quiz-option">行向量只能放右边、列向量只能放左边，否则一致报错</button>
+            <button class="quiz-option">向量只能当 $n\times 1$ 的列向量用，当作行向量一定是错的</button>
+            <button class="quiz-option">三条式子说明向量的方向随便取，结果都一样</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：可以把向量看作是 $n\times1$ 的矩阵，也可以看作是 $1\times n$ 的矩阵，如何看待根据算法而不同。三条式子的差别全在中间维：$A_{(m\times n)}$ 乘 $x_{(n\times1)}$ 是 n↔n，成立；乘 $x_{(1\times n)}$ 是 n↔1，对不上，所以是 error；行向量乘列向量 $(1\times n)(n\times1)$ 把 n 消掉，只剩 $1\times1$，也就是标量。方向不是随便取，而是由运算本身决定。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">4. 按点乘定义算出 $\begin{bmatrix}1&amp;2&amp;3\\4&amp;5&amp;6\end{bmatrix} \cdot \begin{bmatrix}7&amp;8\\9&amp;10\\11&amp;12\end{bmatrix}$，结果（课件算例）是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$\begin{bmatrix}58&amp;139\\64&amp;154\end{bmatrix}$</button>
+            <button class="quiz-option">$\begin{bmatrix}58&amp;64\\139&amp;154\end{bmatrix}$</button>
+            <button class="quiz-option">$\begin{bmatrix}76&amp;100\\103&amp;136\end{bmatrix}$</button>
+            <button class="quiz-option">无法相乘：右边不是 $2\times 2$ 方阵</button>
+          </div>
+          <div class="quiz-explain" hidden>逐项算：$c_{11}=1\cdot7+2\cdot9+3\cdot11=7+18+33=58$；$c_{12}=1\cdot8+2\cdot10+3\cdot12=8+20+36=64$；$c_{21}=4\cdot7+5\cdot9+6\cdot11=28+45+66=139$；$c_{22}=4\cdot8+5\cdot10+6\cdot12=32+50+72=154$。结果正是课件的 $\begin{bmatrix}58&amp;64\\139&amp;154\end{bmatrix}$。选 A 是把结果转置了（$c_{12}$ 与 $c_{21}$ 的位置写反）；$(2\times3)\cdot(3\times2)$ 中间维 3↔3 匹配，完全可以相乘，结果是 $2\times2$。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">5. $\begin{bmatrix}1&amp;2&amp;3\\4&amp;5&amp;6\end{bmatrix} \cdot \begin{bmatrix}7\\8\\9\end{bmatrix}$ 的结果与形状是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$\begin{bmatrix}50\\122\end{bmatrix}$，形状 $2\times 1$</button>
+            <button class="quiz-option">$\begin{bmatrix}50&amp;122\end{bmatrix}$，形状 $1\times 2$</button>
+            <button class="quiz-option">标量 $172$，因为两个向量相乘得标量</button>
+            <button class="quiz-option">无法相乘：右边是一维向量，必须先转置成行向量</button>
+          </div>
+          <div class="quiz-explain" hidden>$(2\times3)(3\times1)\to(2\times1)$：第一行 $1\cdot7+2\cdot8+3\cdot9=7+16+27=50$，第二行 $4\cdot7+5\cdot8+6\cdot9=28+40+54=122$，结果 $\begin{bmatrix}50\\122\end{bmatrix}$，与课件算例一致。只有当「行向量 × 列向量」$(1\times n)(n\times1)$ 时结果才退化成 $1\times1$ 的标量；这里左边是 $2\times3$，所以结果仍是列向量。而且左边列数 3 恰好等于右边长度 3，不需要转置。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">6. 矩阵 $A$ 是 $2\times 3$（元素记作 $a_{ij}$）。转置后 $A^T$ 的形状，以及 $A^T$ 第 1 行第 2 列的元素是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$3\times 2$；元素是 $a_{12}$</button>
+            <button class="quiz-option">$2\times 3$；元素是 $a_{21}$</button>
+            <button class="quiz-option">$3\times 2$；元素是 $a_{21}$</button>
+            <button class="quiz-option">$2\times 3$；元素是 $a_{12}$</button>
+          </div>
+          <div class="quiz-explain" hidden>课件：如果原矩阵 A 是 $m\times n$，转置后 $A^T$ 就是 $n\times m$——所以 $2\times3$ 变成 $3\times2$。转置把行列互换，也就是 $(A^T)_{ij}=a_{ji}$：$A^T$ 第 1 行第 2 列（i=1、j=2）来自 $a_{21}$。把形状写成 $2\times3$ 等于没转置，这是 shape 自检里最容易漏掉的一条。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 某层输入 $m=768$、输出 $n=3072$，按 $\mathbf{a}^{(l)}=\sigma(\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)})$，$\mathbf{W}^{(l)}$、$\mathbf{a}^{(l-1)}$、$\mathbf{b}^{(l)}$、$\mathbf{a}^{(l)}$ 的形状依次是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">$3072\times 3072$、$768\times 1$、$3072\times 1$、$768\times 1$</button>
+            <button class="quiz-option">$3072\times 768$、$3072\times 1$、$768\times 1$、$3072\times 1$</button>
+            <button class="quiz-option">$3072\times 768$、$768\times 1$、$3072\times 1$、$3072\times 1$</button>
+            <button class="quiz-option">$768\times 3072$、$768\times 1$、$768\times 1$、$3072\times 1$</button>
+          </div>
+          <div class="quiz-explain" hidden>课件逐条标了维度：$\mathbf{a}^{(l)}$ 是 $n\times1$、$\mathbf{a}^{(l-1)}$ 是 $m\times1$、$\mathbf{W}^{(l)}$ 是 $n\times m$、$\mathbf{b}^{(l)}$ 是 $n\times1$。代入 n=3072、m=768：权重 $3072\times768$、输入 $768\times1$、偏置 $3072\times1$、输出 $3072\times1$。矩阵乘法 $(3072\times768)(768\times1)\to(3072\times1)$，偏置逐元素相加不改变形状。选 A 是把权重写成 $m\times n$——乘起来中间维 768↔3072 直接对不上，属于课件写 $A_{(m\times n)}\cdot x_{(1\times n)}=error$ 那一类错误。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 课件说「神经网络中的每一层，实际上做的是矩阵运算，并不存在所谓『神经元』」。把一层从「逐个神经元算」改写成一次矩阵乘法 $\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}$ 之后，结果与执行方式会怎样变化？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">结果等价，但矩阵乘法一定比逐神经元计算慢，只是代码更短</button>
+            <button class="quiz-option">只有单层网络等价，多层网络必须逐神经元算</button>
+            <button class="quiz-option">结果不同：矩阵形式丢掉了每个神经元各自的偏置</button>
+            <button class="quiz-option">结果完全等价（偏置由 $\mathbf{b}^{(l)}$ 承担），而且循环落到了编译好的批量矩阵乘法里，实际执行更快</button>
+          </div>
+          <div class="quiz-explain" hidden>课件的结论是「每层实际上做的是矩阵运算」：$\mathbf{W}^{(l)}$ 的第 j 行乘 $\mathbf{a}^{(l-1)}$ 就是第 j 个神经元的加权和，偏置由 $\mathbf{b}^{(l)}$ 的第 j 个元素承担，所以逐神经元算与一次矩阵乘法是同一件事——等价，并没有丢偏置。差别在执行：矩阵乘法的循环发生在编译好的底层实现里（NumPy 官方把这种「代码里没有显式循环」称为 vectorization，说循环是在 optimized, pre-compiled C code 背后进行的），而逐神经元在 Python 层写就是解释执行的 for 循环。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 课件给出 $x_{(1\times n)} \cdot y_{(n\times 1)} = 标量_{(1\times 1)}$。如果把这两个向量换个方向相乘 $y_{(n\times 1)} \cdot x_{(1\times n)}$，按同样的维度规则会得到什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一个 $n\times n$ 的矩阵：中间维 1↔1 匹配并被消掉，剩下 n 与 n 成为结果的两个维度</button>
+            <button class="quiz-option">还是一个标量，与 $x \cdot y$ 结果相同</button>
+            <button class="quiz-option">直接 error：中间维 1 与 n 对不上</button>
+            <button class="quiz-option">一个 $1\times 1$ 的矩阵，但前提是先把其中一个向量转置</button>
+          </div>
+          <div class="quiz-explain" hidden>只按维度推：$(n\times1)(1\times n)$ 的中间维是 1↔1，匹配、被求和消掉，剩下 $n\times n$ 就是结果形状。对照课件那条 $(1\times n)(n\times1)$：中间维 n↔n 匹配、消掉后剩 $1\times1$，也就是标量。同一对向量换个方向，结果从标量变成矩阵——这正是课件「既可以看作 $n\times1$、也可以看作 $1\times n$，如何看待根据算法而不同」的实际后果。中间维对不上的是另一条：$A_{(m\times n)}\cdot x_{(1\times n)}$（n↔1）。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0009-神经网络的本质',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事让 AI 把课件的 $A_{(m\\times n)} \\cdot x_{(n\\times 1)} = y_{(m\\times 1)}$ 写成代码。AI 交回来是这样（<code>A</code> 是 (2, 3)，<code>x</code> 用 <code>np.array([7, 8, 9])</code> 表示，注释还写着「x 就是课件里那个列向量」）：<pre><code>y = A @ x      # x: (3,) 一维数组，当作列向量</code></pre>同事说「NumPy 会自动把向量当列向量，没问题」。这段代码会报错吗？结果和课件的约定一致吗？如果换成显式行向量 <code>np.array([[7, 8, 9]])</code> 又会怎样？`,
+              source: `来源：NumPy 官方文档 numpy.matmul（"Matrix product of two arrays."；"If the second argument is 1-D, it is promoted to a matrix by appending a 1 to its dimensions. After matrix multiplication the appended 1 is removed."；"ValueError: If the last dimension of x1 is not the same size as the second-to-last dimension of x2."）https://numpy.org/doc/stable/reference/generated/numpy.matmul.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `结论分三层。<br><br>① <strong>不报错，但形状和课件约定不一致</strong>：x 是 1-D 的 (3,)，官方说明 matmul 会把第二个 1-D 参数「appending a 1 to its dimensions」提升成 (3, 1) 参与运算，算完再把这个 1 去掉——所以结果是 (2,) 的一维数组 <code>[50, 122]</code>，而不是课件约定的 (2, 1) 列向量。想做显式列向量，要写 <code>x[:, None]</code> 变成 (3, 1)，得到 (2, 1)。<br><br>② <strong>显式行向量会直接抛错</strong>：<code>np.array([[7, 8, 9]])</code> 是 (1, 3)，<code>A @ 行向量</code> 触发 <code>ValueError: matmul: Input operand 1 has a mismatch in its core dimension 0 ... (size 1 is different from 3)</code>——官方文档写得很直白：「If the last dimension of x1 is not the same size as the second-to-last dimension of x2.」这正是课件那句 $A_{(m\\times n)} \\cdot x_{(1\\times n)} = error$ 的代码版。<br><br>③ <strong>「一维数组就是列向量」这句话不成立</strong>：numpy.transpose 官方提醒 1-D 数组的转置「returns an unchanged view of the original array, as a transposed vector is simply the same vector」——一维数组根本没有行/列之分，只有长度。面试里把这点讲出来，比背公式更能说明你真的踩过 shape 的坑：凡是要参与矩阵运算的向量，先显式定形（<code>[:, None]</code> / <code>[None, :]</code>），再让 shape 断言兜底。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `请按本章定义讲清「矩阵相加」与「矩阵的点乘」的区别：各自对形状的要求是什么？结果形状由什么决定？为什么一个会消掉中间维、一个不会？在 NumPy 里分别对应哪个运算符？`,
+              source: `来源：NumPy 官方文档 numpy.add（"Add arguments element-wise."；"If x1.shape != x2.shape, they must be broadcastable to a common shape (which becomes the shape of the output)."）https://numpy.org/doc/stable/reference/generated/numpy.add.html · 检索 2026-10-02 · 层级：一手（官方文档）+ NumPy 官方文档 numpy.matmul（"If both arguments are 2-D they are multiplied like conventional matrices."；"Stacks of matrices are broadcast together as if the matrices were elements, respecting the signature (n,k),(k,m)->(n,m)"）https://numpy.org/doc/stable/reference/generated/numpy.matmul.html`,
+              breakdown: `<strong>相加</strong>：$c_{ij}=(a_{ij}+b_{ij})$，逐元素（官方定义：Add arguments element-wise），要求两个矩阵同为 $m\\times n$，结果还是 $m\\times n$；NumPy 里是 <code>+</code>（np.add）。注意官方对 shape 的说法：「If x1.shape != x2.shape, they must be broadcastable to a common shape」——课程说的「形状必须相同」是数学定义，代码里的 <code>+</code> 在形状不同时会走广播规则补形状，这正是静默 bug 的入口。<br><br><strong>点乘</strong>：$c_{ij}=\\sum_{k=1}^{n} a_{ik}b_{kj}$，A 的第 i 行与 B 的第 j 列对应相乘再求和，求和下标 k 走遍中间维 n，所以 A 的列数必须等于 B 的行数，结果 $m\\times p$；NumPy 里是 <code>@</code>（np.matmul），官方签名就是 <code>(n,k),(k,m)-&gt;(n,m)</code>。<br><br><strong>为什么一个消中间维、一个不消</strong>：相加是「同一格子里的两个数相加」，每个位置独立，没有任何维度参与求和；点乘的每个结果元素都跨越了一整条中间维（一次内积），中间维被求和「吃掉」，只剩两个端点维度（A 的行、B 的列）。一句话记忆：<strong>相加是逐格对齐，点乘是行 × 列</strong>。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `课件的公式是 $\\mathbf{a}^{(l)}=\\sigma(\\mathbf{W}^{(l)}\\mathbf{a}^{(l-1)}+\\mathbf{b}^{(l)})$——权重在前、输入在后；而框架文档写的是 $y = xA^T + b$。为什么框架要把权重转置一次？请结合课件的 $\\mathbf{W}^{(l)}$ 是 $n\\times m$ 与框架权重 (out_features, in_features) 讲清两者是同一个运算；再说明 $A^T$ 在 NumPy 里是拷贝还是视图，这对工程意味着什么。`,
+              source: `来源：PyTorch 官方文档 torch.nn.Linear（"Applies an affine linear transformation to the incoming data: y = xA^T + b"；"weight (torch.Tensor) – the learnable weights of the module of shape (out_features, in_features)"；"Shape: Input: (*, H_in) ... Output: (*, H_out) where all but the last dimension are the same shape as the input"）https://docs.pytorch.org/docs/2.14/generated/torch.nn.Linear.html · 检索 2026-10-02 · 层级：一手（官方文档）+ NumPy 官方文档 numpy.transpose（"For a 2-D array, this is the standard matrix transpose."；"A view is returned whenever possible."）https://numpy.org/doc/stable/reference/generated/numpy.transpose.html`,
+              breakdown: `<strong>两者不矛盾，只是「谁被转置」不同。</strong>课件的 $\\mathbf{W}^{(l)}$ 形状是 $n\\times m$：行 = 本层输出维 n，列 = 输入维 m；左乘列向量 $\\mathbf{a}^{(l-1)}$（$m\\times 1$）得到 $n\\times 1$。PyTorch 的 weight 存成 (out_features, in_features)——行是输出维、列是输入维，与课件完全一致；但框架把输入当成「行向量 / 一批样本按行堆叠」：官方 Shape 写的是 Input (*, H_in)，即最后一位才是特征维、前面的 * 是任意前导维（batch）。$x$ 的行是样本，要让 $x$ 乘上权重，必须把权重转置成 (in_features, out_features)，才有 $y=xA^T$ 的 (样本, 输出维)。所以 <code>A^T</code> 只是「行向量约定」与「列向量约定」之间的换算，不改变运算本身——同一件事的两种排版。<br><br><strong>视图还是拷贝</strong>：transpose 官方明确「A view is returned whenever possible」，2-D 转置是标准转置、但通常不复制数据。好消息是它几乎零成本（可以放心写 <code>x @ W.T</code>）；坏消息是它和原矩阵共享内存——原地改转置后的数组会改到原数组，而且转置后的数组内存不连续，某些后续运算会变慢。<br><br>面试加分点：自己从零实现一层时，如果内部按课件用列向量推导，就不要在循环里反复转置参数；选一种约定贯穿全栈，只在对接框架的那一层做一次换算。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 写了一段「把权重矩阵转置后做列归一化」的代码，跑完发现原始权重被改了，后面几层输出全错，但控制台没有任何报错：<pre><code>W_T = W.T          # W: (768, 768)，想拿转置做列标准化
+W_T /= np.linalg.norm(W_T, axis=0, keepdims=True)
+model.forward(x)   # 结果与预期差很远</code></pre>请找出根因、解释它为什么不报错，并给出两种修法（含怎么验证）。`,
+              source: `来源：NumPy 官方文档 numpy.transpose（"Returns an array with axes transposed."；"A view is returned whenever possible."）https://numpy.org/doc/stable/reference/generated/numpy.transpose.html · 检索 2026-10-02 · 层级：一手（官方文档）+ NumPy 官方文档 Absolute beginners（"One major difference is that slice indexing of a list copies the elements into a new list, but slicing an array returns a view: an object that refers to the data in the original array. The original array can be mutated using the view."）https://numpy.org/doc/stable/user/absolute_beginners.html`,
+              breakdown: `<strong>根因</strong>：<code>W.T</code> 是<strong>视图</strong>而不是拷贝——官方原文「A view is returned whenever possible」。于是 <code>W_T /= ...</code> 这个原地（in-place）运算改的就是 W 背后同一块内存，W 被就地改掉了。<br><br><strong>为什么一声不吭</strong>：代码语义上「只动了 W_T」，形状、dtype 全合法，没有任何越界或类型错误；而 numpy 的切片/转置默认返回视图的设计（绝对初学者文档里写得很清楚：数组切片返回的是「an object that refers to the data in the original array」，原数组会被视图的修改影响）正是为了省内存。省内存的代价就是别名副作用。<br><br><strong>修法一（要独立副本就显式拷贝）</strong>：<code>W_T = W.T.copy()</code>；若后续要做大量矩阵运算，用 <code>np.ascontiguousarray(W.T)</code> 顺带拿到连续内存。<br><br><strong>修法二（根本不写原地运算）</strong>：<code>W_T = W.T / np.linalg.norm(W.T, axis=0, keepdims=True)</code>，用非原地除法生成新数组，原 W 不动。<br><br><strong>怎么验证</strong>：<code>W_T.base is W</code> 为 True、<code>W_T.flags.owndata</code> 为 False 就说明它是视图；改之前先 <code>W_before = W.copy()</code>，改完断言 <code>np.array_equal(W_before, W)</code>。教学点：本章讲的「转置」在数学上只是行列互换，在 NumPy 里默认是零成本视图——便宜和别名是同一枚硬币的两面。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `面试官说「神经网络本质就是矩阵运算」，然后让你落地：手写一个 768 → 3072 → 768 的两层前馈推理。请说明：为什么不该用双重 for 循环写、一次喂 32 个样本时各量的形状怎么摆、以及在「课件的列向量约定」与「框架的行向量约定」之间怎么选。`,
+              source: `来源：NumPy 官方文档 What is NumPy（"Vectorization describes the absence of any explicit looping, indexing, etc., in the code - these things are taking place, of course, just “behind the scenes” in optimized, pre-compiled C code."；"NumPy gives us the best of both worlds: element-by-element operations are the “default mode” when an ndarray is involved, but the element-by-element operation is speedily executed by pre-compiled C code."）https://numpy.org/doc/stable/user/whatisnumpy.html · 检索 2026-10-02 · 层级：一手（官方文档）+ NumPy 官方文档 numpy.matmul（"It uses an optimized BLAS library when possible"；"If either argument is N-D, N > 2, it is treated as a stack of matrices residing in the last two indexes and broadcast accordingly."）https://numpy.org/doc/stable/reference/generated/numpy.matmul.html`,
+              breakdown: `<strong>① 为什么不写双重 for</strong>：课件已经证明一层就是一次矩阵乘法；写成矩阵乘法后，循环落在编译好的底层实现里——官方对 vectorization 的定义正是「the absence of any explicit looping ... these things are taking place ... in optimized, pre-compiled C code」，而 matmul 还会「use an optimized BLAS library when possible」。双重 for 的乘加次数一样，但每次加减乘除都在 Python 解释器里过一遍、丢掉 SIMD/BLAS 并行，常数大几个量级。第一层 $3072\\times768$、第二层 $768\\times3072$，这个规模差距会非常直观。<br><br><strong>② 32 个样本怎么摆</strong>：单样本按课件是列向量 $m\\times1$；一批 B=32 个样本按列拼成 $m\\times B$（即 $768\\times32$），公式 $\\sigma(\\mathbf{W}\\mathbf{a}+\\mathbf{b})$ 一个字都不用改：$(n\\times m)(m\\times B)\\to(n\\times B)$，偏置 $n\\times1$（$3072\\times1$）靠广播加到每一列。框架的约定等价但摆放相反：PyTorch Linear 的 Shape 是 Input (*, H_in)、Output (*, H_out)，batch 放在前导维、特征维在最后。两种摆法都对，混用才出事。<br><br><strong>③ 选约定</strong>：做数学推导、对照课件公式时用列向量约定（$\\mathbf{W}\\mathbf{a}$，权重在前）；对接库、框架、数据管道时用行向量约定（batch 在前，$xW^T$），只在边界做一次转置换算。补充取舍：batch 越大吞吐越高，但中间激活从 $n\\times1$ 变成 $n\\times B$、内存线性增长；转置是视图、几乎免费，但换来的是非连续内存，真要在热点循环里反复用，先 <code>ascontiguousarray</code> 定型更稳。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 NumPy 把本章的四组运算各跑一遍，并用 shape 断言 + 手算结果交叉验证（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '按本章定义实现并核对：① 两个 2×3 矩阵相加；② (2×3)·(3×2) 点乘，与课件算例逐项对账；③ 转置一个 2×3 矩阵并验证元素对应关系；④ (2×3)·(3×1) 列向量乘法；每步都打印 shape。',
+                accept: ['点乘结果等于课件算例 [[58, 64], [139, 154]]，列向量乘法结果等于 [[50], [122]]', '每步 shape 与课件维度规则一致：相加 (2, 3)、点乘 (2, 2)、转置 (3, 2)、列向量乘法 (2, 1)', '把显式行向量 (1, 3) 左乘到 (2, 3) 矩阵上，亲眼看到 ValueError（课件写的 error 那一行）；并验证 A.T 与原矩阵共享内存（A.T.base is A 为 True）'],
+              },
+              source: `任务基于《09. 神经网络的本质》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：<code>A = np.array([[1, 2, 3], [4, 5, 6]])</code>。① 相加：<code>A + np.array([[7, 8, 9], [10, 11, 12]])</code> 得 <code>[[8, 10, 12], [14, 16, 18]]</code>。② 点乘：B 取 <code>[[7, 8], [9, 10], [11, 12]]</code>，<code>A @ B</code> 得 <code>[[58, 64], [139, 154]]</code>。③ 转置：<code>A.T</code> 是 (3, 2)，验证 <code>A.T[1, 0] == A[0, 1]</code>（都等于 2）。④ 列向量乘法：<code>A @ np.array([[7], [8], [9]])</code> 得 <code>[[50], [122]]</code>。<br><br>两个必须亲手撞的坑：<code>np.array([[7, 8, 9]])</code> 是 (1, 3)（显式行向量），<code>A @ 它</code> 会抛 <code>ValueError: matmul ... mismatch in its core dimension</code>——这就是课件的 $A_{(m\\times n)}\\cdot x_{(1\\times n)} = error$；而 <code>A.T</code> 是视图（<code>A.T.base is A</code> 为 True、<code>owndata</code> 为 False），原地改它等于改 A——这两点分别对应面试第 1 题和第 4 题。把每个 shape 用 assert 钉死，比肉眼盯数字可靠得多。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://numpy.org/doc/stable/reference/generated/numpy.matmul.html">NumPy numpy.matmul 官方文档</a>（(n,k),(k,m)-&gt;(n,m)、1-D 提升规则与维度报错条件） · <a href="https://numpy.org/doc/stable/reference/generated/numpy.transpose.html">NumPy numpy.transpose 官方文档</a>（1-D 转置是原样视图、2-D 转置 whenever possible 返回视图） · <a href="https://numpy.org/doc/stable/user/basics.broadcasting.html">NumPy Broadcasting</a>（广播规则：相等，或其中一个为 1）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/神经网络的本质速查表.html">神经网络的本质速查表</a>——三种运算的规则、向量方向三条式子、一层公式的维度表一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/神经网络的本质">09.神经网络的本质</a> · 上一课 <a href="/agents/Agents底层逻辑/梯度下降">05.梯度下降</a> · 下一课 <a href="/agents/Agents底层逻辑/词嵌入">10.词嵌入</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

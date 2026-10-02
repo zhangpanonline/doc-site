@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · tools：tool calling 机制、工具描述与事件流，让模型学会调用函数——互动教学课程">
+  <title>tools · 互动教学课程（Agents底层逻辑 ac-18）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>tools</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/tools">18.tools</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 Tool Calling 的分工边界——模型只产出「调用意图」，真正执行函数的是你自己的代码</li>
+        <li>复述工具描述的三层结构（<code>type</code> / <code>function.name+description</code> / <code>parameters</code> 的 JSON Schema），并说明它为什么能左右模型的选型</li>
+        <li>读懂本章 <code>agent/events.py</code> 与 <code>agent/model.py</code> 的事件流改造：<code>EventEmitter</code> 与 <code>ReasoningBuilder / ContentBuilder / ToolCallsBuilder</code> 三个构建器</li>
+        <li>走通「绑定工具 → 调用模型 → 解析 <code>tool_calls</code> → 执行 → 回填结果」的闭环，并说清其中的坑</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「模型为什么需要工具、工具描述长什么样、流式事件怎么拼」这三件事过一遍——细节都在《18.tools》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>为什么需要 Tool Calling：模型只会「文本进、文本出」</h3>
+        <ul class="pitfall-list">
+          <li><strong>能力边界</strong>：大模型只能处理输入得到输出，<strong>没有任何其他功能</strong>。读文件、执行命令、联网搜索这些事，模型都无法直接处理</li>
+          <li><strong>于是有了 Tool Calling</strong>：需要模型完成「文本输出之外的功能」时，就把工具描述交给模型，让它输出「要调用哪个函数、参数是什么」</li>
+          <li><strong>最关键的一条</strong>：模型<strong>不执行</strong>函数。课件原注：「<code>get_weather</code> 函数功能需由用户提供，模型本身不执行具体函数」；官方文档说得更直白——API 不会真的执行任何函数调用，执行是开发者的责任</li>
+          <li><strong>闭环四步</strong>：① 带上 <code>tools</code> 调模型 → ② 模型返回 <code>tool_calls</code>（<code>finish_reason</code> 为 <code>tool_calls</code>）→ ③ 你的代码执行函数、把结果作为 <code>role: "tool"</code> 的消息追加回上下文 → ④ 再次调用模型，让它基于工具结果生成自然语言回答</li>
+          <li><strong>本章的两个示例工具</strong>：<code>read_file(filepath) -&gt; str</code> 与 <code>write_file(filepath, content) -&gt; None</code>；文档字符串（docstring）是写工具描述时的现成素材</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>工具描述：模型能看到的「函数签名」</h3>
+        <ul class="pitfall-list">
+          <li><strong>外层固定</strong>：<code>"type": "function"</code>，目前各家 API 只支持 <code>function</code> 这一种工具类型</li>
+          <li><strong>函数名</strong>：<code>function.name</code>，<strong>会影响模型输出结果</strong>，通常直接取函数名（官方约束：由 a-z、A-Z、0-9、下划线、连字符组成，最长 128 字符，且必须唯一）</li>
+          <li><strong>函数描述</strong>：<code>function.description</code>，<strong>自然语言描述功能，模型能理解</strong>——官方定义它「供模型理解何时以及如何调用该 function」。这是选型准确率的第一抓手，写「文件操作」这种含糊描述等于把选择权交给运气</li>
+          <li><strong>参数 schema</strong>：<code>function.parameters</code> 用 JSON Schema 描述，顶层 <code>"type": "object"</code> 固定；<code>properties</code> 逐项写 <code>type</code> + <code>description</code>；<code>required</code> 列出必填参数。<code>read_file</code> 要 <code>["filepath"]</code>，<code>write_file</code> 要 <code>["filepath", "content"]</code></li>
+          <li><strong>参数描述要写清后果</strong>：课件的 <code>content</code> 描述是「要写入的内容，该内容会完全覆盖文件原本内容」——把破坏性行为写进描述，模型才会谨慎</li>
+          <li><strong>工具被放去哪</strong>：厂商通常把工具定义拼到<strong>系统上下文的末尾</strong>（课件展示了 <code># Tools</code> / <code>namespace functions</code> 的注入形态）。这意味着工具定义<strong>每一轮都要随请求重发</strong>，成本随工具数量线性增长：<br><code>$T_{\text{prompt}} = T_{\text{sys}} + \sum_{i} T_{\text{tool}_i} + \sum_{j} T_{\text{msg}_j}$</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>事件流：把「流式的一堆 delta」拼回一条完整消息</h3>
+        <ul class="pitfall-list">
+          <li><strong>为什么要它</strong>：流式响应里每块都是 <code>delta</code> 而不是 <code>message</code>；正文、思考、工具调用三路内容可能在同一次响应里交错下发，散在几百个 chunk 里</li>
+          <li><strong>事件清单</strong>：<code>agent/events.py</code> 用 <code>Event</code> 常量把事件定型——<code>REASONING_START/REASONING/REASONING_END</code>、<code>CONTENT_START/CONTENT/CONTENT_END</code>、<code>TOOL_CALL_START/TOOL_CALL/TOOL_CALL_END</code>、<code>COMPLETE</code></li>
+          <li><strong>发布订阅</strong>：<code>EventEmitter</code> 用 <code>@dataclass</code> + <code>_listeners: dict[str, list[Callable]]</code>（<code>default_factory=lambda: defaultdict(list)</code>）实现 <code>on(event, callback)</code> 与 <code>emit(event, **data)</code>；<code>Model</code> 直接继承 <code>EventEmitter</code>，所以模型自己就是事件源</li>
+          <li><strong>Builder 模式</strong>：<code>Builder.emit(chunk)</code> 每次取 <code>chunk.choices[0].delta</code>，按 <code>_key_names(delta)</code> 给出的字段名与起止事件名走「首块发 START 事件 → 后续块 <code>append_value</code> → <code>is_end</code> 为真发 END 事件并置 <code>compoleted = True</code>」这套流程</li>
+          <li><strong>三个构建器</strong>：<code>ContentBuilder</code> 管 <code>content</code>；<code>ReasoningBuilder</code> 用 <code>_get_reasoning_field_name</code> 兼容 <code>reasoning_content</code> / <code>reasoning</code> 两种字段名；<code>ToolCallsBuilder</code> 管 <code>tool_calls</code></li>
+          <li><strong>工具调用最特殊</strong>：<code>append_value</code> 按 <code>tc_delta.index</code> 归位、不够长就补占位字典，再按字段累加——<code>arguments</code> 是<strong>分片下发的 JSON 字符串</strong>，要 <code>+=</code>；<code>_normalize_tool_calls</code> 把 SDK 对象统一压成 <code>{"id", "type", "function": {"name", "arguments"}}</code> 的字典，好让消息能进会话历史</li>
+          <li><strong>提前收尾</strong>：<code>ReasoningBuilder.is_end</code> 返回 <code>bool(delta.content) or bool(delta.tool_calls) or super().is_end(chunk)</code>——模型「先思考、再直接发起工具调用」时不会产出 content，只看 <code>finish_reason</code> 会让思考段一直不结束</li>
+          <li><strong>监听与打印</strong>：<code>ModelPrinterListener</code> 遍历 <code>Event.__dict__</code> 里所有事件名逐个 <code>model.on(...)</code> 订阅，用 <code>self.listening</code> 开关一键静音（课件里 <code>listener.listening = False</code> 之后再发起那次写文件的调用）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《18.tools》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">1. 关于 Tool Calling 的分工，下面哪一句是对的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型会执行函数，并把函数返回值直接作为回答返回给用户</button>
+            <button class="quiz-option">模型只负责输出「要调用哪个函数、参数是什么」，真正执行函数的是你的代码</button>
+            <button class="quiz-option">模型会在服务端的沙箱里运行这个函数并把结果写回上下文</button>
+            <button class="quiz-option">只要把 Python 函数通过 <code>tools</code> 传进去，Python 就会自动执行它</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原注：<code>get_weather</code> 函数功能需由用户提供，<strong>模型本身不执行具体函数</strong>。官方 Cookbook 也写着：API 不会真的执行任何函数调用，用模型输出去执行函数是开发者的责任。模型交付的是「调用意图」——函数名 + JSON 参数。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 绑定到 <code>session.tools</code> 的每个工具对象，骨架是怎样的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>{"type": "tool", "name", "params"}</code>——工具类型写 <code>tool</code>，参数用 <code>params</code></button>
+            <button class="quiz-option">直接把 Python 函数对象塞进列表：<code>[read_file, write_file]</code></button>
+            <button class="quiz-option">只传函数名字符串列表：<code>["read_file", "write_file"]</code></button>
+            <button class="quiz-option"><code>{"type": "function", "function": {"name", "description", "parameters"}}</code>——外层类型固定，内层是函数名、自然语言描述与 JSON Schema 参数</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：<code>"type": "function"</code> 是固定值，<code>function</code> 里依次是 <code>name</code>（工具名称，会影响模型输出结果，通常为函数名）、<code>description</code>（自然语言描述函数功能，模型能理解）、<code>parameters</code>（参数的 schema 描述）。函数对象和纯字符串都无法让模型知道参数长什么样。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. <code>read_file</code> 的参数 schema 里写了 <code>"required": ["filepath"]</code>，它的含义是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型调用这个工具时必须提供 <code>filepath</code></button>
+            <button class="quiz-option">只有写进 <code>required</code> 的参数才会出现在 <code>properties</code> 里</button>
+            <button class="quiz-option"><code>filepath</code> 这个参数的类型必须是字符串</button>
+            <button class="quiz-option"><code>filepath</code> 必须带默认值</button>
+          </div>
+          <div class="quiz-explain" hidden>课件把 <code>required</code> 注释为「<strong>必填参数</strong>」：<code>read_file</code> 必填 <code>["filepath"]</code>，<code>write_file</code> 必填 <code>["filepath", "content"]</code>。类型由 <code>properties</code> 里各自的 <code>type</code> 决定，两者是并列信息。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">4. 你把 <code>read_file</code> 与 <code>write_file</code> 的 <code>description</code> 都写成「文件操作」，结果模型在只想读文件时频繁调用 <code>write_file</code>。按本章与官方文档，根因与修法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>description</code> 只用于文档展示，不影响模型选择，问题一定出在系统提示词</button>
+            <button class="quiz-option"><code>parameters</code> 里少了 <code>required</code>，补上就能选对</button>
+            <button class="quiz-option">模型能力不足，应该换一个更大的模型</button>
+            <button class="quiz-option"><code>description</code> 正是「供模型理解何时以及如何调用该 function」的依据；两条描述区分度不足导致选型不可控——应写清各自用途与边界（读取 vs 写入、是否覆盖原内容）</button>
+          </div>
+          <div class="quiz-explain" hidden>官方文档对 <code>description</code> 的定义是「function 的功能描述，供模型理解何时以及如何调用该 function」；本章课件也注明它「自然语言描述函数功能，模型能理解」。工具选择靠的就是名字 + 描述 + 参数说明这几段文本，含糊描述会直接劣化选型准确率。<code>required</code> 管的是参数是否必填，与「选哪个工具」无关。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 取到 <code>tool_calls[0]["function"]["arguments"]</code> 之后，为什么要先 <code>json.loads</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>arguments</code> 已经是 dict，转一次只是为了防止内存泄漏</button>
+            <button class="quiz-option"><code>arguments</code> 是 bytes，必须解码成字符串</button>
+            <button class="quiz-option">只是为了打印时缩进好看</button>
+            <button class="quiz-option"><code>arguments</code> 是一段由模型生成的 JSON <strong>字符串</strong>，要反序列化成 dict 才能用 <code>func(**arguments)</code> 展开</button>
+          </div>
+          <div class="quiz-explain" hidden>课件执行工具一节就是这条路：<code>tool_name = tool_calls["function"]["name"]</code>、<code>arguments = json.loads(tool_calls["function"]["arguments"])</code>。官方 API 文档把 <code>arguments</code> 定义为「要调用的 function 的参数，由模型生成，<strong>格式为 JSON</strong>」的字符串字段；直接 <code>**</code> 展开字符串会报 <code>TypeError: argument after ** must be a mapping</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 模型返回 <code>{"filepath": "a.md", "content": "x", "encoding": "utf-8"}</code>，而 <code>write_file</code> 的签名是 <code>(filepath, content)</code>。直接 <code>func(**arguments)</code> 的后果与应有的防线是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型不可能返回 schema 未定义的参数，所以无需处理</button>
+            <button class="quiz-option">多出来的 <code>encoding</code> 会被 Python 忽略，正常写入</button>
+            <button class="quiz-option">应该把 <code>write_file</code> 改成 <code>def write_file(**kwargs)</code> 来接收一切</button>
+            <button class="quiz-option">会抛 <code>TypeError: unexpected keyword argument</code> 中断流程——官方文档明确提醒「模型并不总是生成有效的 JSON，并且可能会臆造出你函数模式中未定义的参数，在调用函数之前，请在代码中验证这些参数」，应做参数校验/白名单过滤，并可用 <code>strict</code> 模式从源头约束</button>
+          </div>
+          <div class="quiz-explain" hidden>关键判断：<strong>模型的输出是「建议」，不是「可信输入」</strong>。官方 API 文档在 <code>function.arguments</code> 字段下的原话就是「模型并不总是生成有效的 JSON，并且可能会臆造出你函数模式中未定义的参数。在调用函数之前，请在代码中验证这些参数」。用 <code>**kwargs</code> 全盘接收等于放弃校验，把不可信参数直接带进业务逻辑。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">7. <code>ToolCallsBuilder.append_value</code> 必须按 <code>tc_delta.index</code> 归位再累加。为什么不能直接 <code>+=</code> 到第一个工具上？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>index</code> 决定工具的执行顺序，必须按序执行</button>
+            <button class="quiz-option">并行工具调用时多个 <code>tool_call</code> 的增量会交错下发（各自带 <code>index</code>），而 <code>arguments</code> 又是分片下发的 JSON 字符串；不按 <code>index</code> 归位就会把两个调用的片段拼成同一段，导致 JSON 无法解析</button>
+            <button class="quiz-option"><code>index</code> 是函数名的哈希值，用来定位要执行的函数</button>
+            <button class="quiz-option"><code>finish_reason</code> 只在最后一个 chunk 出现，<code>index</code> 用来判断流是否结束</button>
+          </div>
+          <div class="quiz-explain" hidden>本章代码给了两处线索：<code>while len(tool_calls) &lt;= idx: tool_calls.append({...占位...})</code> 说明 <code>index</code> 是「第几个工具调用」；<code>tc["function"]["arguments"] += args</code> 说明参数是<strong>分片拼接</strong>的。官方 Cookbook 也确认「较新的模型可以在一轮里调用多个函数」（并行函数调用）。一旦交错到达的片段被错误合并，<code>json.loads</code> 就会在解析处炸掉——而这是 Agent 里最常见的「诡异 JSON 报错」来源之一。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 读 <code>ReasoningBuilder.is_end</code>：它为什么返回 <code>bool(delta.content) or bool(delta.tool_calls) or super().is_end(chunk)</code>，而不只用基类那套 <code>finish_reason</code> 判断？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">为了兼容不同厂商的 <code>reasoning_content</code> / <code>reasoning</code> 两种字段名</button>
+            <button class="quiz-option">为了让思考内容更完整，避免过早结束</button>
+            <button class="quiz-option">为了在 <code>finish_reason</code> 出现之前就开始拼接正文</button>
+            <button class="quiz-option">因为模型常常「先思考、再直接发起工具调用」而始终不产出 <code>content</code>；只看 <code>finish_reason</code> 会让思考段拖到整条流结束才收尾，所以这一块 delta 一旦出现 <code>content</code> 或 <code>tool_calls</code>，就说明思考已经结束、应当立即收尾</button>
+          </div>
+          <div class="quiz-explain" hidden>基类 <code>is_end</code> 只看 <code>chunk.choices[0].finish_reason</code>，而它是整条流最后才出现的信号。思考模式下的典型轨迹是「思考 → 直接给 <code>tool_calls</code>」，中间没有正文；<code>ReasoningBuilder</code> 于是把「正文开始」或「工具调用开始」都当作思考结束的界标。兼容字段名的活由 <code>_get_reasoning_field_name</code> 干，两者是不同层的职责。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 生产 Agent 里照抄课件的 <code>func = globals().get(tool_name)</code> + <code>if callable(func): func(**arguments)</code> 做派发，最大的风险与改法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">应该改成 <code>eval(tool_name + "(**arguments)")</code>，更通用</button>
+            <button class="quiz-option">工具名由模型生成，等于把「调用哪个 Python 对象」的决定权交给模型——名字写错会因 <code>callable</code> 判断而<strong>静默不执行</strong>，被提示注入时还可能命中预期外的同名符号；应改成显式注册表（<code>{name: func}</code>）做白名单派发，执行前校验参数</button>
+            <button class="quiz-option"><code>globals()</code> 会复制一份全局命名空间，内存开销太大</button>
+            <button class="quiz-option"><code>globals()</code> 查不到时必然抛 <code>KeyError</code>，加个 <code>try/except</code> 就够了</button>
+          </div>
+          <div class="quiz-explain" hidden>先用 <code>globals().get()</code> 再 <code>callable</code> 判断，意味着<strong>查不到时什么都不发生</strong>——工具调用被静默吞掉，比报错更难查。而「名字来自模型」这件事本身就把执行面暴露了出去。课件用 <code>globals()</code> 是为了在 Notebook 里演示闭环最短路径；工程化的正确答案是<strong>显式注册 + 白名单派发 + 参数校验</strong>——这正是下一章《19.封装tools》要解决的问题。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0018-tools',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事为了「保证模型一定会调用工具」，在思考模式下把 <code>tool_choice</code> 硬写成 <code>"required"</code>，接口直接报 <code>400</code>。他还顺手在没传任何工具的那条老请求里也写了 <code>"required"</code>。请指出两处问题的根因，并给出 <code>tool_choice</code> 的正确用法。`,
+              source: `来源：DeepSeek API 文档 Chat Completions API（"<code>none</code> 意味着模型不会调用任何 tool，而是生成一条消息；<code>auto</code> 意味着模型可以选择生成一条消息或调用一个或多个 tool；<code>required</code> 意味着模型必须调用一个或多个 tool"；"当没有 tool 时，默认值为 <code>none</code>。如果有 tool 存在，默认值为 <code>auto</code>。思考模式下不支持 <code>required</code> 和指定具体 tool 的用法，API 会返回 <code>400</code> 错误"）https://api-docs.deepseek.com/zh-cn/api/create-chat-completion · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `两个根因都在「把 <code>tool_choice</code> 当成了万能开关」。<strong>① 思考模式 + <code>required</code> 是官方明确的不支持组合</strong>：文档写着「思考模式下不支持 <code>required</code> 和指定具体 tool 的用法，API 会返回 400 错误。请先关闭思考模式」——所以要么关掉思考模式，要么放弃强制。<strong>② 没有 <code>tools</code> 时 <code>required</code> 无意义</strong>：默认值本身是「没有 tool 时为 <code>none</code>，有 tool 时为 <code>auto</code>」，强行传 <code>required</code> 是在要求模型调用一个不存在的工具。<br>正确姿势：<strong>一般业务让模型自己判断就留默认 <code>auto</code></strong>；确实需要「必须调一次」的场景（例如表单填写）用 <code>required</code> 或 <code>{"type": "function", "function": {"name": "..."}}</code> 锁定具体工具，但<strong>要确认当前不在思考模式</strong>，并准备好模型返回 <code>finish_reason: "tool_calls"</code> 之后的分支逻辑。面试里能顺手说出「三个取值分别意味着什么」＋「两个默认值」＋「思考模式的限制」，这题就满了。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `本章的 <code>ToolCallsBuilder</code> 要按 <code>index</code> 归位、把 <code>arguments</code> 一片片拼起来才能还原出一次工具调用。请从流式响应的数据形态解释：为什么非流式能直接拿到完整 <code>tool_calls</code>，流式就必须自己拼？`,
+              source: `来源：OpenAI Cookbook《How to stream completions》（"As you can see above, streaming responses have a <code>delta</code> field rather than a <code>message</code> field. <code>delta</code> can hold things like: a role token (e.g., <code>{"role": "assistant"}</code>) / a content token / nothing (e.g., <code>{}</code>), when the stream is over"）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_stream_completions.ipynb + DeepSeek API 文档 Chat Completions API（<code>arguments</code>："要调用的 function 的参数，由模型生成，格式为 JSON"）https://api-docs.deepseek.com/zh-cn/api/create-chat-completion · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `核心差别是「一次给全」还是「切片给」。<strong>非流式</strong>返回的是一个完整 <code>ChatCompletion</code> 对象，<code>choices[0].message.tool_calls</code> 直接就是数组，每一项含 <code>id</code> / <code>type</code> / <code>function.name</code> / <code>function.arguments</code>——本章 <code>_normalize_result_from_response</code> 只需 <code>message.model_dump()</code> 再挑出 <code>reasoning_field</code>、<code>content</code>、<code>tool_calls</code> 三个字段塞进 <code>result.message</code>。<strong>流式</strong>每块是 <code>ChatCompletionChunk</code>，承载增量的是 <code>choices[0].delta</code>（而不是 <code>message</code>），官方把它可能承载的东西概括为角色 token、内容 token、以及流结束时的空对象。<code>tool_calls</code> 的增量形态更碎：每个 <code>tc_delta</code> 带一个 <code>index</code> 表明「这是第几个工具调用」，<code>function.name</code> 可能只在第一片出现，<code>function.arguments</code> 是<strong>逐片字符串</strong>。所以 <code>ToolCallsBuilder</code> 要干三件事：按 <code>index</code> 扩列表占位（<code>while len(tool_calls) &lt;= idx</code>）、把 <code>id</code> / <code>type</code> / <code>name</code> 补上、把 <code>arguments</code> 用 <code>+=</code> 累加；最后 <code>_normalize_tool_calls</code> 把 SDK 对象拍成纯字典，才放得进 <code>session.messages</code>。答到这层可以说：<strong>「流式的本质是把一条消息拆成许多 delta，构建器的职责就是逆向还原。」</strong>`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `工具执行完了，结果怎么「还给」模型才对？请说明回填消息的 <code>role</code>、<code>tool_call_id</code>、以及它在消息序列里的位置约束——并解释为什么不能简单地把它当成一条 user 消息发回去。`,
+              source: `来源：OpenAI Cookbook《How to call functions with chat models》（"Step 3: Extract the function name and parameters from response, call the function with parameters. Append the result to messages."；"Note that messages with role ’tool’ must be a response to a preceding message with ’tool_calls’"；"Note that the API will not actually execute any function calls. It is up to developers to execute function calls using model outputs."）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb + DeepSeek Tool Calls 指南（"用户：调用 function <code>get_weather({location: ’Hangzhou’})</code>，并传给模型。"）https://api-docs.deepseek.com/zh-cn/guides/tool_calls · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `回填的正确形态是 <code>{"role": "tool", "tool_call_id": tool.id, "content": "..."}</code>——DeepSeek 官方示例正是 <code>messages.append(message)</code>（那条带 <code>tool_calls</code> 的 assistant 消息）之后紧跟 <code>messages.append({"role": "tool", "tool_call_id": tool.id, "content": "24℃"})</code>。<strong>三条约束：</strong>① <code>role</code> 必须是 <code>tool</code>，它是专为「工具结果」定义的角色；② <code>tool_call_id</code> 必须等于模型给出的 <code>tool_calls[i].id</code>，模型靠它把结果与「我发出的哪个请求」对上号；③ 位置上必须排在产生它的那条带 <code>tool_calls</code> 的 assistant 消息<strong>之后</strong>——官方明确写着「role 为 tool 的消息必须是对前面某条带 tool_calls 的消息的响应」。<strong>为什么不能当 user 消息发</strong>：那样模型看到的是一段「用户突然说了些奇怪的话」，既丢了 <code>tool_call_id</code> 的对应关系（并行调用多个工具时无法区分哪个结果属于哪次调用），也破坏了消息序列的合法性；多轮之后还会让上下文里堆出一串与工具无关的用户发言，把对话结构搅乱。顺带记住：<strong>DeepSeek 的 Chat Completion 接口不支持在对话中间插入工具调用消息</strong>，需要这种能力得换 Anthropic API 或 Responses API。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查这段 AI 写出来的「工具执行」代码：<br><code>tc = session.messages[-1]["tool_calls"][0]</code><br><code>func = globals().get(tc["function"]["name"])</code><br><code>result = func(**tc["function"]["arguments"])</code><br><code>session.add_message({"role": "user", "content": str(result)})</code><br>请指出至少三处问题，并逐条给出修法。`,
+              source: `来源：DeepSeek API 文档 Chat Completions API（<code>arguments</code>："要调用的 function 的参数，由模型生成，格式为 JSON。请注意，模型并不总是生成有效的 JSON，并且可能会臆造出你函数模式中未定义的参数。在调用函数之前，请在代码中验证这些参数。"）https://api-docs.deepseek.com/zh-cn/api/create-chat-completion + OpenAI Cookbook《How to call functions with chat models》（"Note that messages with role ’tool’ must be a response to a preceding message with ’tool_calls’"）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `四处问题，按严重程度排：<strong>① 少了 <code>json.loads</code></strong>：<code>arguments</code> 是 JSON 字符串，<code>**</code> 展开会直接 <code>TypeError: argument after ** must be a mapping</code>。修法：<code>arguments = json.loads(tc["function"]["arguments"])</code>，并套 <code>try/except json.JSONDecodeError</code>——官方提醒模型「并不总是生成有效的 JSON」。<strong>② <code>func</code> 可能是 <code>None</code></strong>：<code>globals().get(name)</code> 在名字对不上时返回 <code>None</code>，调用即 <code>TypeError: \'NoneType\' object is not callable</code>；更隐蔽的是「恰好命中同名符号但语义完全不同」。修法：显式注册表 <code>TOOLS = {"read_file": read_file, "write_file": write_file}</code> + 白名单查表 + 缺失时回一条明确的错误结果给模型。课件演示版本用 <code>if callable(func)</code> 挡了一下，但代价是<strong>静默不执行</strong>——Agent 里最贵的失败就是无声失败。<strong>③ 没有校验参数</strong>：官方原话是模型「可能会臆造出你函数模式中未定义的参数」，直接 <code>**arguments</code> 会因多余关键字报 <code>TypeError</code>。修法：按 schema 过滤 + 类型校验（必要时上 <code>strict</code> 模式）。<strong>④ 回填角色错了</strong>：必须用 <code>{"role": "tool", "tool_call_id": tc["id"], "content": str(result)}</code>，而不是 <code>role: "user"</code>——官方规定 role 为 <code>tool</code> 的消息必须响应前面那条带 <code>tool_calls</code> 的消息，丢了 <code>tool_call_id</code> 并行调用就乱了套。加分项：指出这一整段应当被封装成可复用的「工具注册 + 派发」层（正是下一章 <code>19.封装tools</code> 的主题）。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `团队要给一个代码 Agent 设计工具层：既要让模型「稳定选对工具、稳定给对参数」，又不想让每次请求的 <code>tools</code> 定义无限膨胀。请给出你的设计：工具描述怎么写、schema 怎么约束、什么时候用 <code>strict</code>、失败路径怎么兜。`,
+              source: `来源：DeepSeek Tool Calls 指南（"在 <code>strict</code> 模式下，模型在输出 Function 调用时会严格遵循 Function 的 JSON Schema 的格式要求，以确保模型输出的 Function 符合用户的定义"；"每个 <code>object</code> 的所有属性均需设置为 <code>required</code>，且 <code>object</code> 中 <code>additionalProperties</code> 属性必须为 <code>false</code>"；支持的 JSON Schema 类型为 object / string / number / integer / boolean / array / enum / anyOf；"用户需要设置 <code>base_url="https://api.deepseek.com/beta"</code> 来开启 Beta 功能"）https://api-docs.deepseek.com/zh-cn/guides/tool_calls + DeepSeek API 文档（<code>description</code>："function 的功能描述，供模型理解何时以及如何调用该 function"；<code>tool_choice</code>："<code>required</code> 意味着模型必须调用一个或多个 tool"）https://api-docs.deepseek.com/zh-cn/api/create-chat-completion · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `四层设计。<strong>① 描述层：一个工具只干一件事，边界写进 description。</strong>官方把 <code>description</code> 定义为「供模型理解何时以及如何调用该 function」的依据，所以每个工具的描述要能回答「什么时候该用我、什么时候不该用我」；带破坏性的参数把后果写出来（课件的 <code>content</code> 就注明「会完全覆盖文件原本内容」）。名字用动词短语、保持稳定唯一——<code>name</code> 会直接影响模型的输出。<strong>② schema 层：用类型系统替代自然语言叮嘱。</strong>能枚举就别用自由字符串（<code>enum</code> 让「订单状态」只能是几个值之一）；能约束格式就用 <code>pattern</code> / <code>format</code>（如 <code>email</code>、<code>^\\d{6}$</code>）；一个位置可能有两种形态（邮箱或手机号）用 <code>anyOf</code>。<strong>③ strict 层：什么时候上强约束。</strong>需要「输出严格符合 JSON Schema」时启用 <code>strict</code>——代价是三条硬规矩：走 <code>base_url="https://api.deepseek.com/beta"</code>、<code>tools</code> 里<strong>每个</strong> function 都要置 <code>strict: true</code>、且每个 <code>object</code> 的所有属性都必须进 <code>required</code> 并写 <code>additionalProperties: false</code>（官方对 schema 会做服务端校验，不合规直接报错）。这反过来也说明：<strong>strict 是「宁可少给参数、也要严格对齐」的取舍</strong>，不适合「可选参数一堆」的宽松工具。<strong>④ 兜底层：默认 <code>auto</code>＋显式校验。</strong><code>tool_choice</code> 默认「无工具为 none、有工具为 auto」，别滥用 <code>required</code>（思考模式下还会直接 400）。工具执行前必做参数校验——官方写明模型可能臆造 schema 未定义的参数；执行后用 <code>role: "tool"</code> + <code>tool_call_id</code> 回填。至于「tools 膨胀」：靠<strong>能力分层</strong>——把低频工具收进 Skill / MCP Server 按需挂载，而不是把几十个函数一次性塞进每次请求（这就把话题接到了后面的 MCP 与 Skill 章节）。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 30 分钟内给 agent 工程接上工具能力并跑通一次完整闭环：绑定工具 → 调模型拿到 <code>tool_calls</code> → 执行函数 → 回填结果 → 再问一次拿到自然语言答案（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '写出 read_file(filepath) / write_file(filepath, content) 两个函数 → 组装 session.tools（type=function + name + description + parameters 的 JSON Schema，required 分别是 ["filepath"] 与 ["filepath","content"]）→ 让模型新建一个 uv.md 并写入 UV 安装教程 → 从 session.messages[-1] 取 tool_calls，用 json.loads 解析 arguments，查表派发执行 → 以 role:"tool" + tool_call_id 回填结果 → 再调一次模型，让它用自然语言汇报结果。',
+                accept: ['两个工具的 schema 都能通过官方字段校验（type/function.name/description/parameters 齐全）', '执行阶段先 json.loads 再展开参数，多余或缺失参数有处理，不用 globals() 裸派发', '回填消息是 role:"tool" 且 tool_call_id 与模型返回的 id 一致，位置紧跟带 tool_calls 的 assistant 消息', '第二轮模型回答里能引用工具执行的真实结果（例如文件已创建、内容摘要），而不是自己编造'],
+              },
+              source: `任务基于《18.tools》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 函数照课件写，docstring 直接当描述的素材；顺手测一次 <code>read_file("./agent/prompt/system.j2")[:200]</code> 确认能读。② 组装 <code>session.tools</code>：外层 <code>"type": "function"</code>，内层 <code>name</code> 用函数名、<code>description</code> 写清用途与边界、<code>parameters</code> 顶层 <code>"type": "object"</code> + <code>properties</code> + <code>required</code>。③ 调用时如果只想看非流式结果，先 <code>listener.listening = False</code> 再 <code>model.invoke(session)</code>，用 <code>resp.print_raw()</code> 看原始响应；记得 <code>session.save()</code> 落盘。④ 执行：<code>tc = session.messages[-1]["tool_calls"][0]</code> → <code>tool_id = tc["id"]</code>、<code>name = tc["function"]["name"]</code>、<code>arguments = json.loads(tc["function"]["arguments"])</code> → 用注册表 <code>{"read_file": read_file, "write_file": write_file}[name](**arguments)</code>。⑤ 回填 <code>{"role": "tool", "tool_call_id": tool_id, "content": "写入成功"}</code> 后再调一次。常见坑：忘了 <code>json.loads</code>（<code>**</code> 展开字符串直接 TypeError）；用 <code>globals().get</code> 派发导致名字对不上时静默不执行；把结果写成 <code>role: "user"</code> 丢了 <code>tool_call_id</code>；工具描述写得太笼统导致模型在两个工具间乱选。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://api-docs.deepseek.com/zh-cn/guides/tool_calls">DeepSeek Tool Calls 指南</a> · <a href="https://api-docs.deepseek.com/zh-cn/api/create-chat-completion">DeepSeek Chat Completions API</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb">OpenAI Cookbook《How to call functions with chat models》</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_stream_completions.ipynb">OpenAI Cookbook《How to stream completions》</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/tools速查表.html">tools速查表</a>——工具 schema 三段结构、闭环四步、事件流与常见坑一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/tools">18.tools</a> · 下一课 <a href="/agents/Agents底层逻辑/封装tools">19.封装tools</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skill速查表 · 参考手册</title>
+  <meta name="description" content="Skill速查表 · 可打印参考手册：配合《Skill互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>Skill速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0023-Skill.html">《Skill互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>它解决什么问题</h2>
+      <p>Skill 是一套<strong>可插拔的专业提示词模块</strong>：每个 Skill 对应一个特定场景（处理越权提问、数据分析、客服应答等），<strong>只有当用户问题匹配该场景时，内容才会被注入上下文</strong>——按需加载避免了系统提示词的无限膨胀。</p>
+      <table class="cmp-table">
+        <tr><th>做法</th><th>系统提示词里放什么</th><th>代价</th></tr>
+        <tr><td>全量硬塞</td><td>所有场景的完整说明（数据来源、字段含义、产品参数、活动、购买链接……）</td><td>严重的提示词膨胀；与当前任务无关的指令每轮都在干扰</td></tr>
+        <tr><td>Skill 按需加载</td><td>只有「技能名 + description」清单</td><td>多一次工具调用；换来按需注入与可插拔</td></tr>
+      </table>
+      <p>课件的判断依据：这些提示词<strong>只有在某些场景下才会触发</strong>（用户「有时候」要销售分析、「经常」问产品）。</p>
+    </section>
+
+    <section>
+      <h2>渐进式披露：三级加载</h2>
+      <table class="cmp-table">
+        <tr><th>级别</th><th>内容</th><th>何时进入上下文</th><th>本章对应</th></tr>
+        <tr><td>第一级</td><td>每个 Skill 的 <code>name</code> + <code>description</code></td><td>启动时预载进系统提示词</td><td><code>prompt.py</code> 的 <code>list_skills()</code> → <code>system.j2</code> 清单</td></tr>
+        <tr><td>第二级</td><td><code>SKILL.md</code> 正文（完整指令）</td><td>模型判定相关时读入</td><td><code>use_skill</code> 工具按需返回</td></tr>
+        <tr><td>第三级及以后</td><td>技能目录里被引用的脚本 / 参考文档 / 模板</td><td>需要时按名再读</td><td><code>use_skill</code> 返回的 <code>path</code> 指向技能目录</td></tr>
+      </table>
+      <p><strong>description 决定「什么时候想起来」，正文决定「想起来之后怎么做」</strong>——写成空串或含糊描述，技能就永远不会被触发。</p>
+    </section>
+
+    <section>
+      <h2>SKILL.md 格式速查</h2>
+      <pre>agent/.agents/skills/&lt;技能名&gt;/
+└── SKILL.md          # frontmatter + 正文（本章两个技能：no-permission、frontend-design）
+
+---                   # 文件必须以 --- 开头
+name: no-permission   # 必需；限 64 字符，小写字母 / 数字 / 连字符
+description: 当用户和你和开发无关的问题时，使用此技能   # 必需、非空；写清「做什么 + 何时用」
+---
+
+统一回复：“我是一个编程助手，我无法回复你这个问题，请把话题限制在开发领域”</pre>
+      <table class="cmp-table">
+        <tr><th>frontmatter 字段</th><th>必需</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>是</td><td>技能名，同时是目录名与运行时路由键（<code>SKILL_BASE_DIR / skill_name / "SKILL.md"</code>）</td></tr>
+        <tr><td><code>description</code></td><td>是</td><td>模型判断「何时加载」的主要依据，非空</td></tr>
+        <tr><td><code>license</code> / <code>compatibility</code> / <code>metadata</code></td><td>否</td><td>许可、环境要求、自定义键值</td></tr>
+        <tr><td><code>allowed-tools</code></td><td>否</td><td>该技能可使用的<strong>预先批准</strong>的工具（空格分隔，实验性）——技能层的权限声明</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>本章工程链路</h2>
+      <pre># 1. 新增 agent/tool/use_skill.py
+SKILL_BASE_DIR = Path(__file__).parent.parent / ".agents" / "skills"
+skill_file = SKILL_BASE_DIR / skill_name / "SKILL.md"   # 不存在 → FileNotFoundError
+parts = content.split("---")                            # 取 frontmatter
+meta = yaml.safe_load(parts[1]) if len(parts) >= 3 else {}
+return json.dumps({"meta": meta, "content": content, "path": str(skill_file)})
+
+# 2. 修改 agent/prompt.py：list_skills() 扫描技能目录 → [{技能名: meta}, …]
+# 3. 修改 agent/prompt/system.j2：两层 for 渲染清单（外层列表、内层 items()）
+# 4. 修改 agent/tool/__init__.py：registry.register(use_skill)
+
+# 5. 安装公共 Skill（需先装 node；公共技能检索 https://www.skills.sh/）
+npx skills add https://github.com/anthropics/skills --skill frontend-design</pre>
+      <dl class="term-grid">
+        <dt>agent/skills-lock.json</dt>
+        <dd>记录公共 Skill 的 <code>source</code> / <code>sourceType</code> / <code>skillPath</code> / <code>computedHash</code>——可复现、可对账，但<strong>只证明版本一致，不证明内容安全</strong>。</dd>
+        <dt>权限与信任边界</dt>
+        <dd>技能正文会逐字进入模型上下文：恶意 skill 可能引入漏洞或指使模型外泄数据。只从可信来源安装，来源不够可信时先审计内容、代码依赖与捆绑脚本，并警惕让模型访问不可信外部网络的指令。</dd>
+        <dt>验证触发</dt>
+        <dd><code>agent.invoke("最近天气如何？")</code>——越权提问应被 no-permission 接管；<code>agent.session.print_friendly()</code> / <code>session.tools</code> 查看当前上下文与工具清单。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <ul class="pitfall-list">
+        <li><strong>把正文抄进系统提示词</strong>：等于放弃这一整章——第一级清单常驻、第二级正文按需，界线不能破。</li>
+        <li><strong>手工切 frontmatter</strong>：<code>split("---")</code> 靠「切出至少三段」判断，文件没有 frontmatter 或开头多空行 / BOM 时 meta 会<strong>静默变成 <code>{}</code></strong>；frontmatter 内部出现 <code>---</code> 还会截断。应断言以 <code>---</code> 开头、<code>split("---", 2)</code> 或换解析器，并对必需字段做非空校验。</li>
+        <li><strong>用 <code>yaml.load</code> 读技能</strong>：官方警告它和 <code>pickle.load</code> 一样能调用任意 Python 函数；第三方 SKILL.md 是外部数据，必须用 <code>yaml.safe_load</code>。</li>
+        <li><strong>技能名对不上</strong>：frontmatter 的 <code>name</code>、目录名、模型传参三者必须一致，否则 <code>FileNotFoundError</code> 会直接穿到调用方（本章 <code>registry.invoke</code> 没有兜底）。</li>
+        <li><strong>description 写成空或含糊</strong>：模型失去唯一触发线索，技能装了等于没装；反过来写成「用于所有问题」则会过度触发，把正常问题也拦掉。</li>
+      </ul>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

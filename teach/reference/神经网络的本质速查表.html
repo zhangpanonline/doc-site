@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>神经网络的本质速查表 · 参考手册</title>
+  <meta name="description" content="神经网络的本质速查表 · 可打印参考手册：配合《神经网络的本质互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>神经网络的本质速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0009-神经网络的本质.html">《神经网络的本质互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>三种矩阵运算</h2>
+      <table class="cmp-table">
+        <tr><th>运算</th><th>定义</th><th>形状规则</th><th>结果形状</th></tr>
+        <tr>
+          <td>相加</td>
+          <td>$c_{ij}=(a_{ij}+b_{ij})$</td>
+          <td>两个矩阵必须同为 $m\times n$，对应位置相加</td>
+          <td>$m\times n$（不变）</td>
+        </tr>
+        <tr>
+          <td>点乘（矩阵乘法）</td>
+          <td>$c_{ij}=\sum_{k=1}^{n} a_{ik}b_{kj}$</td>
+          <td>$A_{(m\times n)} \cdot B_{(n\times p)}$：左边列数 = 右边行数，中间维 $n$ 被求和消掉</td>
+          <td>$m\times p$</td>
+        </tr>
+        <tr>
+          <td>转置</td>
+          <td>$(A^T)_{ij}=a_{ji}$（行列互换）</td>
+          <td>任意矩阵都可转置</td>
+          <td>$m\times n \to n\times m$</td>
+        </tr>
+      </table>
+      <p>课件的三个算例（点乘请记牢，中级测验考过它）：</p>
+      <p>$$\begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} + \begin{bmatrix} 7 & 8 & 9 \\ 10 & 11 & 12 \end{bmatrix} = \begin{bmatrix} 8 & 10 & 12 \\ 14 & 16 & 18 \end{bmatrix}$$</p>
+      <p>$$\begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} \cdot \begin{bmatrix} 7 & 8 \\ 9 & 10 \\ 11 & 12 \end{bmatrix} = \begin{bmatrix} 58 & 64 \\ 139 & 154 \end{bmatrix} \quad (58=1\cdot7+2\cdot9+3\cdot11)$$</p>
+      <p>$$\begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} \cdot \begin{bmatrix} 7 \\ 8 \\ 9 \end{bmatrix} = \begin{bmatrix} 50 \\ 122 \end{bmatrix}$$</p>
+      <p>一句话：<strong>相加是逐格对齐，点乘是行 × 列</strong>。</p>
+    </section>
+
+    <section>
+      <h2>向量 × 矩阵：三条方向规则</h2>
+      <table class="cmp-table">
+        <tr><th>式子</th><th>中间维</th><th>结论</th></tr>
+        <tr><td>$A_{(m\times n)} \cdot x_{(n\times 1)} = y_{(m\times 1)}$</td><td>$n \leftrightarrow n$</td><td>✅ 成立，结果 $m\times 1$ 列向量</td></tr>
+        <tr><td>$A_{(m\times n)} \cdot x_{(1\times n)} = error$</td><td>$n \leftrightarrow 1$</td><td>❌ 对不上，直接错</td></tr>
+        <tr><td>$x_{(1\times n)} \cdot y_{(n\times 1)} = 标量_{(1\times 1)}$</td><td>$n \leftrightarrow n$</td><td>✅ 中间维消掉，退化成标量</td></tr>
+      </table>
+      <p>课件原文：向量可以看作 $n\times 1$ 的矩阵，也可以看作 $1\times n$ 的矩阵，<strong>如何看待根据算法而不同</strong>。换个方向相乘结果就变了：$y_{(n\times 1)} \cdot x_{(1\times n)} = (n\times n)$ 的矩阵，不再是标量。</p>
+      <dl class="term-grid">
+        <dt>方向自检</dt>
+        <dd>先写下两边的形状，再看中间两个数是否相等——不相等就是 error，不用试。</dd>
+        <dt>1-D 的坑</dt>
+        <dd>NumPy 里 <code>np.array([7, 8, 9])</code> 是 1-D <code>(3,)</code>，没有行/列之分；参与矩阵乘法前先定形（<code>[:, None]</code> 列向量 / <code>[None, :]</code> 行向量），否则结果形状会「少一个 1」。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>神经网络的本质：一层 = 一次矩阵运算</h2>
+      <p>$$\mathbf{a}^{(l)} = \sigma\left( \mathbf{W}^{(l)} \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)} \right) \qquad (n\times m)(m\times 1) + (n\times 1) \to (n\times 1)$$</p>
+      <p>课件结论：<strong>神经网络中的每一层，实际上做的是矩阵运算，并不存在所谓「神经元」。</strong></p>
+      <table class="cmp-table">
+        <tr><th>符号</th><th>含义</th><th>大小</th></tr>
+        <tr><td>$\mathbf{a}^{(l)}$</td><td>第 $l$ 层的输出向量</td><td>$n\times 1$</td></tr>
+        <tr><td>$\mathbf{a}^{(l-1)}$</td><td>第 $l-1$ 层的输出向量（本层输入）</td><td>$m\times 1$</td></tr>
+        <tr><td>$\mathbf{W}^{(l)}$</td><td>第 $l$ 层的权重矩阵</td><td>$n\times m$（行 = 本层输出维 n，列 = 输入维 m）</td></tr>
+        <tr><td>$\mathbf{b}^{(l)}$</td><td>第 $l$ 层的偏置向量</td><td>$n\times 1$</td></tr>
+        <tr><td>$\sigma(\cdot)$</td><td>激活函数（如 Sigmoid、ReLU 等）</td><td>形状不变，逐元素作用</td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>为什么不存在「神经元」</dt>
+        <dd>$\mathbf{W}^{(l)}$ 的第 j 行乘 $\mathbf{a}^{(l-1)}$ 就是第 j 个神经元的加权和，偏置由 $\mathbf{b}^{(l)}$ 的第 j 个元素承担——一次矩阵乘法等于同时算完 n 个「神经元」，差别只在效率：循环落在编译好的底层实现里。</dd>
+        <dt>易错 ①</dt>
+        <dd>把 $\mathbf{W}^{(l)}$ 记成 $m\times n$：$(m\times n)(m\times 1)$ 中间维对不上，乘不起来。</dd>
+        <dt>易错 ②</dt>
+        <dd>把 $\mathbf{a}^{(l-1)}$ 当行向量：$A_{(m\times n)}\cdot x_{(1\times n)}$ 正是课件标注 error 的那条。</dd>
+        <dt>易错 ③</dt>
+        <dd>用 <code>*</code> 代替 <code>@</code>：<code>*</code> 是逐元素相乘（还会走广播补形状），矩阵乘法要用 <code>@</code> / <code>np.matmul</code>。</dd>
+        <dt>易错 ④</dt>
+        <dd>以为 <code>A.T</code> 是拷贝：NumPy 里转置「A view is returned whenever possible」，原地改转置结果会改到原矩阵。</dd>
+        <dt>框架里的等价写法</dt>
+        <dd>PyTorch <code>torch.nn.Linear</code> 把权重存成 (out_features, in_features)——与课件的 $n\times m$ 一致，但输入按行摆放，所以写作 $y = xA^T + b$：只是行/列约定换算，不是另一个运算。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

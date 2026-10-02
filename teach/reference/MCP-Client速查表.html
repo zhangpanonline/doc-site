@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MCP-Client速查表 · 参考手册</title>
+  <meta name="description" content="MCP-Client速查表 · 可打印参考手册：配合《MCP-Client互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>MCP-Client速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0025-MCP-Client.html">《MCP-Client互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>一次会话的固定三步</h2>
+      <table class="cmp-table">
+        <tr><th>步</th><th>代码</th><th>协议方法 / 作用</th></tr>
+        <tr><td>0 装依赖</td><td><code>!uv add mcp==1.28.1</code></td><td>python-sdk v1.28.1</td></tr>
+        <tr><td>1 初始化</td><td><code>await session.initialize()</code></td><td><code>initialize</code>：协商协议版本与能力（客户端 MUST 最先发起）</td></tr>
+        <tr><td>2 发现工具</td><td><code>tools = await session.list_tools()</code></td><td><code>tools/list</code>：支持分页（<code>cursor</code> / <code>nextCursor</code>）</td></tr>
+        <tr><td>3 调用工具</td><td><code>await session.call_tool(name=…, arguments={…})</code></td><td><code>tools/call</code>：结果含 <code>content</code> 与 <code>isError</code></td></tr>
+      </table>
+      <pre>async with stdio_client(server_params) as (read, write):
+    async with ClientSession(read, write) as session:
+        await session.initialize()          # 1
+        tools = await session.list_tools()  # 2  tools/list
+        result = await session.call_tool(   # 3  tools/call
+            name="get_current_time",
+            arguments={"timezone": "Asia/Shanghai"},
+        )
+        print(result.model_dump_json(indent=2, ensure_ascii=False))</pre>
+      <p>打印一律用 <code>model_dump_json(indent=2, ensure_ascii=False)</code>：结果是 Pydantic 模型，中文不被转义。</p>
+    </section>
+
+    <section>
+      <h2>两种传输对照</h2>
+      <table class="cmp-table">
+        <tr><th></th><th>stdio</th><th>Streamable HTTP</th></tr>
+        <tr><td>服务器在哪</td><td>客户端<strong>作为子进程启动</strong>（<code>uvx …</code>）</td><td>独立进程 / 远端，客户端连一个 MCP endpoint URL</td></tr>
+        <tr><td>配置字段</td><td><code>{"type": "stdio", "command": "uvx", "args": ["mcp-server-time"]}</code></td><td><code>{"type": "http", "url": "https://learn.microsoft.com/api/mcp"}</code></td></tr>
+        <tr><td>连接对象</td><td><code>StdioServerParameters(command=…, args=[…])</code></td><td>URL 字符串</td></tr>
+        <tr><td>解包形状</td><td><code>stdio_client(params) as (read, write)</code> —— <strong>二元组</strong></td><td><code>streamable_http_client(url) as (read_stream, write_stream, _)</code> —— <strong>三元组</strong></td></tr>
+        <tr><td>关掉时</td><td>关服务器输入流 → 等它退出（必要时 SIGTERM / SIGKILL）</td><td>关闭关联的 HTTP 连接</td></tr>
+      </table>
+      <p>两种传输拿到 <code>read / write</code> 之后的写法<strong>完全一样</strong>：<code>ClientSession(read, write)</code> → <code>initialize()</code>。差别全被 <code>connect_mcp</code> 吃掉。</p>
+      <p>本章验证对象：<code>uvx mcp-server-time</code>（<code>get_current_time</code>、<code>convert_time</code>）· <code>https://learn.microsoft.com/api/mcp</code>（<code>microsoft_docs_search</code>、<code>microsoft_code_sample_search</code>、<code>microsoft_docs_fetch</code>）。</p>
+    </section>
+
+    <section>
+      <h2>三层封装（<code>agent/tool/use_mcp.py</code>）</h2>
+      <pre>mcp = {"servers": {
+    "time":            {"type": "stdio", "command": "uvx", "args": ["mcp-server-time"]},
+    "microsoft-learn": {"type": "http",  "url": "https://learn.microsoft.com/api/mcp"},
+}}
+
+@asynccontextmanager
+async def connect_mcp(server_config: dict):
+    """按 type 连接并 initialize，yield 已就绪的 ClientSession"""
+    if server_config["type"] == "stdio":
+        params = StdioServerParameters(command=server_config["command"],
+                                       args=server_config.get("args", []))
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                yield session
+    elif server_config["type"] == "http":
+        async with streamable_http_client(server_config["url"]) as (read, write, _):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                yield session
+    else:
+        raise ValueError(f"不支持的服务器类型: {server_config['type']}")
+
+class MCPClient:
+    def __init__(self, config):        self.servers = config["servers"]
+    async def alist_tools(self):       # 遍历所有服务器 → [{"server", "tools"}]
+    async def acall_tool(self, server_name, tool_name, arguments=None)
+    def list_tools(self):              return run_async(self.alist_tools())
+    def call_tool(self, server_name, tool_name, arguments=None)
+                                       #  return run_async(self.acall_tool(...))</pre>
+      <dl class="term-grid">
+        <dt>第一层 <code>connect_mcp</code></dt>
+        <dd><code>@asynccontextmanager</code> + <code>yield session</code>：把「必须最先发生的 <code>initialize()</code>」封在 yield 之前，调用方拿到的 session 天然已就绪。</dd>
+        <dt>第二层 单服务器函数</dt>
+        <dd><code>list_server_tools(config)</code> / <code>call_server_tool(config, name, args)</code>：<code>async with connect_mcp(config) as session:</code> 一行进上下文。</dd>
+        <dt>第三层 <code>MCPClient</code></dt>
+        <dd>吃整份配置；<code>alist_tools()</code> 遍历全部服务器（N 个服务器 = N 次连接），<code>acall_tool()</code> 只按名字连<b>一个</b>。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>同步封装 <code>run_async</code> 与易错点</h2>
+      <pre>import threading
+
+def run_async(coro):
+    """在独立线程中运行异步协程，同步等待并返回结果"""
+    result = None
+    error = None
+
+    def _run():
+        nonlocal result, error
+        try:
+            result = asyncio.run(coro)
+        except Exception as e:
+            error = e
+
+    t = threading.Thread(target=_run)
+    t.start()
+    t.join()          # 串行等待：没有并发，也不支持取消 / 超时
+
+    if error:
+        raise error
+    return result</pre>
+      <table class="cmp-table">
+        <tr><th>易错点</th><th>现象 / 正确做法</th></tr>
+        <tr><td>HTTP 抄成两元组</td><td><code>streamable_http_client</code> 解出三个值，必须写 <code>as (read_stream, write_stream, _)</code></td></tr>
+        <tr><td>漏写 <code>type</code> 或不支持的类型</td><td>命中 <code>else: raise ValueError</code>，且会打断 <code>alist_tools()</code> 的整轮遍历</td></tr>
+        <tr><td>直接 <code>asyncio.run</code></td><td>Jupyter 自身有事件循环，同线程内调用会报错——所以课件改用独立线程（每个线程一个事件循环）</td></tr>
+        <tr><td>在异步 Agent 里套同步皮</td><td>工具链路里已经有事件循环，直接 <code>await</code>；<code>run_async</code> 是兼容层，不是并发层</td></tr>
+        <tr><td>漏传必填参数</td><td>如 <code>get_current_time</code> 的 <code>timezone</code>：返回 <code>isError: true</code> + <code>Input validation error</code>，<strong>不抛异常</strong></td></tr>
+        <tr><td>工具名写错</td><td>两种可能：协议错误（JSON-RPC <code>error</code>，如 <code>Unknown tool: …</code>）或工具执行错误（<code>isError: true</code>，错误文本在 <code>content</code> 里）——都要检查，别当正常结果</td></tr>
+        <tr><td>列表缓存当永久真相</td><td><code>tools/list</code> 分页；服务器可发 <code>notifications/tools/list_changed</code>，需重取或设 TTL</td></tr>
+        <tr><td>每次调用都重连</td><td><code>acall_tool</code> 每次都会重新连接 + <code>initialize()</code>（stdio 还要重启子进程）；高频场景要评估长连接复用</td></tr>
+      </table>
+      <p>健壮性底线（官方规范建议）：为所有发出的请求<strong>设置超时</strong>，否则 <code>t.join()</code> 会无限期阻塞主线程。</p>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

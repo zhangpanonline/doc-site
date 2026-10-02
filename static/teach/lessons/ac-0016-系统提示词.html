@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 系统提示词：五条编写原则、prompt 模板与 Jinja2 渲染，以及系统提示词的工程化封装——互动教学课程">
+  <title>系统提示词 · 互动教学课程（Agents底层逻辑 ac-16）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>系统提示词</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/系统提示词">16.系统提示词</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清系统提示词在消息序列里的位置，以及它为什么天然承担「全局设定」的角色</li>
+        <li>复述编写系统提示词的五条原则——精简、自洽、全局约束、保持静态、结构化——并用正反案例互相校验</li>
+        <li>读懂 <code>agent/prompt/system.j2</code> 与 <code>agent/prompt.py</code> 的配合：模板目录、<code>FileSystemLoader</code>、<code>get_template</code>、<code>render</code></li>
+        <li>判断 Jinja2 渲染里的两类静默故障——变量名写错渲染成空、块标签留下多余空行——并给出修法</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把系统提示词的位置、五条编写原则与本章的渲染链路过一遍——细节都在《16.系统提示词》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>它是什么，为什么在「最前面」</h3>
+        <ul class="pitfall-list">
+          <li><strong>位置</strong>：系统提示词<strong>往往出现在所有消息的最前面</strong>；大模型在训练的过程中，会重点关注系统提示词</li>
+          <li><strong>载体</strong>：本章的 <code>agent/message.py</code> 用 <code>@dataclass</code> 定义了 <code>Message</code> 抽象基类，再由 <code>SystemMessage / UserMessage / AssistantMessage</code> 三个子类分别把 <code>role</code> 默认成 <code>"system" / "user" / "assistant"</code>——发请求时它们被转成 <code>{"role": …, "content": …}</code> 的字典列表</li>
+          <li><strong>为什么值得单独讲</strong>：它不在某一轮对话里，而是作用于<strong>整条对话的每一轮</strong>——写坏了不会报错，只会让 Agent 的行为慢慢跑偏</li>
+          <li><strong>最小示例</strong>：<code>SystemMessage("当用户向你打招呼时，你仅需回答你好即可")</code> + <code>UserMessage("你好")</code>，第一条消息就把行为定死了</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>五条核心原则（课件的正反对照）</h3>
+        <ul class="pitfall-list">
+          <li><strong>精简</strong>：能不说就不说，能少说就少说，绝对避免无病呻吟。反例是「你现在要充当一名专业代码顾问……希望你认真仔细地阅读……」；正例压缩成一句「你是代码顾问。精准解答编程问题，不懂直接说明，禁止编造信息。」</li>
+          <li><strong>自洽</strong>：提示词不能自我矛盾。反例「回答务必详尽，多角度展开说明；同时所有回复控制在 30 字以内」——两条规则互相打架</li>
+          <li><strong>全局约束</strong>：系统提示词内所有规则作用于整条对话的每一轮交互。反例「当用户要求你写数据分析类代码的时候，你应该使用 Python 来编写」——这是只对某类请求成立的局部规则，课件的正面案例是<strong>删掉</strong>（<code>&lt;空&gt;</code>）</li>
+          <li><strong>保持静态</strong>：系统提示词内容应当<strong>尽量</strong>固定不变。反例「当前用户是：<code>&lt;动态内容&gt;</code>，时间是：<code>&lt;动态内容&gt;</code>」——正面案例同样是<strong>空</strong></li>
+          <li><strong>结构化</strong>：用 Markdown / XML（或二者混用）分层排版，核心指令、硬性约束、输出规范<strong>用标记隔离</strong>，便于模型区分层级、识别关键规则，避免文本扁平化造成理解偏差</li>
+          <li>记忆抓手：<strong>精简管「说多少」、自洽管「别打架」、全局约束管「放对地方」、保持静态管「别乱动」、结构化管「怎么排版」</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>从 <code>.j2</code> 模板到系统提示词：本章工程链路</h3>
+        <ul class="pitfall-list">
+          <li><strong>先收集环境信息</strong>：<code>get_cwd()</code>（<code>os.getcwd()</code>）、<code>get_is_git()</code>（跑 <code>git rev-parse --is-inside-work-tree</code>，返回码为 0 且输出为 <code>true</code> 才算在仓库里）、<code>get_language()</code>（macOS 读 <code>defaults read -g AppleLocale</code>，Windows 走 <code>ctypes</code> 读区域设置，其它平台返回空串）</li>
+          <li><strong>把模板交给 Jinja2</strong>：<code>Environment(loader=FileSystemLoader(template_dir))</code> → <code>env.get_template("system.j2")</code> → <code>template.render(language=…, cwd=…, is_git=…)</code></li>
+          <li><strong>封装成通用入口</strong>：<code>render_prompt(prompt_name)</code> 把模板目录定为<strong>模块同级的 <code>prompt</code> 子目录</strong>（<code>os.path.dirname(__file__)</code>），再按 <code>f"{prompt_name}.j2"</code> 取模板——所以 <code>render_prompt("system")</code> 读的就是 <code>agent/prompt/system.j2</code>；加一个新提示词只需丢一个 <code>&lt;name&gt;.j2</code> 进去</li>
+          <li><strong>模板本身长什么样</strong>：<code>system.j2</code> 就是一份结构化的系统提示词——<code># System</code> / <code># Doing tasks</code> / <code># Using your tools</code> / <code># Tone and style</code> 分段，末尾 <code># Language</code> 用 <code>{% if language %}</code> 条件块、<code># Environment</code> 注入 <code>{{ cwd }}</code> 与 <code>{{ is_git }}</code></li>
+          <li><strong>本章 <code>agent/</code> 变更</strong>：新增 7 个文件（<code>__init__.py</code>、<code>config.py</code>、<code>message.py</code>、<code>model.py</code>、<code>printer.py</code>、<code>prompt.py</code>、<code>prompt/system.j2</code>），修改 0 个，删除旧的 <code>utils/</code> 六个文件——这是一次「把散装脚本收进包」的重构</li>
+          <li><strong>依赖</strong>：<code>uv add pydantic-settings==2.14.1</code>（读 <code>.env</code> 配置）、<code>uv add jinja2==3.1.6</code>（模板渲染）</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《16.系统提示词》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 关于系统提示词在消息序列里的位置与分量，本章的说法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">通常放在最后一条消息，作为收尾提醒</button>
+            <button class="quiz-option">位置由模型自动决定，与消息顺序无关</button>
+            <button class="quiz-option">往往出现在所有消息的最前面，且大模型在训练过程中会重点关注系统提示词</button>
+            <button class="quiz-option">只有单轮对话才能使用系统提示词</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：系统提示词往往出现在所有消息的最前面，大模型在训练的过程中，会重点关注系统提示词。工程上它由 <code>SystemMessage</code> 承载，<code>role</code> 默认就是 <code>"system"</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 反面案例：「你是数据分析助手。回答务必详尽，多角度展开说明；同时所有回复控制在 30 字以内。」它违反的是哪条原则？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">全局约束</button>
+            <button class="quiz-option">结构化</button>
+            <button class="quiz-option">自洽</button>
+            <button class="quiz-option">精简</button>
+          </div>
+          <div class="quiz-explain" hidden>这是「自洽」的反面案例——提示词不能自我矛盾：既要「务必详尽、多角度展开」，又要「30 字以内」，两条要求互相打架。课件给的正面对照是：「你是数据分析助手。回答简洁，整体控制在 30 字以内。」</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 关于「结构化」这条原则，课件推荐的做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">禁止使用标题，因为标题会额外占用 token</button>
+            <button class="quiz-option">只用一句最短的话，禁止多行</button>
+            <button class="quiz-option">把所有要求写成一整段连续文字，避免换行被模型忽略</button>
+            <button class="quiz-option">用 Markdown / XML（或二者混用）分层排版，把核心指令、硬性约束、输出规范用标记隔离</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「结构化」原文：系统提示词采用 Markdown / XML（或二者混用）进行分层排版；核心指令、硬性约束、输出规范使用标记进行隔离，便于模型区分层级、识别关键规则，避免文本扁平化造成理解偏差。课件正面对照即一例：<code># 角色</code> / <code>## 硬性规则</code> / <code>## 输出要求</code>。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 要把 <code>agent/prompt</code> 目录交给 Jinja2 的 <code>FileSystemLoader</code>，并且希望「不管进程从哪个目录启动都能找到模板」。本章 <code>agent/prompt.py</code> 的 <code>render_prompt</code> 选择的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>FileSystemLoader("agent/prompt")</code>，因为相对路径总相对项目根目录</button>
+            <button class="quiz-option"><code>FileSystemLoader(os.getcwd())</code>，把当前工作目录整个交给它</button>
+            <button class="quiz-option"><code>FileSystemLoader(os.path.join(os.path.dirname(__file__), "prompt"))</code></button>
+            <button class="quiz-option">不用 loader，把模板字符串直接写在 <code>.py</code> 里</button>
+          </div>
+          <div class="quiz-explain" hidden>本章封装后的 <code>render_prompt</code> 用的是 <code>os.path.join(os.path.dirname(__file__), "prompt")</code>——以<strong>模块自身文件位置</strong>为基准。对比课件前面探索版写的 <code>os.path.join(os.getcwd(), 'agent/prompt')</code>：它把模板目录绑死在「启动进程时的工作目录」上，换个目录运行就会找不到模板。这正是「探索版 → 封装版」之间一处关键的修正。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. <code>render_prompt(prompt_name)</code> 是按什么规则定位模板文件的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模板内容存在 <code>.env</code> 里，由 pydantic-settings 读出来</button>
+            <button class="quiz-option">模板放在 <code>agent/</code> 目录下，命名为 <code>agent/system.j2</code></button>
+            <button class="quiz-option">模板放在工程根目录，命名为 <code>prompt/system.md</code></button>
+            <button class="quiz-option">模板放在 <code>agent/prompt/</code> 目录下、命名为 <code>&lt;name&gt;.j2</code>，通过 <code>env.get_template(f"{prompt_name}.j2")</code> 取</button>
+          </div>
+          <div class="quiz-explain" hidden>课件封装的 <code>render_prompt</code> 把模板目录定为「模块同级的 <code>prompt</code> 子目录」，再用 <code>env.get_template(f"{prompt_name}.j2")</code> 按名字取模板——所以 <code>render_prompt("system")</code> 读的是 <code>agent/prompt/system.j2</code>。本章「新增文件」清单里正好列着这个文件。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 「全局约束」原则要求：系统提示词内所有规则作用于整条对话的每一轮交互。据此，课件给的反面案例「当用户要求你写数据分析类代码的时候，你应该使用 Python 来编写」问题出在哪？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">它应该挪到系统提示词的最前面</button>
+            <button class="quiz-option">它应该全部改成大写，才能被模型重视</button>
+            <button class="quiz-option">它应该拆成三句话，写成 markdown 列表</button>
+            <button class="quiz-option">它是一条只对某类请求生效的<strong>局部规则</strong>，不该占用作用于全程的系统提示词；课件给的正面案例是删除（<code>&lt;空&gt;</code>）</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「全局约束」原文：系统提示词内所有规则作用于整条对话的每一轮交互。反面案例把「数据分析类代码 → 用 Python」当成全局规则写进系统提示词，但它只在一小类请求里成立，会给每一轮对话都带上无关约束；课件给出的正面案例就是 <code>&lt;空&gt;</code>——这类条件性要求属于当轮的用户消息或工具描述，不属于系统层。这也和「精简」互相印证：能不说就不说。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">7. 模板里 <code>{% if language %}</code> 块与 <code>{% endif %}</code> 各自独占一行，<code>Environment</code> 没有传任何空白相关参数。渲染后 <code># Language</code> 前后总是多出空行，没有 <code>language</code> 时同样留下空行。正确的解释与修法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">必须把 <code>{% if %}</code> 换成 <code>{% for %}</code> 才能去掉空行</button>
+            <button class="quiz-option">Jinja2 不支持条件块，必须改用 Python 的 f-string 拼接</button>
+            <button class="quiz-option">这是 <code>trim_blocks</code> / <code>lstrip_blocks</code> <strong>默认关闭</strong>所致——块标签所在行会被移除但留下空行；可开启这两个选项，或在标签上写 <code>{%- if language -%}</code> 手动控制空白</button>
+            <button class="quiz-option">空行是模型输出造成的，与模板无关</button>
+          </div>
+          <div class="quiz-explain" hidden>本章的 <code>Environment(loader=FileSystemLoader(...))</code> 没传 <code>trim_blocks</code> / <code>lstrip_blocks</code>，两者默认都是关闭的，因此「独占一行的块标签会被移除，但会留下一个空行，内容里的空格照旧保留」。修法有两条：初始化时写 <code>Environment(..., trim_blocks=True, lstrip_blocks=True)</code>，或在标签上用 <code>{%- … -%}</code> 手动吃掉空白。系统提示词是逐字进入模型的文本，这类空白差异值得控制。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 模板里写的是 <code>Is a git repository: {{ isgit }}</code>（本意是 <code>is_git</code>），但 <code>render()</code> 只传了 <code>language</code> / <code>cwd</code> / <code>is_git</code>。渲染不报错，这一行后面却是空。原因与修法？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 <code>subprocess</code> 调用失败了</button>
+            <button class="quiz-option">因为 <code>.j2</code> 模板不能接收布尔变量，必须先在 Python 里转成字符串</button>
+            <button class="quiz-option">Jinja2 默认的 <code>Undefined</code> 可以打印、可迭代、可当布尔判断（打印出来就是空字符串），只有其它运算才抛 <code>UndefinedError</code>——变量名写错会<strong>静默变空</strong>；应改用 <code>StrictUndefined</code>，或渲染后断言关键字段非空</button>
+            <button class="quiz-option">因为 <code>is_git</code> 是布尔值，Jinja2 会把布尔值一律渲染成空字符串</button>
+          </div>
+          <div class="quiz-explain" hidden>官方对默认 <code>Undefined</code> 的定义是：可以被打印、被迭代、被当作布尔值，<strong>其它运算才会抛 <code>UndefinedError</code></strong>，而 <code>str(Undefined)</code> 就是空字符串。所以把 <code>is_git</code> 拼成 <code>isgit</code> 不会报错，只会让环境信息静默丢一块——对系统提示词来说这是最危险的一类 bug：不崩溃、不告警，模型拿到的却是残缺指令。修法：<code>Environment(..., undefined=StrictUndefined)</code> 让拼错的变量立刻失败，或在渲染后断言关键字段非空。注意布尔值本身在 Jinja2 里会渲染成 <code>True</code> / <code>False</code>（课件里 <code>Is a git repository: {{ is_git }}</code> 正是这种用法），所以第 1 条不成立。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">9. 审查一份系统提示词：角色与硬性规则用 Markdown 分好了段，但末尾又写上「当前用户：<code>{{ user_name }}</code>，当前时间：<code>{{ now }}</code>」。它违反本章哪条原则？重新设计时这部分该放哪？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">违反「全局约束」——用户名不是一条全局规则</button>
+            <button class="quiz-option">违反「结构化」——动态信息不该出现在 Markdown 里</button>
+            <button class="quiz-option">违反「精简」——变量太多导致模型读不懂</button>
+            <button class="quiz-option">违反「保持静态」——系统提示词内容应当尽量固定不变；动态信息应移出系统提示词（放进当轮用户消息或工具结果），让系统提示词保持稳定</button>
+          </div>
+          <div class="quiz-explain" hidden>课件「保持静态」原文：系统提示词内容应当<strong>尽量</strong>固定不变；反面案例正是「当前用户是：<code>&lt;动态内容&gt;</code>，时间是：<code>&lt;动态内容&gt;</code>」，正面案例是 <code>&lt;空&gt;</code>。用户与时间每轮都在变，留在系统提示词里等于让这份「全局设定」每轮都不一样。（工程上还有一层代价：提示词缓存按前缀比对，前缀一变就整段重算。）正确做法是把静态的角色与规则留在系统提示词，把随请求变化的用户、时间信息注入到当轮消息或工具返回结果中。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0016-系统提示词',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事把系统提示词的模板目录写成 <code>FileSystemLoader("agent/prompt")</code>（相对路径），在工程根目录跑 Notebook 一切正常；可一旦包成命令行工具、从别的目录启动，就抛 <code>TemplateNotFound: system.j2</code>。按 Jinja2 官方文档，这个相对路径到底相对谁？给出两种修法。`,
+              source: `来源：Jinja2 官方文档 API（FileSystemLoader："Load templates from a directory in the file system. The path can be relative or absolute. Relative paths are relative to the current working directory."）https://jinja.palletsprojects.com/en/stable/api/ · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《16.系统提示词》课件（agent/prompt.py 的 render_prompt 用 os.path.dirname(__file__) 定位模板目录）`,
+              breakdown: `官方原话：相对路径相对的是<strong>当前工作目录（current working directory）</strong>。所以 <code>FileSystemLoader("agent/prompt")</code> 只在「启动进程时恰好站在工程根目录」这一种情况下成立——这正好解释了课件里两段代码的差别：探索版写 <code>os.path.join(os.getcwd(), 'agent/prompt')</code>，把模板目录绑死在 CWD；而封装进 <code>agent/prompt.py</code> 的 <code>render_prompt</code> 改成 <code>os.path.join(os.path.dirname(__file__), "prompt")</code>，以<strong>模块自身文件位置</strong>为基准。两种修法：① 用绝对路径——以 <code>__file__</code> 推导，或把模板目录做成可配置项；② 改用按包定位的 loader（如 <code>PackageLoader</code>，官方对它的说明是「它会自己算出模板文件夹的绝对路径，只要求你的包可导入」）。在部署环境里依赖「启动目录」，是最容易在换工作目录、装成全局命令、或被打包进 site-packages 时翻车的写法。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `系统提示词在消息序列里的位置和角色是什么？如果开发者完全不用 system 消息、把指令直接写进第一条 user 消息，官方允许吗？请说清「可以」与「推荐」的区别。`,
+              source: `来源：OpenAI Cookbook《How to format inputs to ChatGPT models》（"Typically, a conversation will start with a system message that tells the assistant how to behave, followed by alternating user and assistant messages, but you are not required to follow this format."；"The system message can be used to prime the assistant with different personalities or behaviors."）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `官方给的规范形态是：对话以一条 <strong>system 消息</strong>开头，告诉助手应当如何表现，随后是交替出现的 user / assistant 消息；system 消息的用途是「为助手预设不同的人格或行为」。课件讲的是同一件事的另一面——「系统提示词往往出现在所有消息的最前面，大模型在训练的过程中会重点关注系统提示词」，所以它天然就是<strong>全局设定</strong>的位置，这也解释了为什么「全局约束」原则要求里面的规则作用于每一轮交互。同时官方明确说这不是强制格式：非对话型任务可以把指令放进第一条 user 消息。但在 Agent 工程里仍然推荐用 system 消息——它是唯一一个「与具体某一轮无关」的位置，把全局设定与当轮请求分开，才谈得上后面那条「保持静态」（前缀稳定、缓存可命中）。本章的 <code>SystemMessage</code>（<code>role</code> 默认 <code>"system"</code>）就是为这个位置准备的载体。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `本章「精简」原则说「能不说就不说」，而 Anthropic 的官方建议是「追求最小信息集」，还特意补了一句「minimal 不一定等于 short」。这两者矛盾吗？请解释这句补充的意思，并说明在 Agent 场景里怎么拿捏该删什么、该留什么。`,
+              source: `来源：Anthropic 工程博客《Effective context engineering for AI agents》（"Regardless of how you decide to structure your system prompt, you should be striving for the minimal set of information that fully outlines your expected behavior. (Note that minimal does not necessarily mean short; you still need to give the agent sufficient information up front to ensure it adheres to the desired behavior.)"；"At one extreme, we see engineers hardcoding complex, brittle logic in their prompts…"；"The optimal altitude strikes a balance: specific enough to guide behavior effectively, yet flexible enough to provide the model with strong heuristics to guide behavior."）https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `不矛盾，两者说的是同一件事的两个方向。本章「精简」的反面案例是「你现在要充当一名专业代码顾问，接下来我会向你提出各种各样和编程相关的问题。希望你认真仔细地阅读……」——要删的是<strong>无信息量的客套与重复</strong>，课件原话是「能不说就不说，能少说就少说，绝对避免无病呻吟」。官方把目标定义为「最小信息集 = 足以完整描述预期行为的那一组信息」，并特意补充「minimal 不一定等于 short，你仍然要在一开始给 Agent 足够的信息，确保它遵守期望行为」。所以拿捏标准不是字数，而是<strong>每条指令是否可执行、是否可判定</strong>：删掉「请认真阅读」这类空话，保留「不懂直接说明，禁止编造」这类硬约束。官方还点出了两个失衡方向：一端是把 if-else 逻辑硬编码进提示词（brittle、难维护），另一端是给一堆含糊的高层指令、假定模型与你共享上下文——「最佳高度」是「具体到能有效引导行为，又灵活到给模型留下可靠的启发式空间」。操作建议也很直接：先用最好的模型跑<strong>最小提示词</strong>，再按失败模式逐步加指令和例子——增量是失败驱动的，而不是想到就加。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `审查这段模板与渲染调用：模板里环境小节写 <code>Is a git repository: {{ isgit }}</code>（本意是 <code>is_git</code>）；<code>{% if language %}</code> 块独占一行，<code>Environment</code> 未设任何空白相关参数；<code>render()</code> 只传了 <code>language</code>。问：为什么这段代码不会报错？渲染出来的系统提示词会出现哪些问题？怎么修？`,
+              source: `来源：Jinja2 官方文档 API（Undefined："The default undefined type. This can be printed, iterated, and treated as a boolean. Any other operation will raise an UndefinedError."）https://jinja.palletsprojects.com/en/stable/api/ + Jinja2 模板设计文档（"With both trim_blocks and lstrip_blocks disabled (the default), block tags on their own lines will be removed, but a blank line will remain and the spaces in the content will be preserved."）https://jinja.palletsprojects.com/en/stable/templates/ · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `两个问题都不会报错，这恰恰是危险之处。① <strong>变量拼错静默变空</strong>：官方对默认 <code>Undefined</code> 的定义是「可以被打印、被迭代、被当作布尔值，其它运算才抛 <code>UndefinedError</code>」，而 <code>str(Undefined)</code> 就是空字符串。于是 <code>{{ isgit }}</code> 渲染成空，最终发给模型的提示词里 <code>- Is a git repository:</code> 后面什么都没有——模型拿到的是一份残缺的环境说明，而日志里干干净净。② <strong>空白残留</strong>：<code>trim_blocks</code> / <code>lstrip_blocks</code> 默认关闭，独占一行的块标签「会被移除，但会留下一个空行，内容里的空格照旧保留」；<code>{% if language %}</code> 正是这种写法，没有 <code>language</code> 时也会留下空行。修法：把 <code>undefined</code> 换成 <code>StrictUndefined</code>（拼错立即失败），并对关键字段做渲染后断言；空白用 <code>Environment(..., trim_blocks=True, lstrip_blocks=True)</code>，或在标签上写 <code>{%- if language -%}</code> / <code>{%- endif -%}</code>。原则是让模板渲染 <strong>fail loudly</strong>：在提示词这一层，静默降级等于悄悄改了 Agent 的行为。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `设计一套 Agent 系统提示词的资产管理方案：既要把语言、工作目录、是否 git 仓库这类环境信息注入进去，又想让提示词缓存尽量命中。请说明「哪一层写死、哪一层动态、每轮变化的动态信息放哪、版本化与回归测试怎么做」。`,
+              source: `来源：OpenAI Cookbook《Prompt Caching 101》（"you’ll want to put static content like instructions and examples at the beginning of your prompt, and variable content, such as user-specific information, at the end. This also applies to images and tools, which must be identical even in their ordering between requests."；"When an API request is made, the system first checks if the beginning portion (prefix) of the prompt has already been cached."）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/Prompt_Caching101.ipynb + Anthropic 工程博客《Effective context engineering for AI agents》（"you should be striving for the minimal set of information that fully outlines your expected behavior"）https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents + Anthropic《Prompt caching with Claude》（"Conversational agents: Reduce cost and latency for extended conversations, especially those with long instructions or uploaded documents."）https://www.anthropic.com/news/prompt-caching · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `分四层设计。<strong>① 静态骨架进模板、进版本库</strong>：角色、硬性规则、输出规范用 Markdown / XML 分段（本章「结构化」原则；官方也建议「把提示词组织成不同小节，用 XML 标签或 Markdown 标题分隔」），这部分要求逐字稳定。<strong>② 动态信息分级</strong>：语言、<code>cwd</code>、<code>is_git</code> 这类「随环境变但不随轮次变」的值交给 <code>render_prompt</code> 注入没问题——一次部署内它们是常量，正好对应本章 <code>system.j2</code> 末尾的 <code># Environment</code> 小节；而「当前用户、当前时间」这类<strong>每轮都变</strong>的值不要放进系统提示词（本章「保持静态」原则），应放进当轮 user 消息或工具结果。<strong>③ 为什么要这样切</strong>：官方缓存机制是「先检查提示词的<strong>前缀</strong>是否已缓存，命中就复用；不命中就整段从头处理并缓存前缀」，并明确建议静态内容放开头、可变内容放结尾，连工具定义「顺序都必须完全一致」。前缀一变，命中归零、成本和延迟回到全量计算——Anthropic 那边也正是把「长指令、长文档的持续对话」列为提示词缓存的典型场景。这就是「保持静态」在账单上的形态。<strong>④ 版本化与回归</strong>：模板进 git，用内容 hash 标记版本，线上问题能定位到具体某一版提示词；渲染结果做快照测试（同一输入必须逐字一致，防漂移）；关键字段非空断言（配合 <code>StrictUndefined</code>）；把 <code>render_prompt(name)</code> → <code>&lt;name&gt;.j2</code> 的映射当成公开契约——改文件名等于改 API。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 25 分钟内给 agent 工程补上「系统提示词模板」这一层：模板文件 + 渲染函数 + 用渲染结果发起一次带 system 消息的调用。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: '新建 agent/prompt/system.j2（含角色、硬性规则、输出要求三段，并注入 language / cwd / is_git）→ 在 agent/prompt.py 里写 render_prompt(prompt_name)：用 FileSystemLoader 指向模块同级的 prompt 目录、按 f"{prompt_name}.j2" 取模板 → 渲染并打印结果，确认没有多余空行与空字段 → 用 SystemMessage(render_prompt("system")) 加一条 UserMessage("目前在哪个目录？") 发起一次流式调用。',
+                accept: ['render_prompt("system") 能打印出完整提示词，三段结构清晰', '把进程切到别的目录再运行，模板依然能被找到（不依赖当前工作目录）', '模板里没有未定义变量被静默渲染成空（关键字段可断言非空）', '调用时消息序列第一条是 role 为 system 的消息，模型能据此回答当前目录'],
+              },
+              source: `任务基于《16.系统提示词》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 模板按本章「结构化」原则分三段（<code># 角色</code> / <code>## 硬性规则</code> / <code>## 输出要求</code>），末尾用 <code># Environment</code> 注入 <code>{{ cwd }}</code>、<code>{{ is_git }}</code>，语言部分用 <code>{% if language %}</code> 条件块——记得配 <code>trim_blocks=True, lstrip_blocks=True</code> 或写 <code>{%- -%}</code>，否则会留下空行。② 渲染函数照本章封装：<code>template_dir = os.path.join(os.path.dirname(__file__), "prompt")</code> → <code>Environment(loader=FileSystemLoader(template_dir))</code> → <code>env.get_template(f"{prompt_name}.j2")</code> → <code>template.render(language=..., cwd=..., is_git=...)</code>。③ 自检：加 <code>undefined=StrictUndefined</code>，渲染后断言 <code>cwd</code> 非空。④ 调用：<code>SystemMessage(render_prompt("system"))</code> 必须排在 <code>UserMessage</code> 之前。常见坑：模板目录用 <code>os.getcwd()</code>（换个目录启动就 TemplateNotFound）；变量名拼错却静默变空；把「当前时间」写进系统提示词（违反「保持静态」，也让提示词缓存无法命中）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://jinja.palletsprojects.com/en/stable/templates/">Jinja2 Template Designer Documentation</a> · <a href="https://jinja.palletsprojects.com/en/stable/api/">Jinja2 API（Environment / FileSystemLoader / Undefined）</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb">OpenAI Cookbook《How to format inputs to ChatGPT models》</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/Prompt_Caching101.ipynb">OpenAI Cookbook《Prompt Caching 101》</a> · <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic《Effective context engineering for AI agents》</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/系统提示词速查表.html">系统提示词速查表</a>——五条原则正反对照、Jinja2 渲染链路与常见故障一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/系统提示词">16.系统提示词</a> · 下一课 <a href="/agents/Agents底层逻辑/会话">17.会话</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

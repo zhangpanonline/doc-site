@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · AI的分类：用一张图理清 AI / 机器学习 / 深度学习 / 生成式 AI 的包含关系与能力边界——互动教学课程">
+  <title>AI的分类 · 互动教学课程（Agents底层逻辑 ac-02）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>AI的分类</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/AI的分类">02.AI的分类</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>按从外到内说出 AI ⊃ 机器学习 ⊃ 深度学习 ⊃ 生成式 AI / 大模型的包含关系，并给出每一层的判据</li>
+        <li>解释「AI 不等于机器学习」——知识工程、演化计算、符号主义等实现路径与流派各自站在哪一层</li>
+        <li>分清监督 / 自监督 / 无监督 / 强化四类训练范式，说清各自的「答案」从哪来</li>
+        <li>面对一个真实需求，判断它该落在哪一层：规则、传统机器学习，还是深度学习 / 生成式 AI</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>本章源仓库以图示为主——一张分类图加一份 XMind 导图。先把图的三条主线过一遍，细节都在《02.AI的分类》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>四个圈：从外到内是包含关系，不是并列关系</h3>
+        <ul class="pitfall-list">
+          <li><strong>人工智能（AI）</strong>：最大的圈，一切让机器表现出智能行为的方法都算</li>
+          <li><strong>机器学习（ML）</strong>：AI 的子集，不靠人写规则，而是从数据里学规律</li>
+          <li><strong>深度学习（DL）</strong>：机器学习的子集，用<strong>多层神经网络</strong>来学</li>
+          <li><strong>生成式 AI / 大模型</strong>：深度学习里以「<strong>生成内容</strong>」为目标的那一支</li>
+          <li>一句记忆：<strong>越往里圈越小</strong>——所以「属于里层」能推出「属于外层」，反过来推<strong>不成立</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>图的两条主线：要解决的问题 + 实现方法</h3>
+        <ul class="pitfall-list">
+          <li><strong>要解决的问题</strong>（AI 的三大战场）：
+            <strong>自然语言处理</strong>（文本分类／情感分析／垃圾邮件识别、机器翻译、文本生成、问答系统）、
+            <strong>语音技术</strong>（ASR 语音转文字、TTS 文字转语音、语音唤醒、声纹识别）、
+            <strong>计算机视觉</strong>（图像分类、目标检测、语义分割、人脸识别、指纹识别、文字提取）</li>
+          <li><strong>实现方法</strong>：知识工程、演化计算、<strong>机器学习</strong>——三条并列的路线，机器学习只是<strong>其中一支</strong></li>
+          <li><strong>哲学流派</strong>：符号主义（智能＝推理规则）、连接主义（智能＝大脑结构）、行为主义（智能＝环境互动）</li>
+          <li>因此「AI 就是神经网络」这类说法，在图上第一层就被否掉了</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>机器学习内部再分层：判据与四类范式</h3>
+        <ul class="pitfall-list">
+          <li><strong>机器学习的定义（图原文）</strong>：对于一个计算机程序，如果它在任务 <strong>T</strong> 上的性能 <strong>P</strong>，随着经验 <strong>E</strong> 的增加而提升，那么就称它为机器学习
+            ——T：你要 AI 干什么；E：给 AI 喂什么；P：怎么衡量好坏</li>
+          <li><strong>四类训练范式</strong>：监督学习（人类给答案）、自监督学习（自己找答案）、无监督学习（没有答案）、强化学习（给奖惩）</li>
+          <li><strong>传统方法 vs 深度学习</strong>：线性回归、决策树、支持向量机是机器学习，但<strong>不属于</strong>深度学习——判据是有没有用多层神经网络</li>
+          <li><strong>深度学习 vs 生成式 AI</strong>：深度学习里还有判别式的一支（分类、检测），只有「产出新内容」的才是生成式 AI</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《02.AI的分类》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 图中四个圈从外到内的包含关系是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">四者是并列关系，只是叫法不同</button>
+            <button class="quiz-option">人工智能 ⊃ 深度学习 ⊃ 机器学习 ⊃ 生成式 AI / 大模型</button>
+            <button class="quiz-option">人工智能 ⊃ 机器学习 ⊃ 深度学习 ⊃ 生成式 AI / 大模型</button>
+            <button class="quiz-option">机器学习 ⊃ 人工智能 ⊃ 生成式 AI ⊃ 深度学习</button>
+          </div>
+          <div class="quiz-explain" hidden>文档《怎么读这张图》原文：从外到内是<strong>包含关系</strong>，不是并列关系——人工智能（最大）⊃ 机器学习（从数据学规律）⊃ 深度学习（用多层神经网络）⊃ 生成式 AI / 大模型（以生成内容为目标的那一支）。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">2. 图里给机器学习的定义是「程序在任务 T 上的性能 P 随经验 E 的增加而提升」。按这个判据，下面哪一个系统<strong>不算</strong>机器学习？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">在游戏里靠奖励信号不断试错的智能体</button>
+            <button class="quiz-option">在海量未标注文本上自学语言规律的模型</button>
+            <button class="quiz-option">用历史订单训练出的流失预测模型</button>
+            <button class="quiz-option">工程师手工维护关键词规则来拦截垃圾邮件的过滤器</button>
+          </div>
+          <div class="quiz-explain" hidden>判据是「性能随经验提升」，而不是「人把规则写死」。关键词规则完全由人维护，不会因为多喂数据而自己变好——它属于 AI（知识工程这条实现路径），但不是机器学习。前三项分别对应监督学习、自监督学习、强化学习。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 「生成式 AI / 大模型」在图中的位置是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">与深度学习并列的另一条技术路线</button>
+            <button class="quiz-option">人工智能之上更大的一圈，涵盖 AI</button>
+            <button class="quiz-option">机器学习的另一个名字</button>
+            <button class="quiz-option">深度学习里以「生成内容」为目标的那一支</button>
+          </div>
+          <div class="quiz-explain" hidden>文档原文：生成式 AI / 大模型是深度学习里以「生成内容」为目标的那一支——它是最内层、最小的圈，既不涵盖 AI，也不与深度学习并列。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 两个团队做同一件事——预测用户会不会流失：A 团队用决策树，B 团队用多层神经网络。按本课的图，判断正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">A 属于机器学习、B 属于深度学习，两者都在 AI 这个大圈里</button>
+            <button class="quiz-option">A 不属于 AI，B 才属于 AI</button>
+            <button class="quiz-option">两者都属于生成式 AI，因为都在做预测</button>
+            <button class="quiz-option">两者都属于深度学习，只是算法不同</button>
+          </div>
+          <div class="quiz-explain" hidden>图里「如何实现？」分支把<strong>线性回归、决策树、支持向量机</strong>与<strong>神经网络 → 深度学习</strong>并列：深度学习的判据是「多层神经网络」，决策树没有这一结构，所以只是机器学习；而机器学习本身是 AI 的子集，两者都在 AI 圈内。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">5. 「让程序判断一张图里是猫还是狗」与「让程序根据一句话画出一张图」，按图的层次划分，最准确的说法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">两者都是生成式 AI 的典型任务</button>
+            <button class="quiz-option">两者都是计算机视觉任务，只是输出形式不同</button>
+            <button class="quiz-option">前者属于语音技术，后者属于自然语言处理</button>
+            <button class="quiz-option">前者是计算机视觉里的判别类任务（图像分类），后者才是生成式 AI 的目标——生成新内容</button>
+          </div>
+          <div class="quiz-explain" hidden>图里计算机视觉下列了「图像分类（这张图是猫还是狗）」——输出是一个判断，属于<strong>判别类</strong>任务；而生成式 AI 的定义是「以生成内容为目标」，文本生成图像才是它那一支。同为 AI，能力边界不同。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">6. 一个反诈系统用「人工维护的规则库」识别诈骗话术，另一个用「从历史通话里学出来的模型」识别。按图判断，正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">规则库系统属于 AI（知识工程这条实现路径），但不是机器学习；模型系统才是机器学习</button>
+            <button class="quiz-option">规则库系统不是 AI，模型系统才是 AI</button>
+            <button class="quiz-option">两者都是机器学习，只是数据量不同</button>
+            <button class="quiz-option">模型系统属于深度学习，规则库系统属于机器学习</button>
+          </div>
+          <div class="quiz-explain" hidden>图里 AI 的实现方法有三条并列：<strong>知识工程、演化计算、机器学习</strong>。规则库是知识工程的产物——是 AI，但不是机器学习；从数据里学规律的模型才是机器学习，至于它是否属于深度学习，还要看有没有用多层神经网络（本题没有给出这一信息，所以不能断言）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">7. 某公司「用大模型做了个客服」。下面关于技术层次的判断，哪一条是正确的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">用了大模型就意味着用到了深度学习，但深度学习不等于生成式 AI</button>
+            <button class="quiz-option">大模型属于机器学习，但不属于 AI</button>
+            <button class="quiz-option">大模型是 AI 之外的新技术，与机器学习并列</button>
+            <button class="quiz-option">深度学习就是生成式 AI 的同义词</button>
+          </div>
+          <div class="quiz-explain" hidden>四层包含关系：大模型 ⊂ 生成式 AI ⊂ 深度学习 ⊂ 机器学习 ⊂ AI。所以「用了大模型 ⇒ 用到了深度学习」成立；但深度学习里还有判别式的一支（分类、检测），<strong>不等于</strong>生成式 AI。其余三项都把包含关系的方向弄反或把两层混为一谈。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">8. 后面的课程是这么往下钻的：03–09 讲神经网络，10–14 讲 Transformer 与推理，15 起才落到 Agent 应用工程。用这张图解释——为什么必须先打通神经网络这一层？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为大模型属于生成式 AI → 生成式 AI 属于深度学习 → 深度学习建立在多层神经网络之上，要理解最内层就得先打通神经网络</button>
+            <button class="quiz-option">因为只有神经网络才能处理文本，其他方法都不行</button>
+            <button class="quiz-option">因为神经网络是 AI 里最外层、内容最少的一层，学起来最快</button>
+            <button class="quiz-option">因为 Agent 应用必须自己训练模型，训练就要懂神经网络</button>
+          </div>
+          <div class="quiz-explain" hidden>文档原文：后面的课程就从这张图的最内层往下钻——先讲神经网络（03–09），再讲 Transformer 与推理（10–14），最后落到 Agent 应用工程（15 起）。依赖链是「最内层 ← 深度学习 ← 多层神经网络」，神经网络是这条链的地基，跳过它就没法理解大模型是怎么被训练与驱动起来的。选项 A 错在图里 NLP 的实现方法不止神经网络；B 错在本课程目标的 Agent 应用开发是<strong>调用</strong>模型，不要求自己训练。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">9. 给三个需求在图里找位置：① 通话录音转文字 ② 判断一条评论是好评还是差评 ③ 根据一段描述生成一张配图。下列说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">①和③都属于生成式 AI，②不属于 AI</button>
+            <button class="quiz-option">①属于语音技术（ASR）、②属于自然语言处理（文本分类）、③属于生成式 AI（文本生成图像）——前两个是识别／判别类任务，第三个才是生成内容</button>
+            <button class="quiz-option">三个需求都属于生成式 AI，因为都用到了 AI</button>
+            <button class="quiz-option">①属于自然语言处理、②属于计算机视觉、③属于语音技术</button>
+          </div>
+          <div class="quiz-explain" hidden>对照图的三大战场：语音技术下有「ASR（语音转文字）」，自然语言处理下有「文本分类（情感分析、垃圾邮件识别）」，生成式 AI 的能力边界是「生成新内容」——文本生成图像落在这一支。三者的共同点是都属于 AI，区别在于产出的是判断还是新内容。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查排错、设计选型与 AI 辅助场景，题目都围绕「这张图的包含关系与各类 AI 的能力边界」——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0002-AI的分类',
+          questions: [
+            {
+              type: 'trap',
+              level: '初级岗常问',
+              prompt: `有人说：「AI 就是神经网络，神经网络就是深度学习，深度学习就是大模型。」请指出这句话每跳跃一次丢掉了什么，并用本课图里的<strong>哲学流派</strong>与<strong>层次结构</strong>说明。`,
+              source: `来源：AWS 官方文档 What Is Artificial Intelligence (AI)?（"Artificial intelligence (AI) is an umbrella term for different strategies and techniques for making machines more human-like."；"While machine learning and deep learning fall under the AI umbrella, not all AI activities are machine learning and deep learning."）https://aws.amazon.com/what-is/artificial-intelligence/ · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《02. AI的分类》分类图（哲学流派：符号主义＝智能是推理规则 / 连接主义＝智能是大脑结构 / 行为主义＝智能是环境互动）`,
+              breakdown: `这句「三位一体」的每个等号都错，三次跳跃各丢掉一层信息：<br><br><strong>① AI = 神经网络？</strong>官方定义说 AI 是「不同策略与技术的伞」（umbrella term for different strategies and techniques）：图里就有符号主义（智能＝推理规则）、连接主义（智能＝大脑结构）、行为主义（智能＝环境互动）三种流派，实现方法也有知识工程、演化计算、机器学习三条。神经网络只是其中一支。<br><br><strong>② 神经网络 = 深度学习？</strong>图里「如何实现？」把线性回归、决策树、支持向量机与「神经网络 → 深度学习」并列；判据是<strong>多层</strong>神经网络，单个感知机/浅层模型不叫深度学习。<br><br><strong>③ 深度学习 = 大模型？</strong>深度学习里还有判别式的一支（图像分类、目标检测），大模型只是「以生成内容为目标」的那一支——最内层、最小的圈。<br><br>收尾一句最加分：<strong>包含关系只能从外往内推，不能从内往外反推</strong>——是神经网络不一定是大模型，是大模型一定落在这四层之内。`,
+            },
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事汇报时说：「我们这个客服机器人用了机器学习，所以它属于生成式 AI 那一支。」请按本课的图，把这个推理里混淆的层次<strong>逐条拆开</strong>——这句话错在哪几步？`,
+              source: `来源：AWS 官方文档 What Is Machine Learning?（"While machine learning is AI, not all AI activities can be called machine learning."；"Artificial intelligence is the broader concept of making machines more human-like, while machine learning is a subset focused on teaching computers to learn from data without explicit programming."）https://aws.amazon.com/what-is/machine-learning/ · 检索 2026-10-02 · 层级：一手（官方文档）+ AWS 官方文档 What Is Artificial Intelligence (AI)?（"machine learning is technically one among many other branches of artificial intelligence."）https://aws.amazon.com/what-is/artificial-intelligence/`,
+              breakdown: `三步拆解：<br><br><strong>第一步（对）</strong>：用了机器学习 ⇒ 它属于 AI。因为机器学习 ⊂ AI，这一步是从内往外推，成立。<br><br><strong>第二步（错）</strong>「所以它就是 AI」——把 AI 等同于机器学习。官方原文明确「While machine learning is AI, not all AI activities can be called machine learning」，图里 AI 的实现方法还有知识工程与演化计算，甚至有一堆规则驱动的系统：是 AI，但不是机器学习。<br><br><strong>第三步（错得更远）</strong>「机器学习 ⇒ 生成式 AI」——反向推最里层。正确的方向是：机器学习 ⊃ 深度学习 ⊃ 生成式 AI／大模型，越往里越窄。一个客服机器人可能是规则/检索式（AI，不是 ML），可能是判别式模型（ML，不是生成式），只有输出真正是「新生成的内容」时才算生成式 AI。<br><br>面试落点：把「包含关系不能反推」说出来，比背四个定义更能证明你真的看懂了这张图。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `请用一句话分别定义图中的四层，并说明每一层的<strong>判据</strong>——凭什么说一个系统属于这一层？`,
+              source: `来源：Microsoft Learn 官方文档 Deep learning vs. machine learning（"Machine learning is a subset of artificial intelligence that uses techniques (such as deep learning) that enable machines to use experience to improve their ability to perform tasks."；"Deep learning is a subset of machine learning that’s based on artificial neural networks."）https://learn.microsoft.com/en-us/azure/machine-learning/concept-deep-learning-vs-machine-learning · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `四层定义 + 四个判据（判据才是能判断对错的抓手）：<br><br><strong>人工智能（AI）</strong>：让机器表现出智能行为的方法。判据——机器做了「看起来需要智能」的事，不管用什么手段。<br><br><strong>机器学习（ML）</strong>：AI 的子集，不靠人写规则，从数据里学规律。判据——性能随经验/数据增加而提升（图里的 T/E/P 定义），规则是学出来的而不是人写死的。<br><br><strong>深度学习（DL）</strong>：机器学习的子集，用多层神经网络。判据——模型结构是<strong>多层神经网络</strong>；决策树、支持向量机、线性回归是 ML 但不是 DL。<br><br><strong>生成式 AI／大模型</strong>：深度学习里以生成内容为目标的那一支。判据——产出是<strong>新内容</strong>（文本／图像／音频），而不只是分类标签或数值预测。<br><br>两家官方文档的两条 subset 定义正好把链条串起来：ML ⊂ AI、DL ⊂ ML，再往内就是生成式这一支。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `图里机器学习的关键是「设计一套训练方法，让机器可以自主地学习」。监督学习、自监督学习、无监督学习、强化学习这四类范式，区别到底在「<strong>答案从哪来</strong>」？请各举一个贴近业务的例子。`,
+              source: `来源：AWS 官方文档 What Is Machine Learning?（"Machine learning is a type of artificial intelligence that performs data analysis tasks without explicit instructions."；"Data scientists supply algorithms with labeled and defined training data to assess for correlations."；"Unsupervised learning algorithms train on unlabeled data."；"Reinforcement learning is a method with reward values attached to the different steps that the algorithm must go through."）https://aws.amazon.com/what-is/machine-learning/ · 检索 2026-10-02 · 层级：一手（官方文档）+ Scikit-learn 官方文档 Getting Started（"Scikit-learn is an open source machine learning library that supports supervised and unsupervised learning."；"For unsupervised learning tasks, y does not need to be specified."）https://scikit-learn.org/stable/getting_started.html + 源课程《02. AI的分类》分类图（四类训练范式：人类给答案 / 自己找答案 / 没有答案 / 给奖惩）`,
+              breakdown: `统一问一个问题：<strong>监督信号从哪来？</strong><br><br><strong>监督学习：人类给答案。</strong>给你标好标签的数据，学「输入 → 标签」的映射。业务例子：垃圾邮件识别、情感分析（图里 NLP 的文本分类）。官方原文：数据科学家提供带标签、有定义的训练数据来评估相关性。<br><br><strong>自监督学习：自己找答案。</strong>标签从数据自身构造出来（比如遮住一部分让模型补全），所以能吃掉海量无标注数据。业务例子：用未标注语料自学语言规律，再迁移到下游任务。<br><br><strong>无监督学习：没有答案。</strong>不预测标签，只找结构。业务例子：把新闻自动聚成体育/财经等类别。官方原文：在无标签数据上训练。scikit-learn 的接口判据更直白——无监督任务不需要给 <code>y</code>。<br><br><strong>强化学习：给奖惩。</strong>没有标准答案，只有动作后的回报，靠试错改进策略。业务例子：游戏或仿真环境里的决策智能体。官方原文：在算法必须经过的不同步骤上附加奖励值。<br><br>落点：四类不是按「算法新旧」分的，而是按监督信号的来源分的——这也是面试官最容易追问的一句。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `你让 AI 生成一份「AI 技术栈分层」配置，用于给内部问答机器人做路由。它返回了下面这段。审查：哪些条目的<strong>层次判断</strong>是错的？请逐条指出并改正。<pre><code>layers = {
+  "人工智能": ["机器学习", "知识工程", "演化计算"],
+  "机器学习": ["深度学习", "线性回归", "决策树", "支持向量机"],
+  "深度学习": ["神经网络", "生成式AI"],
+  "生成式AI": ["大模型", "人工智能"],
+  "大模型":   ["强化学习"],
+}
+flags = {"用了机器学习": "属于生成式AI", "神经网络": "必然是多层网络"}</code></pre>`,
+              source: `来源：Microsoft Learn 官方文档 Deep learning vs. machine learning（"Machine learning is a subset of artificial intelligence that uses techniques (such as deep learning) that enable machines to use experience to improve their ability to perform tasks."；"Deep learning is a subset of machine learning that’s based on artificial neural networks."）https://learn.microsoft.com/en-us/azure/machine-learning/concept-deep-learning-vs-machine-learning · 检索 2026-10-02 · 层级：一手（官方文档）+ AWS 官方文档 What Is Artificial Intelligence (AI)?（"While machine learning and deep learning fall under the AI umbrella, not all AI activities are machine learning and deep learning."）https://aws.amazon.com/what-is/artificial-intelligence/`,
+              breakdown: `先立判据再逐条审：包含关系只能「外层包含内层」，且每一层是<strong>同类维度</strong>（都是技术层次，不是训练范式）。<br><br><strong>① 错：<code>"生成式AI": ["大模型", "人工智能"]</code></strong>——把最大的圈挂到了最小的圈下面，包含关系反向。生成式 AI ⊂ 深度学习 ⊂ 机器学习 ⊂ 人工智能，应删掉「人工智能」。<br><br><strong>② 错：<code>"大模型": ["强化学习"]</code></strong>——跨维度混层。「监督/自监督/无监督/强化」是<strong>训练范式</strong>，不是技术层次，不能当作大模型的下级；而且「用了大模型」也推不出「系统里有强化学习」（训练阶段可能用到 RLHF，但这是训练手段，不是层次归类）。<br><br><strong>③ 错：<code>flags["用了机器学习"] = "属于生成式AI"</code></strong>——典型的越层反推。正确方向是机器学习 ⊃ 深度学习 ⊃ 生成式 AI；用了机器学习只说明它是 AI，离生成式还差两层。<br><br><strong>④ 对但要注意：<code>"深度学习": ["神经网络", "生成式AI"]</code></strong>——两个下级都在圈内；不过「神经网络」要写成「多层神经网络」才是深度学习的严格判据，难怪 <code>flags["神经网络"] = "必然是多层网络"</code> 这一条是<strong>错的</strong>：网络可以是单层的，多层才是深度学习。<br><br>修正后的最小改动：删掉「人工智能」与「强化学习」两个挂错的下级，把 flag 改成「用了机器学习 ⇒ 属于 AI」，「神经网络」改成「多层神经网络 ⇒ 属于深度学习」。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `团队要做一个「会议助手」：① 把中英夹杂的会议录音转成文字；② 判断哪些段落是「决议」、哪些是「闲聊」；③ 按会议主题生成一份摘要并配一张示意图。请按本课的四层图给出选型：哪些环节落在识别／判别类任务上，哪些必须用生成式 AI？并说明「全程无脑上大模型」在实践中会付出什么代价。`,
+              source: `来源：AWS 官方文档 What Is Generative AI?（"Artificial intelligence is the broader concept of making machines more human-like. Generative AI is a subset that generates new content meaningfully and intelligently."）https://aws.amazon.com/what-is/generative-ai/ · 检索 2026-10-02 · 层级：一手（官方文档）+ AWS 官方文档 What Is Deep Learning?（"Deep generative learning is deep learning that focuses on creating new output from learned input."；"Traditionally, deep learning focused on identifying relationships between data."）https://aws.amazon.com/what-is/deep-learning/ + NVIDIA 官方词汇表 What Is Generative AI?（"Generative AI enables users to quickly generate new content based on a variety of inputs. Inputs and outputs to these models can include text, images, sounds, animation, 3D models, and other types of data."）https://www.nvidia.com/en-us/glossary/generative-ai/`,
+              breakdown: `按「产出是判断还是新内容」切分，正好对应图的三大战场：<br><br><strong>① 录音转文字</strong>：图里语音技术下的 ASR，产出是转写结果（识别类），不是新内容——用专门的语音识别模型，追求的是准确率与可回查。<br><br><strong>② 决议／闲聊分类</strong>：图里自然语言处理下的文本分类（判别类），产出是一个标签——用判别式模型，成本低、延迟低、结果可评估。<br><br><strong>③ 摘要 + 配图</strong>：这才是生成式 AI 的边界内——官方定义是「生成新内容」（文本、图像、音频等多模态输出），深度学习里「以生成新输出为目标」的那一支。<br><br><strong>「全程上大模型」的代价</strong>：把①也交给大模型，等于用生成式模型做识别——延迟与成本成倍上升，还会引入幻觉：转写错一个数字，后面的摘要会顺着错的输入继续编，错误被放大且难以定位。<br><br><strong>更稳的分层</strong>：识别类走专门模型/规则并做确定性校验（金额、日期、人名）；生成类交给大模型，同时保留原文以便回查；分类这种判别任务能小模型就不上大模型。面试落点：先判能力边界，再算成本与风险——「最内层最先进」不等于「最内层最合适」。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `用 AI 工具（建议用 Claude Code 或网页版对话）在 20 分钟内产出一份「AI 四层包含关系」的可视化 + 能力边界清单，任务与验收点见任务卡。`,
+              scene: {
+                time: '约 20 分钟',
+                goal: '让 AI 生成一张四层包含关系图（Mermaid、SVG 或纯文本嵌套皆可）与一份边界清单：每一层写清「定义 / 判据 / 一个真实产品例子 / 一个它做不到的事」，共四层。',
+                accept: ['包含关系方向正确：人工智能 ⊃ 机器学习 ⊃ 深度学习 ⊃ 生成式 AI / 大模型，且四层都是技术层次，没有混入监督/强化这类训练范式', '每层都给出了判据（如深度学习＝多层神经网络、生成式 AI＝产出新内容），而不只是名词解释', '「做不到的事」具体可检验：例如「决策树做不到自动从图像里提特征」「图像分类模型做不到生成一张新图」', '至少有一个例子是你实际查证过的真实产品功能，并标注了它的层次归属'],
+              },
+              source: `任务基于《02. AI的分类》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：先让 AI 只输出「四层 + 判据」的骨架，<strong>人工核对包含关系方向</strong>，再让它补例子与边界。<br><br>核对清单（对应本课测验的考点）：① 有没有把生成式 AI 放到比 AI 更外层？② 有没有把「监督学习」和「深度学习」画成同一层（前者是训练范式，不是层次）？③ 判据是不是「多层神经网络」「产出新内容」这类可检验的句子？④ 举个例子实测：「人脸识别属于哪一层？它是不是生成式 AI？」——如果你的清单答不出「属于深度学习/判别类，不是生成式 AI」，说明边界没写清。<br><br>最常见的两个坑：AI 会把「AI 包含机器学习、机器学习包含深度学习」错写成并列的三个框（图一画就露馅）；以及把「大模型」直接等同于「生成式 AI」——大模型是生成式 AI 的典型代表，但生成式 AI 还包含文生图、语音合成等不同模态（NVIDIA 官方词汇表把输入输出明确列为文本、图像、声音、动画、3D 模型等多种数据类型）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://aws.amazon.com/what-is/artificial-intelligence/">AWS 官方文档《What Is Artificial Intelligence (AI)?》</a>（AI ⊃ ML ⊃ DL 与「并非所有 AI 都是机器学习」） · <a href="https://learn.microsoft.com/en-us/azure/machine-learning/concept-deep-learning-vs-machine-learning">Microsoft Learn《Deep learning vs. machine learning》</a>（两条 subset 定义串起层次链） · <a href="https://www.nvidia.com/en-us/glossary/generative-ai/">NVIDIA 词汇表《What Is Generative AI?》</a>（生成式 AI 的多模态边界）</li>
+        <li><strong>打印参考</strong>：<a href="../reference/AI的分类速查表.html">AI的分类速查表</a>——四层判据、三大战场、四类训练范式一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/AI的分类">02.AI的分类</a> · 下一课 <a href="/agents/Agents底层逻辑/神经元">03.神经元</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

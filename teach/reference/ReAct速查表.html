@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReAct速查表 · 参考手册</title>
+  <meta name="description" content="ReAct速查表 · 可打印参考手册：配合《ReAct互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>ReAct速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0020-ReAct.html">《ReAct互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>ReAct 主循环：三拍一出口</h2>
+      <pre>def query(q: str, session: Session, model: Model):
+    session.add_message({"role": "user", "content": q})
+    # ReAct Loop
+    while True:
+        model.invoke_stream(session)                      # ① 想：推理 + 可能发起 tool_calls
+        call_msg = registry.invoke(session.messages[-1])   # ② 做：执行 tool_calls
+        if call_msg is None:
+            break                                          # 出口：本轮没有工具调用 → 收尾
+        else:
+            session.messages += call_msg                   # ③ 看结果：role=tool 写回上下文</pre>
+      <dl class="term-grid">
+        <dt>核心机制</dt>
+        <dd>推理轨迹与任务动作<strong>交替（interleaved）</strong>出现：推理负责诱导、跟踪、更新行动计划与处理异常；动作负责接入外部信息源取回新信息。</dd>
+        <dt>三个动作</dt>
+        <dd><code>invoke_stream</code>（想）→ <code>registry.invoke</code>（做）→ <code>+= call_msg</code>（看结果）；下一轮又是「想」。</dd>
+        <dt>循环出口</dt>
+        <dd><code>registry.invoke()</code> 返回 <code>None</code>——这条 assistant 消息里没有 <code>tool_calls</code>，当前 content 即最终回复。</dd>
+        <dt>为什么不能省第 ③ 步</dt>
+        <dd>结果不回流，模型每轮看到的上下文都停在「我要调用工具」，会重复发起同一调用：命令被重复执行、token 持续消耗、循环不收敛。</dd>
+        <dt>消息顺序硬约束</dt>
+        <dd><code>assistant</code>（含 <code>tool_calls</code>）→ <code>tool</code>（每条结果带 <code>tool_call_id</code>）→ 再次请求；<code>role=tool</code> 的消息<strong>必须</strong>回应前面那条带 <code>tool_calls</code> 的 assistant 消息。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>本章 <code>agent/</code> 变更对照</h2>
+      <table class="cmp-table">
+        <tr><th>文件</th><th>类型</th><th>要点</th></tr>
+        <tr><td><code>tool/bash_command.py</code></td><td>新增</td><td><code>@tool(command=...)</code> + <code>subprocess.run</code>；返回码 0 → <code>stdout</code>（空则「(命令执行成功，无输出)」），非 0 → <code>[退出码 N]</code> + <code>stderr</code></td></tr>
+        <tr><td><code>分析.md</code></td><td>新增</td><td>Agent 自己跑出来的工程分析：模块清单、数据流、设计模式表</td></tr>
+        <tr><td><code>prompt.py</code></td><td>修改</td><td>新增 <code>get_os()</code>（<code>platform.system()</code>）；<code>render_prompt</code> 渲染上下文 = <code>language / cwd / os / is_git</code></td></tr>
+        <tr><td><code>prompt/system.j2</code></td><td>修改</td><td><code># Environment</code> 小节新增 <code>Operating system: {{ os }}</code></td></tr>
+        <tr><td><code>session.py</code></td><td>修改</td><td>新建时自动注入：<code>render_prompt("system")</code> 作为系统消息 + <code>self.tools = tools or registry.schemas()</code></td></tr>
+        <tr><td><code>tool/__init__.py</code></td><td>修改</td><td>注册 <code>read_file</code> / <code>write_file</code> / <code>bash_command</code>；<code>invoke()</code> 把 <code>tool_calls</code> 逐一执行成 <code>role=tool</code> 消息</td></tr>
+        <tr><td><code>printer.py</code></td><td>修改</td><td>打印简洁化：<code>REASONING_START</code>「思考中...」、<code>CONTENT_START</code>「内容：」、<code>content</code> 绿色逐字、<code>TOOL_CALL_END</code> 打印工具名</td></tr>
+        <tr><td><code>1.json</code> / <code>uv.md</code></td><td>删除</td><td>本次工程清理</td></tr>
+      </table>
+      <p>合计：<strong>新增 2、修改 5、删除 2</strong>。会话落盘在 <code>agent/sessions/&lt;session_id&gt;.json</code>（<code>Session.save()</code>）。</p>
+    </section>
+
+    <section>
+      <h2>工具与参数速查</h2>
+      <table class="cmp-table">
+        <tr><th>预注册工具</th><th>作用</th></tr>
+        <tr><td><code>read_file</code></td><td>读取文件内容</td></tr>
+        <tr><td><code>write_file</code></td><td>写入文件内容</td></tr>
+        <tr><td><code>bash_command</code></td><td>执行 shell 命令（30 秒超时）</td></tr>
+      </table>
+      <pre>subprocess.run(
+    command,                       # 要执行的命令字符串
+    shell=True,                    # 经 shell 执行（管道、通配符、变量展开可用）
+    executable="/bin/bash" | "cmd" # shell=True 时：替换默认 shell（POSIX 默认 /bin/sh）
+    capture_output=True,           # 捕获 stdout + stderr（不是打印）
+    text=True,                     # 文本模式：stdout/stderr 是 str
+    timeout=30,                    # 秒；到期 → 子进程被 kill 并 wait → 重抛 TimeoutExpired
+)</pre>
+      <ul class="pitfall-list">
+        <li><strong>返回值约定</strong>：本章工具把「失败」也当成正常返回值（<code>[退出码 N]</code> + stderr），因为对模型来说错误信息就是可用的环境反馈。</li>
+        <li><strong>但超时没兜底</strong>：<code>TimeoutExpired</code> 会从 <code>tool(**args)</code> 一路抛穿，直接打断 ReAct 循环——生产里应捕获并翻译成 <code>role=tool</code> 的内容。</li>
+        <li><strong><code>shell=True</code> 的安全提示</strong>：官方要求先读 Security Considerations——shell 被显式调用后，转义与注入防范由应用负责（<code>shlex.quote</code> 等）。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>易错点与设计模式</h2>
+      <table class="cmp-table">
+        <tr><th>易错点</th><th>现象</th><th>修法</th></tr>
+        <tr><td>结果不写回上下文</td><td>模型反复发起同一个工具调用，命令被重复执行</td><td>保留 <code>session.messages += call_msg</code></td></tr>
+        <tr><td>丢掉 assistant 消息</td><td>出现「无主的 <code>role=tool</code> 消息」，请求被拒 / 模型对不上号</td><td>先留含 <code>tool_calls</code> 的 assistant，再追加 tool 结果</td></tr>
+        <tr><td>工具名未注册</td><td><code>self._tools[name]</code> 先抛 <code>KeyError</code>，「无此工具」提示永远执行不到</td><td>改 <code>self._tools.get(name)</code>，或捕获后作为 tool 内容回传</td></tr>
+        <tr><td>只循环「有工具就调」</td><td>模型绕圈时不收敛，费用与延迟失控</td><td>补显式停止条件（最大迭代 / 时限 / 预算 / 连续失败数）</td></tr>
+        <tr><td>直接暴露 shell</td><td>越权执行、注入风险</td><td>沙箱 + guardrails：限目录、限命令、限时、限可写范围、审计日志</td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>设计模式（<code>分析.md</code> 结论）</dt>
+        <dd>发布-订阅 → <code>EventEmitter</code>；策略模式 → Reasoning / Content / ToolCalls 三类 Builder；<strong>装饰器模式 → <code>@tool</code></strong>；工厂模式 → <code>create_params_model</code>；<strong>单例模式 → 全局唯一 <code>registry</code></strong>。</dd>
+        <dt>数据流一句话</dt>
+        <dd>用户输入 → <code>add_message</code> → <code>Model.invoke</code> → 拆成 Reasoning / Content / Tool Calls → <code>Registry.invoke</code> 执行 → 结果写回 → 再次 invoke，直到没有工具调用。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

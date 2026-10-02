@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tools速查表 · 参考手册</title>
+  <meta name="description" content="tools速查表 · 可打印参考手册：配合《tools互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>tools速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0018-tools.html">《tools互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>Tool Calling：分工与闭环</h2>
+      <p>一句话：<strong>模型只会「文本进、文本出」，它输出的是调用意图，执行函数是你的代码的责任。</strong></p>
+      <table class="cmp-table">
+        <tr><th>步骤</th><th>谁在做</th><th>产出 / 动作</th></tr>
+        <tr><td>① 绑定工具</td><td>你的代码</td><td><code>session.tools = [...]</code>，随请求发出去（厂商拼到系统上下文末尾）</td></tr>
+        <tr><td>② 调用模型</td><td>模型</td><td>返回 <code>tool_calls</code>：<code>id</code> + <code>function.name</code> + <code>function.arguments</code>（JSON 字符串），<code>finish_reason</code> 为 <code>tool_calls</code></td></tr>
+        <tr><td>③ 执行函数</td><td>你的代码</td><td><code>json.loads(arguments)</code> → 查表拿函数 → <code>func(**arguments)</code>，执行前校验参数</td></tr>
+        <tr><td>④ 回填结果</td><td>你的代码</td><td><code>{"role": "tool", "tool_call_id": &lt;id&gt;, "content": ...}</code>，紧跟带 <code>tool_calls</code> 的 assistant 消息</td></tr>
+        <tr><td>⑤ 再问一次</td><td>模型</td><td>基于工具结果生成自然语言回答</td></tr>
+      </table>
+      <pre># 本章闭环（课件《18.tools》）
+import json
+tc = session.messages[-1]["tool_calls"][0]
+tool_id   = tc["id"]
+tool_name = tc["function"]["name"]
+arguments = json.loads(tc["function"]["arguments"])
+func = {"read_file": read_file, "write_file": write_file}.get(tool_name)  # 课件用 globals().get()
+if callable(func):
+    result = func(**arguments)
+session.add_message({"role": "tool", "tool_call_id": tool_id, "content": str(result)})</pre>
+    </section>
+
+    <section>
+      <h2>工具描述（schema）速查</h2>
+      <table class="cmp-table">
+        <tr><th>字段</th><th>取值</th><th>作用</th></tr>
+        <tr><td><code>type</code></td><td>固定 <code>"function"</code></td><td>目前各厂商只支持 function 这一种工具类型</td></tr>
+        <tr><td><code>function.name</code></td><td>函数名（唯一）</td><td>会影响模型输出结果；官方限 a-z / A-Z / 0-9 / 下划线 / 连字符，≤128 字符</td></tr>
+        <tr><td><code>function.description</code></td><td>自然语言</td><td>供模型理解「何时以及如何调用」，是选型准确率的第一抓手</td></tr>
+        <tr><td><code>function.parameters</code></td><td>JSON Schema</td><td>顶层 <code>"type": "object"</code> 固定；<code>properties</code> 逐项写 <code>type</code> + <code>description</code>；<code>required</code> 列必填参数</td></tr>
+        <tr><td><code>function.strict</code></td><td><code>true</code> / <code>false</code></td><td>Beta：强制输出严格符合 JSON Schema（需 <code>base_url=.../beta</code>，且每个 function 都要开）</td></tr>
+        <tr><td><code>tool_choice</code></td><td><code>none</code> / <code>auto</code> / <code>required</code> / <code>{type,function:{name}}</code></td><td>控制调用行为；无 tool 默认 <code>none</code>，有 tool 默认 <code>auto</code>；思考模式不支持 <code>required</code> 与指定工具（返回 400）</td></tr>
+      </table>
+      <pre># 本章两个工具的 schema 骨架
+session.tools = [
+    {"type": "function",
+     "function": {
+         "name": "read_file",
+         "description": "读取文件",
+         "parameters": {
+             "type": "object",
+             "properties": {"filepath": {"type": "string",
+                                         "description": "文件的绝对路径，或相对于cwd的路径"}},
+             "required": ["filepath"]}}},
+    {"type": "function",
+     "function": {
+         "name": "write_file",
+         "description": "写入文件",
+         "parameters": {
+             "type": "object",
+             "properties": {"filepath": {"type": "string", "description": "文件的绝对路径，或相对于cwd的路径"},
+                            "content":  {"type": "string", "description": "要写入的内容，该内容会完全覆盖文件原本内容"}},
+             "required": ["filepath", "content"]}}},
+]</pre>
+      <p>成本提醒：工具定义每轮都随请求重发，输入 token 大致为
+        <code>$T_{\text{prompt}} = T_{\text{sys}} + \sum_{i} T_{\text{tool}_i} + \sum_{j} T_{\text{msg}_j}$</code>——工具越多，每轮越贵。</p>
+    </section>
+
+    <section>
+      <h2>事件流：三个构建器怎么拼消息</h2>
+      <table class="cmp-table">
+        <tr><th>事件常量（agent/events.py）</th><th>由谁发出</th><th>说明</th></tr>
+        <tr><td><code>REASONING_START / REASONING / REASONING_END</code></td><td><code>ReasoningBuilder</code></td><td>字段名用 <code>_get_reasoning_field_name</code> 兼容 <code>reasoning_content</code> / <code>reasoning</code></td></tr>
+        <tr><td><code>CONTENT_START / CONTENT / CONTENT_END</code></td><td><code>ContentBuilder</code></td><td>正文增量，逐块累加</td></tr>
+        <tr><td><code>TOOL_CALL_START / TOOL_CALL / TOOL_CALL_END</code></td><td><code>ToolCallsBuilder</code></td><td>按 <code>index</code> 归位、<code>arguments</code> 分片 <code>+=</code>，最后 <code>_normalize_tool_calls</code> 拍成纯字典</td></tr>
+        <tr><td><code>COMPLETE</code></td><td>—</td><td>整轮完成的收尾事件</td></tr>
+      </table>
+      <pre># 事件总线（发布订阅）
+class EventEmitter:                       # @dataclass
+    _listeners: dict[str, list[Callable]]  # default_factory=lambda: defaultdict(list)
+    def on(self, event, callback): self._listeners[event].append(callback)
+    def emit(self, event, **data):
+        for cb in self._listeners.get(event, []): cb(event, **data)
+
+# Builder 骨架：首块发 START → 后续 append_value → is_end 发 END 并置 compoleted = True
+# 流式响应承载增量的字段是 delta（不是 message）；结束块的 delta 可能是空对象
+# ReasoningBuilder.is_end: bool(delta.content) or bool(delta.tool_calls) or super().is_end(chunk)
+#    → 模型「先思考、再直接发起工具调用」时没有正文，只看 finish_reason 会让思考段拖到最后</pre>
+      <dl class="term-grid">
+        <dt>Model</dt>
+        <dd><code>@dataclass class Model(EventEmitter)</code>；<code>invoke()</code> 走非流式，<code>invoke_stream()</code> 走流式；流式下三个 Builder 依次 <code>emit(chunk)</code>，再把各 Builder 的 <code>value</code> 合成 <code>{"role": "assistant", "content": ""}</code> 起始的消息并写入会话。</dd>
+        <dt>ModelPrinterListener</dt>
+        <dd>遍历 <code>Event.__dict__</code> 里的事件名逐个 <code>model.on(...)</code> 订阅；<code>listening = False</code> 可一键静音流式打印。</dd>
+        <dt>Session.tools</dt>
+        <dd>本章给 <code>Session</code> 加了 <code>tools</code> 字段（默认 <code>[]</code>），<code>__str__</code> 里连同 <code>messages</code> 一起序列化，方便 <code>session.print()</code> 查看上下文。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>易错点</h2>
+      <dl class="term-grid">
+        <dt>忘记 <code>json.loads</code></dt>
+        <dd><code>arguments</code> 是模型生成的 JSON <strong>字符串</strong>；直接 <code>func(**arguments)</code> 报 <code>TypeError: argument after ** must be a mapping</code>。</dd>
+        <dt>把模型参数当可信输入</dt>
+        <dd>官方提醒：模型并不总是生成有效的 JSON，还可能臆造 schema 未定义的参数——调用前必须校验；<code>strict</code> 模式可从源头约束。</dd>
+        <dt>用 <code>globals().get</code> 裸派发</dt>
+        <dd>名字对不上时静默不执行；被提示注入还可能命中意外符号。工程做法是显式注册表白名单派发（下一章《19.封装tools》）。</dd>
+        <dt>角色与位置写错</dt>
+        <dd>工具结果必须用 <code>role: "tool"</code> + <code>tool_call_id</code>，并紧跟在带 <code>tool_calls</code> 的那条 assistant 消息之后；不能用 user 消息代替。Chat Completion 接口不支持在对话中间插入工具调用消息。</dd>
+        <dt>描述含糊导致乱选</dt>
+        <dd><code>description</code> 是模型选型的依据。两个工具都写「文件操作」，模型就会在只读场景调写入工具。写清用途、边界与后果。</dd>
+        <dt><code>tool_choice</code> 滥用</dt>
+        <dd>思考模式下不支持 <code>required</code> 与指定具体工具（返回 400）；没有 <code>tools</code> 时也不用传。</dd>
+        <dt>流式拼接不按 index</dt>
+        <dd>并行工具调用的增量会交错到达；不按 <code>index</code> 归位就把两次调用的 <code>arguments</code> 拼成一段，<code>json.loads</code> 必炸。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

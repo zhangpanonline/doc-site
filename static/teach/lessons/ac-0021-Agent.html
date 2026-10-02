@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Agent：把会话、工具与循环组装成完整 Agent，含事件监听与生命周期——互动教学课程">
+  <title>Agent · 互动教学课程（Agents底层逻辑 ac-21）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Agent</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Agent">21.Agent</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清 <code>Agent</code> 在工程里的位置——入口/编排层，把 Model、Session、Tool、Listener 四个部件组装起来</li>
+        <li>复述 <code>Agent.invoke</code> 的 ReAct 循环流程与退出判据：看最后一条消息有没有 <code>tool_calls</code></li>
+        <li>解释事件监听链路：<code>Event</code> 常量 → <code>EventEmitter.on/emit</code> → <code>ModelListener.listen</code> 一次性注册全部事件 → 抽象 <code>_handler</code></li>
+        <li>读懂流式解析的三个 <code>Builder</code> 与 <code>print_friendly</code>，并指出 <code>while True</code> 缺少停止条件的风险</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把「编排层 + 监听层 + 流式解析」三条线过一遍——细节都在《21.Agent》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>Agent 是什么：把四件东西装到一起的编排层</h3>
+        <ul class="pitfall-list">
+          <li><strong>课件定义</strong>：AI Agent 是通过自主规划、调用工具、持续观察反馈并迭代行动，独立推进复杂任务直至目标达成的人工智能运行单元</li>
+          <li><strong>职责分工</strong>：<code>agent/agent.py</code> 是入口/编排层；<code>Model</code>（模型层）、<code>Session</code>（会话层）、<code>tool/</code>（工具层）、<code>Listener</code>（监听层）各管一段，Agent 只负责<strong>串起来 + 驱动循环</strong></li>
+          <li><strong>构造</strong>：<code>Agent(*, session=None, model=None, model_listener=None)</code>——三个参数都是关键字参数、都可省略；<code>self.session = session or Session()</code>、<code>self.model = model or Model()</code>；一旦传入 <code>model_listener</code>，构造时就执行 <code>self.listener.listen(self.model)</code></li>
+          <li><strong>循环</strong>：先 <code>session.add_message({"role": "user", "content": q})</code>；然后 <code>while True</code>：<code>resp = model.invoke_stream(session)</code> → <code>call_msg = registry.invoke(session.messages[-1])</code>；返回 <code>None</code> 就 <code>break</code>，否则 <code>session.messages += call_msg</code> 继续下一轮；每轮的 <code>resp</code> 都收进 <code>responses</code> 列表</li>
+          <li><strong>本章的四处课前修改</strong>：系统提示词更简洁、封装出 <code>agent.py</code>、封装抽象的监听器、<code>Session</code> 新增 <code>print_friendly</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>监听层：事件驱动是怎么解耦的</h3>
+        <ul class="pitfall-list">
+          <li><strong>事件常量</strong>（<code>agent/events.py</code>）：推理事件 <code>reasoning_start / reasoning / reasoning_end</code>、内容事件 <code>content_start / content / content_end</code>、工具调用事件 <code>tool_call_start / tool_call / tool_call_end</code>，以及完成事件 <code>complete</code></li>
+          <li><strong>事件总线</strong>：<code>EventEmitter</code> 用「事件名 → 回调列表」的映射（<code>defaultdict(list)</code>）管理监听器；<code>on(event, callback)</code> 注册、<code>emit(event, **data)</code> 触发该事件下的所有回调——<strong>一个事件可以挂多个监听器</strong></li>
+          <li><strong>抽象监听器</strong> <code>ModelListener(ABC)</code>：<code>listening</code> 标志默认 <code>True</code>；<code>listen(model)</code> 取出 <code>Event</code> 上所有事件常量，逐个 <code>model.on(event=e, callback=self._model_print_callback)</code>——<strong>一行代码把监听器挂到全部事件</strong>；统一回调先查 <code>listening</code>，再转发给抽象方法 <code>_handler(e, **args)</code></li>
+          <li><strong>子类只写业务</strong>：<code>ModelPrinterListener._handler</code> 按事件分支打印——<code>reasoning_start</code> 打印「思考中...」、<code>content_start</code> 打印「内容：」、<code>content</code> 绿色输出增量片段、<code>tool_call_end</code> 青色打印「调用工具：xxx」</li>
+          <li><strong>解耦收益</strong>（<code>分析.md</code> 设计亮点 2）：<code>EventEmitter</code> + <code>ModelListener</code> 把「模型推理」与「副作用」（打印、日志、前端推送）分开——Model 只负责发射事件，谁来消费它不关心</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>流式解析与生命周期：Builder、InvokeResult、print_friendly</h3>
+        <ul class="pitfall-list">
+          <li><strong>三个 Builder 同时消费每个 chunk</strong>：<code>ReasoningBuilder</code> 盯推理字段（兼容 <code>reasoning_content</code> / <code>reasoning</code>）、<code>ContentBuilder</code> 盯 <code>content</code>、<code>ToolCallsBuilder</code> 盯 <code>tool_calls</code>；谁先拿到值谁就先发 <code>start</code> 事件，之后每个增量发一次中间事件</li>
+          <li><strong>结束判定</strong>：<code>is_end</code> 看 <code>chunk.choices[0].finish_reason</code> 是否非空；<code>ReasoningBuilder</code> 额外提前收尾——一旦 <code>delta</code> 里出现 <code>content</code> 或 <code>tool_calls</code>，就认为「思考阶段结束、正文/工具开始」</li>
+          <li><strong>工具调用要拼装</strong>：流式下 <code>tool_calls</code> 被切成分片，<code>append_value</code> 按 <code>tc_delta.index</code> 归位（不够就补齐占位），把 <code>arguments</code> 字符串按序拼接；<code>_normalize_tool_calls</code> 再把对象统一成 dict，好直接进 <code>session.messages</code></li>
+          <li><strong>结果封装</strong>：<code>InvokeResult</code> 带 <code>message</code>（可入会话）与 <code>raw</code>（原始响应），<code>print_raw()</code> 用来看单次调用的原始数据</li>
+          <li><strong>会话可读化</strong>：<code>Session.print_friendly()</code> 按角色分段输出（系统消息 / 用户消息 / 工具调用 / AI消息 / 调用结果），工具参数截断到 70 字符、工具结果截断到 50 字符——排错时先用它看「模型到底收到了什么」</li>
+          <li><strong>别忽略的隐患</strong>：<code>while True</code> 没有任何停止条件。官方提醒，Agent 通常在任务完成时终止，但<strong>也常需要最大迭代次数这类停止条件来保持控制</strong>——否则模型只要一直发起工具调用，循环与成本就没有上限</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《21.Agent》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 本章新增的 <code>agent/agent.py</code> 里，<code>Agent</code> 类承担的角色是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">维护消息历史、工具 Schema，并负责会话落盘</button>
+            <button class="quiz-option">直接实现 OpenAI API 调用与流式解析</button>
+            <button class="quiz-option">入口/编排层——把 Model、Session、Tool registry 与 Listener 组装起来，并驱动 ReAct 循环</button>
+            <button class="quiz-option">把普通 Python 函数包装成 LLM 可识别的工具定义</button>
+          </div>
+          <div class="quiz-explain" hidden><code>分析.md</code> 的架构图把它写得最清楚：<code>Agent (入口/编排)</code> 之下才是 Model / Session / Tool / Listener 四层，最底下是 <code>EventEmitter</code> 事件总线。API 调用与流式解析在 <code>model.py</code>，消息与工具 Schema 在 <code>session.py</code>，函数包装在 <code>tool/core/tool.py</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. <code>ModelListener.listen(model)</code> 做了什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把 model 实例登记到全局单例表里</button>
+            <button class="quiz-option">只注册 <code>content</code> 与 <code>content_end</code> 两个事件</button>
+            <button class="quiz-option">取出 <code>Event</code> 上的所有事件常量，逐个调用 <code>model.on(event=e, callback=self._model_print_callback)</code>——一次把监听器挂到全部事件上</button>
+            <button class="quiz-option">起一个后台线程轮询 model 的输出</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 <code>listener.py</code> 原文：<code>events = [v for k, v in Event.__dict__.items() if not k.startswith("__")]</code>，再 <code>for e in events: model.on(event=e, callback=self._model_print_callback)</code>。它不区分事件种类，统一挂同一个回调，由 <code>_handler</code> 在子类里分支处理。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">3. 为什么要单独抽出监听层（<code>listener.py</code> + <code>printer.py</code>），而不是在 Model 里直接 <code>print</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为这样打印速度更快</button>
+            <button class="quiz-option">因为 <code>EventEmitter</code> 不允许在 Model 内部调用 <code>print</code></button>
+            <button class="quiz-option">因为流式响应下 <code>print</code> 无法使用</button>
+            <button class="quiz-option">为了解耦：Model 只负责在推理过程中发射事件，打印、写日志、推前端等副作用交给监听器各自实现</button>
+          </div>
+          <div class="quiz-explain" hidden><code>分析.md</code> 设计亮点 2 原文：事件驱动架构用 <code>EventEmitter</code> + <code>ModelListener</code> 解耦了模型推理与副作用（打印、日志等）。这也解释了为什么 <code>ModelListener</code> 是抽象基类——同一套事件流可以派生多个监听器（控制台、文件日志、WebSocket），Model 一行都不用改。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 关于 <code>Agent.__init__(self, *, session=None, model=None, model_listener=None)</code>，下面说法正确的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">三个都是关键字参数、都可省略；<code>session</code> / <code>model</code> 省略时用默认构造，<code>model_listener</code> 一旦传入就在构造时立刻挂到 model 上</button>
+            <button class="quiz-option">传入的 <code>session</code> 会被深拷贝一份再使用</button>
+            <button class="quiz-option"><code>session</code> 必须传入，否则 <code>Session()</code> 会因为缺少系统提示词而报错</button>
+            <button class="quiz-option"><code>model_listener</code> 必须传入，否则 <code>invoke</code> 无法工作</button>
+          </div>
+          <div class="quiz-explain" hidden>签名里的 <code>*</code> 表示后面全是关键字参数；<code>self.session = session or Session()</code>、<code>self.model = model or Model()</code> 说明两者可省略——<code>Session()</code> 自己会渲染系统提示词、<code>Model()</code> 自己会读配置。监听器是可选增强：<code>if self.listener: self.listener.listen(self.model)</code>，没有监听器，Agent 照样能跑，只是终端不打印过程。另外这里是<strong>引用同一个 session 对象</strong>，不是拷贝——所以外部持有它就能用 <code>print_friendly()</code> 复盘。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. <code>session.print_friendly()</code> 与 <code>print(session)</code> / <code>str(session)</code> 的区别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>print_friendly()</code> 打印的是原始事件流，而不是消息列表</button>
+            <button class="quiz-option">两者完全等价，只是名字不同</button>
+            <button class="quiz-option"><code>__str__</code> / <code>print()</code> 输出完整 JSON（含 messages 与 tools）；<code>print_friendly()</code> 按角色分段并截断长内容，更适合人眼排查</button>
+            <button class="quiz-option"><code>print_friendly()</code> 会顺手把会话保存成 JSON 文件</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 <code>session.py</code> 里 <code>__str__</code> 是 <code>json.dumps({"id": ..., "messages": ..., "tools": ...}, ensure_ascii=False, indent=2)</code>——完整、精确，但工具 Schema 一多就淹没在 JSON 里。新增的 <code>print_friendly()</code> 按 <code>role</code> 分段打标签（系统消息 / 用户消息 / 工具调用 / AI消息 / 调用结果），并把工具参数截到 70 字符、工具结果截到 50 字符。排错顺序通常是：先 <code>print_friendly()</code> 看对话骨架对不对，需要细节时再 <code>print(session)</code> 或 <code>result.print_raw()</code>。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 流式推理里三个 <code>Builder</code> 的工作方式是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">三个 Builder 轮流接管 chunk，一个 chunk 只会被其中一个消费</button>
+            <button class="quiz-option"><code>ToolCallsBuilder</code> 负责把所有内容拼成最终文本</button>
+            <button class="quiz-option">只有 <code>finish_reason</code> 到达时才发射增量事件</button>
+            <button class="quiz-option">每个 chunk 都同时喂给三个 Builder；它们各自盯自己的字段，有值就发 <code>start</code> → 增量 → <code>end</code> 事件，互不干扰</button>
+          </div>
+          <div class="quiz-explain" hidden>课件 <code>_process</code> 里是 <code>for chunk in response: for b in builders: b.emit(chunk)</code>——三个 Builder 都看得到每个 chunk，各自用 <code>getattr(delta, field_name, None)</code> 判断自己有没有值。增量事件是每个 chunk 都发（<code>emit(event_name, chunk_value=value, ...)</code>），<code>finish_reason</code> 只决定何时发 <code>end</code> 事件。<code>ToolCallsBuilder</code> 只收集工具调用，文本由 <code>ContentBuilder</code> 收集。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 同样发来一条工具调用，为什么非流式下 <code>_normalize_result_from_response</code> 直接取 <code>message.tool_calls</code> 就行，而流式下 <code>ToolCallsBuilder.append_value</code> 必须按 <code>tc_delta.index</code> 归位、再把 <code>arguments</code> 逐片拼接？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 <code>arguments</code> 是 dict，必须逐键合并</button>
+            <button class="quiz-option">因为 <code>index</code> 表示多个工具之间的优先级顺序</button>
+            <button class="quiz-option">因为流式的 <code>tool_calls</code> 一定只出现在最后一个 chunk 里</button>
+            <button class="quiz-option">因为流式下一次调用被切成多个 delta 分片下发，<code>id</code> / <code>name</code> / <code>arguments</code> 散落在不同 chunk；必须按 <code>index</code> 归位（不足处补占位）并按序拼接参数字符串，才能还原出完整调用</button>
+          </div>
+          <div class="quiz-explain" hidden>非流式响应是一个已经组装好的对象，所以 <code>_normalize_result_from_response</code> 能直接遍历 <code>[reasoning_field, "content", "tool_calls"]</code> 取值。流式则相反：只有分片。课件因此写了 <code>append_value</code>——用 <code>tc_delta.index</code> 找到（或补齐）对应槽位，<code>tc["function"]["arguments"] += args</code> 逐片累加，最后 <code>_normalize_tool_calls</code> 把对象统一成 dict。顺手记住一个后果：<strong>参数在流式途中是半截 JSON，不能提前 <code>json.loads</code></strong>——这正是「边解析边发射事件」要付出的代价。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 这一版 <code>Agent.invoke</code> 用 <code>while True</code>，靠 <code>registry.invoke(self.session.messages[-1])</code> 返回 <code>None</code> 退出。风险与修法分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">应该把 <code>while True</code> 换成 <code>for msg in session.messages</code> 遍历消息</button>
+            <button class="quiz-option">风险是 <code>responses</code> 列表会覆盖掉前面几轮的结果</button>
+            <button class="quiz-option">模型只要持续发起工具调用，循环就不会结束，轮数与成本无上限；应补最大迭代次数（或时间 / 预算）这类停止条件，并把每轮的 <code>resp</code> 留下来便于观测</button>
+            <button class="quiz-option">没有风险——模型一定会自己停止发起工具调用</button>
+          </div>
+          <div class="quiz-explain" hidden>循环的退出条件完全依赖模型「这一轮不再要求调工具」，而工具有副作用（<code>read_file</code> / <code>write_file</code> / <code>bash_command</code>）时，模型可能反复试探、反复执行。Anthropic 官方在讲自主 Agent 时明确提醒：任务通常在完成时终止，但<strong>也常需要设置停止条件（例如最大迭代次数）来保持控制</strong>。注意 <code>responses.append(resp)</code> 是把每轮结果都收进列表（不覆盖），所以 <code>responses[0]</code> 只是第一轮的中间结果，最终答案在最后一轮——调用方必须知道这一点。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 排查现象：「Agent 行为正常，最终答案也对，但终端把模型正文和工具名各打印了两遍。」按本章实现，最可能的根因是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">模型一次返回了两个 <code>choices</code></button>
+            <button class="quiz-option">三个 Builder 对同一个 chunk 重复发射了同一事件</button>
+            <button class="quiz-option">监听器被重复注册了：<code>EventEmitter.on</code> 只做 <code>append</code> 不去重，<code>listen()</code> 又不是幂等的——同一个监听器挂同一个 model 两次，每个事件就会有两个回调</button>
+            <button class="quiz-option"><code>print_friendly()</code> 被调用了两次</button>
+          </div>
+          <div class="quiz-explain" hidden>链路是：<code>EventEmitter</code> 用 <code>Event</code> 名到回调列表的映射管理监听器，<code>on</code> 的行为就是 <code>self._listeners[event].append(callback)</code>（课件 <code>events.py</code>），<code>emit</code> 则遍历该列表逐个调用——<strong>挂两次就回调两次</strong>。重复注册的常见来源：手工又调了一次 <code>listener.listen(agent.model)</code>、或者用同一个 listener 构造了两个 Agent（<code>Agent</code> 构造时会自动 <code>listen</code>）。修法：注册前查重，或让 <code>listen</code> 幂等（例如内部记 <code>(id(model), id(self))</code> 已注册集合）。Builder 每个 chunk 只 <code>emit</code> 一次、<code>print_friendly</code> 只涉及消息列表，都解释不了「事件流」翻倍。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0021-Agent',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事读了 <code>Agent.invoke</code> 后说：「模型只要输出了正文，这一轮就该结束了，所以拿 <code>resp.message["content"]</code> 非空当退出条件更直观。」请指出这个改法错在哪：如果模型在<strong>同一次响应</strong>里既写了一段解释、又发起了工具调用，这一版代码会怎么走？为什么不能拿正文当终止判据？`,
+              source: `来源：OpenAI Cookbook《How to call functions with chat models》（"Step 2: Check programmatically if model wanted to call a function. If true, proceed to step 3."；"Step 3: Extract the function name and parameters from response, call the function with parameters. Append the result to messages."）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《21.Agent》课件（agent/agent.py 的 ReAct Loop：用 registry.invoke(session.messages[-1]) 是否为 None 判退出）`,
+              breakdown: `官方把「模型是否想调函数」定位成一个必须<strong>程序化检查</strong>的条件（Step 2），并且在 Step 3-4 里把函数结果追加进消息列表后<strong>再调一次 API</strong>——也就是说「这一轮要不要继续」只看有没有工具调用，与正文写没写、写多长无关。本章代码正是这个判据：<code>call_msg = registry.invoke(self.session.messages[-1])</code>，<code>None</code> 才 <code>break</code>，否则把 tool 消息追加进会话、回到循环开头。<br>所以「有正文 + 有工具调用」的情况会<strong>继续循环</strong>——那段正文只是这一轮的旁白（模型常常先说「我先读一下这个文件」再动手），它会被收进 <code>responses</code>，但不终止流程。<br>反过来，把「content 非空」当退出条件会更糟：模型先说一句话再调工具时循环会<strong>提前退出</strong>，工具永远不执行，用户拿到一句「我这就去读文件」就结束了。Anthropic 的说法可以当记忆锚点：Agent 本质上就是「LLMs using tools based on environmental feedback in a loop」——决定循环继续的是<strong>环境反馈（工具结果）</strong>，不是模型说了多少话。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `请按顺序讲清 <code>Agent.invoke("…")</code> 一次调用的完整链路（消息怎么进会话、模型怎么被调用、工具结果以什么身份回到会话、循环怎么退出），并说明为什么工具结果消息必须紧跟在那条带工具调用的 assistant 消息之后。`,
+              source: `来源：OpenAI Cookbook《How to call functions with chat models》（"Note that messages with role ’tool’ must be a response to a preceding message with ’tool_calls’"；"If a function is used, the output will contain "finish_reason": "tool_calls" in the response, as well as a tool_calls object that has the name of the function and the generated function arguments."）https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `四步走（官方 Cookbook 的 Step 1-4 与本章代码一一对应）：<br>① <strong>组装请求</strong>：<code>session.add_message({"role": "user", "content": q})</code>，把用户消息追加进会话；<code>session.messages</code> 与 <code>session.tools</code> 一起发给模型。<br>② <strong>调模型 + 解析流</strong>：<code>resp = self.model.invoke_stream(self.session)</code>；<code>_process</code> 在流式解析结束后把 assistant 消息（<code>role</code> / <code>content</code> / 可能的 <code>tool_calls</code>）<code>add_message</code> 进会话，同时三个 Builder 已经边解析边发了事件。<br>③ <strong>判断是否要执行工具</strong>：<code>call_msg = registry.invoke(self.session.messages[-1])</code>——从最后一条 assistant 消息里取 <code>tool_calls</code>，逐一执行，返回 <code>role: "tool"</code> 的结果消息列表（含 <code>tool_call_id</code> / <code>name</code> / <code>content</code>）；没有工具调用就返回 <code>None</code>。<br>④ <strong>回到第 ② 步</strong>：<code>self.session.messages += call_msg</code> 把工具结果并进会话，再调一次模型；返回 <code>None</code> 时 <code>break</code>，把所有轮次的 <code>resp</code> 作为 <code>responses</code> 返回。<br>顺序为什么不能乱：官方明确要求 role 为 <code>tool</code> 的消息必须是「前面那条带 <code>tool_calls</code> 的消息」的回应。本章没有额外做插入排序，靠的是 <code>_process</code> 先把 assistant 消息写进会话、紧接着再追加 tool 消息这个天然顺序（<code>messages[-1]</code> 就是刚写入的 assistant 消息）——这也意味着<strong>任何绕过 <code>_process</code> 写会话的改动都会破坏这个约定</strong>。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `团队要给 Agent 加两件事：一是把推理过程实时打到终端，二是能在演示时「临时静音」日志。请说明本章的 <code>ModelListener</code> 是怎么设计的（为什么用抽象基类、<code>listen</code> 怎么做到一次挂全事件、<code>listening</code> 开关到底挡住了什么），以及为什么这样设计后，新增一个「写文件日志」的监听器不用改 Model。`,
+              source: `来源：Python 官方文档 abc — Abstract Base Classes（"A class that has a metaclass derived from ABCMeta cannot be instantiated unless all of its abstract methods and properties are overridden."；"Unlike Java abstract methods, these abstract methods may have an implementation. This implementation can be called via the super() mechanism from the class that overrides it."）https://docs.python.org/3/library/abc.html · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `机制拆成四段：<br>① <strong>为什么抽象基类</strong>：<code>ModelListener(ABC)</code> 把 <code>_handler</code> 声明成 <code>@abstractmethod</code>。官方原话是：<strong>只要还有抽象方法没被覆盖，这个类就不能实例化</strong>——所以「写了个监听器却忘了实现 <code>_handler</code>」会在 <code>ModelListener()</code> 那一刻就炸，而不是等到第一个事件到来才静默失效。官方还提醒抽象方法<strong>可以有实现</strong>（子类可用 <code>super()</code> 调用），本章正是这么用的：基类实现 <code>listen</code> 与统一回调，子类只管 <code>_handler</code>。<br>② <strong>一次挂全事件</strong>：<code>listen(model)</code> 从 <code>Event</code> 上取出所有事件常量（过滤掉 <code>__</code> 开头的魔术属性），逐个 <code>model.on(event=e, callback=self._model_print_callback)</code>。这里 <code>EventEmitter</code> 是「事件名 → 回调列表」的映射，所以<strong>一个事件可以挂多个监听器</strong>：终端打印器、文件日志、WebSocket 推送可以同时在线。<br>③ <strong>listening 挡住的是什么</strong>：<code>_model_print_callback</code> 先 <code>if not self.listening: return</code>，再转发给 <code>_handler</code>。注意它挡的是<strong>回调这一层</strong>——<code>model.emit(...)</code> 照样在跑、事件照样遍历回调列表，只是这个监听器选择不处理。所以「静音」是零成本的开关，不需要反注册、也不需要动 Model。<br>④ <strong>为什么新增日志监听器不用改 Model</strong>：Model 继承 <code>EventEmitter</code>，在流式解析过程中只负责 <code>emit</code>；谁在听、听了做什么，Model 一概不知（<code>分析.md</code> 设计亮点 2：事件驱动架构解耦了模型推理与副作用）。新增 <code>FileLogListener(ModelListener)</code>、实现 <code>_handler</code>、在构造 Agent 时传进去即可。唯一要留意的是注册本身不是幂等的（见下一题）。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `代码审查：<code>Agent.invoke</code> 用 <code>while True</code> 驱动，退出条件是 <code>registry.invoke(self.session.messages[-1])</code> 返回 <code>None</code>，每轮 <code>responses.append(resp)</code>，最后 <code>return responses</code>。请指出至少两个隐患（一个关于「循环什么时候停」，一个关于「调用方怎么拿到最终答案 / 这段代码依赖了什么隐含约定」），并给出修法。`,
+              source: `来源：Anthropic 工程博客《Building effective agents》（"The task often terminates upon completion, but it’s also common to include stopping conditions (such as a maximum number of iterations) to maintain control."；"we recommend extensive testing in sandboxed environments, along with the appropriate guardrails."）https://www.anthropic.com/engineering/building-effective-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《21.Agent》课件（agent/agent.py）`,
+              breakdown: `隐患一：<strong>没有停止条件</strong>。<code>while True</code> 的退出完全托付给模型「这一轮不再要工具」。当工具有副作用（<code>write_file</code> / <code>bash_command</code>）时，模型一轮轮试探、报错、再试，循环与 token 成本都没有上限；一旦模型陷入「反复调用同一个工具」的循环，进程会一直烧下去。官方建议很具体：任务通常在完成时终止，但<strong>也常要设置停止条件（例如最大迭代次数）来保持控制</strong>，并在沙箱环境里配合护栏做充分测试。修法：<code>for _ in range(max_steps)</code> 或 <code>while steps &lt; max_steps</code>，超限时返回「已达最大步数」并保留现场；再加超时/预算、工具结果去重（同一调用重复出现就熔断）。<br>隐患二：<strong>返回值语义是「每轮的中间结果」</strong>。<code>responses</code> 收集的是循环每一轮的 <code>InvokeResult</code>，最终答案在<strong>最后一个</strong>元素，而 <code>responses[0]</code> 很可能只是「我这就去读文件」这种旁白。调用方若写成 <code>agent.invoke(q)[0]</code> 就会拿到中间态。修法：让 <code>invoke</code> 直接返回最终 <code>InvokeResult</code>（或返回 <code>(final, trace)</code> 结构），把完整轨迹留给监听器/日志。<br>附带一个隐含约定：<code>self.session.messages[-1]</code> 能拿到「刚写进去的 assistant 消息」，是因为 <code>Model._process</code> 一定会 <code>session.add_message</code>。这层耦合没有类型或断言保护，将来换一个不写会话的模型实现，循环就会拿着旧消息做判断——建议在 <code>invoke</code> 里显式持有 <code>resp.message</code> 来判断（例如 <code>registry.invoke(resp.message)</code>），把「谁写会话」与「拿谁判断」解耦。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `现在要让这个 Agent 上线做「运维助手」：既能读日志、跑命令，又要能审计、能在出错时人工接管。请基于本章的组装结构给出设计：①怎么判断这个任务该用固定流程（workflow）还是自主 Agent；②监听层怎么承载可观测性；③除了「模型不再调用工具」，还要补哪些控制手段。`,
+              source: `来源：Anthropic 工程博客《Building effective agents》（"Workflows are systems where LLMs and tools are orchestrated through predefined code paths."；"Agents, on the other hand, are systems where LLMs dynamically direct their own processes and tool usage, maintaining control over how they accomplish tasks."；"Prioritize transparency by explicitly showing the agent’s planning steps."；"The autonomous nature of agents means higher costs, and the potential for compounding errors."）https://www.anthropic.com/engineering/building-effective-agents · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `① <strong>先判形态</strong>：官方把 workflow 定义为「LLM 与工具按<strong>预定义代码路径</strong>编排」，agent 定义为「LLM <strong>动态决定</strong>自己的流程与工具使用」。运维场景里「收集信息 → 判断 → 执行」的路径无法预先写死（要跑几条命令取决于日志说什么），属于 agent 的适用范围；但「重启服务」这类动作路径固定，应当抽成 workflow 或单独工具，不要把可控步骤交给模型自由发挥。官方还提醒：agent 的自主性意味着<strong>更高成本与误差累积</strong>，所以要用沙箱 + 护栏做充分测试。<br>② <strong>监听层就是现成的可观测面</strong>：本章已把推理/内容/工具调用拆成事件流，官方三条原则里那条「<strong>透明——显式展示 Agent 的规划步骤</strong>」正好落在这里。落地方案：<code>ModelPrinterListener</code> 管人看的终端输出；再派生 <code>AuditListener</code>，在 <code>tool_call_end</code> 时把「工具名 + 参数 + 调用 id + 时间」写审计日志；两者都继承 <code>ModelListener</code>、共用事件流，Model 零改动。要点：<strong>审计监听器不能因为写日志失败而拖垮主流程</strong>（<code>_handler</code> 里做 try/except，日志走队列），以及注册要幂等、避免重复审计。<br>③ <strong>控制手段清单</strong>：<em>步数/预算</em>——最大迭代次数、总 token 或费用上限、墙钟超时，超限时返回「已达上限」并把 <code>print_friendly()</code> 的会话快照落盘；<em>工具面收窄</em>——只注册这个岗位需要的工具，危险动作（写文件、跑命令）加白名单/只读模式/人工确认；<em>人机检查点</em>——官方描述里 Agent 可以在检查点或遇阻时暂停等人类判断，实现上就是让「需要审批的工具」抛一个特定异常，由 Agent 层捕获、状态存进 <code>Session.save()</code>、批准后用 <code>Session.load()</code> 恢复；<em>可复现</em>——每轮 <code>resp</code> 与工具结果都进会话，配合 <code>save()/load()</code> 把一次事故完整重放。最后回到本章那句：Agent 的价值在编排，风险也在编排——把限制写进代码，而不是只写进系统提示词。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 30 分钟内组装出一个能跑的最小 Agent，并让它完成一次真实的小任务（分析目录、产出 <code>分析.md</code>）。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '新建 agent/agent.py：Agent(*, session=None, model=None, model_listener=None)，构造时若传入监听器就 listen(self.model)；实现 invoke(q)：先 add 用户消息，再 while 循环 —— invoke_stream → registry.invoke(session.messages[-1]) → 为 None 则收尾退出，否则把工具结果消息并进 session 继续；再取用 listener.py 的抽象 ModelListener 与 printer.py 的 ModelPrinterListener，跑 agent.invoke("请帮我分析./agent目录中的核心实现逻辑，将结果放到当前目录的 分析.md 中")，最后用 agent.session.print_friendly() 复盘整条轨迹。',
+                accept: ['终端能看到「思考中...」「内容：」与青色「调用工具：xxx」的事件输出，说明监听器已挂上全部事件', '工作目录里真的生成了 分析.md，说明 write_file 工具被模型调用并执行成功', '会话消息顺序正确：system → user → assistant(含 tool_calls) → tool 结果 → … 最后一轮没有 tool_calls', 'print_friendly() 打印出的轨迹能对上 responses 的轮数，工具参数与结果被截断显示而不是刷屏'],
+              },
+              source: `任务基于《21.Agent》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：① 照课件把监听器先建好——<code>listener = ModelPrinterListener(); agent = Agent(model_listener=listener)</code>，构造时自动 <code>listen(self.model)</code>，所以不需要手工注册事件。② <code>invoke</code> 严格按 ReAct 循环写；判据是 <code>registry.invoke(...)</code> 的返回值，<strong>不是</strong>正文有没有内容。③ 跑任务后先看终端事件流（思考/内容/工具名），再 <code>agent.session.print_friendly()</code> 看骨架，<code>responses</code> 的长度应当等于循环轮数。<br>常见坑：<em>忘记挂监听器</em>——不传 <code>model_listener</code> 时 Agent 照跑，只是终端一片安静，容易误判成「模型没工作」；<em>拿正文当退出条件</em>——模型先解释一句再调工具，循环会提前结束，<code>分析.md</code> 根本不会生成；<em>重复注册</em>——手工又调一次 <code>listen()</code>，事件回调翻倍、输出全打两遍；<em>没有停止条件</em>——演示时模型若反复调同一个工具，进程不会自己停下，脚本里先加一个最大步数更稳妥；<em>工具报错</em>——<code>bash_command</code> 等工具是异常安全的，失败会以文本形式回到会话，所以「工具失败」通常表现为模型继续尝试而不是程序崩溃。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic《Building effective agents》</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb">OpenAI Cookbook《How to call functions with chat models》</a> · <a href="https://docs.python.org/3/library/abc.html">Python 官方文档 abc — Abstract Base Classes</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Agent速查表.html">Agent速查表</a>——编排层结构、事件监听链路、三个 Builder 与停止条件一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Agent">21.Agent</a> · 下一课 <a href="/agents/Agents底层逻辑/Agent-搜索引擎">22.Agent 搜索引擎</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

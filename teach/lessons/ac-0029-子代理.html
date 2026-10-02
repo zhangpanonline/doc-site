@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · 子代理：用 create_agent 把大任务拆给独立上下文与独立会话的子代理并行执行，再用线程 join 汇总结果——互动教学课程">
+  <title>子代理 · 互动教学课程（Agents底层逻辑 ac-29）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>子代理</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/子代理">29.子代理</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>说清「一个 Agent 在一个轮次里跑完所有事」为什么会得到一个超级庞大的上下文，以及它带来的三个具体问题</li>
+        <li>用 <code>@tool</code> 把 <code>create_agent(agent_config)</code> 注册进工具仓库，并说清每个子代理配置里的 <code>name</code> 与 <code>query</code> 分别管什么</li>
+        <li>读懂「一配置一线程 + <code>threading.Lock</code> + 逐个 <code>join</code>」这段并发代码：为什么必须加锁、为什么结果顺序不可依赖 <code>name</code> 顺序</li>
+        <li>判断什么时候该拆子代理、什么时候不该拆（成本、共享上下文、返回摘要的容量边界）</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>先花几分钟把本章的骨架过一遍——细节都在《29.子代理》里，测验和面试会考。</p>
+
+      <div class="card">
+        <h3>问题：一个轮次跑完所有事 → 超级庞大的上下文</h3>
+        <ul class="pitfall-list">
+          <li>课件开场给的是「开发一个业务功能并暴露成 FastAPI 接口」这种任务：一个 Agent 在<strong>一个轮次</strong>里要经历 <code>reasoning</code>（需求分析、方案设计）+ 一个<strong>超级庞大的 ReAct 循环</strong></li>
+          <li>这个循环里塞着：建立 ORM 数据层 → 实现数据迁移 → 执行迁移命令 → 创建 DTO → 创建 Service → 创建接口 → 创建多个测试脚本 → 运行测试脚本 → 解决错误（循环）</li>
+          <li>每一步的工具调用与工具结果都会<strong>沉积进同一条 <code>session.messages</code></strong>，于是「你最终会得到一个超级庞大的上下文，这会带来诸多问题」</li>
+          <li>子代理就是为了解决这个问题：把「探索、实现、调试」这些趟脏活的过程<strong>挪出主上下文</strong>，主 Agent 只留下被压缩过的结论</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>更友好的设计：主代理管宏观，子代理并行干活</h3>
+        <ul class="pitfall-list">
+          <li><strong>主代理</strong>：<code>reasoning</code> 只做<strong>宏观</strong>需求分析与方案设计，再在 ReAct 循环里派活</li>
+          <li><strong>子代理</strong>（各带一条用户提示词）：实现数据层 / 实现 DTO / 实现接口 / 完成测试——<strong>各干一件事</strong></li>
+          <li><strong>收口</strong>：等待所有子代理完成，汇总结果（课件配图 <code>assets/子代理.svg</code> 讲的就是这个分派与汇总的形状）</li>
+          <li>关键差别：子代理跑的是<strong>自己的会话</strong>——<code>run_sub_agent</code> 里 <code>agent = Agent()</code>，每个子代理用自己的 <code>Session</code>，与主代理的消息历史不共享；主代理拿回的只是最后一条消息的 <code>content</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>实现：<code>create_agent</code> 这个工具怎么跑</h3>
+        <ul class="pitfall-list">
+          <li>注册：<code>agent/tool/__init__.py</code> 里 <code>from agent.tool.create_agent import create_agent</code>，再 <code>registry.register(create_agent)</code>——和 <code>read_file</code>、<code>bash_command</code>、<code>use_skill</code>、<code>use_mcp</code> 同一条注册链</li>
+          <li>入参：<code>agent_config: list[dict[str, str]]</code>，每项形如 <code>{"name": "sub-agent-1", "query": "这是一个测试，请说：你好！"}</code>；<code>name</code> 用来给结果贴标签，<code>query</code> 是子代理的<strong>初始用户提示词</strong></li>
+          <li>返回：<code>json.dumps(results, indent=2, ensure_ascii=False)</code>，每项形如 <code>{"name": "sub-agent-1", "result": "子代理1的完成结果"}</code>——result 取的是子代理 <code>responses[-1]</code> 的 <code>message["content"]</code></li>
+          <li>执行：为每个配置起一个 <code>threading.Thread(target=run_sub_agent, args=(name, query))</code> 并 <code>start()</code>；所有线程起完后逐个 <code>join()</code>；<code>results.append</code> 用 <code>threading.Lock</code> 保护</li>
+          <li>落盘：每个子代理结束前 <code>agent.session.save(f"{name}-")</code>——片段存成 <code>&lt;name&gt;-&lt;id&gt;.json</code>，事后能单独回看某个子代理到底干了什么</li>
+          <li>用法：主代理只要说一句「请开启多个子代理，创建两个页面，分别画小猪佩奇和海绵宝宝。」，模型就会调 <code>create_agent</code> 分派，最后 <code>agent.session.save()</code> 保存整轮会话</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《29.子代理》覆盖的内容。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">1. 课件说「一个 Agent 单独完成业务功能会得到超级庞大的上下文」，这个上下文是怎么长起来的？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为 ORM、迁移、DTO、Service、接口、测试脚本的每一步工具调用与结果，都沉积在同一个轮次的同一条消息历史里</button>
+            <button class="quiz-option">因为模型参数量太大，上下文窗口被权重占用</button>
+            <button class="quiz-option">因为用了流式输出，每个 chunk 都会完整存进会话</button>
+            <button class="quiz-option">因为系统提示词太长，子代理的描述字段把上下文占满</button>
+          </div>
+          <div class="quiz-explain" hidden>课件原文：一个轮次里要经历 <code>reasoning</code> 加「一个超级庞大的 ReAct 循环」——建立 ORM 数据层、实现数据迁移、执行迁移命令、创建 DTO、创建 Service、创建接口、创建多个测试脚本、运行测试脚本、解决错误（循环）。这些步骤的工具调用与返回都进同一条会话，于是「你最终会得到一个超级庞大的上下文」。子代理正是为此而生。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">2. 主代理调 <code>create_agent</code> 之后，子代理执行任务时的上下文来自哪里？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">继承主代理的 <code>session.messages</code>，所以在子代理里能看到主代理之前的全部对话</button>
+            <button class="quiz-option">继承主代理的会话但只读，子代理不能往里写新消息</button>
+            <button class="quiz-option">来自子代理自己的新会话：<code>run_sub_agent</code> 里 <code>agent = Agent()</code>，只拿到自己的 <code>query</code></button>
+            <button class="quiz-option">所有子代理共用同一个新会话，彼此能看见对方的消息</button>
+          </div>
+          <div class="quiz-explain" hidden><code>run_sub_agent</code> 的第一行就是 <code>agent = Agent()</code>——不传 <code>session</code>，于是 <code>Agent.__init__</code> 走 <code>self.session = session or Session()</code>，每个子代理<strong>各自新建一条会话</strong>。它只接收 <code>agent.invoke(query)</code> 这一条用户消息，主代理的历史既不继承、也不共享；多个子代理之间同样互不可见。这就是「上下文隔离」在代码里的落点。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">3. <code>create_agent</code> 返回给模型的是什么形状？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">一个字典，键是子代理名、值是各自的 <code>Session</code> 对象</button>
+            <button class="quiz-option">一段把所有子代理全文对话拼起来的纯文本</button>
+            <button class="quiz-option"><code>json.dumps</code> 出来的字符串，每项形如 <code>{"name": ..., "result": ...}</code>，<code>result</code> 是子代理最后一条消息的 <code>content</code></button>
+            <button class="quiz-option">一个列表，每项只有子代理的完整 <code>messages</code></button>
+          </div>
+          <div class="quiz-explain" hidden>课件「返回结果示例」写得很明确：<code>[{"name": "sub-agent1", "result": "子代理1的完成结果"}, ...]</code>，最后 <code>return json.dumps(results, indent=2, ensure_ascii=False)</code>。注意返回的是<strong>摘要</strong>——<code>responses[-1].message.get("content", "")</code>，子代理的中间过程不上行；需要回看完整过程时去读 <code>agent.session.save(f"{name}-")</code> 落盘的会话文件。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">4. 去掉这段代码里的 <code>for thread in threads: thread.join()</code>，最直接的后果是什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">主线程不再等子代理干完就往下走，<code>results</code> 可能还是空列表/缺项，返回的 JSON 不完整</button>
+            <button class="quiz-option">子代理之间会发生死锁，程序永久挂起</button>
+            <button class="quiz-option">子代理不会启动，因为线程必须先 join 才会运行</button>
+            <button class="quiz-option">子代理会串行执行，速度变慢但结果不变</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 官方文档对 <code>join()</code> 的定义是「Wait until the thread terminates…blocks the calling thread until the thread whose join() method is called terminates」。课件正是在 <code>start()</code> 完所有线程之后才逐个 <code>join()</code>，这就是「等待所有子代理完成，汇总结果」那一步的实现。没有它，主线程可能在子代理还没 append 完就跑到了 <code>return json.dumps(results, ...)</code>，把不完整的结果交回模型。</div>
+        </div>
+        <div class="quiz-q" data-correct="1">
+          <div class="quiz-prompt">5. <code>results.append({...})</code> 外面为什么要套 <code>with results_lock:</code>？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">因为不加锁线程无法 <code>start()</code>，<code>Thread</code> 构造时就会抛 <code>RuntimeError</code></button>
+            <button class="quiz-option">因为多个线程同时在写同一个共享列表，加锁保护这次写操作的原子性</button>
+            <button class="quiz-option">因为 <code>json.dumps</code> 不是线程安全的，必须在锁里序列化</button>
+            <button class="quiz-option">为了让子代理按配置顺序依次写入，保证返回结果与 <code>agent_config</code> 顺序一致</button>
+          </div>
+          <div class="quiz-explain" hidden><code>results</code> 在主线程创建，却被所有子代理线程同时 append——这是典型的共享可变状态。Python 官方文档在 <code>threading</code> 介绍里就点明加锁的用途：「Locks are…to protect shared data」，因此本课用 <code>threading.Lock</code> 把它包住。<strong>注意它只保证写入不被撕裂，不保证顺序</strong>：谁先 append 取决于线程调度，返回值里 <code>name</code> 的先后不能当作 <code>agent_config</code> 的顺序。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 主代理准备派两个子代理，配置应该写成什么样？</div>
+          <div class="quiz-options">
+            <button class="quiz-option"><code>{"name": "sub-agent-1", "query": "…"}</code>——只传一个字典，一次只能起一个子代理</button>
+            <button class="quiz-option"><code>[{"agent": "sub-agent-1", "prompt": "…"}]</code>——字段名是 <code>agent</code> 和 <code>prompt</code></button>
+            <button class="quiz-option"><code>[{"name": "sub-agent-1"}, {"name": "sub-agent-2"}]</code>——提示词由子代理自己去主会话里找</button>
+            <button class="quiz-option"><code>[{"name": "sub-agent-1", "query": "这是一个测试，请说：你好！"}, {"name": "sub-agent-2", "query": "this is a test, reply: Hello!"}]</code></button>
+          </div>
+          <div class="quiz-explain" hidden>工具签名是 <code>create_agent(agent_config: list[dict[str, str]])</code>，循环里取的是 <code>config.get("name", "unnamed")</code> 与 <code>config.get("query", "")</code>：<strong>列表 + 每项 <code>name</code>/<code>query</code></strong>。工具描述也写明「每个子代理要配置名称、用户提示词，子代理会根据提示词启动任务」——<code>query</code> 就是子代理唯一的任务交代，省略它子代理会带着空提示词开工（代码里 <code>get</code> 的默认值是空字符串，不会报错，所以这个坑很安静）。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 某个子代理的 <code>agent.invoke(query)</code> 中途抛了异常，跑 <code>create_agent</code> 的主代理会看到什么？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">该子代理被自动重跑，返回结果里带上重试次数</button>
+            <button class="quiz-option">整个 <code>create_agent</code> 抛异常，主代理这次工具调用直接失败</button>
+            <button class="quiz-option">该子代理的结果变成字符串 <code>"null"</code>，主代理能一眼看出它失败了</button>
+            <button class="quiz-option">该线程带着未处理异常结束，<code>join()</code> 照常返回，但这一项不会进 <code>results</code>——主代理只拿到一份「少了这个 name」的 JSON，没有错误标记</button>
+          </div>
+          <div class="quiz-explain" hidden>Python 官方文档说明：线程的 <code>run()</code> 里抛出的未处理异常由 <code>threading.excepthook()</code> 处理，默认是「printed out on sys.stderr」，<strong>它不会传播到调用 join() 的主线程</strong>；而 <code>join()</code> 的定义是等线程终止（「either normally or through an unhandled exception」），照样正常返回。课件这段实现里 <code>run_sub_agent</code> 没有 try/except、<code>results.append</code> 也不会执行，于是返回值静默缺项。这正是「错误在 agentic 系统里会复合」的典型形态——主代理会把「少了一路结果」当成「已经汇总完毕」继续往下做。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">8. 队友提出：「能不能让所有子代理共享同一条会话上下文，这样它们能互相看见进度、不重复劳动？」按本章的设计，这个改法的问题在哪儿？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">共享上下文后 <code>json.dumps</code> 会序列化失败，因为出现循环引用</button>
+            <button class="quiz-option">技术上做不到，因为 <code>Agent()</code> 不接受 <code>session</code> 参数，构造函数里写死了新建会话</button>
+            <button class="quiz-option">共享上下文会让 <code>threading.Lock</code> 失效，必须改用 <code>multiprocessing</code></button>
+            <button class="quiz-option">共享之后每个子代理的探索过程都会回流进同一条历史，「超级庞大的上下文」原样重建，子代理架构的前提被取消</button>
+          </div>
+          <div class="quiz-explain" hidden><code>Agent.__init__</code> 的签名是 <code>session: Session | None = None</code> 配 <code>session or Session()</code>，所以「能传入」恰恰是它的设计（第 3 个选项的事实描述是错的）。真正的代价在语义上：本章 <code>run_sub_agent</code> 之所以写 <code>agent = Agent()</code>，就是为了让每个子代理「在独立线程中运行，完成任务后合并返回结果」——<strong>用隔离换上下文容量</strong>。如果共享会话，ORM、迁移、测试脚本这些过程全部堆回同一条历史，与「让一个 Agent 单轮跑完全流程」的原始问题完全等价；此时该选的不是共享上下文，而是别拆子代理、老老实实顺序做（或者按 Anthropic 的做法把中间产物写到文件系统，只传轻量引用）。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">9. 主代理说「创建两个页面，分别画小猪佩奇和海绵宝宝」，两个子代理各自跑起来后，下面哪个判断最准确？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">隔离的只是<strong>上下文</strong>：工作目录、文件系统、工具副作用都是共用的，所以两个子代理完全可能选中同一个文件路径，必须靠提示词把边界写清</button>
+            <button class="quiz-option">因为并行执行，两个子代理一定会写同一个文件名，必然互相覆盖</button>
+            <button class="quiz-option">两个子代理会先把各自要用的工具协商好再动手，工具使用不会冲突</button>
+            <button class="quiz-option">两者消息历史隔离，因此写文件、跑命令完全不会互相影响，不需要任何额外约束</button>
+          </div>
+          <div class="quiz-explain" hidden>课件的隔离发生在<strong>会话层</strong>：每个子代理 <code>agent = Agent()</code> 拿自己的 <code>Session</code>，<code>Agent</code> 的工具来自同一个按类级字典组织的 <code>registry</code>，<code>write_file</code>/<code>bash_command</code> 操作的是同一个工作目录。所以「不共享消息」并不等于「不共享世界」：两个子代理彼此看不见对方的产出，却可能落到同一个路径上（<code>index.html</code>、<code>page.html</code> 这类名字尤其容易撞）。正确做法是在 <code>query</code> 里把交付物路径、命名规范、可写范围交代死——这也是「子代理的任务描述必须包含目标、输出格式、工具与边界」的现实理由。第 2 个选项把「可能」说成了「必然」；第 3 个选项描述的行为在本章代码里并不存在。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0029-子代理',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事说：「主代理不是有完整上下文吗？派子代理时写个『把数据层做了』就够了，它自己知道前因后果。」请指出这句话错在哪里，以及会导致哪些具体后果。`,
+              source: `来源：Anthropic 工程博客 How we built our multi-agent research system（"Subagents facilitate compression by operating in parallel with their own context windows"；"Each subagent needs an objective, an output format, guidance on the tools and sources to use, and clear task boundaries. Without detailed task descriptions, agents duplicate work, leave gaps, or fail to find necessary information."）https://www.anthropic.com/engineering/multi-agent-research-system · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《29.子代理》课件（<code>run_sub_agent</code> 中 <code>agent = Agent()</code> 与 <code>query</code> 语义）`,
+              breakdown: `错在把「主代理知道」当成「子代理知道」。章节代码里 <code>run_sub_agent</code> 的第一步是 <code>agent = Agent()</code>——<strong>新建一条会话</strong>，子代理看到的全部输入只有 <code>agent.invoke(query)</code> 那一条用户消息，主代理的需求分析、方案设计、之前读过的文件统统不在里面。官方文档的原话是子代理「operating in parallel with their own <strong>context windows</strong>」：这条隔离正是省上下文的手段，代价就是<b>任务交接必须自带全部必要信息</b>。<br>描述过粗的具体后果，官方也列了三种：<strong>重复劳动</strong>（不同子代理跑了同一件事——博客里就有一个真实案例：一个子代理在研究 2021 年汽车芯片危机，另外两个在重复调查 2025 年的供应链）、<strong>留缺口</strong>（谁都以为别人会做）、<strong>找不到必要信息</strong>（不知道去哪找、用哪个工具）。<br>所以「objective + output format + tools/sources + task boundaries」这四件套要写进 <code>query</code>：交付什么、以什么形式返回、允许用什么工具、边界在哪（哪些文件可写、哪些不要碰）。第 9 题考的是同一个根因的另一面。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `主代理说：「我按 <code>agent_config</code> 的顺序依次派活的，所以返回的 JSON 里 <code>name</code> 一定按我给的顺序排。」请讲清这句话为什么不成立，并说明课件里 <code>start()</code> → <code>join()</code> → <code>Lock</code> 这三件事各自保证了什么。`,
+              source: `来源：Python 官方文档 threading（"This blocks the calling thread until the thread whose join() method is called terminates – either normally or through an unhandled exception – or until the optional timeout occurs."；"Locks are the most primitive synchronization…to protect shared data"）https://docs.python.org/3/library/threading.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《29.子代理》课件（<code>create_agent</code> 原文）`,
+              breakdown: `先分清三件事的职能：<br><strong>① 顺序 <code>start()</code> 不等于顺序执行。</strong><code>start()</code> 只是「arranges for the object's <code>run()</code> method to be invoked in a separate thread of control」——线程何时真正拿到 GIL、跑多久，由调度器决定；官方在 CPython 实现说明里也强调 GIL 下「only one thread can execute Python code at once」。哪个子代理先跑完、先执行到 <code>results.append</code>，完全不确定。<br><strong>② <code>join()</code> 保证的是「都完成」，不是「按序完成」。</strong>官方定义只承诺「等这个线程终止」，课件把它放在所有 <code>start()</code> 之后，对应「等待所有子代理完成，汇总结果」那一步：<strong>它解决的是「结果还没写完就 return」的竞态，不解决排序</strong>。<br><strong>③ <code>Lock</code> 保护的是写入的原子性，不是先后。</strong>官方文档把锁的用途定义为 protect shared data；这里 <code>results</code> 被所有子线程并发 append。加锁之后不会再出现「两个线程同时写导致丢项」，但<strong>谁先拿到锁谁先 append</strong>，锁本身不排队成你想要的业务顺序。<br>结论：返回值里 <code>name</code> 的顺序是<strong>调度产物</strong>。要用它就得自己定序——比如返回前按 <code>agent_config</code> 的 name 顺序重排，或者干脆改成索引位写入 <code>results[idx] = ...</code>（配合锁）。让主代理依赖数组顺序去对应子任务，是这类并发汇总代码里最常见的一类隐性 bug。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `AI 写的这段子代理并发代码，请做代码审查——重点看失败处理与资源边界：<br><code>def run_sub_agent(name, query):</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;agent = Agent()</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;responses = agent.invoke(query)</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;content = responses[-1].message.get("content", "")</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;agent.session.save(f"{name}-")</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;with results_lock:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;results.append({"name": name, "result": content})</code><br><code>for config in agent_config:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;t = threading.Thread(target=run_sub_agent, args=(config.get("name", "unnamed"), config.get("query", ""))); t.start(); threads.append(t)</code><br><code>for t in threads: t.join()</code>`,
+              source: `来源：Python 官方文档 threading（"If the run() method raises an exception, threading.excepthook() is called to handle it."；"join(timeout=None)… or until the optional timeout occurs… if the thread is still alive, the join() call timed out"；"Daemon threads are abruptly stopped at shutdown."）https://docs.python.org/3/library/threading.html · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《29.子代理》课件（<code>create_agent</code> 与「等待所有子代理完成，汇总结果」）`,
+              breakdown: `结构本身是本章的正确形态：一配置一线程、共享列表加锁、最后统一 <code>join()</code>。问题集中在「子代理是个会失败、会卡住的外部调用」这一点上：<br>① <strong>异常静默丢失。</strong>官方写明线程 <code>run()</code> 里的未处理异常交给 <code>threading.excepthook()</code>，默认只打到 <code>stderr</code>，不会传回 join 的主线程；而这里的 <code>agent.invoke(query)</code> 会真实发网络请求、真实跑工具。一个子代理挂了，主代理收到的是「少一项」的 JSON，还会以为汇总完成——<strong>必须给每个子代理加 try/except，把失败也变成一条带 <code>name</code> 的结果</strong>（例如 <code>{"name": name, "result": "", "error": str(e)}</code>）。<br>② <strong>没有超时，<code>join()</code> 可以无限等。</strong>官方给 <code>join()</code> 留了 <code>timeout</code> 参数，并且提醒「As join() always returns None, you must call is_alive() after join() to decide whether a timeout happened」。这里是无参 <code>join()</code>：只要有一个子代理卡在模型请求或工具调用上，整轮 <code>create_agent</code> 就永远不返回，主代理的 ReAct 循环被冻住，用户侧也没有任何超时提示。<br>③ <strong>没有并发上限。</strong><code>agent_config</code> 由模型生成，长度不可控——模型完全可能一次塞进十个、二十个子代理，每个都独自发请求、跑工具、写会话文件。这就是 Anthropic 复盘的早期失败模式之一：「Early agents made errors like spawning 50 subagents for simple queries」。需要按任务复杂度定预算，并在工具层设上限（超出直接拒绝或排队）。<br>④ <strong>结果内容没有上限。</strong><code>responses[-1].message.get("content", "")</code> 理论上可以是任意长文本，全部塞进一次 <code>json.dumps</code> 回给主代理——子代理省下的上下文可能又被这一份结果还回去。官方因此建议「Subagent output to a filesystem to minimize the 'game of telephone'」：让子代理把大产物落到文件，只回传轻量引用。<br>另外两个小事：<code>agent.session.save(f"{name}-")</code> 的 <code>name</code> 由模型给，若含路径分隔符会写到 <code>sessions</code> 目录之外；<code>daemon</code> 未设置，进程退出时正在写的子代理会被直接掐断，会话文件可能半截。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `你负责一个「给现有后端加一个业务模块」的 Agent 工作流：要建 ORM 层、写迁移、建 DTO/Service/接口、补测试。请给出选型：<strong>单代理一个轮次跑完</strong>，还是<strong>拆成多个子代理并行</strong>？说明判据、拆法，以及拆了之后要额外补哪些工程设施。`,
+              source: `来源：Anthropic 工程博客 How we built our multi-agent research system（"most coding tasks involve fewer truly parallelizable tasks than research, and LLM agents are not yet great at coordinating and delegating to other agents in real time"；"multi-agent systems use about 15× more tokens than chats"；"Synchronous execution creates bottlenecks."）https://www.anthropic.com/engineering/multi-agent-research-system · 检索 2026-10-02 · 层级：一手（官方文档）+ Microsoft Learn Orchestrator and subagent multi-agent patterns（"Don’t use this pattern when: The process includes well-defined steps and strong hierarchical dependencies."）https://learn.microsoft.com/en-us/agents/architecture/multi-agent-orchestrator-sub-agent · 检索 2026-10-02 · 层级：一手（官方文档）+ 渡一源课程《29.子代理》课件`,
+              breakdown: `课件给的折中是<strong>分层拆</strong>：主代理只做宏观需求分析与方案设计，把「实现数据层 / 实现 DTO / 实现接口 / 完成测试」分给四个子代理，最后汇总——这样主上下文里留下的是结论，不是过程。<br><strong>判据（什么时候值得拆）</strong>：<br>· 官方总结的适用面是「heavy parallelization, information that exceeds single context windows, and interfacing with numerous complex tools」，同时对编码任务给了明确警告：<strong>「most coding tasks involve fewer truly parallelizable tasks than research」</strong>，而且模型「not yet great at coordinating and delegating to other agents in real time」。<br>· Microsoft Learn 给的否定条件同样直接：流程「includes well-defined steps and strong hierarchical dependencies」时不要用这种模式——数据层没建完就写测试，依赖是硬的。<br>· 所以本章场景不该「全并行」：先让主代理定契约（表结构、DTO 形态、接口签名），再做<strong>依赖分层</strong>——数据层是 DTO/接口的前置，必须串行；DTO、接口、（基于契约的）测试脚本之间可以并行。<br><strong>成本账先算：</strong>官方数据是「multi-agent systems use about 15× more tokens than chats」，且这套并行结构在同步等待下会「creates bottlenecks…the entire system can be blocked while waiting for a single subagent to finish」。所以只有当任务价值撑得起这份花费时才拆——简单事实查询用单代理反而更快更稳。<br><strong>拆完要补的工程设施：</strong><br>① <strong>失败与超时</strong>：每个子代理独立 try/except，<code>join(timeout)</code> + <code>is_alive()</code> 判定，失败以结构化结果回传而不是静默消失（对应第 3 题的审查）。<br>② <strong>并发与预算上限</strong>：按复杂度限制子代理数量（官方经验值是简单查询 1 个、直接对比 2–4 个、复杂研究 10 个以上），并给单个子代理设轮次/工具调用上限，防止模型一次派 50 个。<br>③ <strong>产物落到文件系统</strong>：大输出（代码、报告、日志）由子代理写盘，只回传路径与摘要，避免「传话游戏」把上下文又撑满。<br>④ <strong>可观测</strong>：每个子代理单独 <code>session.save(前缀)</code>（课件已有这个习惯），再补上「哪个子代理、跑了多久、失败在哪一步」的追踪，否则多代理的调试成本会指数上升。<br>⑤ <strong>写入边界</strong>：并行子代理共享工作目录，必须用提示词/权限把可写路径切开，避免两个子代理覆盖同一个文件。<br><strong>一句话定法</strong>：先问「这些子任务之间有没有真正的独立性与硬依赖」，再问「这份上下文值不值得用 15 倍 token 换」；两者都过才拆，且拆完必须带失败、超时、上限、产物外置四件套。`,
+            },
+            {
+              type: 'scenario',
+              level: '中级岗常问',
+              prompt: `给课件 Agent 工程接上 <code>create_agent</code>，并用它完成一次真实的「双子代理并行产出」（建议用 Claude Code 完成），任务与验收点见任务卡。`,
+              scene: {
+                time: '约 25 分钟',
+                goal: `把 <code>agent/tool/create_agent.py</code> 注册进 <code>agent/tool/__init__.py</code> 后，直接调一次 <code>create_agent(agent_config=[{"name": "sub-agent-1", "query": "这是一个测试，请说：你好！"}, {"name": "sub-agent-2", "query": "this is a test, reply: Hello!"}])</code> 验证通路；再让主代理执行「请开启多个子代理，创建两个页面，分别画小猪佩奇和海绵宝宝。」，观察分派与汇总的完整过程。`,
+                accept: [
+                  '直接调用 <code>create_agent</code> 返回的 JSON 里有两项，每项形如 <code>{"name": ..., "result": ...}</code>，<code>name</code> 与传入配置对得上（顺序不作要求）',
+                  '<code>agent/tool/__init__.py</code> 里有 <code>from agent.tool.create_agent import create_agent</code> 与 <code>registry.register(create_agent)</code>，且该工具出现在 <code>registry.schemas()</code> 中',
+                  '主代理那一轮结束后，<code>agent/sessions/</code> 下出现两个 <code>sub-agent-*-&lt;id&gt;.json</code> 会话文件，各自只有自己的消息历史、看不到对方',
+                  '两个页面文件都被真实产出且互不覆盖（在 <code>query</code> 里指定了明确的输出路径与命名）',
+                  '主动做一次破坏性验证：把某个子代理的 <code>query</code> 指向必然失败的工具调用，确认观察到的现象是「结果少一项」而不是整轮抛异常——并能说出该现象对应哪条线程语义',
+                ],
+              },
+              source: `任务基于《29.子代理》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `最短通路：先在 <code>agent/tool/__init__.py</code> 里 import 并 <code>registry.register(create_agent)</code>（漏掉这一步，模型侧的 <code>create_agent</code> 调用会走到 <code>registry._tools[name]</code> 的 KeyError 分支/报「无此工具」），再用课件第一段代码直接 <code>print(create_agent(agent_config=[...]))</code> 验证——这一步不经过模型，能干净地确认并发汇总本身是通的。<br>第二步才是端到端：<code>Agent(model_listener=ModelPrinterListener())</code> 挂上打印监听，然后 <code>agent.invoke("请开启多个子代理，创建两个页面，分别画小猪佩奇和海绵宝宝。")</code>。观察三个点：<strong>(a)</strong> 主会话里出现一次 <code>create_agent</code> 的工具调用与它的返回，但<b>看不到</b>子代理内部的思考与工具调用（隔离生效）；<strong>(b)</strong> <code>agent/sessions/</code> 下多出以 <code>name-</code> 为前缀的会话文件，点开能看到各自的完整过程；<strong>(c)</strong> 主代理拿到 JSON 后用 <code>content</code> 做汇总陈述，最后 <code>agent.session.save()</code> 落盘。<br>最容易踩的四个点：<strong>(1)</strong> 两个子代理都把页面写到同一个路径（例如都叫 <code>page.html</code>）互相覆盖——这就是第 9 题说的「隔离的是上下文不是文件系统」，<code>query</code> 里必须写死输出路径；<strong>(2)</strong> 忘记注册工具，模型说「无此工具」；<strong>(3)</strong> 直接调 <code>create_agent</code> 时把 <code>agent_config</code> 传成字典而不是列表，循环会遍历到字符串键上（或直接报错），对照签名 <code>list[dict[str, str]]</code> 检查；<strong>(4)</strong> 用 <code>print(resp)</code> 看结果时误以为顺序等于配置顺序——回看第 4–5 题，<code>results</code> 的顺序由线程调度决定。<br>破坏性验证建议放在最后：把其中一个 <code>name</code> 留下、把 <code>query</code> 改成必然触发异常的内容，会看到 stdout 上出现 stderr 风格的线程异常回溯，而 <code>create_agent</code> 仍正常返回、只是 JSON 少一项——这就是「错误不会跨线程传播」的手感。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/multi-agent-research-system">Anthropic · How we built our multi-agent research system</a>（子代理并行 + 独立上下文、委派四件套、15× token 代价、同步等待瓶颈）· <a href="https://docs.python.org/3/library/threading.html">Python 官方文档 threading</a>（<code>join()</code>、<code>Lock</code>、<code>excepthook</code> 与 GIL）· <a href="https://learn.microsoft.com/en-us/agents/architecture/multi-agent-orchestrator-sub-agent">Microsoft Learn · Orchestrator and subagent multi-agent patterns</a>（适用与不适用条件）</li>
+        <li><strong>动手自检</strong>：把 <code>create_agent</code> 抄进 notebook，先跑课件那组「你好 / Hello!」双代理配置，再把 <code>results_lock</code> 注释掉、把 <code>join()</code> 循环注释掉各跑一次，亲手看结果怎么变；最后给 <code>run_sub_agent</code> 加 try/except 与 <code>join(timeout=...)</code>，对照 <a href="../reference/子代理速查表.html">子代理速查表</a> 勾一遍。</li>
+        <li><strong>打印参考</strong>：<a href="../reference/子代理速查表.html">子代理速查表</a>——主代理/子代理分工对照、<code>create_agent</code> 执行链路、线程与锁的易错点一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Skill-VS-MCP">28.Skill VS MCP</a> · 本课 <a href="/agents/Agents底层逻辑/子代理">29.子代理</a> · 下一课 <a href="/agents/Agents底层逻辑/Prompt-Engineering">30.Prompt Engineering</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

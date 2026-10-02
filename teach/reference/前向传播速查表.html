@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>前向传播速查表 · 参考手册</title>
+  <meta name="description" content="前向传播速查表 · 可打印参考手册：配合《前向传播互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>前向传播速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0004-前向传播.html">《前向传播互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>四组核心公式</h2>
+      <pre># 1. 单个神经元
+y = σ( Σᵢ wᵢxᵢ + b )          # LaTeX: $y = \sigma(\sum_{i=1}^n w_i x_i + b)$
+
+# 2. 神经网络中的单个神经元（L = 第 L 层，j = 当前层第 j 行神经元）
+a^L_j = σ( Σᵢ wᵢ · a^(L-1)_i + b )   # LaTeX: $a^{L}_j = \sigma(\sum_{i=1}^n w_i a^{L-1}_i + b)$
+
+# 3. 某一层（矩阵形式 / 简写形式）
+a^(l) = σ( W^(l) a^(l-1) + b^(l) )   # LaTeX: $\mathbf{a}^{(l)} = \sigma\left( \mathbf{W}^{(l)} \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)} \right)$
+       (n×m)(m×1) + (n×1)  →  n×1
+
+# 4. 总参数量
+Σ(l=1..L) ( n_l × n_{l-1} + n_l )
+     = (n₁n₀ + n₁) + (n₂n₁ + n₂) + … + (n_L n_{L-1} + n_L)</pre>
+      <p>链路一句话：<strong>上一层输出 → 乘本层权重 → 加本层偏置 → 逐元素过激活函数 → 本层输出</strong>，逐层往下走就是前向传播。</p>
+    </section>
+
+    <section>
+      <h2>符号与维度速查</h2>
+      <table class="cmp-table">
+        <tr><th>符号</th><th>含义</th><th>大小</th></tr>
+        <tr><td><code>a^(l)</code></td><td>第 l 层的输出向量</td><td><code>n × 1</code></td></tr>
+        <tr><td><code>a^(l-1)</code></td><td>第 l-1 层的输出向量（本层输入）</td><td><code>m × 1</code></td></tr>
+        <tr><td><code>W^(l)</code></td><td>第 l 层的权重矩阵</td><td><code>n × m</code>（行 = 本层神经元数，列 = 上一层输出维）</td></tr>
+        <tr><td><code>b^(l)</code></td><td>第 l 层的偏置向量</td><td><code>n × 1</code></td></tr>
+        <tr><td><code>σ(·)</code></td><td>激活函数（如 Sigmoid、ReLU 等）</td><td>形状不变，逐元素作用</td></tr>
+      </table>
+      <p>维度自检：<code>(n × m)(m × 1) → (n × 1)</code>——中间维度 <code>m</code> 必须相等，输出行数由 <code>W</code> 的行数决定。</p>
+    </section>
+
+    <section>
+      <h2>总参数量算例</h2>
+      <table class="cmp-table">
+        <tr><th>层</th><th>权重</th><th>偏置</th><th>本层参数</th></tr>
+        <tr><td>784 → 128</td><td>128 × 784 = 100352</td><td>128</td><td>100480</td></tr>
+        <tr><td>128 → 10</td><td>10 × 128 = 1280</td><td>10</td><td>1290</td></tr>
+        <tr><td colspan="3"><strong>合计</strong></td><td><strong>101770</strong></td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>一层怎么算</dt>
+        <dd><code>n_l × n_{l-1} + n_l</code>：权重矩阵元素数 + 偏置向量元素数。</dd>
+        <dt>和 batch 的关系</dt>
+        <dd>参数量只由各层神经元个数决定，与一次喂多少样本无关；批量只把 <code>a^(l-1)</code> 从 <code>m × 1</code> 变成 <code>m × B</code>，公式不变。</dd>
+        <dt>易错 ①</dt>
+        <dd>把 <code>W</code> 记成 <code>m × n</code>：矩阵乘法维度对不上，直接报错。</dd>
+        <dt>易错 ②</dt>
+        <dd>把偏置写成 1-D 的 <code>(n,)</code> 而不是 <code>(n, 1)</code>：NumPy 广播会把结果撑成 <code>(n, n)</code>，不报错但结果全错。</dd>
+        <dt>易错 ③</dt>
+        <dd>用 <code>*</code> 代替 <code>@</code>：<code>*</code> 是逐元素相乘，不是矩阵乘法；矩阵乘法用 <code>@</code> 或 <code>np.matmul</code>。</dd>
+        <dt>易错 ④</dt>
+        <dd>激活函数套错位置：必须是 <code>σ(W a + b)</code>，不是 <code>W·σ(a) + b</code>，也不是 <code>σ(W a) + b</code>。</dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

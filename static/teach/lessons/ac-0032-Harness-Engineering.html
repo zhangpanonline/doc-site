@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Agents底层逻辑 · Harness Engineering：Agent 外壳要提供的工具、权限、可观测性与人工检查点——互动教学课程">
+  <title>Harness Engineering · 互动教学课程（Agents底层逻辑 ac-32）</title>
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
+      <h1>Harness Engineering</h1>
+      <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Harness-Engineering">32.Harness Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
+    </header>
+
+    <section class="lesson-goal card">
+      <h2 style="margin-top:0">本课目标</h2>
+      <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
+      <ol>
+        <li>用「马 / 马具」的比喻说清 Harness Engineering 的主张：把注意力从「选什么马（模型）」转到「怎么驾驭模型」</li>
+        <li>复述本章三大核心关注点：情境与状态管理（召回 → 规划 → 行动）、护栏（最小权限原则）、可观测（完成判据与信息来源）</li>
+        <li>把三个关注点对回 18/19/20/21 章的 <code>agent/</code> 代码：工具注册表、参数校验、事件监听、ReAct 循环的退出判据</li>
+        <li>说清外壳里「错误处理 + 人工检查点」的设计要点：工具错误怎么回灌、什么时候必须让人来拍板</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>知识速览</h2>
+      <p>本章文档很短，但它是一个「框架性」的章节：名词先立住，再回头把前几章写过的代码按「外壳」视角重读一遍。测验和面试只考本章文档 + 18/19/20/21 章已经写过的判据。</p>
+
+      <div class="card">
+        <h3>Harness 是什么：从「选马」到「做马具」</h3>
+        <ul class="pitfall-list">
+          <li><strong>词源</strong>：Harness 意为<strong>马具</strong>。本章文档引的原作者判断是「马具对骑乘的影响非常大」，因此该词也被译为「<strong>驾驭工程</strong>」/「缰绳工程」</li>
+          <li><strong>核心主张</strong>：任务落地时，应把更多注意力<strong>从「选择什么马（模型）」转移到「选择什么样的马具（如何驾驭模型）」</strong>——同一匹马，马具不同，结果可以完全不同</li>
+          <li><strong>工程化定义</strong>（本章文档给出的原始出处）：harness engineering 就是「<strong>每当发现 agent 犯错，就花时间设计一个方案，让 agent 永远不再犯同一个错</strong>」</li>
+          <li><strong>两种落地形态</strong>：更好的<strong>隐式提示</strong>（把每条错误沉淀成 <code>AGENTS.md</code> 里的一行）＋ 真正的<strong>可编程工具</strong>（让 agent 能自己验证「我做对了」的脚本，例如跑过滤后的测试、截图对比）</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>本章三大核心关注点（文档原文口径）</h3>
+        <ul class="pitfall-list">
+          <li><strong>情境与状态管理</strong>：确保 AI 在复杂、长周期任务中能获得正确的上下文信息，并记住任务状态，避免「<strong>失忆</strong>」和「<strong>跑偏</strong>」；强调 <strong>召回 → 规划 → 行动</strong> 这个顺序</li>
+          <li><strong>护栏</strong>：像给系统设置权限一样，严格管理 AI 能调用哪些工具、访问哪些数据；核心理念是<strong>最小权限原则</strong>——只给 AI 完成当前任务所必须的权限，以防误操作或恶意利用</li>
+          <li><strong>可观测</strong>：需要做详细的设计，保证三个问题都有答案——<strong>模型知晓是否完成了任务？判断的依据是什么？从哪里获取判断需要的信息？</strong></li>
+          <li>三者不是并列的清单，而是「<strong>知道自己知道什么（情境）→ 只被允许做该做的（护栏）→ 能证明自己做对了（可观测）</strong>」的一条链</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>落到课程代码：外壳的五个部件</h3>
+        <ul class="pitfall-list">
+          <li><strong>工具面</strong>：18 章给出工具定义的最小 Schema（<code>type: "function"</code> + <code>name</code> / <code>description</code> / <code>parameters</code>，<code>required</code> 列表）；19 章用 Pydantic 动态建模参数，封装出 <code>Tool</code> 类、<code>@tool</code> 装饰器与全局 <code>registry</code></li>
+          <li><strong>权限</strong>：最小权限在本工程里的落点是「<strong>只注册当前任务需要的工具</strong>」——<code>session.tools = registry.schemas()</code> 决定模型能看见什么；另一层是执行前<strong>参数校验</strong>（<code>Tool.__call__</code> 先 <code>param_model(**kwargs)</code> 再调原函数）</li>
+          <li><strong>可观测</strong>：<code>EventEmitter</code> + <code>ModelListener</code> 的事件流（一次挂全事件）、<code>Session.print_friendly()</code> 的轨迹复盘；而「判断任务是否完成」的<strong>信息必须来自环境</strong>——工具真实返回的结果、命令的退出码与报错，而不是模型的自我陈述</li>
+          <li><strong>错误处理</strong>：<code>Tool.__call__</code> 用 <code>try/except</code> + <code>traceback.format_exception</code> 把异常转成字符串结果回灌会话——单个工具失败不会让进程崩掉，模型还能读到错误自我修正；代价是「<strong>失败</strong>」与「<strong>正常返回</strong>」形态相同</li>
+          <li><strong>人工检查点</strong>：有副作用的动作（写文件、跑命令）要能停下来等人拍板；现场用 <code>Session.save()</code> 落盘、<code>Session.load()</code> 读回，避免「重跑一遍」把长任务的时间与成本再烧一次</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>分级测验</h2>
+      <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《32.Harness Engineering》覆盖的内容（含 18/19/20/21 章已写过的代码判据）。</p>
+
+      <h3>🌱 初级测验 · 概念</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">1. 本章用「马具」来解释 Harness，原作者的比喻想表达的是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">只要模型选得足够强，任务就一定能落地</button>
+            <button class="quiz-option">Harness 指的是模型运行所依赖的 GPU 驱动与运行时</button>
+            <button class="quiz-option">任务落地时应把更多注意力从「选择什么马（模型）」转移到「选择/打造什么样的马具（如何驾驭模型）」</button>
+            <button class="quiz-option">应该尽量换更便宜的马（模型）来跑任务</button>
+          </div>
+          <div class="quiz-explain" hidden>本章文档原文：Harness 一词意为马具，原作者的意思是「在任务落地的时候，我们应该把更多的注意力从选择什么马（模型）转移到选择什么样的马具身上（如何驾驭模型）」，因此它也被翻译为「驾驭工程」/「缰绳工程」。注意它是<strong>注意力分配</strong>的主张，不是说模型不重要——同一匹马，马具不同，骑乘结果差别很大。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">2. 「像给系统设置权限一样，严格管理 AI 能调用哪些工具、访问哪些数据，核心理念是最小权限原则」——这是本章哪个核心关注点？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">护栏</button>
+            <button class="quiz-option">情境与状态管理</button>
+            <button class="quiz-option">可观测</button>
+            <button class="quiz-option">提示词压缩</button>
+          </div>
+          <div class="quiz-explain" hidden>这是本章文档对<strong>护栏</strong>的原文定义，紧跟的一句是「只给 AI 完成当前任务所必须的权限，以防误操作或恶意利用」。情境与状态管理管的是「上下文与任务状态」，可观测管的是「是否完成、依据是什么、信息从哪来」，都不是权限问题。</div>
+        </div>
+        <div class="quiz-q" data-correct="0">
+          <div class="quiz-prompt">3. 本章说情境与状态管理强调的顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">召回 → 规划 → 行动</button>
+            <button class="quiz-option">召回 → 行动 → 规划</button>
+            <button class="quiz-option">规划 → 召回 → 行动</button>
+            <button class="quiz-option">行动 → 召回 → 规划</button>
+          </div>
+          <div class="quiz-explain" hidden>本章文档写得很明确：情境与状态管理「强调 召回 → 规划 → 行动」，目标是避免 AI 在长周期任务中「失忆」和「跑偏」。顺序的含义是：先把该知道的上下文拉回来，再决定怎么做，最后才动手——而不是先动手再回头找依据。</div>
+        </div>
+      </div>
+
+      <h3>🌿 中级测验 · 应用</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">4. 本章「可观测」问的第三问是「从哪里获取判断需要的信息」。结合 21 章的 Agent 循环，下面哪一项最符合这个要求？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">数一数 <code>responses</code> 列表有多长，够长就算完成</button>
+            <button class="quiz-option">把 temperature 调低，让模型的回答更确定</button>
+            <button class="quiz-option">把每轮工具调用的真实结果（文件内容、命令输出、报错、退出码）并回会话，让判断建立在环境返回的事实上</button>
+            <button class="quiz-option">看模型在正文里有没有说「我已经完成了」</button>
+          </div>
+          <div class="quiz-explain" hidden>本章把可观测拆成三问：模型知晓是否完成了任务？判断依据是什么？从哪里获取判断需要的信息？前几章的代码给出的答案是<strong>环境真值</strong>：18/19 章把工具执行结果包成 <code>role: "tool"</code> 的消息并回 <code>session.messages</code>，21 章的循环再用「这一轮还要不要调工具」这个程序化检查决定去留。「模型自称完成」是措辞不是证据；<code>responses</code> 的长度只反映循环跑了几轮，与完成无关；temperature 影响采样，不影响判据。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">5. 19 章的 <code>Tool.__call__</code> 用 <code>try/except</code> 包住参数校验与函数执行，异常时 <code>result = "".join(traceback.format_exception(...))</code>。从 harness 的「错误处理」视角看，这个设计的好处与代价分别是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">好处是省 token；代价是丢掉了堆栈信息</button>
+            <button class="quiz-option">好处是能自动重试失败的工具；代价是把错误藏起来，模型永远看不到</button>
+            <button class="quiz-option">好处是单个工具失败不会让 Agent 进程崩溃，模型能读到错误信息自我修正；代价是「失败结果」与「正常返回值」形态相同，模型可能误判为成功并反复重试，所以还需要护栏（步数/预算上限、结构化错误标记、危险动作人工确认）</button>
+            <button class="quiz-option">好处是工具永远不会失败；代价是再也不需要护栏了</button>
+          </div>
+          <div class="quiz-explain" hidden>看 <code>Tool.__call__</code> 的代码：<code>result = ""</code> 起手，<code>try</code> 里校验参数并调用原函数，<code>except</code> 里把完整堆栈字符串塞进 <code>result</code>，最后统一 <code>return result</code>。所以「崩溃」被换成了「一段文本」，这对长任务很友好（Agent 不会因为读了一个不存在的文件就整体挂掉）；但文本既是错误报告、也是正常返回值，模型没有结构化的「这是失败」信号，配合 21 章那个<code>while True</code>（没有停止条件），就可能出现「反复调用同一个必然失败的工具」这种烧钱循环——这正是本章护栏要补的位置，而不是靠提示词叮嘱模型「别重试」。</div>
+        </div>
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">6. 要把「最小权限原则」落到这套 <code>agent/</code> 代码里，最直接的做法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把所有工具都注册上，让模型自己在运行时判断该用哪个</button>
+            <button class="quiz-option">在系统提示词里写一句「请不要执行危险操作」，让模型自觉遵守</button>
+            <button class="quiz-option">保留危险工具的注册，只把它的函数体注释掉</button>
+            <button class="quiz-option">只把当前任务需要的工具注册进 <code>registry</code>（<code>session.tools = registry.schemas()</code>），用不到的能力干脆不让模型看到；参数在执行前用 Pydantic 模型校验</button>
+          </div>
+          <div class="quiz-explain" hidden>最小权限的定义是「只授予完成任务所必须的数据与操作」。在这套代码里，<strong>注册面就是权限面</strong>：<code>registry</code> 里没有的工具，<code>registry.schemas()</code> 就不会把它写进 <code>session.tools</code>，模型根本看不到、也就调用不了——这是硬边界。提示词只是软约束（模型可能无视、也可能被注入的文本带偏）；「保留注册但注释函数体」更糟：Schema 还在，模型会一直尝试调用一个不存在的实现。第二层落到 19 章的参数校验：<code>Tool.__call__</code> 先 <code>param_model(**kwargs)</code>，参数不对就走异常分支，不会带着脏参数去执行。</div>
+        </div>
+      </div>
+
+      <h3>🎯 高级测验 · 综合</h3>
+      <div class="quiz">
+        <div class="quiz-q" data-correct="3">
+          <div class="quiz-prompt">7. 线上现象：模型连续 7 轮都在调用同一个 <code>write_file</code>，每次都失败、每次都再试一遍，进程一直不结束、成本持续上涨。按本章三个关注点，最合理的处置顺序是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">先把「不要重复调用同一个工具」加长写进系统提示词，问题就算解决</button>
+            <button class="quiz-option">先对每一次工具调用都加人工确认，再考虑日志</button>
+            <button class="quiz-option">先换一个更强的模型，再补日志</button>
+            <button class="quiz-option">先可观测（把每轮的工具名、参数、结果与报错完整记下来，确认失败原因与重试模式）→ 再看护栏（加最大迭代/预算上限与重复失败熔断，危险工具走审批）→ 最后回到情境与状态（把失败结论与当前进度写进会话/状态，让下一轮按召回→规划→行动重新起步）</button>
+          </div>
+          <div class="quiz-explain" hidden>按本章的三关注点排序：<strong>没有观测就没有诊断</strong>——先要知道每轮到底发生了什么（工具名、参数、返回的错误文本、耗时），才谈得上修；<strong>护栏是把限制写进代码</strong>——最大迭代次数/预算上限 + 同一工具+参数重复失败的熔断 + 危险动作审批，官方明确提醒 agent 的自主性意味着更高成本与误差累积，常要设停止条件来保持控制；<strong>最后回到情境与状态管理</strong>——把「这条路试过、失败原因是 X」沉淀进会话或状态文件，下一轮召回时不再重走死路。换模型（B）跳过了诊断；只加提示词（C）是软约束，模型完全可以无视——它不是权限边界；给每次调用都加人工确认（D）在诊断之前就把效率压死，且没解决「为什么一直失败」。顺带一句：这个现象本身也是 harness engineering 的入口——把这次错误变成一条「永远不再犯」的机制（上限 + 熔断 + 验证脚本）。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">8. 本章引用的原始判断是：harness engineering 就是「发现 agent 犯了一个错，就工程化一个方案，让它永远不再犯同样的错」。下面哪一项最符合这个判据？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">把 temperature 调到 0，减少随机性</button>
+            <button class="quiz-option">换一个上下文窗口更大、参数更多的模型</button>
+            <button class="quiz-option">把这次错误沉淀成 agent 自己能跑的验证手段（例如只跑相关用例的测试/检查脚本），并写进 <code>AGENTS.md</code> 告诉它什么时候、怎么用</button>
+            <button class="quiz-option">在系统提示词里再加一句「请务必小心，不要写错文件」</button>
+          </div>
+          <div class="quiz-explain" hidden>原始出处把这件事分成两种形态：<strong>更好的隐式提示</strong>（<code>AGENTS.md</code>，每一行都来自一次具体的 bad behavior）与<strong>真正的可编程工具</strong>（截图、跑过滤测试等）；并且给出一条经验：<strong>只要给 agent 一个能验证自己工作的办法，它多半会自己修掉错误、并防止回归</strong>。所以判据是「<strong>可执行、可复现的验证</strong>」，不是「再叮嘱一句」（叮嘱没有新信息，下一轮还会犯）、也不是换模型/调温度（那是换马和调马的脾气，不解决「它无法判断自己错了」这个根因）。C 同时命中两种形态，还天然带来一条可观测的判据。</div>
+        </div>
+        <div class="quiz-q" data-correct="2">
+          <div class="quiz-prompt">9. 长周期任务里 Agent「失忆」：忘了前面已经确认过的约束，开始跑偏。按本章「情境与状态管理」，最对症的修法是？</div>
+          <div class="quiz-options">
+            <button class="quiz-option">调高 temperature，让它多探索几种做法</button>
+            <button class="quiz-option">要求模型每一轮都复述一次自己的目标，靠它自己记住</button>
+            <button class="quiz-option">把任务状态显式管理起来：关键结论与进度写进会话（并用 <code>Session.save()</code> 落盘、需要时 <code>Session.load()</code> 读回），每轮按 <strong>召回 → 规划 → 行动</strong> 重新注入这次需要的上下文，而不是指望模型「记得」</button>
+            <button class="quiz-option">把系统提示词写得越长越好，把所有可能遇到的情况都提前写进去</button>
+          </div>
+          <div class="quiz-explain" hidden>本章对情境与状态管理的要求是「确保 AI 在复杂、长周期的任务中，能获得正确的上下文信息，并记住任务状态，避免失忆和跑偏」，并强调<strong>召回 → 规划 → 行动</strong>。关键词是「<strong>获得</strong>」与「<strong>管理</strong>」——状态由外壳负责维护和注入，不是模型的记忆责任：18/19/20/21 章里 <code>session</code> 管消息与工具 Schema、每轮把工具结果并回 <code>session.messages</code>、<code>Session.save()</code> 把会话落盘、<code>Session.load(session_id)</code> 读回，这些就是召回的基础设施。A 是「把上下文写成墙纸」，越长越稀释重点；B 与目标相反（跑偏时更需要收敛）；C 把状态管理托付给模型的自我复述，恰恰是「失忆」时最先失效的那一环。</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💼 面试实战</h2>
+      <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
+      <button type="button" class="interview-launch">开始面试实战</button>
+      <script>
+        window.__interview = {
+          lesson: 'ac-0032-Harness-Engineering',
+          questions: [
+            {
+              type: 'trap',
+              level: '中级岗常问',
+              prompt: `同事读完《32.Harness Engineering》的「马具」比喻后说：「那就明白了——harness 就是提示词工程，把系统提示词写得更细更全，等于给马配了一副更好的马具。」请指出这个理解漏掉了什么：按本章与原始出处，harness engineering 到底在做什么？它和「写提示词」是什么关系？`,
+              source: `来源：Mitchell Hashimoto《My AI Adoption Journey》（"It is the idea that anytime you find an agent makes a mistake, you take the time to engineer a solution such that the agent never makes that mistake again."；"1. Better implicit prompting (AGENTS.md)."；"2. Actual, programmed tools."；"If you give an agent a way to verify its work, it more often than not fixes its own mistakes and prevents regressions."）https://mitchellh.com/writing/my-ai-adoption-journey · 检索 2026-10-02 · 层级：一手（作者本人博客，即本章文档所引来源）`,
+              breakdown: `漏掉的是「<strong>可执行</strong>」。原始出处把 harness engineering 拆成两种形态：<strong>更好的隐式提示</strong>（<code>AGENTS.md</code>，每一行都来自一次真实的 bad behavior）与<strong>真正的可编程工具</strong>（截图脚本、只跑相关用例的测试等），判据是「<strong>让 agent 永远不再犯同一个错</strong>」。写提示词只是形态之一，而且是最弱的那一环——它给的是<strong>建议</strong>，不是能力。<br>回到本章文档的三个关注点，会更清楚为什么提示词盖不住：<em>情境与状态管理</em>要回答「这次该给模型喂什么上下文、任务状态存在哪」，这是会话与状态管理的活；<em>护栏</em>是最小权限，要回答「模型被允许调用哪些工具、访问哪些数据」——提示词不是权限边界，模型可以无视、也可能被工具返回的文本带偏，而<strong>不注册的工具模型根本看不到</strong>；<em>可观测</em>要回答「是否完成任务、依据是什么、判断信息从哪来」，这需要事件流、日志与可复现的验证，而不是一段更长的说明文。<br>面试里可以用一个对照回答：<strong>「把『不要删除文件』写进系统提示词」是提示词工程；「不注册删除类工具，或者让删除动作必须拿到人工批准」才是 harness engineering</strong>。前者请求模型配合，后者让错误在结构上不可能发生。`,
+            },
+            {
+              type: 'trap',
+              level: '高级岗常问',
+              prompt: `另一位同事说：「护栏就是安全提示词加人工 review——在 system prompt 里把红线写清楚，再让模型自己注意，就够了。」请从最小权限原则出发说明这个说法为什么不成立，并给出在课程这套 <code>agent/</code> 代码里，「护栏」应当落在哪三处。`,
+              source: `来源：Microsoft Learn《Enhance security with the principle of least privilege》（"The information security principle of least privilege asserts that users and applications should be granted access only to the data and operations they require to perform their jobs."；"Prevent overprivileged applications by revoking unused and reducible permissions."）https://learn.microsoft.com/en-us/entra/identity-platform/secure-least-privileged-access · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《32.Harness-Engineering》课件（护栏 = 最小权限原则，只给完成当前任务所必须的权限）`,
+              breakdown: `为什么不成立：官方对最小权限的表述是「<strong>只授予用户与应用完成其工作所必需的数据与操作</strong>」，并且明确要求「撤销未被使用与可降级的权限」——这是一条<strong>授权（grant）规则</strong>，靠的是「权限集合本身被削减」，而不是「被授权者承诺不越界」。提示词是<strong>软约束</strong>：模型可能忽略它、可能被上下文里注入的文本说服、也可能在长循环里逐渐偏离；而权限面是<strong>硬边界</strong>——能力不在授权集合里，就调用不到。人工 review 也不是护栏的替代品：官方提醒 agent 的自主性带来更高成本与误差累积，需要在沙箱环境中充分测试并配合护栏，人工检查点是<strong>最后一道</strong>，不是唯一一道。<br>三处落点（都在前几章的代码里已经存在，harness 只是把它们当设计对象）：<br>① <strong>工具注册面</strong>：<code>registry</code> 只注册当前任务需要的工具，<code>session.tools = registry.schemas()</code> 决定模型能看见什么；不用的能力直接不注册，对应官方说的「撤销未使用的权限」。<br>② <strong>参数与执行前校验</strong>：<code>Tool.__call__</code> 先 <code>param_model(**kwargs)</code> 再执行原函数，脏参数进不去；官方给的工具设计建议是「像给团队里的初级工程师写 docstring」、并且把参数改成不容易用错的样子（例如强制绝对路径），本质都是让错误更难发生。<br>③ <strong>危险动作的审批与沙箱</strong>：有副作用的工具（写文件、跑命令）加只读模式/白名单，关键动作停下来等人拍板；实现上用 <code>Session.save()</code> 把现场落盘、审批通过后从同一状态继续。官方文档里也说得很直接：访问受保护数据时，应当<strong>由人给出同意</strong>。`,
+            },
+            {
+              type: 'mechanism',
+              level: '初级岗常问',
+              prompt: `请完整讲一遍本章的三个核心关注点（情境与状态管理、护栏、可观测）：每一项分别在回答什么问题？并分别结合 18-21 章的 <code>agent/</code> 代码，指出一个已经存在的落点。`,
+              source: `来源：Anthropic 工程博客《Building effective agents》（"During execution, it’s crucial for the agents to gain “ground truth” from the environment at each step (such as tool call results or code execution) to assess its progress."；"Prioritize transparency by explicitly showing the agent’s planning steps."）https://www.anthropic.com/engineering/building-effective-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《32.Harness-Engineering》课件（三大关注点原文）`,
+              breakdown: `<strong>① 情境与状态管理</strong>——回答「模型此刻应该知道什么、任务进行到哪一步」。文档口径：确保 AI 在复杂、长周期任务中获得正确的上下文并记住任务状态，避免失忆与跑偏，强调 <strong>召回 → 规划 → 行动</strong>。课程里的落点：<code>Session</code> 统一维护消息与工具 Schema（17/18 章），系统提示词里注入当前环境（20 章的 <code>system.j2</code>），每轮把工具结果并回 <code>session.messages</code>（21 章），<code>Session.save()</code> / <code>Session.load(session_id)</code> 负责把状态落盘与读回。<br><strong>② 护栏</strong>——回答「模型被允许做什么」。文档口径：严格管理能调用哪些工具、访问哪些数据，核心理念是最小权限原则。课程里的落点：<code>registry</code> 的注册面就是权限面（19 章，<code>session.tools = registry.schemas()</code>），加上 <code>Tool.__call__</code> 里的 Pydantic 参数校验。<br><strong>③ 可观测</strong>——回答「怎么知道完成了？依据是什么？信息从哪来」。文档口径明确要求「详细的设计」，把这三问都答上。课程里的落点：<code>EventEmitter</code> + <code>ModelListener</code> 的事件流（21 章，一次把监听器挂到全部事件上，推理/内容/工具调用都可观察）、<code>Session.print_friendly()</code> 复盘轨迹，以及 Agent 循环用 <code>registry.invoke(session.messages[-1])</code> 的返回值判断「这一轮还要不要继续」——判据来自环境的工具结果，而不是模型说了什么。官方那条原则「显式展示 agent 的规划步骤」正是可观测这一项的要求。`,
+            },
+            {
+              type: 'mechanism',
+              level: '中级岗常问',
+              prompt: `本章「可观测」被拆成三个具体问题：模型怎么知道任务完成了？判断的依据是什么？判断需要的信息从哪里来？请说明官方对第三问给出的答案（环境真值），并解释为什么课程把「每轮工具结果并回会话」当作可观测的基础，而不是让模型自己声称完成。`,
+              source: `来源：Anthropic 工程博客《Building effective agents》（"During execution, it’s crucial for the agents to gain “ground truth” from the environment at each step (such as tool call results or code execution) to assess its progress."；"The autonomous nature of agents means higher costs, and the potential for compounding errors."）https://www.anthropic.com/engineering/building-effective-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《21.Agent》课件（while 循环里 registry.invoke(session.messages[-1])，工具结果并回会话后继续下一轮）`,
+              breakdown: `官方给的答案很具体：执行过程中，agent 必须<strong>在每一步从环境取得「ground truth」（工具调用结果、代码执行结果等）来评估自己的进展</strong>。注意这句的主语——真值来自<strong>环境的执行</strong>，不是模型对自身的评估。这也解释了为什么官方把「透明：显式展示 agent 的规划步骤」列为核心原则：可观测不是事后写文档，而是让每一步判断都有留痕。<br>课程里的三件对应物：<br>① <strong>真值入口</strong>：18/19 章把每个工具的执行结果包成 <code>role: "tool"</code> 的消息，携带 <code>tool_call_id</code> 并回 <code>session.messages</code>——文件到底读到什么、命令退出码是多少、报错原文是什么，下一轮模型看到的是这些原始事实。<br>② <strong>程序化判据</strong>：21 章循环的退出条件是 <code>registry.invoke(session.messages[-1])</code> 返回 <code>None</code>（这一轮没有工具调用），这是一个<strong>代码层面的检查</strong>，与正文长短无关。反过来说，如果让「模型说完成了」当判据，就等于拿措辞当证据。<br>③ <strong>可复核</strong>：事件流 + <code>print_friendly()</code> 让「做了什么、环境返回了什么、为什么判定结束」能被复述和审计。<br>反面代价也值得说：官方提醒 agent 的自主性意味着更高成本与误差累积，<strong>误差会累积</strong>——所以判据必须每一步都落回环境，否则一次自我误判会被后面的步骤继承放大。工程做法是：能自动验证的就写成验证脚本/测试（让 agent 自己跑），不能自动验证的把判据写清楚并留人工检查点。`,
+            },
+            {
+              type: 'review',
+              level: '中级岗常问',
+              prompt: `代码审查（19 章工具层的核心）：<code>Tool.__call__</code> 里用 <code>try/except</code> 包住参数校验与函数执行，正常时返回原函数结果的字符串，异常时返回 <code>traceback.format_exception</code> 拼出的完整堆栈；<code>registry.invoke</code> 里先 <code>tool = self._tools[name]</code>，随后写 <code>if not tool: result = "无此工具，请仔细检查你传递的工具名称是否正确"</code>，最后把 <code>result</code> 包成 <code>role: "tool"</code> 的消息返回。请从 harness 的「错误处理 + 护栏」角度指出至少两个问题，并给出修法。`,
+              source: `来源：Anthropic 工程博客《Building effective agents》（"The autonomous nature of agents means higher costs, and the potential for compounding errors. We recommend extensive testing in sandboxed environments, along with the appropriate guardrails."；"The task often terminates upon completion, but it\u2019s also common to include stopping conditions (such as a maximum number of iterations) to maintain control."）https://www.anthropic.com/engineering/building-effective-agents · 检索 2026-10-02 · 层级：一手（官方文档）+ 源课程《19.封装tools》课件（Tool.__call__ 的 traceback 兜底、registry.invoke 的 self._tools[name] 与 if not tool 分支）`,
+              breakdown: `<strong>问题一：异常被吞成「正常字符串结果」。</strong><code>Tool.__call__</code> 把堆栈文本当成普通返回值，<code>registry.invoke</code> 再原样包进 <code>role: "tool"</code> 的消息——对模型来说，「执行失败」与「执行成功返回一段文本」形态完全相同，没有任何结构化信号。后果有两个：模型可能把报错文本当成任务产出继续往下走；更常见的是它发现结果不对，于是重试同一个必然失败的动作，而 21 章的循环没有停止条件，轮数与成本双双失控（官方对此的提醒是：自主性带来更高成本与误差累积，通常需要最大迭代次数这类停止条件来保持控制）。修法：错误结构化（<code>content</code> 里用固定前缀，或额外带 <code>is_error</code> 标记），在 Agent 层对「同一工具 + 同一参数连续失败」做熔断并把失败原因写进会话，同时补上最大迭代次数/超时/预算上限。<br><strong>问题二：工具名不存在时的分支是死代码。</strong><code>tool = self._tools[name]</code> 是字典下标取值，键不存在会<strong>直接抛 <code>KeyError</code></strong>，所以后面的 <code>if not tool</code> 永远执行不到；而这个 <code>KeyError</code> 发生在 <code>Tool.__call__</code> 之外，那个 <code>try/except</code> 兜不住它，会一路冒到 Agent 循环，把整个任务中断——本该是「一次可恢复的工具调用失败」，变成了「进程级异常」。修法：用 <code>self._tools.get(name)</code>，或先判断 <code>name in self._tools</code>，并把「无此工具」连同<strong>可用工具清单</strong>作为工具结果回给模型，让它自我修正。<br><strong>附带一条可观测问题：</strong><code>Tool.__call__</code> 最后用 <code>str(...)</code> 无差别地把返回值转成字符串——文件全文、<code>None</code>、超长日志都会原样进会话，长任务里会迅速吃满上下文，也让「哪些结果值得看」失去控制。修法：对工具结果做长度控制与截断（21 章 <code>print_friendly()</code> 的思路），大结果落盘、只在会话里留摘要与路径。`,
+            },
+            {
+              type: 'design',
+              level: '高级岗常问',
+              prompt: `你要给一个「运维助手」Agent 配一整套 harness：它能读日志、跑只读诊断命令，但<strong>不能</strong>直接重启服务、改配置。请给出设计：① 工具面怎么切；② 权限与人工检查点怎么设；③ 可观测性怎么落地；④ 出错与超时怎么收场。`,
+              source: `来源：Microsoft Learn《Enhance security with the principle of least privilege》（"The information security principle of least privilege asserts that users and applications should be granted access only to the data and operations they require to perform their jobs."；"Use the identity platform’s consent framework to require that a human consent to the request from the application to access protected data."）https://learn.microsoft.com/en-us/entra/identity-platform/secure-least-privileged-access · 检索 2026-10-02 · 层级：一手（官方文档）+ 来源：Anthropic 工程博客《Building effective agents》（"Agents can then pause for human feedback at checkpoints or when encountering blockers."；"we recommend extensive testing in sandboxed environments, along with the appropriate guardrails."）https://www.anthropic.com/engineering/building-effective-agents · 检索 2026-10-02 · 层级：一手（官方文档）`,
+              breakdown: `<strong>① 工具面按「最小可执行动作」切分。</strong>读日志、看服务状态、看磁盘/连接数各自一个只读工具（参数用 Pydantic 校验，例如日志路径限定在白名单目录、行数有上限）；「重启服务」「改配置」<strong>不注册为可直接执行的工具</strong>，而是注册成「生成变更单」的工具——它只产出待审批的动作描述，本身没有副作用。对照最小权限的定义：只授予完成该岗位工作所必需的数据与操作。<br><strong>② 权限与人工检查点。</strong>默认只读白名单（命令前缀/子命令白名单，比在提示词里写「不要执行写操作」可靠得多，因为未授权的命令根本不在工具集合里）；写类动作走审批流：工具抛出「需要人工确认」的信号 → Agent 层捕获 → <code>Session.save()</code> 把现场（消息、待执行动作、参数）落盘 → 人工批准后 <code>Session.load(session_id)</code> 从同一状态续跑。官方对 agent 的描述正是「可以在检查点或遇到阻碍时暂停，等人类反馈」；微软的最小权限实践也强调访问受保护资源应由人给出同意。要点：检查点要设在<strong>不可逆动作之前</strong>，而不是失败之后。<br><strong>③ 可观测性落地。</strong>以 21 章的监听体系为基础：<code>ModelListener</code> 已经一次挂全事件，派生出 <code>AuditListener</code>，在 <code>tool_call_end</code> 记录「工具名 + 参数 + 调用 id + 结果摘要 + 耗时 + 是否人工批准」；「是否完成」用环境真值判定（命令退出码、日志断言、健康检查返回值），并把每轮的判断依据一并写进审计记录。对外：终端/界面用 <code>ModelPrinterListener</code>，审计走独立通道——注意审计失败不能拖垮主流程（handler 内 try/except）。<br><strong>④ 出错与收场。</strong>工具错误结构化回灌（不要只回一段堆栈文本），对同一工具+参数的重复失败熔断；加最大迭代次数、墙钟超时与成本预算（官方：常需停止条件来保持控制）；触发上限时返回「已达上限 + 当前进度 + 已收集的证据」，同时把会话快照落盘，交给人工接手而不是静默失败。最后一步是官方那条绕不开的建议：<strong>先在沙箱环境里充分测试，再配合护栏上线</strong>。`,
+            },
+            {
+              type: 'scenario',
+              level: '初级岗常问',
+              prompt: `用 AI 助手在 30 分钟内，给 21 章那个 Agent 装上最小可用的 harness，让它「自己知道对不对」。任务与验收点见任务卡。`,
+              scene: {
+                time: '约 30 分钟',
+                goal: '① 在工程根目录写/补一份 AGENTS.md：这次跑什么命令算验证通过、哪些动作绝对不做，每条都对应一个具体场景；② 新增一个只读的验证工具（例如 run_checks：只允许跑指定的检查脚本，返回退出码与输出摘要），用 @tool 装饰器注册；③ 只注册本任务需要的工具（不要把所有工具都挂上）；④ 给 Agent 的循环加最大步数；⑤ 跑一次真实小任务，用监听器输出与 session.print_friendly() 复盘，确认每一步「完成 / 未完成」的判据都来自工具输出。',
+                accept: ['AGENTS.md 里每条约束都能对应到一次具体的 agent 错误，或一条明确的验证命令（不是口号）', 'registry 里只有任务需要的工具；验证工具是只读的、参数经 Pydantic 校验，越权参数会被拦下', 'Agent 循环有最大步数（或超时/预算）上限，触顶时返回明确提示并保留现场，而不是死循环', '复盘输出能逐轮说清「做了什么 → 环境返回了什么 → 为什么判定完成或未完成」', '故意让检查脚本失败一次：模型能读到失败输出并修正，而不是把它当成成功结果继续往下做'],
+              },
+              source: `任务基于《32.Harness-Engineering》课件 · 来源层级：一手（源课程）场景化`,
+              breakdown: `思路：先把「怎么算对」写下来，再让 agent 有能力跑这件事，最后才是限制它的手脚。① <code>AGENTS.md</code> 只写两类内容——<strong>验证方式</strong>（跑哪个脚本/哪条命令、看什么输出）与<strong>禁令</strong>（不许动哪些目录/不许跑哪些命令），每条都来自一次真实的踩坑；② 用 19 章的 <code>@tool(...)</code> 包装一个只读的检查工具，参数走 Pydantic 校验（例如只接受脚本名白名单），<code>registry.register</code> 它；③ 构造 <code>Session</code> 时 <code>session.tools = registry.schemas()</code>，确保没有多余能力；④ <code>Agent.invoke</code> 的 <code>while True</code> 换成带最大步数的循环；⑤ 跑任务时开 <code>ModelPrinterListener</code>，结束后 <code>agent.session.print_friendly()</code> 对一遍轨迹。<br>常见坑：<em>把 AGENTS.md 写成口号</em>（「请小心操作」不是 harness，一行具体命令才是）；<em>验证工具写成万能 bash</em>（等于把最小权限又还回去了，只读白名单才是护栏）；<em>只加日志不加步数上限</em>（可观测做到了，护栏没做到，一样会烧钱）；<em>拿「模型说完成了」当验收</em>（判据必须来自脚本退出码/输出）；<em>验证脚本自己没跑通就交给 agent</em>（它会拿一个坏判据反复自我否定）；<em>忘了 session.save()</em>（长任务被打断后只能从零重跑，成本与时间双输）。`,
+            },
+          ],
+        };
+      </script>
+    </section>
+
+    <section>
+      <h2>巩固与延伸</h2>
+      <ul class="pitfall-list">
+        <li><strong>深读推荐</strong>：<a href="https://mitchellh.com/writing/my-ai-adoption-journey">Mitchell Hashimoto《My AI Adoption Journey》</a>（Step 5: Engineer the Harness，本章文档所引来源）· <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic《Building effective agents》</a>（环境真值、检查点、护栏）· <a href="https://learn.microsoft.com/en-us/entra/identity-platform/secure-least-privileged-access">Microsoft Learn：最小权限原则</a></li>
+        <li><strong>打印参考</strong>：<a href="../reference/Harness-Engineering速查表.html">Harness-Engineering速查表</a>——三大关注点、外壳五部件与检查清单一页装下，建议打印。</li>
+        <li><strong>回看课程</strong>：<a href="/agents/Agents底层逻辑/Harness-Engineering">32.Harness Engineering</a> · 相关前置 <a href="/agents/Agents底层逻辑/Agent">21.Agent</a> · 下一课 <a href="/agents/Agents底层逻辑/Loop-Engineering">33.Loop Engineering</a></li>
+      </ul>
+    </section>
+
+  </main>
+  <script src="../assets/quiz.js"></script>
+  <script src="../assets/interview.js"></script>
+  <script src="../assets/math.js"></script>
+</body>
+</html>

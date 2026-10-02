@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MCP协议速查表 · 参考手册</title>
+  <meta name="description" content="MCP协议速查表 · 可打印参考手册：配合《MCP协议互动教学课程》使用。">
+  <link rel="icon" href="../../img/avatar.png" type="image/png">
+  <link rel="stylesheet" href="../assets/course.css">
+  <link rel="stylesheet" href="../assets/forest.css">
+  <link rel="stylesheet" href="../assets/katex/katex.min.css">
+</head>
+<body>
+  <main class="page">
+
+    <header class="lesson-header">
+      <p class="sheet-kicker">参考手册 · 适合打印 · Agents底层逻辑</p>
+      <h1>MCP协议速查表</h1>
+      <p class="lesson-sub">配合<a href="../lessons/ac-0024-MCP协议.html">《MCP协议互动教学课程》</a>使用。</p>
+    </header>
+
+    <section>
+      <h2>协议内核三要素</h2>
+      <p>一句话：<strong>MCP 定义了 Agent 与外部工具的通信标准</strong>，落点是「角色 + 传输 + 消息格式」三件事。</p>
+      <table class="cmp-table">
+        <tr><th>要素</th><th>取值</th><th>记住这一句</th></tr>
+        <tr><td>通信角色</td><td>MCP Client（通常是 Agent）↔ MCP Server（工具提供者）</td><td>任何匹配 MCP 协议的程序都能当 Client——inspector 就是拿来当 Client 用的</td></tr>
+        <tr><td>通信方式</td><td><code>stdio</code> / <code>http</code>（现行规范称 Streamable HTTP）</td><td>stdio 走 <code>stdin</code>·<code>stdout</code> 在本地进程间通信；HTTP 是独立进程、可多客户端</td></tr>
+        <tr><td>通信格式</td><td>JSON-RPC 2.0</td><td>官方硬约束：All messages MUST follow the JSON-RPC 2.0 specification</td></tr>
+      </table>
+      <pre>// JSON-RPC 2.0 信封（课件示例）
+{
+  "jsonrpc": "2.0",
+  "id": "req-123",          // MCP 额外约束：不得为 null，同一会话不得重号
+  "method": "tools/call",   // initialize | tools/list | tools/call | ...
+  "params": { ... }         // 可选
+}</pre>
+      <p>为什么值得有标准：没有协议时，$M$ 个 Agent 对接 $N$ 个工具要做 $M \times N$ 套适配；有了协议，各方各自实现一次即可，总量降到 $M + N$。</p>
+    </section>
+
+    <section>
+      <h2>一次会话的三条消息</h2>
+      <table class="cmp-table">
+        <tr><th>消息</th><th>方向</th><th>作用</th></tr>
+        <tr><td><code>initialize</code></td><td>Client → Server（Server 回响应）</td><td><strong>必须是第一次交互</strong>：协商协议版本、双方 capabilities、交换 <code>clientInfo</code> / <code>serverInfo</code></td></tr>
+        <tr><td><code>tools/list</code></td><td>Client → Server</td><td>发现工具列表：工具名、描述、参数 Schema（前提是 Server 在 initialize 里声明了 <code>tools</code> 能力）</td></tr>
+        <tr><td><code>tools/call</code></td><td>Client → Server</td><td>调用工具：<code>params</code> 里带工具名与实参，响应回来的是工具结果</td></tr>
+      </table>
+      <dl class="term-grid">
+        <dt>生命周期三段</dt>
+        <dd><strong>Initialization</strong>（能力协商 + 版本协商）→ <strong>Operation</strong>（正常通信）→ <strong>Shutdown</strong>（优雅关闭）。</dd>
+        <dt>能力协商规则</dt>
+        <dd><strong>声明才可用</strong>：Server 支持工具就必须声明 <code>tools</code> 能力；Client 看到能力声明后才应发 <code>tools/list</code>。工具一个都没出现，先查 initialize 的 capabilities。</dd>
+        <dt>消息配对</dt>
+        <dd>请求带 <code>id</code>，响应回同一个 <code>id</code>；通知（notification）没有 <code>id</code>，不需要应答。</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>stdio vs http（Streamable HTTP）</h2>
+      <table class="cmp-table">
+        <tr><th></th><th>stdio</th><th>Streamable HTTP</th></tr>
+        <tr><td>谁启动</td><td>Client 把 Server 作为<strong>子进程</strong>启动</td><td>Server 是<strong>独立进程</strong>，自行部署</td></tr>
+        <tr><td>信道</td><td>标准输入 / 标准输出，消息以换行分隔、不得内含换行</td><td>HTTP POST（发消息）+ GET（开 SSE 流接收）</td></tr>
+        <tr><td>客户端数</td><td>一对一</td><td>可处理<strong>多个</strong>客户端连接</td></tr>
+        <tr><td>日志往哪写</td><td><strong>只能写 <code>stderr</code></strong>；stdout 只允许出现合法 MCP 消息</td><td>stderr 不被 Client 捕获，用服务端日志聚合 / OpenTelemetry</td></tr>
+        <tr><td>必备请求头</td><td>—</td><td>POST 必须带 <code>Accept: application/json, text/event-stream</code></td></tr>
+        <tr><td>安全底线</td><td>进程隔离，无网络暴露</td><td>校验 <code>Origin</code> 防 DNS rebinding；本地只绑 <code>127.0.0.1</code>；实现认证</td></tr>
+      </table>
+      <p>选型判据：<strong>看谁在用、数据边界与运维成本</strong>——本机文件/凭据留 stdio；团队共享、集中升级走 HTTP，并把安全三件套补齐。</p>
+    </section>
+
+    <section>
+      <h2>客户端 / 服务端与必备命令</h2>
+      <pre># MCP Client：inspector（课程口径，通常用于调试 MCP Server，可看清通信内容）
+npx -y @modelcontextprotocol/inspector@1.0.0
+# 官方当前文档口径（同一个包 @modelcontextprotocol/inspector），需 Node 22.19.0+
+npx @modelcontextprotocol/inspector
+
+# MCP Server：官方 time 测试服务器
+uvx mcp-server-time
+
+# MCP Server：微软官方文档服务
+https://learn.microsoft.com/api/mcp</pre>
+      <dl class="term-grid">
+        <dt>MCP 聚合站</dt>
+        <dd>awesome-mcp-servers、<a href="https://mcp.so/zh">mcp.so</a>、<a href="https://smithery.ai/servers">smithery.ai</a>、<a href="https://glama.ai/">glama.ai</a>——找现成 Server 从这里起步。</dd>
+        <dt>易错点 ①</dt>
+        <dd>stdio Server 里用 <code>print()</code> 打日志 → 污染 stdout，Client 解析失败。日志一律 <code>stderr</code>。</dd>
+        <dt>易错点 ②</dt>
+        <dd>跳过 <code>initialize</code> 直接调工具 → 违反「初始化必须是首次交互」，能力与版本都没谈。</dd>
+        <dt>易错点 ③</dt>
+        <dd>把 <code>id</code> 写成 <code>null</code> 或重复使用 → MCP 明确禁止（标准 JSON-RPC 允许，MCP 不允许）。</dd>
+        <dt>官方文档</dt>
+        <dd><a href="https://modelcontextprotocol.io/docs/getting-started/intro">What is MCP?</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic">Base Protocol</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports">Transports</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle">Lifecycle</a></dd>
+      </dl>
+    </section>
+
+    <p class="print-badge">🔖 Agents底层逻辑课程</p>
+
+  </main>
+  <script src="../assets/math.js"></script>
+</body>
+</html>
