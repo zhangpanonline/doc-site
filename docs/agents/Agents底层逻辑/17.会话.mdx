@@ -1,0 +1,272 @@
+---
+sidebar_position: 17
+title: '17. 会话'
+description: "Agents底层逻辑 · 会话：多轮消息管理与上下文拼接、缓存命中与 token 成本控制。"
+displayed_sidebar: agentsCore
+---
+
+# 会话
+
+```python
+from agent.model import Model
+from agent.printer import print_response, print_stream, PrinterConfig
+from agent.prompt import render_prompt
+
+model = Model()
+```
+
+```python
+# 第1次调用
+resp = model.invoke_stream([
+    {"role": "system", "content": render_prompt("system")},
+    {"role": "user", "content": "uv是什么？"}
+])
+
+print_stream(resp)
+```
+
+```python
+# 第2次调用
+resp = model.invoke_stream([
+    {"role": "system", "content": render_prompt("system")},
+    {"role": "user", "content": "如何安装？"}
+])
+
+print_stream(resp)
+```
+
+```python
+from agent.session import Session
+
+session = Session()
+session.add_message({"role": "system", "content": render_prompt("system")})
+session.add_message({"role": "user", "content": "uv是什么？"})
+# 第一次调用
+resp = model.invoke_stream(session)
+
+print_stream(resp)
+```
+
+```python
+# 查看会话内容
+import json
+
+print(session.id)
+print(json.dumps(session.messages, ensure_ascii=False, indent=2))
+```
+
+```python
+session.add_message({"role":"user", "content": "如何安装？"})
+# 第2词调用
+resp = model.invoke_stream(session)
+
+print_stream(resp)
+```
+
+```python
+# 查看会话内容
+import json
+
+print(session.id)
+print(json.dumps(session.messages, ensure_ascii=False, indent=2))
+```
+
+```python
+# 保存会话内容
+session.save()
+```
+
+## 本章代码
+
+
+
+本章 `agent/` 工程相对上一章的变更：**新增 1 个文件、修改 2 个文件**、删除 1 个。以下为变更文件全文。
+
+### 新增文件 `agent/session.py`
+
+```python
+import json
+import uuid
+from pathlib import Path
+
+
+class Session:
+    def __init__(self):
+        self.id = str(uuid.uuid4())
+        self.messages: list[dict] = []
+
+    def add_message(self, message: dict):
+        self.messages.append(message)
+
+    def save(self):
+        sessions_dir = Path(__file__).parent / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+
+        data = {
+            "id": self.id,
+            "messages": self.messages,
+        }
+
+        path = sessions_dir / f"{self.id}.json"
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    @classmethod
+    def load(cls, session_id: str):
+        path = Path(__file__).parent / "sessions" / f"{session_id}.json"
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        session = cls()
+        session.id = data["id"]
+        session.messages = data["messages"]
+        return session
+```
+
+### 修改文件 `agent/model.py`
+
+```python
+from collections.abc import Iterator
+from dataclasses import dataclass
+from typing import cast
+
+from agent.config import openai_settings
+from agent.session import Session
+from openai import OpenAI
+
+
+@dataclass
+class Chunk:
+    type: str = ""
+    content: str = ""
+
+
+@dataclass
+class Model:
+    model_name: str = openai_settings.model
+    _client: OpenAI = OpenAI()
+
+    def invoke(self, messages: list[dict] | Session):
+        session = None
+        if isinstance(messages, Session):
+            session = messages
+            messages = session.messages
+
+        response = self._client.chat.completions.create(
+            model=self.model_name,
+            messages=cast(list, messages),
+        )
+
+        if session:
+            content = response.choices[0].message.content or ""
+            session.add_message(response.choices[0].message.to_dict())
+
+        return response
+
+    def invoke_stream(self, messages: list[dict] | Session) -> Iterator[Chunk]:
+        session = None
+        if isinstance(messages, Session):
+            session = messages
+            messages = session.messages
+
+        stream = self._client.chat.completions.create(
+            model=self.model_name,
+            messages=cast(list, messages),
+            stream=True,
+        )
+        is_on_reasoning = False
+        full_reasoning_content = ""
+        full_content = ""
+        reasoning_field = ""
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta
+            content = delta.content
+            reasoning_field_temp = "reasoning_content"
+            reasoning_content = getattr(delta, reasoning_field_temp, None)
+            if not reasoning_content:
+                reasoning_field_temp = "reasoning"
+                reasoning_content = getattr(delta, reasoning_field_temp, None)
+            if reasoning_content:
+                reasoning_field = reasoning_field_temp
+
+            if reasoning_content:
+                full_reasoning_content += reasoning_content
+                if not is_on_reasoning:
+                    is_on_reasoning = True
+                    yield Chunk(type="reasoning_start")
+                yield Chunk(type="reasoning", content=reasoning_content)
+            if content:
+                full_content += content
+                if is_on_reasoning:
+                    is_on_reasoning = False
+                    yield Chunk(type="reasoning_end", content=full_reasoning_content)
+                    yield Chunk(type="content_start")
+                yield Chunk(type="content", content=content)
+
+        yield Chunk(type="content_end", content=full_content)
+
+        if session:
+            msg = {"role": "assistant", "content": full_content}
+            if reasoning_field:
+                msg[reasoning_field] = full_reasoning_content
+            session.add_message(msg)
+```
+
+### 修改文件 `agent/printer.py`
+
+```python
+from dataclasses import dataclass
+import sys
+
+
+@dataclass
+class PrinterConfig:
+    show_reasoning: bool = True
+    reasoning_color: str = "36"
+    content_color: str = "32"
+
+
+def print_response(response, config: PrinterConfig | None = None):
+    if config is None:
+        config = PrinterConfig()
+    message = response.choices[0].message
+    reasoning_content = getattr(message, "reasoning_content", None)
+    if not reasoning_content:
+        reasoning_content = getattr(message, "reasoning", None)
+    if reasoning_content and config.show_reasoning:
+        print(f"\033[{config.reasoning_color}m{reasoning_content}\033[0m")
+        print()
+    content = message.content
+    if content:
+        print(f"\033[{config.content_color}m{content}\033[0m")
+
+
+def print_stream(chunk_iterator, config: PrinterConfig | None = None):
+    if config is None:
+        config = PrinterConfig()
+    for chunk in chunk_iterator:
+        if chunk.type == "reasoning_start":
+            if config.show_reasoning:
+                print("思考：")
+        elif chunk.type == "reasoning_end":
+            if config.show_reasoning:
+                print()
+        elif chunk.type == "content_start":
+            print()
+            print("内容：")
+        elif chunk.type == "content_end":
+            print()
+            print("====输出完毕====")
+        elif chunk.type == "reasoning":
+            if config.show_reasoning:
+                print(f"\033[{config.reasoning_color}m{chunk.content}\033[0m", end="")
+        elif chunk.type == "content":
+            print(f"\033[{config.content_color}m{chunk.content}\033[0m", end="")
+        sys.stdout.flush()
+```
+
+### 已删除文件
+
+- `agent/message.py`

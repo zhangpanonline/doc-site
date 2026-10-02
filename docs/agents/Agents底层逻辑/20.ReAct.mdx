@@ -1,0 +1,711 @@
+---
+sidebar_position: 20
+title: '20. ReAct'
+description: "Agents底层逻辑 · ReAct：推理与行动交替的循环范式，用 ReAct 组织 Agent 主循环。"
+displayed_sidebar: agentsCore
+---
+
+# ReAct
+
+本次代码变动：
+
+- 新增了`tool/bash_command.py`，提供了执行`bash`命令的工具
+- 在系统提示词中注入了当前操作系统的信息
+- 新建 `Session` 时自动注入工具和提示词
+- 将打印格式进行了简洁化处理
+
+```python
+from agent.model import Model
+from agent.printer import ModelPrinterListener
+from agent.session import Session
+from agent.tool import registry
+import json
+import os
+
+session = Session()
+model = Model()
+listener = ModelPrinterListener(model)
+session.print()
+```
+
+# ReAct
+
+![tool_calling.svg](/img/agent-core/20-tool_calling.svg)
+
+```python
+def query(q: str, session: Session, model: Model):
+    "根据用户提问进行处理"
+    session.add_message({"role": "user", "content": q})
+    # ReAct Loop
+    while True:
+        model.invoke_stream(session)
+        call_msg = registry.invoke(session.messages[-1])
+        if call_msg is None:
+            break
+        else:
+            session.messages += call_msg
+
+query("请帮我分析./agent目录中的核心实现逻辑，将结果放到当前目录的 分析.md 中", session, model)
+```
+
+```python
+session.save()
+```
+
+## 本章代码
+
+
+
+本章 `agent/` 工程相对上一章的变更：**新增 2 个文件、修改 5 个文件**、删除 2 个。以下为变更文件全文。
+
+### 新增文件 `agent/tool/bash_command.py`
+
+```python
+import subprocess
+from sys import platform
+
+from agent.tool.core import tool
+
+
+@tool(command="要执行的 bash/shell 命令")
+def bash_command(command: str) -> str:
+    """执行 bash/shell 命令，返回命令输出结果"""
+
+    shell_flag = "cmd" if platform == "win32" else "/bin/bash"
+
+    result = subprocess.run(
+        command,
+        shell=True,
+        executable=shell_flag,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    if result.returncode == 0:
+        return result.stdout.strip() or "(命令执行成功，无输出)"
+    else:
+        return f"[退出码 {result.returncode}]\n{result.stderr.strip() or result.stdout.strip()}"
+```
+
+### 新增文件 `分析.md`
+
+````markdown
+# Agent 核心实现逻辑分析
+
+## 一、整体架构概览
+
+这是一个基于 **ReAct (Reasoning + Acting)** 模式的 AI Agent 框架，核心组件包括：
+
+```
+agent/
+├── config.py          # 配置管理
+├── events.py          # 事件系统 (EventEmitter)
+├── model.py           # LLM 模型调用封装
+├── session.py         # 会话管理
+├── prompt.py          # Jinja2 提示词模板渲染
+├── printer.py         # 流式输出监听与打印
+├── tool/              # 工具系统
+│   ├── core/
+│   │   ├── tool.py    # Tool 基类与装饰器
+│   │   └── utils.py   # 工具辅助函数
+│   ├── bash_command.py  # Shell 命令执行工具
+│   ├── read_file.py     # 文件读取工具
+│   └── write_file.py    # 文件写入工具
+```
+
+---
+
+## 二、核心模块详细分析
+
+### 1. 配置管理 (`config.py`)
+
+**功能**: 基于 Pydantic Settings 的环境配置管理
+
+- **`BaseSettingsWithEnv`**: 基础配置类，自动加载 `.env` 文件
+- **`OpenAISettings`**: OpenAI API 配置，支持 `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL` 环境变量
+- 使用 `env_prefix` 自动解析环境变量前缀
+
+```python
+class OpenAISettings(BaseSettingsWithEnv):
+    api_key: str = ""
+    base_url: str = ""
+    model: str = ""
+    model_config = {"env_prefix": "OPENAI_"}
+```
+
+---
+
+### 2. 事件系统 (`events.py`)
+
+**功能**: 发布-订阅模式的事件总线
+
+```
+Event EventEmitter
+```
+
+- **`Event`**: 定义所有事件类型常量
+  - `REASONING_START / REASONING / REASONING_END` — 推理过程事件
+  - `CONTENT_START / CONTENT / CONTENT_END` — 内容输出事件
+  - `TOOL_CALL_START / TOOL_CALL / TOOL_CALL_END` — 工具调用事件
+  - `COMPLETE` — 完成事件
+
+- **`EventEmitter`**: 事件管理器
+  - `on(event, callback)` — 注册事件监听器
+  - `emit(event, **data)` — 触发事件并传递数据
+
+**设计特点**: 使用 `defaultdict(list)` 管理事件回调，支持一个事件绑定多个监听器。
+
+---
+
+### 3. LLM 模型调用 (`model.py`)
+
+**功能**: 封装 OpenAI Chat Completion API，支持流式/非流式调用
+
+#### 核心类: `Model(EventEmitter)`
+
+```
+Model extends EventEmitter
+```
+
+##### 调用流程:
+
+```
+invoke(session) / invoke_stream(session)
+    ↓
+client.chat.completions.create()
+    ↓
+_process(session, response)
+    ↓
+┌─────────────┬──────────────────┐
+│ 非流式       │ 流式              │
+│ normalize    │ Builder 模式      │
+└─────────────┴──────────────────┘
+    ↓
+session.add_message(result.message)
+```
+
+##### 流式处理 - Builder 模式:
+
+使用 **策略模式** 的不同 Builder 来处理不同类型的响应内容：
+
+| Builder | 处理的字段 | 触发的事件 |
+|---------|-----------|-----------|
+| `ReasoningBuilder` | `reasoning_content` / `reasoning` | reasoning_start → reasoning → reasoning_end |
+| `ContentBuilder` | `content` | content_start → content → content_end |
+| `ToolCallsBuilder` | `tool_calls` | tool_call_start → tool_call → tool_call_end |
+
+**关键设计**:
+- `Builder._key_names(delta)`: 返回 (字段名, 开始事件, 普通事件, 结束事件)
+- `ToolCallsBuilder._normalize_tool_calls()`: 将 chunk 中的 tool_calls 归一化为标准字典格式
+- `ReasoningBuilder.is_end()`: 特殊判断逻辑 — 当出现 content 或 tool_calls 时也认为推理结束
+
+##### InvokeResult:
+
+```python
+@dataclass
+class InvokeResult:
+    message: dict      # 归一化后的消息
+    raw: Any           # 原始响应
+    def print_raw()    # 打印原始 JSON
+```
+
+---
+
+### 4. 会话管理 (`session.py`)
+
+**功能**: 管理对话上下文和工具
+
+```
+Session
+├── id: str                    # UUID
+├── messages: list[dict]       # 消息历史
+├── tools: list[dict]          # 工具 Schema 列表
+├── add_message(message)       # 添加消息
+├── save()                     # 持久化到 JSON 文件
+└── load(session_id)           # 从 JSON 文件加载
+```
+
+**初始化流程**:
+1. 生成唯一 Session ID
+2. 渲染系统提示词 (调用 `render_prompt("system")`)
+3. 注册系统消息
+4. 加载已注册的工具 Schema (从 `registry.schemas()`)
+
+**持久化**: 保存在 `agent/sessions/{session_id}.json`
+
+---
+
+### 5. 提示词渲染 (`prompt.py`)
+
+**功能**: 使用 Jinja2 模板引擎动态生成系统提示词
+
+```
+render_prompt(prompt_name)
+    ↓
+Jinja2 Environment (FileSystemLoader)
+    ↓
+加载 {prompt_name}.j2 模板
+    ↓
+注入上下文变量:
+  - language: 系统语言
+  - cwd: 当前工作目录
+  - os: 操作系统类型
+  - is_git: 是否在 Git 仓库中
+```
+
+**内置工具函数**:
+- `get_cwd()` — 获取当前工作目录
+- `get_os()` — 获取操作系统 (platform.system())
+- `get_is_git()` — 检测是否在 Git 仓库
+- `get_language()` — 获取系统语言 (macOS/Linux/Windows 兼容)
+
+---
+
+### 6. 流式输出监听 (`printer.py`)
+
+**功能**: 监听 Model 事件并在控制台打印格式化输出
+
+```
+ModelPrinterListener (作为 EventEmitter 的监听器)
+    ↓
+监听所有 Event 事件
+    ↓
+根据不同事件类型进行彩色打印
+```
+
+**打印效果**:
+| 事件 | 输出 |
+|------|-----|
+| REASONING_START | "思考中..." |
+| CONTENT_START | 空行 + "内容：" |
+| CONTENT | 绿色文字 (end="") |
+| CONTENT_END | 空行 |
+| TOOL_CALL_END | 蓝色文字 "调用工具: {name}" |
+
+**使用方式**:
+```python
+listener = ModelPrinterListener(model)
+# 启用: listener.listening = True
+# 禁用: listener.listening = False
+```
+
+---
+
+### 7. 工具系统 (`tool/`)
+
+#### 7.1 核心类 (`tool/core/tool.py`)
+
+**`Tool` 类**: 将 Python 函数包装为 LLM 可用的工具
+
+```python
+Tool
+├── func: Callable              # 原始函数
+├── name: str                   # 函数名
+├── description: str            # 函数 docstring
+├── param_descriptions: dict    # 参数描述
+├── param_model: BaseModel      # Pydantic 参数验证模型
+├── schema() -> dict            # 生成 OpenAI function calling schema
+└── __call__(**kwargs) -> str   # 执行工具并返回结果
+```
+
+**`schema()` 生成示例**:
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "read_file",
+    "description": "读取文件内容并以字符串形式返回",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "filepath": {
+          "type": "string",
+          "description": "文件绝对路径或相对于cwd的路径"
+        }
+      },
+      "required": ["filepath"]
+    }
+  }
+}
+```
+
+**`tool` 装饰器**: 简化 Tool 创建
+```python
+@tool(filepath="文件路径描述")
+def my_tool(filepath: str) -> str:
+    """工具描述"""
+    pass
+```
+
+#### 7.2 参数模型构建 (`tool/core/utils.py`)
+
+**`create_params_model(func, param_descriptions)`**:
+
+1. 使用 `inspect.signature()` 获取函数签名
+2. 提取参数类型和默认值
+3. 使用 Pydantic `create_model()` 动态创建验证模型
+4. 必填参数无默认值，可选参数使用函数默认值
+
+#### 7.3 工具注册表 (`tool/__init__.py`)
+
+```
+_ToolRegistry
+├── _tools: dict[str, Tool]     # 已注册的工具
+├── register(tool)              # 注册工具
+├── schemas() -> list[dict]     # 获取所有工具 Schema
+└── invoke(message) -> list[dict] # 执行 tool_calls 并返回结果
+```
+
+**预注册工具**:
+| 工具名 | 功能 |
+|--------|-----|
+| `read_file` | 读取文件内容 |
+| `write_file` | 写入文件内容 |
+| `bash_command` | 执行 shell 命令 (30秒超时) |
+
+**`invoke()` 流程**:
+```
+接收 assistant 消息中的 tool_calls
+    ↓
+遍历每个 tool_call
+    ↓
+从 registry 查找对应 Tool
+    ↓
+执行 tool(**args)
+    ↓
+返回 tool 消息列表 (role: "tool", tool_call_id, content)
+```
+
+**错误处理**: 如果工具不存在或执行失败，返回完整的 traceback 信息。
+
+---
+
+## 三、数据流图
+
+```
+用户输入
+    ↓
+Session.add_message(user_message)
+    ↓
+Model.invoke(session)
+    ↓
+┌─────────────────────────────────────────┐
+│  OpenAI Chat Completion API             │
+│  (messages + tools)                     │
+└─────────────────────────────────────────┘
+    ↓
+Assistant Response
+    ↓
+┌──────────────┬──────────┬──────────────┐
+│ Reasoning    │ Content  │ Tool Calls   │
+│ (思考过程)    │ (回复内容) │ (工具调用)    │
+└──────────────┴──────────┴──────────────┘
+    ↓                    ↓           ↓
+Emitter.emit         Emitter.emit  Emitter.emit
+    ↓                    ↓           ↓
+Printer 打印          Printer      Registry.invoke
+                      打印              ↓
+                                    执行工具
+                                        ↓
+                                Session.add_message(tool_result)
+                                        ↓
+                                  循环调用 Model.invoke...
+                                        ↓
+                                  最终回复用户
+```
+
+---
+
+## 四、关键设计模式
+
+| 模式 | 应用位置 | 说明 |
+|------|---------|-----|
+| **发布-订阅** | EventEmitter | 事件驱动架构，解耦组件间通信 |
+| **策略模式** | Builder 类族 | 不同 Builder 处理不同类型的内容 |
+| **装饰器模式** | @tool | 将普通函数包装为 Tool 对象 |
+| **工厂模式** | create_params_model | 动态创建 Pydantic 验证模型 |
+| **单例模式** | registry | 全局唯一的工具注册表 |
+
+---
+
+## 五、扩展性分析
+
+### 如何添加新工具?
+
+```python
+from agent.tool.core import tool
+
+@tool(param1="参数1描述", param2="参数2描述")
+def my_new_tool(param1: str, param2: int = 10) -> str:
+    """新工具的描述文档"""
+    # 实现逻辑
+    return "结果"
+
+# 注册到全局注册表
+from agent.tool import registry
+registry.register(my_new_tool)
+```
+
+### 如何自定义事件监听?
+
+```python
+def my_listener(event: str, **data):
+    if event == Event.CONTENT:
+        print(f"收到内容片段: {data['chunk_value']}")
+
+model.on(event=Event.CONTENT, callback=my_listener)
+```
+
+### 如何自定义提示词模板?
+
+在 `agent/prompt/` 目录下创建 `.j2` 模板文件，支持使用 `{{ language }}`、`{{ cwd }}`、`{{ os }}`、`{{ is_git }}` 变量。
+
+---
+
+## 六、技术栈总结
+
+| 技术 | 用途 |
+|------|-----|
+| **OpenAI Python SDK** | LLM API 调用 |
+| **Pydantic** | 数据验证、配置管理、动态模型创建 |
+| **Jinja2** | 模板引擎 (提示词渲染) |
+| **subprocess** | Shell 命令执行 |
+| **platform** | 系统信息获取 |
+| **uuid** | 会话唯一标识 |
+````
+
+### 修改文件 `agent/printer.py`
+
+```python
+from dataclasses import dataclass
+import json
+import sys
+from agent.events import Event, EventEmitter
+from agent.model import Model
+
+
+class ModelPrinterListener:
+
+    def __init__(self, model: Model) -> None:
+        self.model = model
+        self.listening = True
+        events = [v for k, v in Event.__dict__.items() if not k.startswith("__")]
+        for e in events:
+            model.on(event=e, callback=self._model_print_callback)
+
+    def _model_print_callback(self, e: str, **args):
+        if not self.listening:
+            return
+        if e == Event.REASONING_START:
+            print("思考中...")
+        elif e == Event.REASONING_END:
+            print()
+        elif e == Event.CONTENT_START:
+            print()
+            print("内容：")
+        elif e == Event.CONTENT_END:
+            print()
+        elif e == Event.TOOL_CALL_END:
+            tool_calls = args["value"]["tool_calls"]
+            for call in tool_calls:
+                print(f"\033[36m调用工具：{call["function"]["name"]}\033[0m")
+        # elif e == Event.REASONING:
+        #     print(f"\033[36m{args["chunk_value"]}\033[0m", end="")
+        elif e == "content":
+            print(f"\033[32m{args["chunk_value"]}\033[0m", end="")
+        sys.stdout.flush()
+```
+
+### 修改文件 `agent/prompt.py`
+
+```python
+import os
+import platform
+import subprocess
+
+from jinja2 import Environment, FileSystemLoader
+
+
+def get_cwd() -> str:
+    return os.getcwd()
+
+
+def get_os() -> str:
+    return platform.system()
+
+
+def get_is_git() -> bool:
+    result = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    return result.returncode == 0 and result.stdout.strip() == "true"
+
+
+def get_language() -> str:
+    system = platform.system()
+    if system == "Darwin":
+        result = subprocess.run(
+            ["defaults", "read", "-g", "AppleLocale"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.stdout.strip()
+    elif system == "Windows":
+        import ctypes
+
+        lcid = ctypes.windll.kernel32.GetUserDefaultLCID()  # type: ignore
+        buf = ctypes.create_unicode_buffer(256)
+        ctypes.windll.kernel32.GetLocaleInfoW(lcid, 0x5C, buf, 256)  # type: ignore
+        return buf.value
+    return ""
+
+
+def render_prompt(prompt_name: str) -> str:
+    template_dir = os.path.join(os.path.dirname(__file__), "prompt")
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template(f"{prompt_name}.j2")
+    return template.render(
+        language=get_language(),
+        cwd=get_cwd(),
+        os=get_os(),
+        is_git=get_is_git(),
+    )
+```
+
+### 修改文件 `agent/prompt/system.j2`
+
+```jinja
+You are Claude Code, Anthropic's official CLI for Claude.
+
+You are an interactive agent that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
+
+IMPORTANT: Assist with authorized security testing, defensive security, CTF challenges, and educational contexts. Refuse requests for destructive techniques, DoS attacks, mass targeting, supply chain compromise, or detection evasion for malicious purposes. Dual-use security tools (C2 frameworks, credential testing, exploit development) require clear authorization context: pentesting engagements, CTF competitions, security research, or defensive use cases.
+
+IMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident that the URLs are for helping the user with programming. You may use URLs provided by the user in their messages or local files.
+
+# Environment
+
+You have been invoked in the following environment:
+ - Primary working directory: 
+   {{ cwd }}
+ - Operating system: {{ os }}
+ - Is a git repository: {{ is_git }}
+```
+
+### 修改文件 `agent/session.py`
+
+```python
+import json
+import uuid
+from pathlib import Path
+from agent.tool import registry
+from agent.prompt import render_prompt
+
+
+class Session:
+    def __init__(self, *, system_prompt="", tools=[]):
+        self.id = str(uuid.uuid4())
+        self.messages: list[dict] = []
+        if not system_prompt:
+            system_prompt = render_prompt("system")
+        self.add_message({"role": "system", "content": render_prompt("system")})
+        self.tools = tools or registry.schemas()
+
+    def add_message(self, message: dict):
+        self.messages.append(message)
+
+    def __str__(self) -> str:
+        data = {"id": self.id, "messages": self.messages, "tools": self.tools}
+        return json.dumps(data, ensure_ascii=False, indent=2)
+
+    def print(self):
+        print(self)
+
+    def save(self):
+        sessions_dir = Path(__file__).parent / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+
+        data = {
+            "id": self.id,
+            "messages": self.messages,
+        }
+
+        path = sessions_dir / f"{self.id}.json"
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    @classmethod
+    def load(cls, session_id: str):
+        path = Path(__file__).parent / "sessions" / f"{session_id}.json"
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        session = cls()
+        session.id = data["id"]
+        session.messages = data["messages"]
+        return session
+```
+
+### 修改文件 `agent/tool/__init__.py`
+
+```python
+from agent.tool.core import Tool
+import json
+from agent.tool.read_file import read_file
+from agent.tool.write_file import write_file
+from agent.tool.bash_command import bash_command
+
+
+class _ToolRegistry:
+    _tools: dict[str, Tool] = {}
+
+    def register(self, tool: Tool):
+        """注册一个工具"""
+        self._tools[tool.name] = tool
+
+    def schemas(self) -> list[dict]:
+        """返回所有工具的 Schema 列表，可直接赋值给 session.tools"""
+        return [t.schema() for t in self._tools.values()]
+
+    def invoke(self, message: dict) -> list[dict] | None:
+        """从模型返回的消息中提取 tool_calls 并逐一执行"""
+        tool_calls = message.get("tool_calls", [])
+        if not tool_calls:
+            return None
+        results = []
+        for tc in message.get("tool_calls", []):
+            id = tc["id"]
+            name = tc["function"]["name"]
+            args = json.loads(tc["function"]["arguments"])
+            tool = self._tools[name]
+            result = ""
+            if not tool:
+                result = "无此工具，请仔细检查你传递的工具名称是否正确"
+            else:
+                result = tool(**args)
+            results.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": id,
+                    "name": name,
+                    "content": result,
+                }
+            )
+        return results
+
+
+registry = _ToolRegistry()
+registry.register(read_file)
+registry.register(write_file)
+registry.register(bash_command)
+```
+
+### 已删除文件
+
+- `1.json`
+- `uv.md`

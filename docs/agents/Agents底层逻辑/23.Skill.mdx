@@ -1,0 +1,281 @@
+---
+sidebar_position: 23
+title: '23. Skill'
+description: "Agents底层逻辑 · Skill：把可复用能力封装成技能包，技能加载与权限控制。"
+displayed_sidebar: agentsCore
+---
+
+# Skill
+
+![skill.svg](/img/agent-core/23-skill.svg)
+
+## 编写 SKILL
+
+编写 `agent/.agents/skills/no-permission/SKILL.md`
+
+## 注入系统提示词和工具
+
+```python
+from agent.agent import Agent
+from agent.printer import ModelPrinterListener
+
+listener = ModelPrinterListener()
+agent = Agent(model_listener=listener)
+```
+
+```python
+agent.session.print_friendly()
+```
+
+```python
+agent.session.tools
+```
+
+```python
+# 测试
+agent.invoke("最近天气如何？")
+```
+
+```python
+agent.session.save()
+```
+
+## 安装公共 SKILL
+
+请先安装 node：https://nodejs.org/zh-cn/
+
+查询公共skill: 
+
+https://www.skills.sh/
+
+```shell
+# 安装 skill
+npx skills add https://github.com/anthropics/skills --skill frontend-design
+```
+
+```python
+agent.invoke("帮我在 ./demo 中创建一个 html 页面，创建一个漂亮的分页表格，请使用 frontend-design skill")
+```
+
+```python
+agent.session.save()
+```
+
+## 本章代码
+
+
+
+本章 `agent/` 工程相对上一章的变更：**新增 2 个文件、修改 3 个文件**。以下为变更文件全文。
+
+### 新增文件 `agent/skills-lock.json`
+
+```json
+{
+  "version": 1,
+  "skills": {
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "4eabc66183767153e404b39d1b839b1c37f2d82d86f0a0d7e880a579d8d62336"
+    }
+  }
+}
+```
+
+### 新增文件 `agent/tool/use_skill.py`
+
+```python
+import json
+from pathlib import Path
+
+import yaml
+from agent.tool.core import tool
+
+SKILL_BASE_DIR = Path(__file__).parent.parent / ".agents" / "skills"
+
+
+def parse_skill_file(skill_name: str) -> str:
+    skill_file = SKILL_BASE_DIR / skill_name / "SKILL.md"
+    if not skill_file.exists():
+        raise FileNotFoundError(f"未找到 Skill: {skill_name}")
+    return skill_file.read_text(encoding="utf-8")
+
+
+@tool(skill_name="Skill 的名称")
+def use_skill(skill_name: str) -> str:
+    """根据 Skill 名称获取其完整描述，返回包含元信息、正文内容和文件路径的 JSON 字符串"""
+
+    markdown_content = parse_skill_file(skill_name)
+
+    parts = markdown_content.split("---")
+    meta = {}
+    if len(parts) >= 3:
+        meta = yaml.safe_load(parts[1])
+
+    skill_file_path = str(SKILL_BASE_DIR / skill_name / "SKILL.md")
+
+    result = {
+        "meta": meta,
+        "content": markdown_content,
+        "path": skill_file_path,
+    }
+
+    return json.dumps(result, ensure_ascii=False, indent=2)
+```
+
+### 修改文件 `agent/prompt.py`
+
+```python
+import os
+import platform
+import subprocess
+from pathlib import Path
+
+import yaml
+from jinja2 import Environment, FileSystemLoader
+
+SKILL_BASE_DIR = Path(__file__).parent / ".agents" / "skills"
+
+
+def get_cwd() -> str:
+    return os.getcwd()
+
+
+def get_os() -> str:
+    return platform.system()
+
+
+def get_is_git() -> bool:
+    result = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    return result.returncode == 0 and result.stdout.strip() == "true"
+
+
+def list_skills() -> list[dict]:
+    if not SKILL_BASE_DIR.exists():
+        return []
+
+    skills = []
+    for skill_dir in SKILL_BASE_DIR.iterdir():
+        if not skill_dir.is_dir():
+            continue
+        skill_file = skill_dir / "SKILL.md"
+        if not skill_file.exists():
+            continue
+
+        content = skill_file.read_text(encoding="utf-8")
+        parts = content.split("---")
+        if len(parts) >= 3:
+            meta = yaml.safe_load(parts[1])
+            skills.append({skill_dir.name: meta})
+
+    return skills
+
+
+def render_prompt(prompt_name: str) -> str:
+    template_dir = os.path.join(os.path.dirname(__file__), "prompt")
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template(f"{prompt_name}.j2")
+    return template.render(
+        cwd=get_cwd(),
+        os=get_os(),
+        is_git=get_is_git(),
+        skills=list_skills(),
+    )
+```
+
+### 修改文件 `agent/prompt/system.j2`
+
+```jinja
+你是一个编程助手，你可以：
+
+- 用简洁、准确的语言回答用户问题
+- 调用工具完成用户交付的任务
+
+# SKILL
+
+Skill 是一套可插拔的专业提示词模块。每个 Skill 对应一个特定场景（如处理越权提问、数据分析、客服应答等），只有当用户问题匹配该场景时，Skill 的内容才会被注入到你的上下文中。这种按需加载的机制避免了系统提示词的无限膨胀。
+
+## 如何使用 Skill
+
+当用户的问题属于某个 Skill 所描述的场景时，你可以使用`use_skill`工具加载对应的 Skill。加载后，该 Skill 的完整指令将追加到当前上下文中，你需要严格遵守其中的要求来执行任务。
+
+## 当前可用的 Skill
+
+{% for skill_item in skills %}
+{% for skill_name, skill_meta in skill_item.items() %}
+- **{{ skill_name }}**: {{ skill_meta.description }}
+{% endfor %}
+{% endfor %}
+
+# 环境
+
+理解所处的环境，有助于你完成工作:
+ - 工作目录（cwd）: `{{ cwd }}`
+ - 操作系统: `{{ os }}`
+ - 当前工作目录是否处于git仓库管理: `{{ is_git }}`
+```
+
+### 修改文件 `agent/tool/__init__.py`
+
+```python
+from agent.tool.core import Tool
+import json
+from agent.tool.read_file import read_file
+from agent.tool.write_file import write_file
+from agent.tool.bash_command import bash_command
+from agent.tool.web import web_search, fetch_url
+from agent.tool.use_skill import use_skill
+
+
+class _ToolRegistry:
+    _tools: dict[str, Tool] = {}
+
+    def register(self, tool: Tool):
+        """注册一个工具"""
+        self._tools[tool.name] = tool
+
+    def schemas(self) -> list[dict]:
+        """返回所有工具的 Schema 列表，可直接赋值给 session.tools"""
+        return [t.schema() for t in self._tools.values()]
+
+    def invoke(self, message: dict) -> list[dict] | None:
+        """从模型返回的消息中提取 tool_calls 并逐一执行"""
+        tool_calls = message.get("tool_calls", [])
+        if not tool_calls:
+            return None
+        results = []
+        for tc in message.get("tool_calls", []):
+            id = tc["id"]
+            name = tc["function"]["name"]
+            args = json.loads(tc["function"]["arguments"])
+            tool = self._tools[name]
+            result = ""
+            if not tool:
+                result = "无此工具，请仔细检查你传递的工具名称是否正确"
+            else:
+                result = tool(**args)
+            results.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": id,
+                    "name": name,
+                    "content": result,
+                }
+            )
+        return results
+
+
+registry = _ToolRegistry()
+registry.register(read_file)
+registry.register(write_file)
+registry.register(bash_command)
+registry.register(web_search)
+registry.register(fetch_url)
+registry.register(use_skill)
+```

@@ -1,0 +1,505 @@
+---
+sidebar_position: 29
+title: '29. 子代理'
+description: "Agents底层逻辑 · 子代理：把任务分派给子代理，上下文隔离与结果汇总。"
+displayed_sidebar: agentsCore
+---
+
+# 子代理
+
+## 代码实现
+
+### 实现 tool: create_agent
+
+```python
+# 测试
+from agent.tool.create_agent import create_agent
+
+resp = create_agent(agent_config=[
+    {
+        "name": "sub-agent-1",
+        "query": "这是一个测试，请说：你好！"
+    },
+    {
+        "name": "sub-agent-2",
+        "query": "this is a test, reply: Hello!"
+    }
+]) 
+print(resp)
+```
+
+### 启动子代理
+
+```python
+from agent.agent import Agent
+from agent.printer import ModelPrinterListener
+
+listener = ModelPrinterListener()
+agent = Agent(model_listener=listener)
+```
+
+```python
+agent.invoke("请开启多个子代理，创建两个页面，分别画小猪佩奇和海绵宝宝。")
+```
+
+```python
+agent.session.save()
+```
+
+## 本章代码
+
+
+
+本章 `agent/` 工程相对上一章的变更：**新增 1 个文件、修改 3 个文件**。以下为变更文件全文。
+
+### 新增文件 `agent/tool/create_agent.py`
+
+```python
+from agent.tool.core import tool
+import threading
+import json
+
+
+@tool(
+    agent_config="每个子代理的配置。每个子代理要配置名称、用户提示词，子代理会根据提示词启动任务，然后根据提示词的要求返回任务执行结果"
+)
+def create_agent(agent_config: list[dict[str, str]]) -> str:
+    """
+    创建并启动多个子代理，每个子代理在独立线程中运行，完成任务后合并返回结果
+    参数示例：
+    [
+        {
+            "name": "sub-agent1",
+            "query": "初始的用户提示词"
+        },
+        {
+            "name": "sub-agent2",
+            "query": "初始的用户提示词"
+        }
+    ]
+    返回结果示例：
+    [
+        {
+            "name": "sub-agent1",
+            "result": "子代理1的完成结果"
+        },
+        {
+            "name": "sub-agent2",
+            "result": "子代理2的完成结果"
+        }
+    ]
+    """
+
+    from agent.agent import Agent
+
+    results: list[dict[str, str]] = []
+    results_lock = threading.Lock()
+    threads: list[threading.Thread] = []
+
+    def run_sub_agent(name: str, query: str) -> None:
+        agent = Agent()
+        responses = agent.invoke(query)
+        final_resp = responses[-1]
+        content = final_resp.message.get("content", "")
+        agent.session.save(f"{name}-")
+        with results_lock:
+            results.append({"name": name, "result": content})
+
+    for config in agent_config:
+        name = config.get("name", "unnamed")
+        query = config.get("query", "")
+        thread = threading.Thread(target=run_sub_agent, args=(name, query))
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    return json.dumps(results, indent=2, ensure_ascii=False)
+```
+
+### 修改文件 `agent/model.py`
+
+```python
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from dataclasses import dataclass
+import json
+from typing import Any, cast
+from agent.events import EventEmitter, Event
+from agent.config import openai_settings
+from agent.session import Session
+from openai import OpenAI, Stream
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
+
+
+def _get_reasoning_field_name(res_or_chunk):
+    "为了兼容性，获取推理字段的名称"
+    for attr_name in ["reasoning_content", "reasoning"]:
+        if hasattr(res_or_chunk, attr_name):
+            return attr_name
+    return ""
+
+
+@dataclass
+class InvokeResult:
+    message: dict
+    raw: Any
+
+    def print_raw(self):
+        if isinstance(self.raw, ChatCompletion):
+            print(self.raw.to_json(indent=2))
+        else:
+            data = [c.model_dump() for c in self.raw]
+            print(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+class Builder(ABC):
+
+    def __init__(self, emitter: EventEmitter):
+        self.emitter = emitter
+        self.value = None
+        self.compoleted = False
+
+    @abstractmethod
+    def _key_names(self, delta) -> list[str]:
+        "获取关键名称"
+        pass
+
+    def emit(self, chunk: ChatCompletionChunk):
+        if self.compoleted:
+            return
+        if not chunk.choices:
+            return
+        delta = chunk.choices[0].delta
+        field_name, start_event_name, event_name, end_event_name = self._key_names(
+            delta
+        )
+        value = getattr(delta, field_name, None)
+        if value:
+            if not self.value:
+                self.value = {field_name: value}
+                self.emitter.emit(start_event_name)
+            else:
+                self.append_value(value, field_name)
+            self.emitter.emit(event_name, chunk_value=value, chunk=chunk)
+        if self.is_end(chunk):
+            if self.value:
+                self.emitter.emit(end_event_name, value=self.value, chunk=chunk)
+                self.compoleted = True
+
+    def append_value(self, value, field_name: str):
+        self.value[field_name] += value  # type: ignore
+
+    def is_end(self, chunk: ChatCompletionChunk):
+        return bool(chunk.choices[0].finish_reason)
+
+
+class ContentBuilder(Builder):
+    def _key_names(self, delta):
+        return ["content", Event.CONTENT_START, Event.CONTENT, Event.CONTENT_END]
+
+
+class ReasoningBuilder(Builder):
+    def _key_names(self, delta):
+        return [
+            _get_reasoning_field_name(delta),
+            Event.REASONING_START,
+            Event.REASONING,
+            Event.REASONING_END,
+        ]
+
+    def is_end(self, chunk: ChatCompletionChunk):
+        delta = chunk.choices[0].delta
+        return bool(delta.content) or bool(delta.tool_calls) or super().is_end(chunk)
+
+
+class ToolCallsBuilder(Builder):
+    def _key_names(self, delta):
+        return [
+            "tool_calls",
+            Event.TOOL_CALL_START,
+            Event.TOOL_CALL,
+            Event.TOOL_CALL_END,
+        ]
+
+    def emit(self, chunk: ChatCompletionChunk):
+        super().emit(chunk)
+        if self.value:
+            self._normalize_tool_calls()
+
+    def _normalize_tool_calls(self):
+        tool_calls = self.value["tool_calls"]  # type: ignore
+        for i in range(len(tool_calls)):
+            if not isinstance(tool_calls[i], dict):
+                tc = tool_calls[i]
+                func_obj = getattr(tc, "function", None)
+                tool_calls[i] = {
+                    "id": getattr(tc, "id", None) or "",
+                    "type": getattr(tc, "type", None) or "function",
+                    "function": {
+                        "name": getattr(func_obj, "name", None) or "",
+                        "arguments": getattr(func_obj, "arguments", None) or "",
+                    },
+                }
+
+    def append_value(self, value, field_name: str):
+        tool_calls = self.value[field_name]  # type: ignore
+        for tc_delta in value:
+            idx = tc_delta.index
+            while len(tool_calls) <= idx:
+                tool_calls.append(
+                    {
+                        "id": "",
+                        "type": "function",
+                        "function": {"name": "", "arguments": ""},
+                    }
+                )
+            tc = tool_calls[idx]
+            if delta_id := getattr(tc_delta, "id", None):
+                tc["id"] = delta_id
+            if delta_type := getattr(tc_delta, "type", None):
+                tc["type"] = delta_type
+            if delta_func := getattr(tc_delta, "function", None):
+                if name := getattr(delta_func, "name", None):
+                    tc["function"]["name"] = name
+                if args := getattr(delta_func, "arguments", None):
+                    tc["function"]["arguments"] += args
+
+
+@dataclass
+class Model(EventEmitter):
+    model_name: str = openai_settings.model
+    _client: OpenAI = OpenAI()
+
+    def _invoke(self, session: Session, stream=False):
+        "核心方法，调用模型得到结果"
+        response = self._client.chat.completions.create(
+            model=self.model_name,
+            messages=cast(list, session.messages),
+            tools=session.tools,  # type: ignore
+            stream=stream,
+        )  # type: ignore
+        return self._process(session, response)
+
+    def _normalize_result_from_response(self, response: ChatCompletion):
+        "将非流式的响应格式进行归一化"
+        message = response.choices[0].message
+        reasoning_field = _get_reasoning_field_name(message)
+        result = InvokeResult(
+            raw=response, message={"role": message.role, "content": ""}
+        )
+        message_dict = message.model_dump()
+        for attr_name in [reasoning_field, "content", "tool_calls"]:
+            if attr_name in message_dict:
+                if message_dict[attr_name]:
+                    result.message[attr_name] = message_dict[attr_name]
+        return result
+
+    def _process(
+        self, session: Session, response: ChatCompletion | Stream[ChatCompletionChunk]
+    ) -> InvokeResult:
+        "处理响应结果"
+        if isinstance(response, ChatCompletion):
+            result = self._normalize_result_from_response(response)
+            session.add_message(result.message)
+            return result
+        # 处理流式内容
+        builders: list[Builder] = [
+            ReasoningBuilder(self),
+            ContentBuilder(self),
+            ToolCallsBuilder(self),
+        ]
+        chunks = []
+        for chunk in response:
+            chunks.append(chunk)
+            for b in builders:
+                b.emit(chunk)
+        message = {"role": "assistant", "content": ""}
+        for b in builders:
+            if b.value:
+                for k, v in b.value.items():
+                    if v is not None:
+                        message[k] = v
+        result = InvokeResult(raw=chunks, message=message)
+        session.add_message(result.message)
+        return result
+
+    def invoke(self, session: Session):
+        return self._invoke(session, stream=False)
+
+    def invoke_stream(self, session: Session):
+        return self._invoke(session, stream=True)
+```
+
+### 修改文件 `agent/session.py`
+
+```python
+import json
+import uuid
+from pathlib import Path
+from agent.tool import registry
+from agent.prompt import render_prompt
+
+
+class Session:
+    def __init__(self, *, system_prompt="", tools=[]):
+        self.id = str(uuid.uuid4())
+        self.messages: list[dict] = []
+        if not system_prompt:
+            system_prompt = render_prompt("system")
+        self.add_message({"role": "system", "content": render_prompt("system")})
+        self.tools = tools or registry.schemas()
+
+    def add_message(self, message: dict):
+        self.messages.append(message)
+
+    def __str__(self) -> str:
+        data = {"id": self.id, "messages": self.messages, "tools": self.tools}
+        return json.dumps(data, ensure_ascii=False, indent=2)
+
+    def print(self):
+        print(self)
+
+    def print_friendly(self):
+        lines = []
+        n = 1
+
+        for msg in self.messages:
+            role = msg.get("role")
+
+            if role == "system":
+                lines.append(f"====={n}. 系统消息======")
+                lines.append(msg.get("content", ""))
+                n += 1
+
+            elif role == "user":
+                lines.append(f"====={n}. 用户消息======")
+                lines.append(msg.get("content", ""))
+                n += 1
+
+            elif role == "assistant":
+                tool_calls = msg.get("tool_calls")
+                if tool_calls:
+                    lines.append(f"====={n}. 工具调用======")
+                    for i, tc in enumerate(tool_calls):
+                        func = tc.get("function", {})
+                        name = func.get("name", "未知")
+                        lines.append(f"工具名{i + 1}: {name}")
+
+                        args_str = func.get("arguments", "{}")
+                        try:
+                            args = json.loads(args_str)
+                        except json.JSONDecodeError, TypeError:
+                            args = {}
+
+                        for k, v in args.items():
+                            v_str = str(v)
+                            v_str = v_str[:70] if len(v_str) > 70 else v_str
+                            lines.append(f"参数{k}: {v_str}")
+
+                        if i < len(tool_calls) - 1:
+                            lines.append("")
+                    n += 1
+                else:
+                    lines.append(f"====={n}. AI消息======")
+                    lines.append(msg.get("content") or "")
+                    n += 1
+
+            elif role == "tool":
+                lines.append(f"====={n}. 调用结果======")
+                tool_name = msg.get("name", "未知")
+                content = msg.get("content") or ""
+                lines.append(f"工具名: {tool_name}")
+                content_display = content[:50] if len(content) > 50 else content
+                lines.append(f"<结果: {content_display}>")
+                n += 1
+
+            lines.append("")
+
+        print("\n".join(lines))
+
+    def save(self, prefix=""):
+        sessions_dir = Path(__file__).parent / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+
+        data = {"id": self.id, "messages": self.messages, "tools": self.tools}
+
+        path = sessions_dir / f"{prefix}{self.id}.json"
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    @classmethod
+    def load(cls, session_id: str):
+        path = Path(__file__).parent / "sessions" / f"{session_id}.json"
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        session = cls()
+        session.id = data["id"]
+        session.messages = data["messages"]
+        return session
+```
+
+### 修改文件 `agent/tool/__init__.py`
+
+```python
+from agent.tool.core import Tool
+import json
+from agent.tool.read_file import read_file
+from agent.tool.write_file import write_file
+from agent.tool.bash_command import bash_command
+from agent.tool.web import web_search, fetch_url
+from agent.tool.use_skill import use_skill
+from agent.tool.use_mcp import use_mcp
+from agent.tool.create_agent import create_agent
+
+
+class _ToolRegistry:
+    _tools: dict[str, Tool] = {}
+
+    def register(self, tool: Tool):
+        """注册一个工具"""
+        self._tools[tool.name] = tool
+
+    def schemas(self) -> list[dict]:
+        """返回所有工具的 Schema 列表，可直接赋值给 session.tools"""
+        return [t.schema() for t in self._tools.values()]
+
+    def invoke(self, message: dict) -> list[dict] | None:
+        """从模型返回的消息中提取 tool_calls 并逐一执行"""
+        tool_calls = message.get("tool_calls", [])
+        if not tool_calls:
+            return None
+        results = []
+        for tc in message.get("tool_calls", []):
+            id = tc["id"]
+            name = tc["function"]["name"]
+            args = json.loads(tc["function"]["arguments"])
+            tool = self._tools[name]
+            result = ""
+            if not tool:
+                result = "无此工具，请仔细检查你传递的工具名称是否正确"
+            else:
+                result = tool(**args)
+            results.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": id,
+                    "name": name,
+                    "content": result,
+                }
+            )
+        return results
+
+
+registry = _ToolRegistry()
+registry.register(read_file)
+registry.register(write_file)
+registry.register(bash_command)
+registry.register(web_search)
+registry.register(fetch_url)
+registry.register(use_skill)
+registry.register(use_mcp)
+registry.register(create_agent)
+```

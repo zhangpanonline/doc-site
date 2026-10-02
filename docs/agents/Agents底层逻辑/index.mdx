@@ -1,9 +1,86 @@
 ---
 title: Agents底层逻辑
-description: "Agents 底层逻辑：AI 大全栈第 1 单元课程，筹备中，敬请期待。"
+description: "Agents底层逻辑：从神经元、注意力机制到大模型推理，再到 tools/ReAct/Skill/MCP 的 Agent 工程，34 章。"
 displayed_sidebar: null
 ---
 
 # Agents底层逻辑
 
-课程筹备中，敬请期待。
+袁进 · Agents底层逻辑：这门课回答一个问题——**你每天在用的 Agent，底下到底是怎么转的**。
+
+路线是「自下而上」：先把神经网络与 Transformer 的原理打通（词元、注意力、推理机制、训练阶段），再一层层搭出 Agent 工程（系统提示词、会话、工具调用、ReAct 循环、Skill、MCP、子代理），最后收在五类工程方法论上（Prompt / Context / Harness / Loop / Graph）。
+
+## 课程章节
+
+### 一、起点：岗位与全景（01–02）
+
+| 章 | 内容 |
+| :--: | :-- |
+| 01 | [必看导言](/agents/Agents底层逻辑/必看导言) |
+| 02 | [AI的分类](/agents/Agents底层逻辑/AI的分类) |
+
+### 二、神经网络与训练（03–09）
+
+| 章 | 内容 |
+| :--: | :-- |
+| 03 | [神经元](/agents/Agents底层逻辑/神经元) |
+| 04 | [前向传播](/agents/Agents底层逻辑/前向传播) |
+| 05 | [梯度下降](/agents/Agents底层逻辑/梯度下降) |
+| 06 | [训练模式和框架](/agents/Agents底层逻辑/训练模式和框架) |
+| 07 | [词元](/agents/Agents底层逻辑/词元) |
+| 08 | [token统计](/agents/Agents底层逻辑/token统计) |
+| 09 | [神经网络的本质](/agents/Agents底层逻辑/神经网络的本质) |
+
+### 三、Transformer 与大模型（10–15）
+
+| 章 | 内容 |
+| :--: | :-- |
+| 10 | [词嵌入](/agents/Agents底层逻辑/词嵌入) |
+| 11 | [注意力机制](/agents/Agents底层逻辑/注意力机制) |
+| 12 | [Transformer的完整训练流程](/agents/Agents底层逻辑/Transformer的完整训练流程) |
+| 13 | [推理机制](/agents/Agents底层逻辑/推理机制) |
+| 14 | [训练阶段](/agents/Agents底层逻辑/训练阶段) |
+| 15 | [模型接口契约](/agents/Agents底层逻辑/模型接口契约) |
+
+### 四、Agent 工程（16–23）
+
+| 章 | 内容 |
+| :--: | :-- |
+| 16 | [系统提示词](/agents/Agents底层逻辑/系统提示词) |
+| 17 | [会话](/agents/Agents底层逻辑/会话) |
+| 18 | [tools](/agents/Agents底层逻辑/tools) |
+| 19 | [封装tools](/agents/Agents底层逻辑/封装tools) |
+| 20 | [ReAct](/agents/Agents底层逻辑/ReAct) |
+| 21 | [Agent](/agents/Agents底层逻辑/Agent) |
+| 22 | [Agent 搜索引擎](/agents/Agents底层逻辑/Agent-搜索引擎) |
+| 23 | [Skill](/agents/Agents底层逻辑/Skill) |
+
+### 五、协议与扩展（24–29）
+
+| 章 | 内容 |
+| :--: | :-- |
+| 24 | [MCP协议](/agents/Agents底层逻辑/MCP协议) |
+| 25 | [MCP Client](/agents/Agents底层逻辑/MCP-Client) |
+| 26 | [Agent接入MCP](/agents/Agents底层逻辑/Agent接入MCP) |
+| 27 | [实现MCP服务器](/agents/Agents底层逻辑/实现MCP服务器) |
+| 28 | [Skill VS MCP](/agents/Agents底层逻辑/Skill-VS-MCP) |
+| 29 | [子代理](/agents/Agents底层逻辑/子代理) |
+
+### 六、工程方法论（30–34）
+
+| 章 | 内容 |
+| :--: | :-- |
+| 30 | [Prompt Engineering](/agents/Agents底层逻辑/Prompt-Engineering) |
+| 31 | [Context Engineering](/agents/Agents底层逻辑/Context-Engineering) |
+| 32 | [Harness Engineering](/agents/Agents底层逻辑/Harness-Engineering) |
+| 33 | [Loop Engineering](/agents/Agents底层逻辑/Loop-Engineering) |
+| 34 | [Graph Engineering](/agents/Agents底层逻辑/Graph-Engineering) |
+
+## 学习建议
+
+1. **别跳过原理**：16 章之后每一章的「为什么这么设计」都指向 03–14 的机制，跳章会变成背 API
+2. **跟着 agent/ 代码走**：16 章起每章都有一个 `agent/` 工程，逐章增量演进（薄课件章的真实内容在代码里）
+3. **公式不用怕**：站点已支持数学排版，公式按「输入 → 运算 → 输出」的链路读即可
+4. **配套材料**：源仓库另有一个 React 互动演示工程（神经元/前向传播/注意力等可视化），见 <a href="https://gitee.com/dev-edu/agent-core" target="_blank" rel="noopener">gitee.com/dev-edu/agent-core</a> 的 `HTML/`
+
+从 [01.必看导言](/agents/Agents底层逻辑/必看导言) 开始。

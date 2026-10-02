@@ -1,0 +1,675 @@
+---
+sidebar_position: 19
+title: '19. 封装tools'
+description: "Agents底层逻辑 · 封装 tools：把工具抽象为可注册的类，含参数校验与错误处理。"
+displayed_sidebar: agentsCore
+---
+
+# 封装tools
+
+```python
+from agent.model import Model
+from agent.printer import ModelPrinterListener
+from agent.prompt import render_prompt
+from agent.session import Session
+import json
+import os
+
+session = Session()
+model = Model()
+listener = ModelPrinterListener(model)
+session.add_message({"role": "system", "content": render_prompt("system")})
+print("环境准备完成")
+```
+
+```python
+# 先定义两个工具函数（跟上节课一样）
+def read_file(filepath: str) -> str:
+    """读取文件内容并以字符串形式返回"""
+    with open(filepath, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def write_file(filepath: str, content: str) -> None:
+    """将内容写入文件"""
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+# 测试一下
+print(read_file("./agent/prompt/system.j2")[:100])
+```
+
+封装的目标是希望在代码层面更加简洁优雅地完成这条流水线。
+
+## 再次认识 Pydantic
+
+```shell
+uv add pydantic==2.13.4
+```
+
+```python
+from pydantic import BaseModel, Field
+
+class Counter(BaseModel):
+    n: int = Field(description="计数值", default=0)
+
+# 自动适配默认值
+# Counter()
+
+# 自动转换类型
+# Counter(n="123")
+
+# 无法转换则报错
+# Counter(n=[1,2,3])
+
+# 转换为字典格式
+# Counter().model_dump()
+
+# 获取 schema
+schema = Counter.model_json_schema()
+# schema
+print(json.dumps(schema, indent=2, ensure_ascii=False))
+```
+
+**我们期望可以通过 Pydantic 的模型来校验参数，并且得到参数列表的 Schema。**
+
+类似于
+
+```python
+param_model = create_params_model(write_file, param_descriptions={
+  "filepath": "文件的绝对路径或相对于cwd的路径",
+  "content": "待写入的文件内容"
+})
+write_file_param_model = param_model(filepath="./uv.md") # 校验参数
+param_model.model_json_schema() # 获取 schema
+```
+
+```python
+# 动态创建模型
+from pydantic import create_model
+
+param_model = create_model(
+    "dynamic_model", 
+    filepath = (str, Field(description="文件的绝对路径或相对于cwd的路径")),
+    content = (str, Field(description="待写入的文件内容"))
+)
+
+# write_file_param_model = param_model(filepath="./uv.md") # 校验参数
+schema = param_model.model_json_schema() # 获取 schema
+print(json.dumps(schema, indent=2, ensure_ascii=False))
+```
+
+```python
+# 实现 create_params_model 函数
+import inspect
+from typing import Any
+
+def create_params_model(func, param_descriptions = {}):
+    model_name = f"{func.__name__}_params"
+    args = {}
+    sig = inspect.signature(func)
+    for pname, param in sig.parameters.items():
+        py_type = (
+            param.annotation if param.annotation is not param.empty else Any
+        )
+        desc = param_descriptions.get(pname, "")
+
+        if param.default is param.empty:
+            # 必填参数：不设默认值
+            args[pname] = (py_type, Field(description=desc))
+        else:
+            # 可选参数：设置默认值
+            args[pname] = (
+                py_type,
+                Field(default=param.default, description=desc),
+            )
+
+    return create_model(model_name, **args)
+
+param_model = create_params_model(write_file, param_descriptions={
+  "filepath": "文件的绝对路径或相对于cwd的路径",
+  "content": "待写入的文件内容"
+})
+# write_file_param_model = param_model(filepath="./uv.md") # 校验参数
+schema = param_model.model_json_schema() # 获取 schema
+print(json.dumps(schema, indent=2, ensure_ascii=False))
+```
+
+## 封装 Tool 类
+
+我们期望，`Tool` 类能够实现下面的操作。
+
+```python
+# 1. Tool可以包装一个函数，并指定每个参数的描述
+
+tool = Tool(
+  read_file, 
+  param_descriptions={"filepath": "文件路径"}
+)
+
+# 2. 调用 tool 和调用原函数行为一致
+tool("./uv.md")
+
+# 3. 可以轻松获取 schema
+tool.schema # {"type":"function", "function": {...}}
+
+```
+
+```python
+# 创建 Tool 类
+import inspect
+from typing import Callable
+
+
+class Tool:
+
+    def __init__(
+        self,
+        func: Callable,
+        param_descriptions: dict = {},
+    ):
+        self.func = func
+        self.name = func.__name__
+        self.description = inspect.getdoc(func) or ""
+        self.param_descriptions = param_descriptions or {}
+        self.param_model = create_params_model(func, param_descriptions)
+
+tool = Tool(
+  read_file, 
+  param_descriptions={"filepath": "文件路径"}
+)
+```
+
+```python
+# 实现 schema
+def schema(self) -> dict:
+    param_schema = self.param_model.model_json_schema()
+    return {
+        "type": "function",
+        "function": {
+            "name": self.name,
+            "description": self.description,
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    name: {
+                        "type": prop.get("type", "string"),
+                        "description": prop.get("description", ""),
+                    }
+                    for name, prop in param_schema.get("properties", {}).items()
+                },
+                "required": param_schema.get("required", []),
+            },
+        },
+    }
+
+setattr(Tool, "schema", schema)
+
+# print(json.dumps(tool.schema(), indent=2, ensure_ascii=False))
+```
+
+```python
+# 实现可调用
+import traceback
+def __call__(self, **kwargs) -> Any:
+    result = ""
+    try:
+        # 验证参数
+        validated = self.param_model(**kwargs)
+        result = str(self.func(**validated.model_dump())) # 将结果转换为字符串
+    except Exception as e:
+        # 完整堆栈字符串
+        result = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+
+    return result
+
+setattr(Tool, "__call__", __call__)
+# tool(filepath = "./agent/prompt/system.j")
+```
+
+```python
+# 使用封装好的类
+from agent.tool.core.tool import Tool
+
+tool = Tool(write_file, param_descriptions={
+    "filepath": "文件的绝对路径或相对于cwd的路径",
+    "content": "待写入的文件内容"
+})
+
+# tool(filepath="uv.md", content="123123123")
+tool.schema()
+```
+
+## 实现装饰器
+
+我们希望对函数的描述能够聚合到函数所在的位置。
+
+```python
+@tool(filepath="文件的绝对路径或相对于cwd的路径", content="待写入的文件内容")
+def write_file(filepath: str, content: str) -> None:
+    """将内容写入文件"""
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+```
+
+```python
+# 实现 tool 装饰器
+
+def tool(**args):
+    """装饰器：将普通函数包装为 Tool 对象"""
+    def decorator(func):
+        return Tool(func, param_descriptions=args)
+    return decorator
+```
+
+```python
+@tool(filepath = "文件绝对路径或相对于cwd的路径")
+def read_file(filepath: str) -> str:
+    """读取文件内容并以字符串形式返回"""
+    with open(filepath, "r", encoding="utf-8") as f:
+        return f.read()
+
+@tool(filepath = "文件绝对路径或相对于cwd的路径", content="待写入的内容")
+def write_file(filepath: str, content: str) -> None:
+    """将内容写入文件"""
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+```
+
+## 封装工具调度中心
+
+现在我们已经可以定义工具了，但是从工具到session之间，以及从session到调用工具之间，还有一点距离。工具调度中心就是为了弥补这个距离。
+
+```python
+session.tools = registry.schema()
+resp = model.invoke(session)
+result = registry.invoke(resp.messages[-1])
+result # 工具调用结果，None表示此次无须调用工具
+```
+
+```python
+class _ToolRegistry:
+    _tools: dict[str, Tool] = {}
+
+    def register(self, tool: Tool):
+        """注册一个工具"""
+        self._tools[tool.name] = tool
+
+    def schemas(self) -> list[dict]:
+        """返回所有工具的 Schema 列表，可直接赋值给 session.tools"""
+        return [t.schema() for t in self._tools.values()]
+
+    def invoke(self, message: dict) -> list[dict] | None:
+        """从模型返回的消息中提取 tool_calls 并逐一执行"""
+        tool_calls = message.get("tool_calls", [])
+        if not tool_calls:
+            return None
+        results = []
+        for tc in message.get("tool_calls", []):
+            id = tc["id"]
+            name = tc["function"]["name"]
+            args = json.loads(tc["function"]["arguments"])
+            tool = self._tools[name]
+            result = ""
+            if not tool:
+                result = "无此工具，请仔细检查你传递的工具名称是否正确"
+            else:
+                result = tool(**args)
+            results.append({
+                "role": "tool",
+                "tool_call_id": id,
+                "name": name,
+                "content": result,
+            })
+        return results
+
+registry = _ToolRegistry()
+registry.register(read_file)
+registry.register(write_file)
+```
+
+## 完整流程测试
+
+```python
+# 注册工具
+
+from agent.tool import registry
+
+session.tools = registry.schemas()
+
+session.print()
+```
+
+```python
+# 发起对话
+session.add_message({"role": "user", "content": "请在当前目录新建一个`uv.md`文件，写入UV的安装教程。直接新建就好"})
+
+resp = model.invoke_stream(session)
+```
+
+```python
+session.print()
+```
+
+```python
+call_msg = registry.invoke(session.messages[-1])
+print(call_msg)
+```
+
+```python
+# 追加工具结果到上下文
+if call_msg:
+    session.messages += call_msg
+
+session.print()
+```
+
+```python
+# 告知模型结果
+
+model.invoke_stream(session)
+```
+
+![tool_calling.svg](/img/agent-core/19-tool_calling.svg)
+
+## 本章代码
+
+
+
+本章 `agent/` 工程相对上一章的变更：**新增 8 个文件、修改 1 个文件**。以下为变更文件全文。
+
+### 新增文件 `1.json`
+
+```json
+{
+  "properties": {
+    "n": {
+      "default": 0,
+      "description": "计数值",
+      "title": "N",
+      "type": "integer"
+    }
+  },
+  "title": "Counter",
+  "type": "object"
+}
+```
+
+### 新增文件 `agent/tool/__init__.py`
+
+```python
+from agent.tool.core import Tool
+import json
+from agent.tool.read_file import read_file
+from agent.tool.write_file import write_file
+
+
+class _ToolRegistry:
+    _tools: dict[str, Tool] = {}
+
+    def register(self, tool: Tool):
+        """注册一个工具"""
+        self._tools[tool.name] = tool
+
+    def schemas(self) -> list[dict]:
+        """返回所有工具的 Schema 列表，可直接赋值给 session.tools"""
+        return [t.schema() for t in self._tools.values()]
+
+    def invoke(self, message: dict) -> list[dict] | None:
+        """从模型返回的消息中提取 tool_calls 并逐一执行"""
+        tool_calls = message.get("tool_calls", [])
+        if not tool_calls:
+            return None
+        results = []
+        for tc in message.get("tool_calls", []):
+            id = tc["id"]
+            name = tc["function"]["name"]
+            args = json.loads(tc["function"]["arguments"])
+            tool = self._tools[name]
+            result = ""
+            if not tool:
+                result = "无此工具，请仔细检查你传递的工具名称是否正确"
+            else:
+                result = tool(**args)
+            results.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": id,
+                    "name": name,
+                    "content": result,
+                }
+            )
+        return results
+
+
+registry = _ToolRegistry()
+registry.register(read_file)
+registry.register(write_file)
+```
+
+### 新增文件 `agent/tool/core/__init__.py`
+
+```python
+from agent.tool.core.tool import Tool, tool
+```
+
+### 新增文件 `agent/tool/core/tool.py`
+
+```python
+# 创建 Tool 类
+import inspect
+import traceback
+from typing import Any, Callable
+from agent.tool.core.utils import create_params_model
+
+
+class Tool:
+
+    def __init__(
+        self,
+        func: Callable,
+        param_descriptions: dict = {},
+    ):
+        self.func = func
+        self.name = func.__name__
+        self.description = inspect.getdoc(func) or ""
+        self.param_descriptions = param_descriptions or {}
+        self.param_model = create_params_model(func, param_descriptions)
+
+    def schema(self) -> dict:
+        param_schema = self.param_model.model_json_schema()
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        name: {
+                            "type": prop.get("type", "string"),
+                            "description": prop.get("description", ""),
+                        }
+                        for name, prop in param_schema.get("properties", {}).items()
+                    },
+                    "required": param_schema.get("required", []),
+                },
+            },
+        }
+
+    def __call__(self, **kwargs) -> Any:
+        result = ""
+        try:
+            # 验证参数
+            validated = self.param_model(**kwargs)
+            result = str(self.func(**validated.model_dump()))  # 将结果转换为字符串
+        except Exception as e:
+            # 完整堆栈字符串
+            result = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+
+        return result
+
+
+def tool(**args):
+    """装饰器：将普通函数包装为 Tool 对象"""
+
+    def decorator(func):
+        return Tool(func, param_descriptions=args)
+
+    return decorator
+```
+
+### 新增文件 `agent/tool/core/utils.py`
+
+```python
+# 实现 create_params_model 函数
+import inspect
+from typing import Any
+from pydantic import Field, create_model
+
+
+def create_params_model(func, param_descriptions={}):
+    model_name = f"{func.__name__}_params"
+    args = {}
+    sig = inspect.signature(func)
+    for pname, param in sig.parameters.items():
+        py_type = param.annotation if param.annotation is not param.empty else Any
+        desc = param_descriptions.get(pname, "")
+
+        if param.default is param.empty:
+            # 必填参数：不设默认值
+            args[pname] = (py_type, Field(description=desc))
+        else:
+            # 可选参数：设置默认值
+            args[pname] = (
+                py_type,
+                Field(default=param.default, description=desc),
+            )
+
+    return create_model(model_name, **args)
+```
+
+### 新增文件 `agent/tool/read_file.py`
+
+```python
+from agent.tool.core import tool
+
+
+@tool(filepath="文件绝对路径或相对于cwd的路径")
+def read_file(filepath: str) -> str:
+    """读取文件内容并以字符串形式返回"""
+    with open(filepath, "r", encoding="utf-8") as f:
+        return f.read()
+```
+
+### 新增文件 `agent/tool/write_file.py`
+
+```python
+from agent.tool.core import tool
+
+
+@tool(filepath="文件绝对路径或相对于cwd的路径", content="待写入的内容")
+def write_file(filepath: str, content: str) -> None:
+    """将内容写入文件"""
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+```
+
+### 新增文件 `uv.md`
+
+````markdown
+# UV 安装教程
+
+## 什么是 UV？
+
+UV 是一个用 Rust 编写的极速 Python 包管理器和解析器，由 Astral（同样是 Ruff 的开发者）开发。它旨在替代 `pip`、`pip-tools`、`pipx`、`poetry` 等工具，提供更快的依赖解析和安装体验。
+
+## 安装方法
+
+### macOS 和 Linux
+
+使用官方安装脚本：
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+或者使用 Homebrew（macOS）：
+
+```bash
+brew install uv
+```
+
+### Windows
+
+使用 PowerShell 安装：
+
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+或者使用 Winget：
+
+```bash
+winget install --id astral-sh.uv
+```
+
+### 使用 pip 安装
+
+```bash
+pip install uv
+```
+
+### 使用 Cargo 安装（需要 Rust 环境）
+
+```bash
+cargo install uv
+```
+
+## 验证安装
+
+安装完成后，运行以下命令验证是否安装成功：
+
+```bash
+uv --version
+```
+
+## 常用命令
+
+| 命令 | 说明 |
+|------|------|
+| `uv pip install <package>` | 安装包 |
+| `uv pip install -r requirements.txt` | 从 requirements 文件安装 |
+| `uv venv` | 创建虚拟环境 |
+| `uv add <package>` | 将包添加到项目 |
+| `uv remove <package>` | 从项目移除包 |
+| `uv sync` | 同步项目依赖 |
+| `uv run <command>` | 在虚拟环境中运行命令 |
+| `uv cache clean` | 清理缓存 |
+| `uv tool install <package>` | 安装全局工具（类似 pipx） |
+
+## 更多信息
+
+- 官方文档：https://docs.astral.sh/uv/
+- GitHub 仓库：https://github.com/astral-sh/uv
+````
+
+### 修改文件 `agent/prompt/system.j2`
+
+```jinja
+You are Claude Code, Anthropic's official CLI for Claude.
+
+You are an interactive agent that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
+
+IMPORTANT: Assist with authorized security testing, defensive security, CTF challenges, and educational contexts. Refuse requests for destructive techniques, DoS attacks, mass targeting, supply chain compromise, or detection evasion for malicious purposes. Dual-use security tools (C2 frameworks, credential testing, exploit development) require clear authorization context: pentesting engagements, CTF competitions, security research, or defensive use cases.
+
+IMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident that the URLs are for helping the user with programming. You may use URLs provided by the user in their messages or local files.
+
+# Environment
+
+You have been invoked in the following environment:
+ - Primary working directory: 
+   {{ cwd }}
+ - Is a git repository: {{ is_git }}
+```

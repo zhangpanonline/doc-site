@@ -1,0 +1,232 @@
+---
+sidebar_position: 9
+title: '09. 神经网络的本质'
+description: "Agents底层逻辑 · 神经网络的本质：堆叠与矩阵运算、通用近似与泛化能力。"
+displayed_sidebar: agentsCore
+---
+
+# 神经网络的本质
+
+## 矩阵相加
+
+$$
+c_{ij}=(a_{ij}+b_{ij})
+$$
+
+
+$$
+\begin{bmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{m1} & a_{m2} & \cdots & a_{mn}
+\end{bmatrix}
++
+\begin{bmatrix}
+b_{11} & b_{12} & \cdots & b_{1n} \\
+b_{21} & b_{22} & \cdots & b_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+b_{m1} & b_{m2} & \cdots & b_{mn}
+\end{bmatrix}
+=
+\begin{bmatrix}
+a_{11}+b_{11} & a_{12}+b_{12} & \cdots & a_{1n}+b_{1n} \\
+a_{21}+b_{21} & a_{22}+b_{22} & \cdots & a_{2n}+b_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{m1}+b_{m1} & a_{m2}+b_{m2} & \cdots & a_{mn}+b_{mn}
+\end{bmatrix}
+$$
+
+$$
+\begin{bmatrix}
+1 & 2 & 3 \\
+4 & 5 & 6
+\end{bmatrix}
++
+\begin{bmatrix}
+7 & 8 & 9 \\
+10 & 11 & 12
+\end{bmatrix}
+=
+\begin{bmatrix}
+1+7 & 2+8 & 3+9 \\
+4+10 & 5+11 & 6+12
+\end{bmatrix}
+=
+\begin{bmatrix}
+8 & 10 & 12 \\
+14 & 16 & 18
+\end{bmatrix}
+$$
+$A_{(m\times n)} + B_{(m\times n)} = AB_{(m\times n)}$
+
+## 矩阵的点乘
+
+$$
+c_{ij}=\sum_{k=1}^{n} a_{ik}b_{kj}
+$$
+
+$$
+AB=
+\begin{bmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{m1} & a_{m2} & \cdots & a_{mn}
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+b_{11} & b_{12} & \cdots & b_{1p} \\
+b_{21} & b_{22} & \cdots & b_{2p} \\
+\vdots & \vdots & \ddots & \vdots \\
+b_{n1} & b_{n2} & \cdots & b_{np}
+\end{bmatrix}
+=
+\begin{bmatrix}
+c_{11} & c_{12} & \cdots & c_{1p} \\
+c_{21} & c_{22} & \cdots & c_{2p} \\
+\vdots & \vdots & \ddots & \vdots \\
+c_{m1} & c_{m2} & \cdots & c_{mp}
+\end{bmatrix}
+$$
+
+
+$$
+\begin{bmatrix}
+1 & 2 & 3 \\
+4 & 5 & 6
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+7 & 8 \\
+9 & 10 \\
+11 & 12
+\end{bmatrix}
+=
+\begin{bmatrix}
+1\cdot7+2\cdot9+3\cdot11 & 1\cdot8+2\cdot10+3\cdot12 \\
+4\cdot7+5\cdot9+6\cdot11 & 4\cdot8+5\cdot10+6\cdot12
+\end{bmatrix}
+=
+\begin{bmatrix}
+7+18+33 & 8+20+36 \\
+28+45+66 & 32+50+72
+\end{bmatrix}
+=
+\begin{bmatrix}
+58 & 64 \\
+139 & 154
+\end{bmatrix}
+$$
+
+
+$A_{(m\times n)} \cdot B_{(n\times p)} = AB_{(m\times p)}$
+
+## 矩阵的转置
+
+$$
+A=
+\begin{bmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{m1} & a_{m2} & \cdots & a_{mn}
+\end{bmatrix}
+\\
+\\
+A^T=
+\begin{bmatrix}
+a_{11} & a_{21} & \cdots & a_{m1} \\
+a_{12} & a_{22} & \cdots & a_{m2} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{1n} & a_{2n} & \cdots & a_{mn}
+\end{bmatrix}
+$$
+
+如果原矩阵 $A$ 是 $m×n$，转置后 $A^T$ 就是 $n×m$。
+
+## 向量矩阵
+
+向量可以和矩阵进行运算，运算时，可以把向量看作是$n×1$的矩阵，也可以看作是$1×n$的矩阵，如何看待根据算法而不同。
+
+$A_{(m\times n)} \cdot x_{(n\times 1)} = y_{(m\times 1)}$
+
+$A_{(m\times n)} \cdot x_{(1\times n)} = error$
+
+$x_{(1\times n)} \cdot y_{(n\times 1)} = 标量_{(1\times 1)}$
+$$
+\begin{bmatrix}
+1 & 2 & 3 \\
+4 & 5 & 6
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+7 \\
+8 \\
+9
+\end{bmatrix}
+=
+\begin{bmatrix}
+1\cdot7+2\cdot8+3\cdot9 \\
+4\cdot7+5\cdot8+6\cdot9
+\end{bmatrix}
+=
+\begin{bmatrix}
+7+16+27 \\
+28+40+54
+\end{bmatrix}
+=
+\begin{bmatrix}
+50 \\
+122
+\end{bmatrix}
+$$
+
+## 神经网络的本质
+
+神经网络中的每一层，实际上做的是矩阵运算，并不存在所谓“神经元”。
+$$
+\begin{aligned}
+& \textbf{神经网络中，某层的计算过程} \\
+\\
+& \text{完整矩阵形式：} \\
+\\
+& \begin{bmatrix}
+  a_1^{(l)} \\
+  a_2^{(l)} \\
+  \vdots \\
+  a_n^{(l)}
+  \end{bmatrix}
+  =
+  \sigma\left(
+  \begin{bmatrix}
+  w_{11}^{(l)} & w_{12}^{(l)} & \cdots & w_{1m}^{(l)} \\
+  w_{21}^{(l)} & w_{22}^{(l)} & \cdots & w_{2m}^{(l)} \\
+  \vdots & \vdots & \ddots & \vdots \\
+  w_{n1}^{(l)} & w_{n2}^{(l)} & \cdots & w_{nm}^{(l)}
+  \end{bmatrix}
+  \begin{bmatrix}
+  a_1^{(l-1)} \\
+  a_2^{(l-1)} \\
+  \vdots \\
+  a_m^{(l-1)}
+  \end{bmatrix}
+  +
+  \begin{bmatrix}
+  b_1^{(l)} \\
+  b_2^{(l)} \\
+  \vdots \\
+  b_n^{(l)}
+  \end{bmatrix}
+  \right) \\[1.2em]
+& \text{简写形式：} \\
+\\
+& \mathbf{a}^{(l)} = \sigma\left( \mathbf{W}^{(l)} \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)} \right) \\[1.2em]
+& \text{其中：} \\
+& \mathbf{a}^{(l)}: \text{第 } l \text{ 层的输出向量（大小为 } n \times 1 \text{）} \\
+& \mathbf{a}^{(l-1)}: \text{第 } l-1 \text{ 层的输出向量（大小为 } m \times 1 \text{）} \\
+& \mathbf{W}^{(l)}: \text{第 } l \text{ 层的权重矩阵（大小为 } n \times m \text{）} \\
+& \mathbf{b}^{(l)}: \text{第 } l \text{ 层的偏置向量（大小为 } n \times 1 \text{）} \\
+& \sigma(\cdot): \text{激活函数（如 Sigmoid、ReLU 等）}
+\end{aligned}
+$$

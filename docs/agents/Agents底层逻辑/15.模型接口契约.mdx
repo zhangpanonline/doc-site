@@ -1,0 +1,323 @@
+---
+sidebar_position: 15
+title: '15. 模型接口契约'
+description: "Agents底层逻辑 · 模型接口契约：OpenAI SDK 调用、流式响应与视觉输入的多模态接口。"
+displayed_sidebar: agentsCore
+---
+
+# 模型接口契约
+
+
+## 本地模型
+
+- `Pytorch + Transformers`：主要是用于本地训练、微调，也可以进行本地推理，但需要自行适配硬件加速
+- `Ollama`：一键部署和运行开源大模型的命令行工具，内置量化支持和 GPU 加速
+- `llama.cpp`：高性能 C/C++ 推理引擎，主打 CPU 推理和多种量化方案
+- `vLLM`：高吞吐量推理框架，基于 PagedAttention 技术，适用于生产环境部署
+- `MLX`：Apple 官方 ML 框架，专为 Apple Silicon 设计的本地推理方案
+- `LM Studio`：带图形界面的桌面应用，支持一键下载和运行本地开源模型
+- `LocalAI`：提供 OpenAI 兼容 API 的本地推理服务，方便现有应用无缝切换
+
+## 下载安装
+
+自行下载安装：https://ollama.com/
+
+```shell
+ollama -v
+```
+
+Ollama官方仓库：https://ollama.com/library
+
+设置环境变量：`OLLAMA_MODEL_SERVER="https://mirror.ollama.com"`
+
+```shell
+# 拉取模型到本地
+ollama pull qwen3-vl
+# 查看已下载的模型
+ollama list
+# 删除模型
+ollama rm <模型名称>
+# 查看模型信息
+ollama show <模型名称>
+# 运行模型
+ollama run <模型名称>
+# 查看目前的服务
+ollama ps
+```
+
+访问：http://localhost:11434/ ，查看服务是否正在运行
+
+
+
+测试接口：
+
+```shell
+# 模型列表
+curl http://localhost:11434/v1/models
+
+# 聊天接口
+curl -X POST http://localhost:11434/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\": \"qwen3-vl\", \"messages\": [{\"role\": \"user\", \"content\": \"你好，请介绍一下自己\"}], \"stream\": false}"
+```
+
+```shell
+uv add openai==1.74.0 python-dotenv==1.2.2
+```
+
+```python
+from utils import config
+from openai import OpenAI, AsyncOpenAI
+
+client = OpenAI()
+```
+
+```python
+# 获取模型列表
+list = client.models.list()
+print(list.to_json())
+```
+
+```python
+# 基本对话
+response = client.chat.completions.create(
+    model=config.OPENAI_MODEL,
+    messages=[
+        {"role":"user", "content":"你是谁"}
+    ]
+)
+print(response.to_json())
+```
+
+```python
+# 关闭思维链
+response = client.chat.completions.create(
+    model=config.OPENAI_MODEL,
+    messages=[
+        {"role":"user", "content":"你是谁"}
+    ],
+    extra_body={
+        "thinking": {
+            "type": "disabled" # qwen3-vl无法直接关闭思考模式
+        }
+    }
+)
+print(response.to_json())
+```
+
+```python
+# 流式响应
+import sys
+
+stream = client.chat.completions.create(
+    model=config.OPENAI_MODEL,
+    messages=[
+        {"role":"system", "content":"少思考，简洁回答"},
+        {"role":"user", "content":"从1数到10"}
+    ],
+    stream=True
+)
+
+for chunk in stream:
+    print(chunk)
+    sys.stdout.flush()
+```
+
+```python
+# 流式响应提取
+from utils.stream_print import print_stream
+import sys
+
+stream = client.chat.completions.create(
+    model=config.OPENAI_MODEL,
+    messages=[
+        {"role":"system", "content":"少思考，简洁回答"},
+        {"role":"user", "content":"从1数到10"}
+    ],
+    stream=True
+)
+print_stream(stream)
+```
+
+```python
+# 使用视觉能力
+from utils.stream_print import print_stream
+from utils.img_base64 import to_dataurl
+
+# 读取本地图片并转换为 Base64
+dataurl = to_dataurl("menu.png")
+stream = client.chat.completions.create(
+    model=config.OPENAI_MODEL,
+    messages=[{
+            "role":"user", 
+            "content":[
+                {"type": "text", "text": "请描述这张图片的内容"},
+                {"type": "image_url","image_url": {"url": dataurl} }
+            ]
+        }
+    ],
+    stream=True
+)
+print_stream(stream)
+```
+
+## 本章代码
+
+
+
+本章 `agent/` 工程相对上一章的变更：**新增 6 个文件、修改 0 个文件**、删除 2 个。以下为变更文件全文。
+
+### 新增文件 `resp.json`
+
+```json
+{
+  "id": "chatcmpl-936",
+  "object": "chat.completion",
+  "created": 1784642808,
+  "model": "qwen3-vl",
+  "system_fingerprint": "fp_ollama",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "你好呀！😊 我是通义千问（Qwen），阿里巴巴集团旗下的超大规模语言模型，由通义实验室研发。我的目标是成为你身边最贴心的AI助手，帮你解决各种问题、创造有趣的内容，甚至陪你聊天解闷！\n\n### 🌟 我能做什么？\n- **多语言支持**：中文、英文、德语、法语等百种语言，沟通零障碍～  \n- **深度对话**：无论是写故事、公文，还是聊哲学、科技，我都能帮你梳理思路。  \n- **逻辑推理+编程**：复杂问题分析、代码写作（Python/Java/C++...全都会！）  \n- **创意无限**：写诗、剧本、邮件、PPT大纲...你想到的我都能实现～  \n\n举个栗子🌰：  \n\u003e 你需要“用英文写一封商务合作邀请函”，或者“用中文写一篇关于AI未来的短文”——随时喊我，秒回！  \n\n### 💡 为什么选我？\n- **超大规模参数量**：理解上下文更精准，对话不卡壳；  \n- **灵活适配场景**：从职场到生活，都能无缝切换；  \n- **持续进化ing**：每周都在更新知识库，和你同步成长～  \n\n要不要试试？比如现在就可以让我帮你写个“五一假期计划”或者解答一个数学题（悄悄说，我擅长解方程！😉）  \n\n随时等你来聊哦～ 😊 有什么需要吗？",
+        "reasoning": "好的，用户让我介绍自己。我应该先明确我的身份，我是通义千问，阿里巴巴集团旗下的超大规模语言模型，由通义实验室研发。\n\n首先，需要简要说明我的背景和功能，比如支持多语言、代码写作等。然后分点列出主要特点：多语言能力、对话理解、逻辑推理、编程能力、多模态处理。但不要写得像列表，而是自然过渡。还要提到用户可能的需求，比如能帮助写故事、写公文、写邮件等。\n\n要注意口语化，避免专业术语太生硬。比如用“超大规模参数量”这种词，可能需要解释成“能够理解和生成多种语言的文本”。同时保持友好语气，让用户感觉亲切，可以加一些表情符号或者感叹号，但别太多显得不正式。\n\n还要确保信息准确，不能编造不存在的功能，比如多模态处理要说明是支持图像、音频等，但可能不需要深入细节。需要检查是否有遗漏的重要点，比如是否提到训练数据的时间范围或者具体场景应用。\n\n另外，用户可能想知道我的应用场景，所以举几个例子会更好，比如写邮件、编程、创作内容等。同时要邀请用户提问，促进互动，让对话继续下去。\n\n最后结构要清晰，先介绍自己，再说能力，然后用例子说明，结尾友好的询问是否需要帮助。"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 14,
+    "completion_tokens": 608,
+    "total_tokens": 622
+  }
+}
+```
+
+### 新增文件 `utils/__init__.py`
+
+```python
+
+```
+
+### 新增文件 `utils/config.py`
+
+```python
+from dotenv import load_dotenv
+import os
+
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_env_file = os.path.abspath(os.path.join(_current_dir, "../.env"))
+
+load_dotenv(_env_file)
+
+OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY")  # type: ignore
+OPENAI_BASE_URL: str = os.environ.get("OPENAI_BASE_URL")  # type: ignore
+OPENAI_MODEL: str = os.environ.get("OPENAI_MODEL")  # type: ignore
+```
+
+### 新增文件 `utils/img_base64.py`
+
+```python
+import base64
+
+
+def to_base64(image_path):
+    with open(image_path, "rb") as image_file:
+        base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+    return base64_image
+
+
+def to_dataurl(image_path: str) -> str:
+    # base64编码
+    b64_data = to_base64(image_path)
+
+    # 简单判断图片类型，可自行扩展
+    lower_path = image_path.lower()
+    if lower_path.endswith(".png"):
+        mime = "image/png"
+    elif lower_path.endswith((".jpg", ".jpeg")):
+        mime = "image/jpeg"
+    elif lower_path.endswith(".gif"):
+        mime = "image/gif"
+    elif lower_path.endswith(".webp"):
+        mime = "image/webp"
+    else:
+        mime = "image/octet-stream"
+
+    data_url = f"data:{mime};base64,{b64_data}"
+    return data_url
+```
+
+### 新增文件 `utils/stream_print.py`
+
+```python
+from utils.stream_resp import chunk_generator
+import sys
+
+
+def print_stream(stream):
+    for chunk in chunk_generator(stream):
+        if chunk.type == "reasoning_start":
+            print("思考：")
+        elif chunk.type == "reasoning_end":
+            print()
+        elif chunk.type == "content_start":
+            print()
+            print("内容：")
+        elif chunk.type == "content_end":
+            print()
+            print("====输出完毕====")
+        elif chunk.type == "reasoning":
+            print(f"\033[36m{chunk.content}\033[0m", end="")
+        elif chunk.type == "content":
+            print(f"\033[31m{chunk.content}\033[0m", end="")
+        sys.stdout.flush()
+```
+
+### 新增文件 `utils/stream_resp.py`
+
+```python
+from dataclasses import dataclass
+
+
+@dataclass
+class Chunk:
+    type: str = ""
+    content: str = ""
+
+
+def chunk_generator(stream):
+    is_on_reasoning = False
+    for chunk in stream:
+        if len(chunk.choices) == 0:
+            continue
+        delta = chunk.choices[0].delta
+        content = delta.content  # 正文内容
+        # 推理内容，为了兼容性，尝试获取两个字段的值。
+        reasoning_content = getattr(delta, "reasoning_content", None)
+        if not reasoning_content:
+            reasoning_content = getattr(delta, "reasoning", None)
+
+        if reasoning_content:
+            if not is_on_reasoning:
+                is_on_reasoning = True
+                yield Chunk(type="reasoning_start")  # 推理开始
+            # 推理内容
+            yield Chunk(type="reasoning", content=reasoning_content)
+        if content:
+            if is_on_reasoning:
+                is_on_reasoning = False
+                # 推理结束
+                yield Chunk(type="reasoning_end")
+                # 正文开始
+                yield Chunk(type="content_start")
+            # 正文内容
+            yield Chunk(type="content", content=content)
+
+    yield Chunk(type="content_end")
+```
+
+### 已删除文件
+
+- `bpe_vocab.json`
+- `corpus.txt`

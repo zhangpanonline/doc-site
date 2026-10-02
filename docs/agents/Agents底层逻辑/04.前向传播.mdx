@@ -1,0 +1,88 @@
+---
+sidebar_position: 4
+title: '04. 前向传播'
+description: "Agents底层逻辑 · 前向传播：从输入到输出的矩阵运算链路，层与层之间如何传递。"
+displayed_sidebar: agentsCore
+---
+
+# 前向传播
+
+$$
+\begin{aligned}
+& \textbf{单个神经元} \\
+\\
+& y = \sigma(\sum_{i=1}^n w_i x_i + b) \\
+\end{aligned}
+$$
+
+---
+
+$$
+\begin{aligned}
+& \textbf{神经网络中的单个神经元} \\
+\\
+& a^{L}_j = \sigma(\sum_{i=1}^n w_i a^{L-1}_i + b) \\
+\\
+& L: 第L层 \\
+& j: 当前层第j行神经元
+\end{aligned}
+$$
+
+---
+
+$$
+\begin{aligned}
+& \textbf{神经网络中，某层的计算过程} \\
+\\
+& \text{完整矩阵形式：} \\
+\\
+& \begin{bmatrix}
+  a_1^{(l)} \\
+  a_2^{(l)} \\
+  \vdots \\
+  a_n^{(l)}
+  \end{bmatrix}
+  =
+  \sigma\left(
+  \begin{bmatrix}
+  w_{11}^{(l)} & w_{12}^{(l)} & \cdots & w_{1m}^{(l)} \\
+  w_{21}^{(l)} & w_{22}^{(l)} & \cdots & w_{2m}^{(l)} \\
+  \vdots & \vdots & \ddots & \vdots \\
+  w_{n1}^{(l)} & w_{n2}^{(l)} & \cdots & w_{nm}^{(l)}
+  \end{bmatrix}
+  \begin{bmatrix}
+  a_1^{(l-1)} \\
+  a_2^{(l-1)} \\
+  \vdots \\
+  a_m^{(l-1)}
+  \end{bmatrix}
+  +
+  \begin{bmatrix}
+  b_1^{(l)} \\
+  b_2^{(l)} \\
+  \vdots \\
+  b_n^{(l)}
+  \end{bmatrix}
+  \right) \\[1.2em]
+& \text{简写形式：} \\
+\\
+& \mathbf{a}^{(l)} = \sigma\left( \mathbf{W}^{(l)} \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)} \right) \\[1.2em]
+& \text{其中：} \\
+& \mathbf{a}^{(l)}: \text{第 } l \text{ 层的输出向量（大小为 } n \times 1 \text{）} \\
+& \mathbf{a}^{(l-1)}: \text{第 } l-1 \text{ 层的输出向量（大小为 } m \times 1 \text{）} \\
+& \mathbf{W}^{(l)}: \text{第 } l \text{ 层的权重矩阵（大小为 } n \times m \text{）} \\
+& \mathbf{b}^{(l)}: \text{第 } l \text{ 层的偏置向量（大小为 } n \times 1 \text{）} \\
+& \sigma(\cdot): \text{激活函数（如 Sigmoid、ReLU 等）}
+\end{aligned}
+$$
+
+
+
+---
+
+$$
+\begin{aligned}
+& \text{总参数量} = \sum_{l=1}^{L} \left( n_l \times n_{l-1} + n_l \right) \\[0.8em]
+& = \left( n_1 \times n_0 + n_1 \right) + \left( n_2 \times n_1 + n_2 \right) + \cdots + \left( n_L \times n_{L-1} + n_L \right)
+\end{aligned}
+$$

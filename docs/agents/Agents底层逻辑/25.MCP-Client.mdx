@@ -1,0 +1,432 @@
+---
+sidebar_position: 25
+title: '25. MCP Client'
+description: "Agents底层逻辑 · MCP Client：以客户端身份连接 MCP 服务器，工具发现与调用。"
+displayed_sidebar: agentsCore
+---
+
+# MCP Client
+
+```python
+# https://github.com/modelcontextprotocol/python-sdk/tree/v1.28.1
+!uv add mcp==1.28.1
+```
+
+## Stdio
+
+### 定义服务器连接参数
+
+```python
+from mcp import StdioServerParameters
+
+server_params = StdioServerParameters(
+    command="uvx",  # Using uv to run the server
+    args=["mcp-server-time"]
+)
+```
+
+### 工具列表
+
+```python
+from mcp.client.stdio import stdio_client
+from mcp import ClientSession
+
+async with stdio_client(server_params) as (read, write):
+    async with ClientSession(read, write) as session:
+        # initialize
+        await session.initialize()
+
+        # tools/list
+        tools = await session.list_tools()
+        print(tools.model_dump_json(indent=2, ensure_ascii=False))
+```
+
+### 调用工具
+
+```python
+async with stdio_client(server_params) as (read, write):
+    async with ClientSession(read, write) as session:
+        # 初始化
+        await session.initialize()
+
+        # tools/call
+        tools = await session.call_tool(
+            name="get_current_time", 
+            arguments={
+                "timezone": "Asia/shanghai"
+            })
+        print(tools.model_dump_json(indent=2, ensure_ascii=False))
+```
+
+## HTTP
+
+### 工具列表
+
+```python
+from mcp.client.streamable_http import streamable_http_client
+from mcp import ClientSession
+
+async with streamable_http_client("https://learn.microsoft.com/api/mcp") as (
+        read_stream,
+        write_stream,
+        _,
+    ):
+        async with ClientSession(read_stream, write_stream) as session:
+            # initialize
+            await session.initialize()  # http请求1
+
+            # tools/list
+            tools = await session.list_tools() # http请求2
+            print(tools.model_dump_json(indent=2, ensure_ascii=False))
+```
+
+### 调用工具
+
+```python
+async with streamable_http_client("https://learn.microsoft.com/api/mcp") as (
+        read_stream,
+        write_stream,
+        _,
+    ):
+    async with ClientSession(read_stream, write_stream) as session:
+        # initialize
+        await session.initialize()
+
+        # tools/call
+        tools = await session.call_tool(
+            name="microsoft_docs_search", 
+            arguments={
+                "query": "c#如何解析excel"
+            })
+        print(tools.model_dump_json(indent=2, ensure_ascii=False))
+```
+
+## 封装
+
+### MCP 配置
+
+```python
+mcp = {
+  "servers": {
+    "time": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-time"
+      ]
+    },
+    "microsoft-learn": {
+        "type": "http",
+        "url": "https://learn.microsoft.com/api/mcp"
+    }
+  }
+}
+```
+
+### 导入
+
+```python
+import asyncio
+from mcp import StdioServerParameters, ClientSession
+from mcp.client.stdio import stdio_client
+from mcp.client.streamable_http import streamable_http_client
+from contextlib import asynccontextmanager
+```
+
+### 封装连接逻辑
+
+用 `@asynccontextmanager` 将连接和初始化逻辑封装为一个异步上下文管理器，根据配置中的 `type` 字段自动选择 stdio 或 http 传输方式。
+
+```python
+@asynccontextmanager
+async def connect_mcp(server_config: dict):
+    """根据配置连接 MCP 服务器，返回已初始化的 ClientSession"""
+    if server_config["type"] == "stdio":
+        params = StdioServerParameters(
+            command=server_config["command"],
+            args=server_config.get("args", [])
+        )
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                yield session
+    elif server_config["type"] == "http":
+        async with streamable_http_client(server_config["url"]) as (read, write, _):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                yield session
+    else:
+        raise ValueError(f"不支持的服务器类型: {server_config['type']}")
+```
+
+### 封装单个服务器操作
+
+有了 `connect_mcp`，获取工具列表和调用工具变得非常简洁——只需 `async with` 进入上下文，拿到 session 后直接调用对应方法即可。
+
+```python
+async def list_server_tools(server_config: dict):
+    """获取单个 MCP 服务器的工具列表"""
+    async with connect_mcp(server_config) as session:
+        return await session.list_tools()
+
+
+async def call_server_tool(server_config: dict, tool_name: str, arguments: dict | None = None):
+    """调用单个 MCP 服务器上的工具"""
+    async with connect_mcp(server_config) as session:
+        return await session.call_tool(tool_name, arguments or {})
+```
+
+验证一下——用 time 服务器测试：
+
+```python
+tools = await list_server_tools(mcp["servers"]["time"])
+print(tools.model_dump_json(indent=2, ensure_ascii=False))
+```
+
+```python
+result = await call_server_tool(mcp["servers"]["time"], "get_current_time", {"timezone": "Asia/Shanghai"})
+print(result.model_dump_json(indent=2, ensure_ascii=False))
+```
+
+### 构建 MCPClient 管理多个服务器
+
+上面的函数已经能处理单个服务器了，但每次都要手动传递 `mcp["servers"]["xxx"]` 仍然不够便捷。我们创建一个 `MCPClient` 类，在初始化时接收完整的 MCP 配置字典，然后提供遍历所有服务器的方法。
+
+先写出异步版本的 `alist_tools` 和 `acall_tool`：
+
+```python
+class MCPClient:
+    def __init__(self, config: dict):
+        self.servers = config["servers"]
+
+    async def alist_tools(self) -> list:
+        """异步获取所有服务器的工具列表"""
+        results = []
+        for name, config in self.servers.items():
+            async with connect_mcp(config) as session:
+                tools = await session.list_tools()
+                results.append({
+                    "server": name,
+                    "tools": tools
+                })
+        return results
+
+    async def acall_tool(self, server_name: str, tool_name: str, arguments: dict | None = None):
+        """异步调用指定服务器上的工具"""
+        config = self.servers[server_name]
+        async with connect_mcp(config) as session:
+            return await session.call_tool(tool_name, arguments or {})
+```
+
+异步版已经可以工作了（在 Jupyter 中用 `await` 直接调用）：
+
+```python
+client = MCPClient(mcp)
+
+all_tools = await client.alist_tools()
+for item in all_tools:
+    print(f"\n===== {item['server']} =====")
+    print(item["tools"].model_dump_json(indent=2, ensure_ascii=False))
+```
+
+```python
+result = await client.acall_tool("time", "get_current_time", {"timezone": "Asia/Shanghai"})
+print(result.model_dump_json(indent=2, ensure_ascii=False))
+```
+
+### 同步封装
+
+现在到了最后一步——将异步方法包装为**真正的同步函数**。
+
+`asyncio.run()` 可以直接运行异步协程并返回结果，但它要求在调用时没有其他事件循环在运行。Jupyter 自身维护了一个事件循环，直接调用会报错。
+
+解决方法：利用 `threading` 在**独立线程**中运行异步代码。每个线程拥有自己的事件循环，互不干扰——新线程中调用 `asyncio.run()` 是安全的，因为它不走 Jupyter 的主循环。
+
+```python
+import threading
+
+def run_async(coro):
+    """在独立线程中运行异步协程，同步等待并返回结果"""
+    result = None
+    error = None
+
+    def _run():
+        nonlocal result, error
+        try:
+            result = asyncio.run(coro)
+        except Exception as e:
+            error = e
+
+    t = threading.Thread(target=_run)
+    t.start()
+    t.join()
+
+    if error:
+        raise error
+    return result
+```
+
+现在为 `MCPClient` 添加同步方法，内部调用 `run_async`：
+
+```python
+class MCPClient:
+    def __init__(self, config: dict):
+        self.servers = config["servers"]
+
+    async def alist_tools(self) -> list:
+        """异步：获取所有服务器的工具列表"""
+        results = []
+        for name, config in self.servers.items():
+            async with connect_mcp(config) as session:
+                tools = await session.list_tools()
+                results.append({
+                    "server": name,
+                    "tools": tools
+                })
+        return results
+
+    async def acall_tool(self, server_name: str, tool_name: str, arguments: dict | None = None):
+        """异步：调用指定服务器上的工具"""
+        config = self.servers[server_name]
+        async with connect_mcp(config) as session:
+            return await session.call_tool(tool_name, arguments or {})
+
+    def list_tools(self) -> list:
+        """同步：获取所有 MCP 服务器的工具列表"""
+        return run_async(self.alist_tools()) # type: ignore
+
+    def call_tool(self, server_name: str, tool_name: str, arguments: dict | None = None):
+        """同步：调用指定服务器上的工具"""
+        return run_async(self.acall_tool(server_name, tool_name, arguments))
+```
+
+### 使用最终封装
+
+#### 发现工具列表
+
+`list_tools()` 返回一个列表，每个元素对应一个 MCP 服务器，包含服务器名称和该服务器的所有工具：
+
+```python
+client = MCPClient(mcp)
+
+all_tools = client.list_tools()
+for item in all_tools:
+    print(f"\n===== {item['server']} =====")
+    print(item["tools"].model_dump_json(indent=2, ensure_ascii=False))
+```
+
+#### 调用工具
+
+`call_tool()` 接收服务器名称、工具名称和参数，返回工具执行结果：
+
+```python
+result = client.call_tool("time", "get_current_time", {"timezone": "Asia/Shanghai"})
+print(result.model_dump_json(indent=2, ensure_ascii=False)) # type: ignore
+```
+
+```python
+result = client.call_tool("microsoft-learn", "microsoft_docs_search", {"query": "Python async"})
+print(result.model_dump_json(indent=2, ensure_ascii=False)) # type: ignore
+```
+
+## 本章代码
+
+
+
+本章 `agent/` 工程相对上一章的变更：**新增 1 个文件、修改 0 个文件**。以下为变更文件全文。
+
+### 新增文件 `agent/tool/use_mcp.py`
+
+```python
+import asyncio
+from mcp import StdioServerParameters, ClientSession
+from mcp.client.stdio import stdio_client
+from mcp.client.streamable_http import streamable_http_client
+from contextlib import asynccontextmanager
+
+mcp = {
+    "servers": {
+        "time": {"type": "stdio", "command": "uvx", "args": ["mcp-server-time"]},
+        "microsoft-learn": {
+            "type": "http",
+            "url": "https://learn.microsoft.com/api/mcp",
+        },
+    }
+}
+
+
+@asynccontextmanager
+async def connect_mcp(server_config: dict):
+    """根据配置连接 MCP 服务器，返回已初始化的 ClientSession"""
+    if server_config["type"] == "stdio":
+        params = StdioServerParameters(
+            command=server_config["command"], args=server_config.get("args", [])
+        )
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                yield session
+    elif server_config["type"] == "http":
+        async with streamable_http_client(server_config["url"]) as (read, write, _):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                yield session
+    else:
+        raise ValueError(f"不支持的服务器类型: {server_config['type']}")
+
+
+import threading
+
+
+def run_async(coro):
+    """在独立线程中运行异步协程，同步等待并返回结果"""
+    result = None
+    error = None
+
+    def _run():
+        nonlocal result, error
+        try:
+            result = asyncio.run(coro)
+        except Exception as e:
+            error = e
+
+    t = threading.Thread(target=_run)
+    t.start()
+    t.join()
+
+    if error:
+        raise error
+    return result
+
+
+class MCPClient:
+    def __init__(self, config: dict):
+        self.servers = config["servers"]
+
+    async def alist_tools(self) -> list:
+        """异步：获取所有服务器的工具列表"""
+        results = []
+        for name, config in self.servers.items():
+            async with connect_mcp(config) as session:
+                tools = await session.list_tools()
+                results.append({"server": name, "tools": tools})
+        return results
+
+    async def acall_tool(
+        self, server_name: str, tool_name: str, arguments: dict | None = None
+    ):
+        """异步：调用指定服务器上的工具"""
+        config = self.servers[server_name]
+        async with connect_mcp(config) as session:
+            return await session.call_tool(tool_name, arguments or {})
+
+    def list_tools(self) -> list:
+        """同步：获取所有 MCP 服务器的工具列表"""
+        return run_async(self.alist_tools())  # type: ignore
+
+    def call_tool(
+        self, server_name: str, tool_name: str, arguments: dict | None = None
+    ):
+        """同步：调用指定服务器上的工具"""
+        return run_async(self.acall_tool(server_name, tool_name, arguments))
+```

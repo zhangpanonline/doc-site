@@ -1,0 +1,138 @@
+---
+sidebar_position: 8
+title: '08. token统计'
+description: "Agents底层逻辑 · token 统计：用 tiktoken 统计 token 数与成本，理解上下文窗口。"
+displayed_sidebar: agentsCore
+---
+
+# token统计
+
+**事后统计**：使用模型服务商的API接口会告知你本次token用量
+
+**事前统计**
+
+将文本发送给大模型之前进行统计，通常用于：
+
+- **单轮输入长度拦截**
+
+  用户粘贴 10 万字合同，事前算出超 100k token，直接弹窗 “文本过长，请分段上传”，不发起无效 API 调用。
+
+- **用户额度 / 充值计费预校验**
+
+  面向 C 端付费产品（AI 写作、AI 客服、知识库问答），调用前预计算本次请求预估总 token，若剩余额度不足，直接拦截，提示充值，不用等 API 返回才告知超限，提升体验；
+
+- **企业预算前置审批**
+
+  企业内部 AI 平台、员工 AI 工具：部门有月度 AI 成本预算。员工上传大文件跑分析前，本地算出预估 token，换算成人民币成本，超过阈值需走审批，再允许发起调用。
+
+- **报价前置展示**
+
+  SaaS AI 工具：用户上传文档 / 输入提示词，页面实时显示「本次预估消耗 XX token，约 XX 元」，让用户确认后再执行，减少客户对账单争议。
+
+- ...
+
+## API统计
+
+某些大模型服务商提供API接口，可免费计算token用量
+
+```shell
+uv add requests==2.34.2 python-dotenv==1.2.2
+```
+
+```python
+import requests
+from dotenv import load_dotenv
+import os
+
+load_dotenv('../.env')
+
+# 以 Moonshot AI（Kimi）为例，它提供了免费的 token 统计接口
+# API Key 申请地址：https://platform.moonshot.cn
+API_KEY = os.environ.get("MOONSHOT_API_KEY")  
+
+url = "https://api.moonshot.cn/v1/tokenizers/estimate-token-count"
+
+text = "人工智能正在深刻改变我们的生活，从智能助手到自动驾驶，AI 无处不在。"
+
+response = requests.post(
+    url,
+    headers={
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+    },
+    json={
+        # "model": "moonshot-v1-8k",
+        "model": "kimi-k3",
+        "messages": [
+            {"role": "user", "content": text},
+        ],
+    },
+)
+
+result = response.json()
+print(f"接口返回：{result}")
+print(f"文本：{text}")
+print(f"文本长度：{len(text)}")
+print(f"Token 数：{result['data']['total_tokens']}")
+```
+
+## SDK统计
+
+某些模型服务商提供SDK，可在本地统计 token
+
+```python
+# 安装依赖（只需运行一次）
+!uv add tiktoken==0.13.0
+```
+
+```python
+import tiktoken
+
+# tiktoken 是 OpenAI 官方的分词库
+# 首次运行会联网下载词表并缓存，之后统计完全在本地进行，无需 API Key
+encoding = tiktoken.encoding_for_model("gpt-4o")
+
+text = "人工智能正在深刻改变我们的生活，从智能助手到自动驾驶，AI 无处不在。"
+
+tokens = encoding.encode(text)
+print(f"文本：{text}")
+print(f"文本长度：{len(text)}")
+print(f"Token 序列：{tokens}")
+print(f"Token 数：{len(tokens)}")
+```
+
+## transformers库
+
+开源模型可以使用 transformers 库进行统计
+
+transformers库是 Hugging Face 的官方库，专门用于操作 transformers 模型。
+
+Hugging Face 是一个开源平台，几乎所有的开源模型都会上传到该平台
+
+官方网站：https://huggingface.co/
+
+```python
+# 安装依赖（只需运行一次）
+!uv add transformers==5.14.1
+```
+
+```python
+import os
+
+# 国内访问 HuggingFace 需配置镜像（可直连的话删除这行即可）
+os.environ["HF_ENDPOINT"] = "http://hf-mirror.com"
+
+from transformers import AutoTokenizer
+
+# 以开源模型 Qwen3 为例
+# 首次运行会下载分词器文件（仅几 MB，不含模型权重），之后统计完全在本地进行
+tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-V3")
+
+text = "人工智能正在深刻改变我们的生活，从智能助手到自动驾驶，AI 无处不在。"
+
+tokens = tokenizer.encode(text)
+print(f"文本：{text}")
+print(f"文本长度：{len(text)}")
+print(f"Token 序列：{tokens}")
+print(f"Token 数：{len(tokens)}")
+```

@@ -4,6 +4,20 @@
  * 设计取向：纸墨 + 朱批——暖纸底、墨字、朱砂红批注；标题宋体，讲义感；克制的印刷排版
  */
 
+/* KaTeX 数学公式样式与字体（本地打包，不走 CDN；对应 docusaurus.config.ts 的 remark-math/rehype-katex） */
+@import 'katex/dist/katex.min.css';
+
+/* 公式跟随正文颜色，避免暗色模式下写死黑色 */
+.katex {
+  color: inherit;
+}
+/* 块级公式在窄屏可横向滚动，不撑破版面 */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+
 :root {
   /* ===== 教学课程色板（与 teach/assets/course.css 同源） ===== */
   --course-bg: #faf7f1;            /* 暖纸色背景 */

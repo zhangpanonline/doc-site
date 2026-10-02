@@ -1,0 +1,537 @@
+---
+sidebar_position: 18
+title: '18. tools'
+description: "Agents底层逻辑 · tools：tool calling 机制、工具描述与事件流，让模型学会调用函数。"
+displayed_sidebar: agentsCore
+---
+
+# tools
+
+```python
+from agent.model import Model
+from agent.printer import ModelPrinterListener
+from agent.prompt import render_prompt
+from agent.session import Session
+import os
+
+session = Session()
+model = Model()
+listener = ModelPrinterListener(model)
+session.add_message({"role": "system", "content": render_prompt("system")})
+```
+
+![tool_calling.svg](/img/agent-core/18-tool_calling.svg)
+
+## 定义工具函数
+
+```python
+def read_file(filepath: str) -> str:
+    """读取文件内容并以字符串形式返回"""
+    with open(filepath, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+# 测试：读取当前课件文件的前 200 个字符
+content = read_file("./agent/prompt/system.j2")
+print(content[:200])
+```
+
+```python
+def write_file(filepath: str, content: str) -> None:
+    """将内容写入文件"""
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+# 测试：写入测试文件
+write_file("test_write.txt", "Hello, this is a test file.\n这是测试文件。")
+print(read_file("test_write.txt"))
+```
+
+## 绑定工具到上下文
+
+https://api-docs.deepseek.com/zh-cn/api/create-chat-completion
+
+```python
+session.tools = [
+    # 工具1: 读文件
+    {
+        # 固定: function
+        "type": "function",
+        "function": {
+            # 工具名称，会影响模型输出结果，通常为函数名
+            "name": "read_file",
+            # 自然语言描述函数功能，模型能理解 
+            "description": "读取文件",
+            # 参数的schema描述”
+            "parameters": {
+                "type": "object", # 固定为 object
+                "properties": {
+                    # 描述参数 filepath
+                    "filepath":{
+                        "type": "string",
+                        "description": "文件的绝对路径，或相对于cwd的路径",
+                    }
+                },
+                # 必填参数
+                "required": ["filepath"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "write_file",
+            "description": "写入文件",
+            "parameters": {
+                "type": "object", 
+                "properties": {
+                    "filepath":{
+                        "type": "string",
+                        "description": "文件的绝对路径，或相对于cwd的路径",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "要写入的内容，该内容会完全覆盖文件原本内容"
+                    }
+                },
+                "required": ["filepath", "content"]
+            }
+        }
+    }
+]
+```
+
+```python
+# 查看上下文
+session.print()
+```
+
+## 调用模型
+
+大模型厂商通常会将你传递的工具放到系统上下文的末尾，比如：
+
+```markdown
+<|im_start|>system<|im_sep|>
+系统提示词
+# Tools
+
+## functions
+
+namespace functions {
+    // 读取文件
+    type read_file = ({
+        // 文件的绝对路径，或相对于cwd的路径
+        file_path: string
+    }) => any;
+    // 写入文件
+    type write_file = ({
+        // 文件的绝对路径，或相对于cwd的路径
+        file_path: string;
+        // 待写入的内容
+        content: string
+    }) => any;
+}
+<|im_end|>
+<|im_start|>user<|im_sep|>
+用户消息
+<|im_end|>
+<|im_start|>assistant<|im_sep|>
+<think>
+```
+
+模型会返回：
+
+```
+思考内容
+</think>
+<tool_call>
+{"name": "write_file", "arguments": {"file_path": "..."}}
+</tool_call>
+<|im_end|>
+```
+
+```python
+listener.listening = False # 暂时不监听流式输出
+
+session.add_message({"role": "user", "content": "请在当前目录新建一个`uv.md`文件，写入UV的安装教程。直接新建就好"})
+resp = model.invoke(session)
+print(resp.print_raw())
+```
+
+```python
+session.save()
+```
+
+## 执行工具
+
+```python
+msg = session.messages[-1]
+msg
+```
+
+```python
+import json
+
+tool_calls = msg["tool_calls"][0]
+tool_id = tool_calls["id"]
+tool_name = tool_calls["function"]["name"]
+arguments = json.loads(tool_calls["function"]["arguments"])
+
+print("tool id", tool_id)
+print("tool name", tool_name)
+print("arguments", arguments)
+```
+
+```python
+func = globals().get(tool_name)
+if callable(func):
+    func(**arguments)
+```
+
+## 本章代码
+
+
+
+本章 `agent/` 工程相对上一章的变更：**新增 1 个文件、修改 3 个文件**。以下为变更文件全文。
+
+### 新增文件 `agent/events.py`
+
+```python
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any
+
+
+class Event:
+    REASONING_START = "reasoning_start"
+    REASONING = "reasoning"
+    REASONING_END = "reasoning_end"
+    CONTENT_START = "content_start"
+    CONTENT = "content"
+    CONTENT_END = "content_end"
+    TOOL_CALL_START = "tool_call_start"
+    TOOL_CALL = "tool_call"
+    TOOL_CALL_END = "tool_call_end"
+    COMPLETE = "complete"
+
+
+@dataclass
+class EventEmitter:
+    _listeners: dict[str, list[Callable[..., Any]]] = field(
+        default_factory=lambda: defaultdict(list)
+    )
+
+    def on(self, event: str, callback: Callable[..., Any]) -> None:
+        self._listeners[event].append(callback)
+
+    def emit(self, event: str, **data: Any) -> None:
+        for cb in self._listeners.get(event, []):
+            cb(event, **data)
+```
+
+### 修改文件 `agent/model.py`
+
+```python
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from dataclasses import dataclass
+import json
+from typing import Any, cast
+from agent.events import EventEmitter, Event
+from agent.config import openai_settings
+from agent.session import Session
+from openai import OpenAI, Stream
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
+
+
+def _get_reasoning_field_name(res_or_chunk):
+    "为了兼容性，获取推理字段的名称"
+    for attr_name in ["reasoning_content", "reasoning"]:
+        if hasattr(res_or_chunk, attr_name):
+            return attr_name
+    return ""
+
+
+@dataclass
+class InvokeResult:
+    message: dict
+    raw: Any
+
+    def print_raw(self):
+        if isinstance(self.raw, ChatCompletion):
+            print(self.raw.to_json(indent=2))
+        else:
+            data = [c.model_dump() for c in self.raw]
+            print(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+class Builder(ABC):
+
+    def __init__(self, emitter: EventEmitter):
+        self.emitter = emitter
+        self.value = None
+        self.compoleted = False
+
+    @abstractmethod
+    def _key_names(self, delta) -> list[str]:
+        "获取关键名称"
+        pass
+
+    def emit(self, chunk: ChatCompletionChunk):
+        if self.compoleted:
+            return
+        if not chunk.choices:
+            return
+        delta = chunk.choices[0].delta
+        field_name, start_event_name, event_name, end_event_name = self._key_names(
+            delta
+        )
+        value = getattr(delta, field_name, None)
+        if value:
+            if not self.value:
+                self.value = {field_name: value}
+                self.emitter.emit(start_event_name)
+            else:
+                self.append_value(value, field_name)
+            self.emitter.emit(event_name, chunk_value=value, chunk=chunk)
+        if self.is_end(chunk):
+            if self.value:
+                self.emitter.emit(end_event_name, value=self.value, chunk=chunk)
+                self.compoleted = True
+
+    def append_value(self, value, field_name: str):
+        self.value[field_name] += value  # type: ignore
+
+    def is_end(self, chunk: ChatCompletionChunk):
+        return bool(chunk.choices[0].finish_reason)
+
+
+class ContentBuilder(Builder):
+    def _key_names(self, delta):
+        return ["content", Event.CONTENT_START, Event.CONTENT, Event.CONTENT_END]
+
+
+class ReasoningBuilder(Builder):
+    def _key_names(self, delta):
+        return [
+            _get_reasoning_field_name(delta),
+            Event.REASONING_START,
+            Event.REASONING,
+            Event.REASONING_END,
+        ]
+
+    def is_end(self, chunk: ChatCompletionChunk):
+        delta = chunk.choices[0].delta
+        return bool(delta.content) or bool(delta.tool_calls) or super().is_end(chunk)
+
+
+class ToolCallsBuilder(Builder):
+    def _key_names(self, delta):
+        return [
+            "tool_calls",
+            Event.TOOL_CALL_START,
+            Event.TOOL_CALL,
+            Event.TOOL_CALL_END,
+        ]
+
+    def emit(self, chunk: ChatCompletionChunk):
+        super().emit(chunk)
+        if self.value:
+            self._normalize_tool_calls()
+
+    def _normalize_tool_calls(self):
+        tool_calls = self.value["tool_calls"]  # type: ignore
+        for i in range(len(tool_calls)):
+            if not isinstance(tool_calls[i], dict):
+                tc = tool_calls[i]
+                func_obj = getattr(tc, "function", None)
+                tool_calls[i] = {
+                    "id": getattr(tc, "id", None) or "",
+                    "type": getattr(tc, "type", None) or "function",
+                    "function": {
+                        "name": getattr(func_obj, "name", None) or "",
+                        "arguments": getattr(func_obj, "arguments", None) or "",
+                    },
+                }
+
+    def append_value(self, value, field_name: str):
+        tool_calls = self.value[field_name]  # type: ignore
+        for tc_delta in value:
+            idx = tc_delta.index
+            while len(tool_calls) <= idx:
+                tool_calls.append(
+                    {
+                        "id": "",
+                        "type": "function",
+                        "function": {"name": "", "arguments": ""},
+                    }
+                )
+            tc = tool_calls[idx]
+            if delta_id := getattr(tc_delta, "id", None):
+                tc["id"] = delta_id
+            if delta_type := getattr(tc_delta, "type", None):
+                tc["type"] = delta_type
+            if delta_func := getattr(tc_delta, "function", None):
+                if name := getattr(delta_func, "name", None):
+                    tc["function"]["name"] = name
+                if args := getattr(delta_func, "arguments", None):
+                    tc["function"]["arguments"] += args
+
+
+@dataclass
+class Model(EventEmitter):
+    model_name: str = openai_settings.model
+    _client: OpenAI = OpenAI()
+
+    def _invoke(self, session: Session, stream=False):
+        "核心方法，调用模型得到结果"
+        response = self._client.chat.completions.create(
+            model=self.model_name,
+            messages=cast(list, session.messages),
+            tools=session.tools,
+            stream=stream,
+        )
+        return self._process(session, response)
+
+    def _normalize_result_from_response(self, response: ChatCompletion):
+        "将非流式的响应格式进行归一化"
+        message = response.choices[0].message
+        reasoning_field = _get_reasoning_field_name(message)
+        result = InvokeResult(
+            raw=response, message={"role": message.role, "content": ""}
+        )
+        message_dict = message.model_dump()
+        for attr_name in [reasoning_field, "content", "tool_calls"]:
+            if attr_name in message_dict:
+                if message_dict[attr_name]:
+                    result.message[attr_name] = message_dict[attr_name]
+        return result
+
+    def _process(
+        self, session: Session, response: ChatCompletion | Stream[ChatCompletionChunk]
+    ) -> InvokeResult:
+        "处理响应结果"
+        if isinstance(response, ChatCompletion):
+            result = self._normalize_result_from_response(response)
+            session.add_message(result.message)
+            return result
+        # 处理流式内容
+        builders: list[Builder] = [
+            ReasoningBuilder(self),
+            ContentBuilder(self),
+            ToolCallsBuilder(self),
+        ]
+        chunks = []
+        for chunk in response:
+            chunks.append(chunk)
+            for b in builders:
+                b.emit(chunk)
+        message = {"role": "assistant", "content": ""}
+        for b in builders:
+            if b.value:
+                for k, v in b.value.items():
+                    if v is not None:
+                        message[k] = v
+        result = InvokeResult(raw=chunks, message=message)
+        session.add_message(result.message)
+        return result
+
+    def invoke(self, session: Session):
+        return self._invoke(session, stream=False)
+
+    def invoke_stream(self, session: Session):
+        return self._invoke(session, stream=True)
+```
+
+### 修改文件 `agent/printer.py`
+
+```python
+from dataclasses import dataclass
+import json
+import sys
+from agent.events import Event, EventEmitter
+from agent.model import Model
+
+
+class ModelPrinterListener:
+
+    def __init__(self, model: Model) -> None:
+        self.model = model
+        self.listening = True
+        events = [v for k, v in Event.__dict__.items() if not k.startswith("__")]
+        for e in events:
+            model.on(event=e, callback=self._model_print_callback)
+
+    def _model_print_callback(self, e: str, **args):
+        if not self.listening:
+            return
+        if e == Event.REASONING_START:
+            print("思考：")
+        elif e == Event.REASONING_END:
+            print()
+        elif e == Event.CONTENT_START:
+            print()
+            print("内容：")
+        elif e == Event.TOOL_CALL_START:
+            print()
+            print("工具调用：")
+        elif e == Event.TOOL_CALL_END:
+            print(json.dumps(args["value"], indent=2, ensure_ascii=False))
+
+        elif e == Event.REASONING:
+            print(f"\033[36m{args["chunk_value"]}\033[0m", end="")
+        elif e == "content":
+            print(f"\033[32m{args["chunk_value"]}\033[0m", end="")
+        sys.stdout.flush()
+```
+
+### 修改文件 `agent/session.py`
+
+```python
+import json
+import uuid
+from pathlib import Path
+
+
+class Session:
+    def __init__(self, tools=[]):
+        self.id = str(uuid.uuid4())
+        self.messages: list[dict] = []
+        self.tools = tools
+
+    def add_message(self, message: dict):
+        self.messages.append(message)
+
+    def __str__(self) -> str:
+        data = {"id": self.id, "messages": self.messages, "tools": self.tools}
+        return json.dumps(data, ensure_ascii=False, indent=2)
+
+    def print(self):
+        print(self)
+
+    def save(self):
+        sessions_dir = Path(__file__).parent / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+
+        data = {
+            "id": self.id,
+            "messages": self.messages,
+        }
+
+        path = sessions_dir / f"{self.id}.json"
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    @classmethod
+    def load(cls, session_id: str):
+        path = Path(__file__).parent / "sessions" / f"{session_id}.json"
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        session = cls()
+        session.id = data["id"]
+        session.messages = data["messages"]
+        return session
+```

@@ -1,0 +1,53 @@
+---
+sidebar_position: 31
+title: '31. Context Engineering'
+description: "Agents底层逻辑 · Context Engineering：上下文工程取舍——放什么、留多久、如何压缩。"
+displayed_sidebar: agentsCore
+---
+
+# Context Engineering
+
+
+> 2025年6月，Shopify的CEO Tobi Lütke 在社交媒体上表示，他更喜欢用“上下文工程”这个词来替代“提示词工程”，因为它更准确地描述了为LLM提供充分信息以完成任务的核心技能
+
+![image-20260730103412811](https://resource.duyiedu.com/yuanjin/202607301034894.png)
+
+
+
+**上下文唯一的影响着模型的输出质量**
+
+上下文具有**注意力偏差（Attention Bias）**的特点
+
+- **长度稀释**
+
+  上下文越长，注意力就被分散到更多token上，关键信息的权重被摊薄，模型更容易漏掉信息
+
+- 长度**分布外（OOD，Out-of-Distribution）**
+
+  当上下文长度超过训练语料常见长度后，模型回复的置信度会有明显下降
+
+- **信噪比问题**
+
+  噪声信息越多，越会挤占模型对关键信息的注意力预算
+
+- **首尾强化**
+
+  模型对开头（系统提示词）和结尾（最近输入）的关注度天然高于中间（位置偏差/Positional Bias）
+
+
+
+上下文工程的关注点：
+
+- **编排**
+
+  提示词、用户问题、工具、MCP、Skill 等内容在上下文中如何排列？什么时间加入什么内容？
+
+- **治理**
+
+  如何确保上下文的内容安全可信？
+
+  如何在持续的循环中，管理和优化不断膨胀的上下文？
+
+
+
+![image-20260730112820794](https://resource.duyiedu.com/yuanjin/202607301128877.png)

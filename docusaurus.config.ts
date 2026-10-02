@@ -1,6 +1,8 @@
 import {themes as prismThemes, type PrismTheme} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -150,6 +152,16 @@ var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[
           path: 'docs',
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
+          // 数学公式（2026-10-02 加，《Agents底层逻辑》课程大量公式需要）：
+          // remark-math 解析 $...$ / $$...$$，rehype-katex 渲染为 HTML+MathML。
+          // 注意：这两个选项必须配在内容插件（docs/pages）上，顶层 markdown.* 不被 schema 接受。
+          // 样式与字体来自 katex/dist/katex.min.css（src/css/custom.css 顶部 @import，本地打包不走 CDN）。
+          remarkPlugins: [remarkMath],
+          rehypePlugins: [[rehypeKatex, {strict: false, throwOnError: false}]],
+        },
+        pages: {
+          remarkPlugins: [remarkMath],
+          rehypePlugins: [[rehypeKatex, {strict: false, throwOnError: false}]],
         },
         blog: false,
         theme: {

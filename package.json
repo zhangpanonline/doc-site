@@ -33,10 +33,13 @@
     "@vercel/functions": "^3.9.5",
     "clsx": "^2.1.1",
     "codemirror": "^6.0.2",
+    "katex": "^0.18.10",
     "lxgw-wenkai-mono-gb-screen-webfont": "^1.0.1",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.10.2",

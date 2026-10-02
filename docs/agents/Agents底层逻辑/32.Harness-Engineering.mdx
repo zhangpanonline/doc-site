@@ -1,0 +1,44 @@
+---
+sidebar_position: 32
+title: '32. Harness Engineering'
+description: "Agents底层逻辑 · Harness Engineering：Agent 外壳的工具、权限与可观测性设计。"
+displayed_sidebar: agentsCore
+---
+
+# Harness Engineering
+
+
+https://mitchellh.com/writing/my-ai-adoption-journey
+
+https://openai.com/index/harness-engineering/
+
+Harness一词，意为马具。
+
+> 马具对骑乘的影响非常大。
+
+原作者的意思是，在任务落地的时候，我们应该把更多的注意力从选择什么马（模型）转移到选择什么样的马具身上（如何驾驭模型）
+
+因此，该词也被翻译为"驾驭工程" / "缰绳工程"
+
+Harness Engineering 的核心关注点：
+
+- **情境与状态管理**
+
+  确保AI在复杂、长周期的任务中，能获得正确的上下文信息，并记住任务状态，避免“失忆”和“跑偏”
+  强调 召回 -> 规划 -> 行动
+
+- **护栏**
+  
+  像给系统设置权限一样，严格管理AI能调用哪些工具、访问哪些数据。核心理念是 最小权限原则 ——只给AI完成当前任务所必须的权限，以防误操作或恶意利用
+  
+- **可观测**
+  
+  需要做详细的设计，保证模型知晓是否完成了任务？判断的依据是什么？从哪里获取判断需要的信息？
+
+
+
+
+
+![Agent model and harness components diagram](https://resource.duyiedu.com/yuanjin/202607301241831.svg)
+
+![image-20260730124725225](https://resource.duyiedu.com/yuanjin/202607301247290.png)

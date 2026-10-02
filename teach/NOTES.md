@@ -130,6 +130,16 @@
 - **面试题数弹性 4–8 道**（不采用框架课的固定 5 题）
 - **题源协议 B 照旧**：官方文档一手来源 + URL + 检索日期；子代理若找不到官方来源，改用「源课程场景化」的场景题，禁止编造 URL
 
+## Agents底层逻辑课程（2026-10-02 前置条件完成；源 gitee dev-edu/agent-core）
+
+袁进《Agents底层逻辑》共 **34 章**：01–02 起点 → 03–09 神经网络与训练 → 10–15 Transformer 与大模型 → 16–23 Agent 工程（tools/ReAct/Agent/Skill）→ 24–29 MCP 与子代理 → 30–34 五类工程方法论。
+
+- **详细交接见 `teach/capsule-agents-core.md`（时间胶囊：已完成清单 + 下一步 + 已踩的坑 + 源课件重取方法）**
+- 已完成：34 章文档（含 13 章「本章代码」附录、11 张图落盘）、课程登记（`key: 'agentcore'`、`sidebar: 'agentsCore'`）、构建通过
+- **待办**：34 节互动课 `ac-0001..ac-0034` + 34 张速查表 + 文档入口小节 + 洗牌/同步/构建/提交
+- **本课程带来的新站点能力**：数学公式渲染（`remark-math` + `rehype-katex` + `katex`）。注意配置必须写在 **preset 的 `docs`/`pages`** 里，顶层 `markdown.remarkPlugins` 不被 schema 接受；样式在 `src/css/custom.css` 顶部 `@import 'katex/dist/katex.min.css'`（本地打包，非 CDN）
+- **转换器已入库**：`teach/tools/agentcore2mdx.py`（单章）+ `teach/tools/agentcore_build_docs.py`（34 章一键重生成）；源课件解压目录 `.scratch/agent-core/`（gitignore，重取方法见胶囊 §5）
+
 ## AI 搜索替代本地插件（2026-09-28 定，站点级）
 
 - **移除** `@easyops-cn/docusaurus-search-local`：其索引一直为空（docs 的 routeBasePath 为 `/`，与插件默认 `docsRouteBasePath:['docs']` 不匹配，132 篇文档全被过滤；中文分词也未配置），右上角搜索框形同虚设

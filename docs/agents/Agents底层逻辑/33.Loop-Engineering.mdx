@@ -1,0 +1,23 @@
+---
+sidebar_position: 33
+title: '33. Loop Engineering'
+description: "Agents底层逻辑 · Loop Engineering：Agent 循环的终止条件、预算控制与失败重试。"
+displayed_sidebar: agentsCore
+---
+
+# Loop Engineering
+
+
+https://x.com/addyosmani/status/2064127981161959567
+
+Loop Engineering 关注的是如何让 Agent 自我推动，最终完成一个可交付的产品。
+
+它的实现方式是循环，在循环中：
+
+- 自主发现还未完成的任务
+- 驱动多个子代理并行任务，并使用工作树隔离
+- 自主沉淀知识
+- 自主接入工具
+- 不同的子代理分工
+
+![image-20260730131916647](https://resource.duyiedu.com/yuanjin/202607301319760.png)

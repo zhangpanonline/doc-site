@@ -1,0 +1,768 @@
+---
+sidebar_position: 21
+title: '21. Agent'
+description: "Agents底层逻辑 · Agent：把会话、工具与循环组装成完整 Agent，含事件监听与生命周期。"
+displayed_sidebar: agentsCore
+---
+
+# Agent
+
+课前修改：
+
+- 修改了系统提示词，现在系统提示词更加简洁
+- 封装了`agent.py`
+- 封装了抽象的监听器
+- 新增了`session`的简洁打印方法`print_friendly`
+
+```python
+from agent.agent import Agent
+from agent.printer import ModelPrinterListener
+
+listener = ModelPrinterListener()
+agent = Agent(model_listener=listener)
+```
+
+```python
+agent.invoke("请帮我分析./agent目录中的核心实现逻辑，将结果放到当前目录的 分析.md 中")
+```
+
+```python
+agent.session.print_friendly()
+```
+
+## 本章代码
+
+
+
+本章 `agent/` 工程相对上一章的变更：**新增 2 个文件、修改 6 个文件**。以下为变更文件全文。
+
+### 新增文件 `agent/agent.py`
+
+```python
+from agent.model import Model
+from agent.printer import ModelPrinterListener
+from agent.session import Session
+from agent.tool import registry
+from agent.listener import ModelListener
+
+
+class Agent:
+
+    def __init__(
+        self,
+        *,
+        session: Session | None = None,
+        model: Model | None = None,
+        model_listener: ModelListener | None = None,
+    ) -> None:
+        self.session = session or Session()
+        self.model = model or Model()
+        self.listener = model_listener
+        if self.listener:
+            self.listener.listen(self.model)
+
+    def invoke(self, q: str):
+        self.session.add_message({"role": "user", "content": q})
+        responses = []
+        # ReAct Loop
+        while True:
+            resp = self.model.invoke_stream(self.session)
+            call_msg = registry.invoke(self.session.messages[-1])
+            if call_msg is None:
+                responses.append(resp)
+                break
+            else:
+                self.session.messages += call_msg
+                responses.append(resp)
+        return responses
+```
+
+### 新增文件 `agent/listener.py`
+
+```python
+from abc import ABC, abstractmethod
+
+from agent.model import Model
+from agent.events import Event
+
+
+class ModelListener(ABC):
+
+    def __init__(self) -> None:
+        self.listening = True
+
+    def listen(self, model):
+        events = [v for k, v in Event.__dict__.items() if not k.startswith("__")]
+        for e in events:
+            model.on(event=e, callback=self._model_print_callback)
+
+    def _model_print_callback(self, e: str, **args):
+        if not self.listening:
+            return
+        self._handler(e, **args)
+
+    @abstractmethod
+    def _handler(self, e: str, **args):
+        pass
+```
+
+### 修改文件 `agent/model.py`
+
+```python
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from dataclasses import dataclass
+import json
+from typing import Any, cast
+from agent.events import EventEmitter, Event
+from agent.config import openai_settings
+from agent.session import Session
+from openai import OpenAI, Stream
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
+
+
+def _get_reasoning_field_name(res_or_chunk):
+    "为了兼容性，获取推理字段的名称"
+    for attr_name in ["reasoning_content", "reasoning"]:
+        if hasattr(res_or_chunk, attr_name):
+            return attr_name
+    return ""
+
+
+@dataclass
+class InvokeResult:
+    message: dict
+    raw: Any
+
+    def print_raw(self):
+        if isinstance(self.raw, ChatCompletion):
+            print(self.raw.to_json(indent=2))
+        else:
+            data = [c.model_dump() for c in self.raw]
+            print(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+class Builder(ABC):
+
+    def __init__(self, emitter: EventEmitter):
+        self.emitter = emitter
+        self.value = None
+        self.compoleted = False
+
+    @abstractmethod
+    def _key_names(self, delta) -> list[str]:
+        "获取关键名称"
+        pass
+
+    def emit(self, chunk: ChatCompletionChunk):
+        if self.compoleted:
+            return
+        if not chunk.choices:
+            return
+        delta = chunk.choices[0].delta
+        field_name, start_event_name, event_name, end_event_name = self._key_names(
+            delta
+        )
+        value = getattr(delta, field_name, None)
+        if value:
+            if not self.value:
+                self.value = {field_name: value}
+                self.emitter.emit(start_event_name)
+            else:
+                self.append_value(value, field_name)
+            self.emitter.emit(event_name, chunk_value=value, chunk=chunk)
+        if self.is_end(chunk):
+            if self.value:
+                self.emitter.emit(end_event_name, value=self.value, chunk=chunk)
+                self.compoleted = True
+
+    def append_value(self, value, field_name: str):
+        self.value[field_name] += value  # type: ignore
+
+    def is_end(self, chunk: ChatCompletionChunk):
+        return bool(chunk.choices[0].finish_reason)
+
+
+class ContentBuilder(Builder):
+    def _key_names(self, delta):
+        return ["content", Event.CONTENT_START, Event.CONTENT, Event.CONTENT_END]
+
+
+class ReasoningBuilder(Builder):
+    def _key_names(self, delta):
+        return [
+            _get_reasoning_field_name(delta),
+            Event.REASONING_START,
+            Event.REASONING,
+            Event.REASONING_END,
+        ]
+
+    def is_end(self, chunk: ChatCompletionChunk):
+        delta = chunk.choices[0].delta
+        return bool(delta.content) or bool(delta.tool_calls) or super().is_end(chunk)
+
+
+class ToolCallsBuilder(Builder):
+    def _key_names(self, delta):
+        return [
+            "tool_calls",
+            Event.TOOL_CALL_START,
+            Event.TOOL_CALL,
+            Event.TOOL_CALL_END,
+        ]
+
+    def emit(self, chunk: ChatCompletionChunk):
+        super().emit(chunk)
+        if self.value:
+            self._normalize_tool_calls()
+
+    def _normalize_tool_calls(self):
+        tool_calls = self.value["tool_calls"]  # type: ignore
+        for i in range(len(tool_calls)):
+            if not isinstance(tool_calls[i], dict):
+                tc = tool_calls[i]
+                func_obj = getattr(tc, "function", None)
+                tool_calls[i] = {
+                    "id": getattr(tc, "id", None) or "",
+                    "type": getattr(tc, "type", None) or "function",
+                    "function": {
+                        "name": getattr(func_obj, "name", None) or "",
+                        "arguments": getattr(func_obj, "arguments", None) or "",
+                    },
+                }
+
+    def append_value(self, value, field_name: str):
+        tool_calls = self.value[field_name]  # type: ignore
+        for tc_delta in value:
+            idx = tc_delta.index
+            while len(tool_calls) <= idx:
+                tool_calls.append(
+                    {
+                        "id": "",
+                        "type": "function",
+                        "function": {"name": "", "arguments": ""},
+                    }
+                )
+            tc = tool_calls[idx]
+            if delta_id := getattr(tc_delta, "id", None):
+                tc["id"] = delta_id
+            if delta_type := getattr(tc_delta, "type", None):
+                tc["type"] = delta_type
+            if delta_func := getattr(tc_delta, "function", None):
+                if name := getattr(delta_func, "name", None):
+                    tc["function"]["name"] = name
+                if args := getattr(delta_func, "arguments", None):
+                    tc["function"]["arguments"] += args
+
+
+@dataclass
+class Model(EventEmitter):
+    model_name: str = openai_settings.model
+    _client: OpenAI = OpenAI()
+
+    def _invoke(self, session: Session, stream=False):
+        "核心方法，调用模型得到结果"
+        response = self._client.chat.completions.create(
+            model=self.model_name,
+            messages=cast(list, session.messages),
+            tools=session.tools,  # type: ignore
+            stream=stream,
+        )  # type: ignore
+        return self._process(session, response)
+
+    def _normalize_result_from_response(self, response: ChatCompletion):
+        "将非流式的响应格式进行归一化"
+        message = response.choices[0].message
+        reasoning_field = _get_reasoning_field_name(message)
+        result = InvokeResult(
+            raw=response, message={"role": message.role, "content": ""}
+        )
+        message_dict = message.model_dump()
+        for attr_name in [reasoning_field, "content", "tool_calls"]:
+            if attr_name in message_dict:
+                if message_dict[attr_name]:
+                    result.message[attr_name] = message_dict[attr_name]
+        return result
+
+    def _process(
+        self, session: Session, response: ChatCompletion | Stream[ChatCompletionChunk]
+    ) -> InvokeResult:
+        "处理响应结果"
+        if isinstance(response, ChatCompletion):
+            result = self._normalize_result_from_response(response)
+            session.add_message(result.message)
+            return result
+        # 处理流式内容
+        builders: list[Builder] = [
+            ReasoningBuilder(self),
+            ContentBuilder(self),
+            ToolCallsBuilder(self),
+        ]
+        chunks = []
+        for chunk in response:
+            chunks.append(chunk)
+            for b in builders:
+                b.emit(chunk)
+        message = {"role": "assistant", "content": ""}
+        for b in builders:
+            if b.value:
+                for k, v in b.value.items():
+                    if v is not None:
+                        message[k] = v
+        result = InvokeResult(raw=chunks, message=message)
+        session.add_message(result.message)
+        return result
+
+    def invoke(self, session: Session):
+        return self._invoke(session, stream=False)
+
+    def invoke_stream(self, session: Session):
+        return self._invoke(session, stream=True)
+```
+
+### 修改文件 `agent/printer.py`
+
+```python
+import json
+import sys
+from agent.events import Event, EventEmitter
+from agent.listener import ModelListener
+
+
+class ModelPrinterListener(ModelListener):
+
+    def _handler(self, e: str, **args):
+        if e == Event.REASONING_START:
+            print("思考中...")
+        elif e == Event.REASONING_END:
+            print()
+        elif e == Event.CONTENT_START:
+            print()
+            print("内容：")
+        elif e == Event.CONTENT_END:
+            print()
+        elif e == Event.TOOL_CALL_END:
+            tool_calls = args["value"]["tool_calls"]
+            for call in tool_calls:
+                print(f"\033[36m调用工具：{call["function"]["name"]}\033[0m")
+        elif e == "content":
+            print(f"\033[32m{args["chunk_value"]}\033[0m", end="")
+        sys.stdout.flush()
+```
+
+### 修改文件 `agent/prompt.py`
+
+```python
+import os
+import platform
+import subprocess
+
+from jinja2 import Environment, FileSystemLoader
+
+
+def get_cwd() -> str:
+    return os.getcwd()
+
+
+def get_os() -> str:
+    return platform.system()
+
+
+def get_is_git() -> bool:
+    result = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    return result.returncode == 0 and result.stdout.strip() == "true"
+
+
+def render_prompt(prompt_name: str) -> str:
+    template_dir = os.path.join(os.path.dirname(__file__), "prompt")
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template(f"{prompt_name}.j2")
+    return template.render(
+        cwd=get_cwd(),
+        os=get_os(),
+        is_git=get_is_git(),
+    )
+```
+
+### 修改文件 `agent/prompt/system.j2`
+
+```jinja
+你是一个编程助手，你可以：
+
+- 用简洁、准确的语言回答用户问题
+- 调用工具完成用户交付的任务
+
+# 环境
+
+理解所处的环境，有助于你完成工作:
+ - 工作目录（cwd）: `{{ cwd }}`
+ - 操作系统: `{{ os }}`
+ - 当前工作目录是否处于git仓库管理: `{{ is_git }}`
+```
+
+### 修改文件 `agent/session.py`
+
+```python
+import json
+import uuid
+from pathlib import Path
+from agent.tool import registry
+from agent.prompt import render_prompt
+
+
+class Session:
+    def __init__(self, *, system_prompt="", tools=[]):
+        self.id = str(uuid.uuid4())
+        self.messages: list[dict] = []
+        if not system_prompt:
+            system_prompt = render_prompt("system")
+        self.add_message({"role": "system", "content": render_prompt("system")})
+        self.tools = tools or registry.schemas()
+
+    def add_message(self, message: dict):
+        self.messages.append(message)
+
+    def __str__(self) -> str:
+        data = {"id": self.id, "messages": self.messages, "tools": self.tools}
+        return json.dumps(data, ensure_ascii=False, indent=2)
+
+    def print(self):
+        print(self)
+
+    def print_friendly(self):
+        lines = []
+        n = 1
+
+        for msg in self.messages:
+            role = msg.get("role")
+
+            if role == "system":
+                lines.append(f"====={n}. 系统消息======")
+                lines.append(msg.get("content", ""))
+                n += 1
+
+            elif role == "user":
+                lines.append(f"====={n}. 用户消息======")
+                lines.append(msg.get("content", ""))
+                n += 1
+
+            elif role == "assistant":
+                tool_calls = msg.get("tool_calls")
+                if tool_calls:
+                    lines.append(f"====={n}. 工具调用======")
+                    for i, tc in enumerate(tool_calls):
+                        func = tc.get("function", {})
+                        name = func.get("name", "未知")
+                        lines.append(f"工具名{i + 1}: {name}")
+
+                        args_str = func.get("arguments", "{}")
+                        try:
+                            args = json.loads(args_str)
+                        except (json.JSONDecodeError, TypeError):
+                            args = {}
+
+                        for k, v in args.items():
+                            v_str = str(v)
+                            v_str = v_str[:70] if len(v_str) > 70 else v_str
+                            lines.append(f"参数{k}: {v_str}")
+
+                        if i < len(tool_calls) - 1:
+                            lines.append("")
+                    n += 1
+                else:
+                    lines.append(f"====={n}. AI消息======")
+                    lines.append(msg.get("content") or "")
+                    n += 1
+
+            elif role == "tool":
+                lines.append(f"====={n}. 调用结果======")
+                tool_name = msg.get("name", "未知")
+                content = msg.get("content") or ""
+                lines.append(f"工具名: {tool_name}")
+                content_display = content[:50] if len(content) > 50 else content
+                lines.append(f"<结果: {content_display}>")
+                n += 1
+
+            lines.append("")
+
+        print("\n".join(lines))
+
+    def save(self):
+        sessions_dir = Path(__file__).parent / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+
+        data = {
+            "id": self.id,
+            "messages": self.messages,
+        }
+
+        path = sessions_dir / f"{self.id}.json"
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    @classmethod
+    def load(cls, session_id: str):
+        path = Path(__file__).parent / "sessions" / f"{session_id}.json"
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        session = cls()
+        session.id = data["id"]
+        session.messages = data["messages"]
+        return session
+```
+
+### 修改文件 `分析.md`
+
+````markdown
+# Agent 核心实现逻辑分析
+
+## 一、整体架构
+
+本项目实现了一个**基于 ReAct 模式的 AI Agent**，采用模块化设计，各组件职责分明。核心架构分为以下几层：
+
+```
+┌─────────────────────────────────────┐
+│           Agent (入口/编排)           │
+├────────┬────────┬────────┬──────────┤
+│ Model  │Session │  Tool  │ Listener │
+│(模型层)│(会话层) │(工具层) │ (监听层)  │
+├────────┴────────┴────────┴──────────┤
+│          EventEmitter (事件总线)       │
+└─────────────────────────────────────┘
+```
+
+---
+
+## 二、核心模块详解
+
+### 1. `agent.py` — Agent 主控（编排层）
+
+**职责**：作为整个 Agent 的入口，组织 ReAct 循环的执行流程。
+
+**关键逻辑**：
+
+```python
+class Agent:
+    def invoke(self, q: str):
+        self.session.add_message({"role": "user", "content": q})
+        responses = []
+        while True:                          # ReAct Loop
+            resp = self.model.invoke_stream(self.session)
+            call_msg = registry.invoke(self.session.messages[-1])
+            if call_msg is None:             # 没有 tool_calls → 结束
+                responses.append(resp)
+                break
+            else:                            # 有工具调用 → 执行工具，继续循环
+                self.session.messages += call_msg
+                responses.append(resp)
+        return responses
+```
+
+**ReAct 循环流程**：
+1. 用户输入 → 加入 `session.messages`
+2. 调用大模型（流式） → 得到响应消息
+3. 检查响应中是否包含 `tool_calls`
+   - **无** `tool_calls` → 结束循环，返回结果
+   - **有** `tool_calls` → 执行工具，将结果加入会话，回到步骤 2
+
+---
+
+### 2. `model.py` — 模型层（与大模型交互）
+
+**职责**：封装 OpenAI API 调用，支持流式（Stream）和非流式响应，并通过事件发射器（`EventEmitter`）向外广播推理过程。
+
+**核心类**：
+
+- **`Model`**（继承 `EventEmitter`）：管理与大模型的通信
+  - `_invoke()` → 调用 OpenAI `chat.completions.create`
+  - `_process()` → 处理响应结果
+    - 非流式响应：直接归一化为 `InvokeResult`
+    - 流式响应：通过三个 `Builder` 分别解析**推理内容、文本内容、工具调用**，边解析边发射事件
+
+- **三个 Builder（构建器）**：
+  | 构建器 | 解析字段 | 发射的事件 |
+  |--------|----------|-----------|
+  | `ReasoningBuilder` | `reasoning_content` | `reasoning_start / reasoning / reasoning_end` |
+  | `ContentBuilder` | `content` | `content_start / content / content_end` |
+  | `ToolCallsBuilder` | `tool_calls` | `tool_call_start / tool_call / tool_call_end` |
+
+- **`InvokeResult`**：封装模型返回的消息（`message: dict`）和原始数据（`raw`）
+
+---
+
+### 3. `session.py` — 会话层（管理上下文）
+
+**职责**：维护完整的对话上下文（消息历史 + 工具定义），支持持久化。
+
+**关键功能**：
+
+| 方法/属性 | 说明 |
+|-----------|------|
+| `messages` | 消息列表（system / user / assistant / tool） |
+| `tools` | 工具的 Schema 列表，传给 OpenAI 用 |
+| `add_message()` | 添加一条消息到历史 |
+| `save()` | 将当前会话保存为 JSON 文件到 `sessions/` 目录 |
+| `load()` | 从 JSON 文件恢复会话 |
+| `print_friendly()` | 以人类可读格式打印整个对话历史 |
+
+**初始化自动加载**：通过 `render_prompt("system")` 渲染 Jinja2 系统提示词模板，将**当前工作目录、操作系统、是否 Git 仓库**等环境信息注入到 system prompt 中。
+
+---
+
+### 4. `tool/` — 工具层（Function Calling 实现）
+
+#### 4.1 `tool/core/tool.py` — Tool 类与注册机制
+
+**`Tool` 类**：将 Python 函数包装为 LLM 可识别的工具。
+
+- `schema()` → 生成 OpenAI 兼容的工具定义 JSON Schema
+- `__call__()` → 执行工具函数，**异常安全**（捕获异常并返回堆栈信息）
+- 参数验证：利用 Pydantic 动态创建参数模型，自动校验类型和必填项
+
+**`@tool` 装饰器**：通过 `param_descriptions` 为参数添加描述信息。
+
+#### 4.2 `tool/core/utils.py` — 参数模型工厂
+
+**`create_params_model()`**：利用 `inspect` 模块解析函数签名，结合 `pydantic.create_model` 动态生成参数校验模型，支持：
+- 类型注解推导
+- 必填/可选参数识别
+- 参数描述注入
+
+#### 4.3 `tool/__init__.py` — 工具注册中心
+
+**`_ToolRegistry` 类**：全局唯一的工具注册器。
+
+```python
+class _ToolRegistry:
+    register(tool)      # 注册工具
+    schemas()           # 返回所有工具的 Schema 列表
+    invoke(message)     # 从模型消息中提取 tool_calls 并逐一执行
+```
+
+**内置三个工具**：
+| 工具 | 函数 | 说明 |
+|------|------|------|
+| `read_file` | `read_file(filepath)` | 读取文件内容 |
+| `write_file` | `write_file(filepath, content)` | 写入内容到文件 |
+| `bash_command` | `bash_command(command)` | 执行 Shell 命令 |
+
+---
+
+### 5. `events.py` — 事件系统（观察者模式）
+
+**`Event` 类**：定义事件常量，包括推理事件、内容事件、工具调用事件和完成事件。
+
+**`EventEmitter` 类**：实现发布-订阅模式。
+
+| 方法 | 说明 |
+|------|------|
+| `on(event, callback)` | 注册事件监听器 |
+| `emit(event, **data)` | 发射事件，触发所有监听器 |
+
+`Model` 继承自 `EventEmitter`，在流式推理过程中发射事件，供监听器消费。
+
+---
+
+### 6. `listener.py` — 监听器抽象基类
+
+**`ModelListener`**（抽象类）：定义监听模型的接口。
+
+- `listen(model)` → 将自身注册到 Model 的所有事件上
+- `_handler(e, **args)` → 子类需实现的抽象方法，处理具体事件
+
+---
+
+### 7. `printer.py` — 监听器实现（控制台打印）
+
+**`ModelPrinterListener`**：继承 `ModelListener`，将模型推理过程实时打印到终端。
+
+| 事件 | 打印内容 |
+|------|----------|
+| `reasoning_start` | "思考中..." |
+| `reasoning_end` | 换行 |
+| `content_start` | "内容：" |
+| `content` | 绿色文本输出内容片段 |
+| `content_end` | 换行 |
+| `tool_call_end` | 青色显示 "调用工具：xxx" |
+
+---
+
+### 8. `config.py` — 配置管理
+
+使用 `pydantic-settings` 从 `.env` 文件或环境变量读取 OpenAI 配置：
+
+| 配置项 | 环境变量前缀 | 说明 |
+|--------|-------------|------|
+| `api_key` | `OPENAI_API_KEY` | API 密钥 |
+| `base_url` | `OPENAI_BASE_URL` | API 端点 |
+| `model` | `OPENAI_MODEL` | 模型名称 |
+
+---
+
+### 9. `prompt.py` — 提示词模板引擎
+
+使用 **Jinja2** 模板引擎渲染系统提示词。
+
+`render_prompt("system")` 将三个环境变量注入模板：
+- `{{ cwd }}` → 当前工作目录
+- `{{ os }}` → 操作系统
+- `{{ is_git }}` → 是否在 Git 仓库内
+
+**模板文件** `prompt/system.j2` 描述了 AI 助手的基本行为和环境信息。
+
+---
+
+## 三、数据流全链路
+
+```
+用户输入 "读取 xxx 文件"
+    │
+    ▼
+Agent.invoke(q)
+    │
+    ├─ session.add_message({"role":"user", "content": q})
+    │
+    ├─ 进入 ReAct Loop
+    │   │
+    │   ├─ Model.invoke_stream(session)
+    │   │   │
+    │   │   ├─ OpenAI API 调用（stream=True）
+    │   │   │
+    │   │   ├─ 流式解析（3个Builder）
+    │   │   │   ├─ ReasoningBuilder → 发射 reasoning_* 事件
+    │   │   │   ├─ ContentBuilder  → 发射 content_* 事件
+    │   │   │   └─ ToolCallsBuilder → 发射 tool_call_* 事件
+    │   │   │
+    │   │   ├─ ModelPrinterListener 实时打印到控制台
+    │   │   │
+    │   │   └─ 返回 InvokeResult (含 message)
+    │   │
+    │   ├─ registry.invoke(message)
+    │   │   │
+    │   │   ├─ 解析 tool_calls
+    │   │   ├─ 逐一执行工具（read_file / write_file / bash_command）
+    │   │   └─ 返回 tool 角色的结果消息列表
+    │   │
+    │   ├─ 有 tool_calls？ → 结果加入 session，继续循环
+    │   └─ 无 tool_calls？ → 结束循环
+    │
+    └─ 返回所有响应
+```
+
+---
+
+## 四、设计亮点
+
+1. **ReAct 模式**：通过"思考→行动→观察"循环，让 Agent 能自主调用工具解决问题
+2. **事件驱动架构**：`EventEmitter` + `ModelListener` 解耦了模型推理与副作用（打印、日志等）
+3. **流式处理**：三个 Builder 分别并行解析推理过程、内容输出和工具调用，实时性强
+4. **工具即函数**：通过 `@tool` 装饰器 + Pydantic 动态建模，将普通 Python 函数无缝转换为 LLM 可识别的工具
+5. **会话持久化**：支持保存/恢复对话历史，便于调试和继续对话
+6. **环境感知**：通过 Jinja2 模板将运行时环境信息自动注入到 system prompt 中
+````
