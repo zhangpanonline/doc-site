@@ -7,22 +7,22 @@ import rehypeKatex from 'rehype-katex';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 /**
- * 纸墨代码主题（亮色）：暖纸底 + 墨色语法注解。
- * 色板与 src/css/custom.css「纸墨 + 朱批」同源——朱砂关键词、黛绿字符串、
- * 靛青数字、焦茶函数名；正文字号下全部 ≥4.5:1 对比度。
+ * 青简代码主题（亮色）：淡绿底 + 青简语法注解。
+ * 色板与 src/css/custom.css「青简」同源——墨绿关键词、绿字符串、
+ * 靛青数字、焦茶函数名（少量暖色点缀，呼应色板暖米提示色）；正文字号下全部 ≥4.5:1 对比度。
  * 背景必须在此定义：prism 主题以内联样式注入，会盖过 CSS 里的背景设置。
  */
-const paperInkTheme: PrismTheme = {
-  plain: {color: '#2d2926', backgroundColor: '#f8f5ed'},
+const qingjianTheme: PrismTheme = {
+  plain: {color: '#112238', backgroundColor: '#eef5e8'},
   styles: [
-    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#73695c', fontStyle: 'italic'}},
-    {types: ['punctuation'], style: {color: '#6b6259'}},
-    {types: ['keyword', 'atrule', 'selector', 'tag', 'important', 'regex'], style: {color: '#9d3b2c'}},
+    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#788395', fontStyle: 'italic'}},
+    {types: ['punctuation'], style: {color: '#5f6b7d'}},
+    {types: ['keyword', 'atrule', 'selector', 'tag', 'important', 'regex'], style: {color: '#336f33'}},
     {types: ['string', 'char', 'attr-value', 'url'], style: {color: '#1e6e5c'}},
     {types: ['number', 'boolean', 'symbol'], style: {color: '#2b5876'}},
     {types: ['function', 'class-name', 'attr-name'], style: {color: '#7a5200'}},
-    {types: ['builtin'], style: {color: '#7c2d21'}},
-    {types: ['operator', 'entity'], style: {color: '#6b6259'}},
+    {types: ['builtin'], style: {color: '#285a28'}},
+    {types: ['operator', 'entity'], style: {color: '#5f6b7d'}},
     {types: ['inserted'], style: {color: '#2e7d32'}},
     {types: ['deleted'], style: {color: '#c0392b'}},
   ],
@@ -230,7 +230,7 @@ var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[
       ],
     },
     prism: {
-      theme: paperInkTheme,
+      theme: qingjianTheme,
       darkTheme: darkPaperInkTheme,
     },
   } satisfies Preset.ThemeConfig,
