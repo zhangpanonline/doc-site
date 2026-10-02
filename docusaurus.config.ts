@@ -91,20 +91,10 @@ const config: Config = {
   onBrokenLinks: 'throw',
 
   headTags: [
-    {
-      tagName: 'meta',
-      attributes: {
-        name: 'description',
-        content: 'AI 大全栈学习路线配套交互课程站：Agents 应用开发 / 后端 / 运维云 / 高效 AI 编程 / 企业级全栈项目 / 就业指导六大单元 + 公共课程，每课配套文档、互动测验与实战作业。',
-      },
-    },
-    {
-      tagName: 'meta',
-      attributes: {
-        property: 'og:description',
-        content: 'AI 大全栈学习路线配套交互课程站：Agents 应用开发 / 后端 / 运维云 / 高效 AI 编程 / 企业级全栈项目 / 就业指导六大单元 + 公共课程，每课配套文档、互动测验与实战作业。',
-      },
-    },
+    // ⚠️ 此处不要再加全局 name="description" / property="og:description"。
+    // 每页的 description 由页面自身提供：docs 页取 frontmatter（AGENTS.md 强制必填、
+    // 全站唯一），React 页取 <Layout description="...">（如 /status）。
+    // 曾有全局注入导致同一页出现两个互相冲突的 description（2026-10-02 移除）。
     {
       tagName: 'meta',
       attributes: {

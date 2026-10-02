@@ -56,6 +56,8 @@
 - **勿在 worktree 跑 `vercel link`**（会误建 Vercel 项目）；部署沿用现有项目。
 - SEO 状态：站长平台只做百度/谷歌/必应三家（验证文件在 static/）；360/搜狗/神马因需 ICP 备案放弃（2026-09-11 用户决定）。站点侧优化（社交卡片 img/social-card.png、WebSite JSON-LD、92 篇 description）已上线；**Course JSON-LD 由 `src/plugins/seo-jsonld.js` 在构建时自动注入**（所有带 title 的 docs/**/index.mdx 页面，无需手动维护；FAQPage 有意不做——题目 JS 动态渲染，避免误导性结构化数据）。
 - **搜索引擎主动通知已自动化**（`.github/workflows/seo-push.yml`）：push main 后 CI 自动跑 IndexNow（必应）+ 百度推送。百度推送需仓库 Secret `BAIDU_PUSH_TOKEN`（百度站长「推送接口」的准入密钥，未配置时该步骤自动跳过）。本地手动跑法：`bash scripts/indexnow-ping.sh` / `BAIDU_PUSH_TOKEN=<token> bash scripts/baidu-push.sh`（后者需先 pnpm build）。
+- **每页 description 只由页面自身提供，禁止全局注入**：docs 页取 frontmatter（必填、全站唯一），React 页取 `<Layout description="...">`（如 /status）。**不得**在 `docusaurus.config.ts` 的 `headTags` 里加 `name="description"` 或 `property="og:description"`——曾因全局注入导致每页出现两个互相冲突的 description（2026-10-02 移除，构建后应校验每页仅 1 条）。
+- **teach 静态页的 sitemap 由构建期脚本注入**：`static/teach/*.html` 是静态文件不是 Docusaurus 路由，`scripts/inject-teach-sitemap.mjs` 在 `docusaurus build` 之后把 154 个 teach 页（lessons 77 + reference 77）并入 `build/sitemap.xml`（全站 288 条）。因此 **`pnpm build` 不能简化成只跑 `docusaurus build`**，否则 teach 页不会被 sitemap 收录、百度推送也会漏掉它们。校验：`python3 scripts/check-sitemap.py`。
 
 ## 其他
 
