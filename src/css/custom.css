@@ -948,3 +948,115 @@ html.immersive .theme-doc-sidebar-container {
 .ji-dist-track { position: relative; flex: 1; height: 100%; border-bottom: 1px solid var(--course-border); }
 .ji-dist-bar { position: absolute; top: 6px; bottom: 6px; left: 0; background: color-mix(in srgb, var(--course-accent) 42%, transparent); border-radius: 2px; }
 .ji-dist-meta { flex: none; width: 118px; padding-left: 8px; font-size: 11px; color: var(--course-muted); }
+
+/* ===== 竹林背景装饰（青简站，亮色专属） =====
+ * 移植自 qingjian.app 编译后 CSS：4 层竹林图叠加 + 呼吸动画。
+ * 镜像（scaleX(-1)/scale(-1,-1)）放在定位 wrapper 上，动画只作用于 img，
+ * 避免两者 transform 冲突；transform-origin 22% 98% 让底部固定、梢部摆动。
+ * 暗色模式（牛皮纸夜读）与竹林不搭，整体隐藏。 */
+html[data-theme='light'] .bamboo-grove {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+html[data-theme='light'] .bamboo-pos {
+  position: absolute;
+}
+html[data-theme='light'] .bamboo-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  transform-origin: 22% 98%; /* 底部固定，梢部摆动 */
+  animation: bamboo-breathe 13s ease-in-out infinite alternate;
+}
+/* 层 1：左下远景，最淡 + 模糊 */
+html[data-theme='light'] .bamboo-pos-1 {
+  left: -6%;
+  bottom: -28%;
+  width: clamp(360px, 34vw, 620px);
+}
+html[data-theme='light'] .bamboo-pos-1 .bamboo-img {
+  opacity: 0.07;
+  filter: blur(2px);
+  animation-duration: 21s;
+  animation-delay: -8s;
+}
+/* 层 2：右下远景，镜像 + 模糊 */
+html[data-theme='light'] .bamboo-pos-2 {
+  right: -9%;
+  bottom: -14%;
+  width: clamp(360px, 38vw, 650px);
+  transform: scaleX(-1);
+}
+html[data-theme='light'] .bamboo-pos-2 .bamboo-img {
+  opacity: 0.07;
+  filter: blur(3px);
+  animation-duration: 25s;
+  animation-delay: -13s;
+}
+/* 层 3：左下近景 */
+html[data-theme='light'] .bamboo-pos-3 {
+  left: -170px;
+  bottom: -5%;
+  width: 260px;
+}
+html[data-theme='light'] .bamboo-pos-3 .bamboo-img {
+  opacity: 0.14;
+  animation-duration: 12s;
+  animation-delay: -5s;
+}
+/* 层 4：右上近景，双向镜像 */
+html[data-theme='light'] .bamboo-pos-4 {
+  right: -160px;
+  top: 12%;
+  width: 240px;
+  transform: scale(-1, -1);
+}
+html[data-theme='light'] .bamboo-pos-4 .bamboo-img {
+  opacity: 0.12;
+  animation-duration: 15s;
+  animation-delay: -11s;
+}
+/* 桌面（wide）档：近景两层外移加大加亮，远景透明度提高 */
+@media (min-width: 761px) {
+  html[data-theme='light'] .bamboo-pos-1 .bamboo-img { opacity: 0.12; }
+  html[data-theme='light'] .bamboo-pos-2 .bamboo-img { opacity: 0.1; }
+  html[data-theme='light'] .bamboo-pos-3 {
+    left: -185px;
+    bottom: -20%;
+    width: 330px;
+  }
+  html[data-theme='light'] .bamboo-pos-3 .bamboo-img { opacity: 0.16; }
+  html[data-theme='light'] .bamboo-pos-4 {
+    right: -185px;
+    top: -24%;
+    width: 330px;
+  }
+  html[data-theme='light'] .bamboo-pos-4 .bamboo-img { opacity: 0.16; }
+}
+/* 窄屏隐藏第 1、2 层（原站 <761px 隐藏远景两层） */
+@media (max-width: 760px) {
+  html[data-theme='light'] .bamboo-pos-1,
+  html[data-theme='light'] .bamboo-pos-2 {
+    display: none;
+  }
+}
+/* 呼吸动画：梢部轻微摇摆 */
+@keyframes bamboo-breathe {
+  0%   { transform: rotate(-1.3deg) translate(-3px); }
+  50%  { transform: rotate(0.2deg) translate(2px); }
+  100% { transform: rotate(1.3deg) translate(3px); }
+}
+/* 动效减弱：关闭动画 */
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme='light'] .bamboo-img {
+    animation: none;
+  }
+}
+/* 暗色模式（牛皮纸夜读）：隐藏竹林层 */
+[data-theme='dark'] .bamboo-grove {
+  display: none;
+}

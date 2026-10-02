@@ -119,6 +119,31 @@ function ImmersiveToggle(): React.JSX.Element | null {
 }
 
 /**
+ * 竹林背景（青简站风格，亮色专属）：fixed 容器铺满视口，4 层竹林图叠加，
+ * 每层图片跑呼吸动画。镜像（scaleX(-1) / scale(-1,-1)）放在定位 wrapper 上、
+ * 动画只作用于 img，避免两者的 transform 冲突；窄屏隐藏第 1、2 层、暗色
+ * 隐藏整个容器均由 custom.css 控制（组件本身始终渲染）。
+ */
+function BambooGrove(): React.JSX.Element {
+  return (
+    <div className="bamboo-grove" aria-hidden="true">
+      <div className="bamboo-pos bamboo-pos-1">
+        <img className="bamboo-img" src="/img/bamboo-grove.webp" alt="" draggable={false} />
+      </div>
+      <div className="bamboo-pos bamboo-pos-2">
+        <img className="bamboo-img" src="/img/bamboo-grove.webp" alt="" draggable={false} />
+      </div>
+      <div className="bamboo-pos bamboo-pos-3">
+        <img className="bamboo-img" src="/img/bamboo-grove.webp" alt="" draggable={false} />
+      </div>
+      <div className="bamboo-pos bamboo-pos-4">
+        <img className="bamboo-img" src="/img/bamboo-grove.webp" alt="" draggable={false} />
+      </div>
+    </div>
+  );
+}
+
+/**
  * 学习进度记录：打开任意章节页时，把「上次学到」写入 localStorage（每单元一个槽）。
  * 记录 = {course, href, index, name}；课程卡片页（CourseTiles）读取本单元槽做高亮与「继续学习」直达。
  */
@@ -186,6 +211,7 @@ function VisitTracker(): null {
 export default function Root({children}: {children: React.ReactNode}): React.JSX.Element {
   return (
     <OriginalRoot>
+      <BambooGrove />
       <ProgressRecorder />
       <ImmersiveToggle />
       <VisitTracker />
