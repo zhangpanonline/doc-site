@@ -959,83 +959,73 @@ html[data-theme='light'] .bamboo-grove {
   inset: 0;
   z-index: 0; /* 显示在文档内容区背景之上；低透明度 + pointer-events:none 不遮挡阅读，navbar 自带高 z-index 不受影响 */
   pointer-events: none;
-  overflow: hidden;
+  overflow: visible; /* 竹子完整展示，不裁剪 */
 }
 html[data-theme='light'] .bamboo-pos {
   position: absolute;
 }
 html[data-theme='light'] .bamboo-img {
   display: block;
-  width: 100%;
-  height: auto;
+  width: auto;
+  height: 100%;
   max-width: none;
   transform-origin: 22% 98%; /* 底部固定，梢部摆动 */
   animation: bamboo-breathe 13s ease-in-out infinite alternate;
 }
 /* 层 1：左下远景，最淡 + 模糊 */
 html[data-theme='light'] .bamboo-pos-1 {
-  left: -6%;
-  bottom: -10%;
-  width: clamp(360px, 34vw, 620px);
+  left: 2%;
+  bottom: 0;
+  height: 68vh;
 }
 html[data-theme='light'] .bamboo-pos-1 .bamboo-img {
-  opacity: 0.04;
+  opacity: 0.07;
   filter: blur(2px);
   animation-duration: 21s;
   animation-delay: -8s;
 }
 /* 层 2：右下远景，镜像 + 模糊 */
 html[data-theme='light'] .bamboo-pos-2 {
-  right: -9%;
-  bottom: -5%;
-  width: clamp(360px, 38vw, 650px);
+  right: 2%;
+  bottom: 0;
+  height: 68vh;
   transform: scaleX(-1);
 }
 html[data-theme='light'] .bamboo-pos-2 .bamboo-img {
-  opacity: 0.04;
+  opacity: 0.07;
   filter: blur(3px);
   animation-duration: 25s;
   animation-delay: -13s;
 }
 /* 层 3：左下近景 */
 html[data-theme='light'] .bamboo-pos-3 {
-  left: -170px;
+  left: 12%;
   bottom: 0;
-  width: 260px;
+  height: 45vh;
 }
 html[data-theme='light'] .bamboo-pos-3 .bamboo-img {
-  opacity: 0.08;
+  opacity: 0.14;
   animation-duration: 12s;
   animation-delay: -5s;
 }
 /* 层 4：右上近景，双向镜像 */
 html[data-theme='light'] .bamboo-pos-4 {
-  right: -160px;
-  top: 12%;
-  width: 240px;
+  right: 12%;
+  top: 6%;
+  height: 38vh;
   transform: scale(-1, -1);
 }
 html[data-theme='light'] .bamboo-pos-4 .bamboo-img {
-  opacity: 0.07;
+  opacity: 0.12;
   animation-duration: 15s;
   animation-delay: -11s;
 }
-/* 桌面（wide）档：近景两层外移加大加亮，远景透明度提高 */
+/* 桌面（wide）档：仅提高各层透明度，定位沿用基础档完整展示 */
 @media (min-width: 761px) {
-  html[data-theme='light'] .bamboo-pos-1 .bamboo-img { opacity: 0.07; }
-  html[data-theme='light'] .bamboo-pos-2 .bamboo-img { opacity: 0.06; }
-  html[data-theme='light'] .bamboo-pos-3 {
-    left: -185px;
-    bottom: 0;
-    width: 330px;
-  }
-  html[data-theme='light'] .bamboo-pos-3 .bamboo-img { opacity: 0.09; }
-  html[data-theme='light'] .bamboo-pos-4 {
-    right: -185px;
-    top: 6%;
-    width: 330px;
-  }
-  html[data-theme='light'] .bamboo-pos-4 .bamboo-img { opacity: 0.09; }
+  html[data-theme='light'] .bamboo-pos-1 .bamboo-img { opacity: 0.12; }
+  html[data-theme='light'] .bamboo-pos-2 .bamboo-img { opacity: 0.10; }
+  html[data-theme='light'] .bamboo-pos-3 .bamboo-img { opacity: 0.16; }
+  html[data-theme='light'] .bamboo-pos-4 .bamboo-img { opacity: 0.16; }
 }
 /* 窄屏隐藏第 1、2 层（原站 <761px 隐藏远景两层） */
 @media (max-width: 760px) {
