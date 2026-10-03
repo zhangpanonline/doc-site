@@ -1,4 +1,1564 @@
 /**
+ * Forest 主题 —— 三态下拉可选主题之一（2026-10-02 起由导航栏 custom-theme-select 下拉切换）。
+ * 仅当 html 同时带 data-theme='light' 与 theme-forest class（即下拉选中「森林 · 亮」）时生效。
+ * （2026-10-02 大改：按用户要求「森林模式所有颜色与 main 分支完全一致」，
+ *   将 main 分支 src/css/custom.css 与 src/css/forest.css 全量迁移到此文件，
+ *   所有选择器仅追加 html[data-theme='light'].theme-forest 守卫前缀、内容逐字保留，
+ *   匹配行为与 main 分支构建产物完全等价，森林模式渲染 = main 分支亮色渲染。）
+ */
+
+/* ===== 森林·亮主题：完整对齐 main 分支颜色文件（custom.css + forest.css 全量迁移） ===== */
+/* 森林主题隐藏竹林装饰（对齐 main 分支：main 无竹林） */
+html[data-theme='light'].theme-forest .bamboo-grove,
+html[data-theme='light'].theme-forest .bamboo-stalk,
+html[data-theme='light'].theme-forest .bamboo-leaf {
+  display: none !important;
+}
+
+/* ==== main 分支 custom.css（守卫版） ==== */
+/**
+ * AI 大全栈 · 配套交互课程站
+ * 配色重构（2026-09-07）：整体对齐「互动教学课程」风格（teach/assets/course.css）
+ * 设计取向：纸墨 + 朱批——暖纸底、墨字、朱砂红批注；标题宋体，讲义感；克制的印刷排版
+ */
+
+/* KaTeX 数学公式样式与字体（本地打包，不走 CDN；对应 docusaurus.config.ts 的 remark-math/rehype-katex） */
+
+
+/* 公式跟随正文颜色，避免暗色模式下写死黑色 */
+html[data-theme='light'].theme-forest .katex {
+
+  color: inherit;
+
+}
+
+/* 块级公式在窄屏可横向滚动，不撑破版面 */
+html[data-theme='light'].theme-forest .katex-display {
+
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+
+}
+
+
+html[data-theme='light'].theme-forest {
+
+  /* ===== 教学课程色板（与 teach/assets/course.css 同源） ===== */
+  --course-bg: #faf7f1;            /* 暖纸色背景 */
+  --course-fg: #2d2926;            /* 墨色正文 */
+  --course-muted: #8a8073;         /* 次要文字 */
+  --course-accent: #9d3b2c;        /* 朱砂红强调 */
+  --course-accent-ink: #7c2d21;    /* 朱砂红·深（链接） */
+  --course-ok: #2e7d32;            /* 答对绿 */
+  --course-bad: #c0392b;           /* 答错红 */
+  --course-border: #e7e0d3;        /* 纸纹边框 */
+  --course-card: #fffdf9;          /* 卡片纸面 */
+  --course-code-bg: #f3efe6;       /* 代码纸底 */
+  --course-highlight: #fdf3e3;     /* 朱批高亮 */
+
+  /* ===== 墨块（hero/横幅）：纸面卡片，与页面同色系 ===== */
+  --hero-bg: var(--course-card);
+  --hero-fg: var(--course-fg);
+  --tile-bg: #ffffff;              /* 单元卡片：比 hero 更亮一层，浮起 */
+
+  /* ===== infima 主色 → 朱砂红 ===== */
+  --ifm-color-primary: #9d3b2c;
+  --ifm-color-primary-dark: #7c2d21;
+  --ifm-color-primary-darker: #6f281d;
+  --ifm-color-primary-darkest: #5c2118;
+  --ifm-color-primary-light: #b04a39;
+  --ifm-color-primary-lighter: #bd5644;
+  --ifm-color-primary-lightest: #c96c5c;
+
+  /* ===== 纸墨映射 ===== */
+  --ifm-background-color: var(--course-bg);
+  --ifm-background-surface-color: var(--course-card);
+  --ifm-font-color-base: var(--course-fg);
+  --ifm-font-color-secondary: var(--course-muted);
+  --ifm-heading-color: var(--course-fg);
+  --ifm-link-color: var(--course-accent-ink);
+  --ifm-link-hover-color: var(--course-accent);
+  --ifm-code-background: var(--course-code-bg);
+  /* 行号槽背景：与 prism 主题内联注入的代码块底色（paperInkTheme #f8f5ed）对齐，
+     否则槽位会显示 Infima 默认色，左侧出现一条加深色块 */
+  --ifm-pre-background: #f8f5ed;
+  --ifm-navbar-background-color: var(--course-card);
+  --ifm-navbar-link-color: var(--course-fg);
+  --ifm-navbar-link-hover-color: var(--course-accent);
+  --ifm-menu-color: var(--course-fg);
+  --ifm-menu-color-active: var(--course-accent);
+  --ifm-menu-color-background-active: var(--course-highlight);
+  --ifm-menu-color-background-hover: rgba(157, 59, 44, 0.05);
+  --ifm-toc-border-color: var(--course-border);
+  --ifm-breadcrumb-separator-color: var(--course-muted);
+  --ifm-hr-border-color: var(--course-border);
+  --ifm-table-border-color: var(--course-border);
+  --ifm-table-stripe-background: var(--course-code-bg);
+  --ifm-blockquote-border-left-color: var(--course-accent);
+  --ifm-color-emphasis-100: var(--course-code-bg);
+  --ifm-color-emphasis-200: var(--course-border);
+  --ifm-color-emphasis-300: #d8d0c0;
+  --ifm-color-emphasis-600: var(--course-muted);
+
+  /* ===== 字体：标题宋体（讲义感），正文系统无衬线，代码手写等宽（霞鹜文楷 Mono） ===== */
+  --ifm-heading-font-family: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "STSong", Georgia, "Times New Roman", serif;
+  --ifm-font-family-monospace: "LXGW WenKai Mono GB Screen", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "JetBrains Mono", "Courier New", monospace;
+  --ifm-code-font-size: calc(95% + 1px); /* 在默认 95% 基础上再大 1px，手写体更易读 */
+  --ifm-pre-line-height: 1.8; /* 手写笔记的宽松行距 */
+  --docusaurus-highlighted-code-line-bg: rgba(157, 59, 44, 0.08);
+
+  /* ===== 滚动条：墨色淡描 ===== */
+  --ifm-scrollbar-size: 10px;
+  --ifm-scrollbar-track-background-color: transparent;
+  --ifm-scrollbar-thumb-background-color: rgba(45, 41, 38, 0.28);
+  --ifm-scrollbar-thumb-hover-background-color: rgba(45, 41, 38, 0.45);
+
+}
+
+
+/* ===== 深色：牛皮纸夜读 + 朱砂（A 方案：夜间暗度 + 暖色调 + 纸纹颗粒） ===== */
+html[data-theme='light'].theme-forest [data-theme='dark'] {
+
+  --course-bg: #262117;            /* 牛皮纸底 */
+  --course-fg: #eae3d2;            /* 暖奶油文字 */
+  --course-muted: #a99f8a;         /* 暖灰次要 */
+  --course-accent: #e8855f;        /* 朱砂强调 */
+  --course-accent-ink: #f2a080;    /* 链接朱砂 */
+  --course-ok: #7ecb8a;            /* 答对绿（暗色提亮） */
+  --course-bad: #e08b7a;           /* 答错红（暗色提亮） */
+  --course-border: #403829;        /* 暖褐边线 */
+  --course-card: #312b20;          /* 卡片面 */
+  --course-code-bg: #312b20;       /* 代码底（行内 chip） */
+  --course-highlight: #3b2f20;     /* 朱批洗染高亮 */
+
+  /* 墨块：暗色下同为卡片面 */
+  --hero-bg: var(--course-card);
+  --hero-fg: var(--course-fg);
+  --tile-bg: #363024;              /* 暗色单元卡片：亮于卡片面一层 */
+
+  --ifm-color-primary: #e8855f;
+  --ifm-color-primary-dark: #d3704b;
+  --ifm-color-primary-darker: #bd6240;
+  --ifm-color-primary-darkest: #9c5034;
+  --ifm-color-primary-light: #ec916f;
+  --ifm-color-primary-lighter: #f0a185;
+  --ifm-color-primary-lightest: #f5b8a0;
+
+  --ifm-background-color: var(--course-bg);
+  --ifm-background-surface-color: var(--course-card);
+  --ifm-font-color-base: var(--course-fg);
+  --ifm-font-color-secondary: var(--course-muted);
+  --ifm-heading-color: var(--course-fg);
+  --ifm-link-color: var(--course-accent-ink);
+  --ifm-link-hover-color: var(--course-accent);
+  --ifm-code-background: var(--course-code-bg);
+  /* 行号槽背景：与 prism 深色代码块底色（paperInkTheme #211d14）对齐 */
+  --ifm-pre-background: #211d14;
+  --ifm-navbar-background-color: var(--course-card);
+  --ifm-navbar-link-color: var(--course-fg);
+  --ifm-navbar-link-hover-color: var(--course-accent);
+  --ifm-menu-color: var(--course-fg);
+  --ifm-menu-color-active: var(--course-accent);
+  --ifm-menu-color-background-active: var(--course-highlight);
+  --ifm-menu-color-background-hover: rgba(232, 133, 95, 0.1);
+  --ifm-toc-border-color: var(--course-border);
+  --ifm-hr-border-color: var(--course-border);
+  --ifm-table-border-color: var(--course-border);
+  --ifm-table-stripe-background: var(--course-code-bg);
+  --ifm-blockquote-border-left-color: var(--course-accent);
+  --ifm-color-emphasis-100: var(--course-code-bg);
+  --ifm-color-emphasis-200: var(--course-border);
+  --ifm-color-emphasis-300: #4a4234;
+  --ifm-color-emphasis-600: var(--course-muted);
+  --docusaurus-highlighted-code-line-bg: rgba(232, 133, 95, 0.14);
+  --ifm-scrollbar-thumb-background-color: rgba(234, 227, 210, 0.2);
+  --ifm-scrollbar-thumb-hover-background-color: rgba(234, 227, 210, 0.34);
+
+}
+
+
+/* ===== 导航栏：纸面 + 纸纹边线（去投影） ===== */
+html[data-theme='light'].theme-forest .navbar {
+
+  box-shadow: none;
+  border-bottom: 1px solid var(--course-border);
+
+}
+
+html[data-theme='light'].theme-forest .navbar__title {
+
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 600;
+
+}
+
+html[data-theme='light'].theme-forest .navbar__item.navbar__link--active {
+
+  color: var(--course-accent);
+
+}
+
+
+/* ===== 文档区：讲义排版 ===== */
+html[data-theme='light'].theme-forest .markdown h1 {
+
+  font-family: var(--ifm-heading-font-family);
+
+}
+
+html[data-theme='light'].theme-forest .markdown h2 {
+
+  border-bottom: 2px solid var(--course-border);
+  padding-bottom: 0.4rem;
+
+}
+
+html[data-theme='light'].theme-forest .markdown a {
+
+  border-bottom: 1px solid color-mix(in srgb, var(--course-accent) 40%, transparent);
+
+}
+
+html[data-theme='light'].theme-forest .markdown a:hover {
+
+  border-bottom-color: var(--course-accent);
+  text-decoration: none;
+
+}
+
+html[data-theme='light'].theme-forest .theme-doc-markdown blockquote {
+
+  background: var(--course-highlight);
+  border-left: 3px solid var(--course-accent);
+
+}
+
+
+/* 侧边栏：朱批划线 */
+html[data-theme='light'].theme-forest .menu__link--active {
+
+  border-right: 2px solid var(--course-accent);
+  background-color: var(--course-highlight);
+
+}
+
+
+/* ===== 代码块：手写笔记纸面——纸底 + 纸纹边 + 纸纹颗粒 + 轻抬纸影 ===== */
+html[data-theme='light'].theme-forest .theme-code-block {
+
+  position: relative;
+  border: 1px solid var(--course-border);
+  box-shadow: 0 1px 2px rgba(45, 41, 38, 0.06), 0 6px 18px rgba(45, 41, 38, 0.07);
+
+}
+
+/* 代码块：平铺浅纸底（无纹理；实际底色由 prism 主题内联注入 #f8f5ed） */
+html[data-theme='light'].theme-forest .theme-code-block pre {
+
+  background-color: var(--course-code-bg);
+
+}
+
+html[data-theme='light'].theme-forest [data-theme='dark'] .theme-code-block {
+
+  box-shadow: none; /* 深夜蓝墨：保持平面感 */
+
+}
+
+
+/* 代码块标题栏：Docusaurus 只给内边距与边框，不设 background/color，
+   标题于是露出容器底色、文字却继承页面色，出现「深底深字」。
+   这里统一让标题与代码块同底同字（颜色由各主题的 prism 变量自动适配）。
+   注：docs 页另有 forest.css 的更高权重规则，分别处理深绿普通块与 CodeRunner 纸面块。 */
+html[data-theme='light'].theme-forest .theme-code-block > [class*='codeBlockTitle'] {
+
+  background-color: var(--prism-background-color);
+  color: var(--prism-color);
+  border-bottom: 1px solid var(--course-border);
+
+}
+
+
+/* 页面纸纹：html 与 body 同时铺同款纸纹（仅亮色），滚动全程画布与盒子都有纹理；
+   基色保持 --course-bg 不变 */
+html[data-theme='light'].theme-forest html,
+html[data-theme='light'].theme-forest body {
+
+  /* 纯色打底：不依赖 background-attachment（该属性在 Safari 系滚动后可能失效，
+     导致页面露出近似代码块米白色的底），滚动时纯色背景天然无位移 */
+  background-color: var(--course-bg);
+  background-image: none;
+
+}
+
+/* 纸纹改为 fixed 定位装饰层（相对视口固定），替代 html/body 的
+   background-attachment: fixed：滚动时颗粒纹理静止，且跨浏览器行为一致 */
+html[data-theme='light'].theme-forest body::before {
+
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url('/img/page-noise.png');
+  background-repeat: repeat;
+  pointer-events: none;
+
+}
+
+html[data-theme='dark'],
+html[data-theme='dark'] body {
+
+  background-image: url('/img/dark-noise.png'); /* 深色同款纸纹 */
+
+}
+
+
+/* 高亮行：朱批墨线，像批注时划下的记号 */
+html[data-theme='light'].theme-forest .theme-code-block-highlighted-line {
+
+  position: relative;
+
+}
+
+html[data-theme='light'].theme-forest .theme-code-block-highlighted-line::before {
+
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--course-accent);
+
+}
+
+
+/* 文字选区：朱批洗染，与纸墨世界一致 */
+html[data-theme='light'].theme-forest ::selection {
+
+  background: rgba(157, 59, 44, 0.16);
+
+}
+
+html[data-theme='light'].theme-forest [data-theme='dark'] ::selection {
+
+  background: rgba(232, 133, 95, 0.32);
+
+}
+
+
+/* ===== AI 大全栈 站点外壳（纸墨版） ===== */
+html[data-theme='light'].theme-forest .ai-hero {
+
+  background: var(--hero-bg);        /* 纸面卡片，融入页面 */
+  color: var(--hero-fg);
+  border: 1px solid var(--course-border);
+  border-radius: 20px;
+  padding: 56px 36px 44px;
+  margin: 24px 0 32px;
+  text-align: center;
+
+}
+
+html[data-theme='light'].theme-forest .ai-hero-kicker {
+
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: var(--course-accent);
+
+}
+
+html[data-theme='light'].theme-forest .ai-hero-title {
+
+  color: var(--hero-fg);
+  font-family: var(--ifm-heading-font-family);
+  font-size: 38px;
+  margin-bottom: 10px;
+  text-wrap: balance;
+
+}
+
+html[data-theme='light'].theme-forest .ai-hero-sub {
+
+  color: color-mix(in srgb, var(--hero-fg) 72%, transparent);
+  font-size: 16px;
+  margin-bottom: 36px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-tiles {
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: left;
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile {
+
+  display: flex;
+  flex-direction: column;
+  background: var(--tile-bg);
+  border: 1px solid var(--course-border);
+  border-radius: 16px;
+  padding: 22px;
+  color: var(--course-fg);
+  box-shadow: 0 1px 3px rgba(45, 41, 38, 0.07);
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile:hover {
+
+  transform: translateY(-3px);
+  border-color: var(--course-accent);
+  box-shadow: 0 8px 22px rgba(45, 41, 38, 0.12);
+  color: var(--course-fg);
+  text-decoration: none;
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile-soon {
+
+  cursor: default;
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile-soon:hover {
+
+  transform: none;
+  border-color: var(--course-border);
+  box-shadow: 0 1px 3px rgba(45, 41, 38, 0.07);
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile-emoji {
+
+  font-size: 34px;
+  line-height: 1;
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile-name {
+
+  color: var(--course-fg);
+  font-family: var(--ifm-heading-font-family);
+  font-size: 17px;
+  margin: 12px 0 6px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile-desc {
+
+  color: var(--course-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  flex: 1;
+  margin-bottom: 0;
+
+}
+
+html[data-theme='light'].theme-forest .ai-badge {
+
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--course-highlight);
+  color: var(--course-accent-ink);
+  margin: 10px 0 2px;
+  width: fit-content;
+
+}
+
+html[data-theme='light'].theme-forest .ai-enter {
+
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 10px;
+  color: var(--course-accent-ink);
+
+}
+
+html[data-theme='light'].theme-forest .ai-course-grid {
+
+  display: grid;
+  gap: 16px;
+  margin: 8px 0 20px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-course-card {
+
+  background: var(--course-card);
+  border: 1px solid var(--course-border);
+  border-radius: 14px;
+  padding: 22px;
+  transition: transform 0.15s, border-color 0.15s;
+
+}
+
+html[data-theme='light'].theme-forest .ai-course-card:hover {
+
+  transform: translateY(-2px);
+  border-color: var(--course-accent);
+
+}
+
+html[data-theme='light'].theme-forest .ai-course-head {
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-course-emoji {
+
+  font-size: 28px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-course-name {
+
+  font-size: 19px;
+  margin: 0;
+  font-family: var(--ifm-heading-font-family);
+
+}
+
+html[data-theme='light'].theme-forest .ai-badges {
+
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+
+}
+
+html[data-theme='light'].theme-forest .ai-course-card .ai-badge {
+
+  background: var(--course-highlight);
+  color: var(--course-accent-ink);
+  margin: 0;
+
+}
+
+html[data-theme='light'].theme-forest .ai-badge-dim {
+
+  background: var(--course-code-bg);
+  color: var(--course-muted);
+
+}
+
+html[data-theme='light'].theme-forest .ai-course-desc {
+
+  color: var(--course-muted);
+  font-size: 14px;
+  margin: 0 0 10px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-meta {
+
+  font-size: 12.5px;
+  color: var(--course-muted);
+  margin-bottom: 10px;
+  font-family: var(--ifm-font-family-monospace);
+
+}
+
+html[data-theme='light'].theme-forest .ai-chips {
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-chip {
+
+  font-size: 12px;
+  background: var(--course-code-bg);
+  color: var(--course-muted);
+  border-radius: 6px;
+  padding: 3px 8px;
+
+}
+
+/* 平台分口径 chip：虚线边框弱化视觉，与岗位/技能 chip 区分 */
+html[data-theme='light'].theme-forest .ai-chip--platform {
+
+  border: 1px dashed color-mix(in srgb, var(--course-muted) 45%, transparent);
+  background: transparent;
+
+}
+
+html[data-theme='light'].theme-forest .ai-cta {
+
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--course-accent-ink);
+  border-bottom: 1px solid color-mix(in srgb, var(--course-accent) 40%, transparent);
+
+}
+
+html[data-theme='light'].theme-forest .ai-cta:hover {
+
+  border-bottom-color: var(--course-accent);
+  text-decoration: none;
+  color: var(--course-accent);
+
+}
+
+html[data-theme='light'].theme-forest .ai-c-banner {
+
+  background: var(--hero-bg);        /* 与 hero 同款纸面卡片 */
+  color: var(--hero-fg);
+  border: 1px solid var(--course-border);
+  border-radius: 14px;
+  padding: 30px 28px;
+  margin: 24px 0 20px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-c-banner-title {
+
+  color: var(--hero-fg);
+  font-family: var(--ifm-heading-font-family);
+  font-size: 26px;
+  margin: 0 0 6px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-c-banner-desc {
+
+  color: color-mix(in srgb, var(--hero-fg) 72%, transparent);
+  font-size: 14.5px;
+  margin: 0;
+
+}
+
+html[data-theme='light'].theme-forest .ai-c-row {
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--course-card);
+  border: 1px solid var(--course-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  color: var(--course-fg);
+
+}
+
+html[data-theme='light'].theme-forest .ai-c-row:hover {
+
+  text-decoration: none;
+  border-color: var(--course-accent);
+  color: var(--course-fg);
+
+}
+
+html[data-theme='light'].theme-forest .ai-c-row-body {
+
+  display: flex;
+  flex-direction: column;
+
+}
+
+html[data-theme='light'].theme-forest .ai-c-row-title {
+
+  font-weight: 700;
+  font-size: 15.5px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-c-row-desc {
+
+  font-size: 13px;
+  color: var(--course-muted);
+
+}
+
+html[data-theme='light'].theme-forest .ai-c-row-go {
+
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--course-accent-ink);
+
+}
+
+html[data-theme='light'].theme-forest .ai-placeholder {
+
+  border: 2px dashed var(--course-border);
+  border-radius: 12px;
+  padding: 26px;
+  text-align: center;
+  color: var(--course-muted);
+  margin: 8px 0 20px;
+
+}
+
+/* ===== 课程视图：一级菜单课程名标题 ===== */
+html[data-theme='light'].theme-forest .menu-course-title {
+
+  margin: 6px 12px 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--course-border);
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--course-accent-ink);
+
+}
+
+
+/* ===== 课程卡片：「上次学到」高亮与继续学习 ===== */
+html[data-theme='light'].theme-forest .ai-tile-main {
+
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  color: var(--course-fg);
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile-main:hover {
+
+  color: var(--course-fg);
+  text-decoration: none;
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile-current {
+
+  border-color: var(--course-accent);
+
+}
+
+html[data-theme='light'].theme-forest .ai-tile-current:hover {
+
+  border-color: var(--course-accent);
+
+}
+
+html[data-theme='light'].theme-forest .ai-last-badge {
+
+  display: inline-block;
+  width: fit-content;
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--course-highlight);
+  color: var(--course-accent-ink);
+  margin-top: 10px;
+
+}
+
+html[data-theme='light'].theme-forest .ai-continue {
+
+  display: inline-block;
+  width: fit-content;
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 8px;
+  color: var(--course-accent-ink);
+  border-bottom: 1px solid color-mix(in srgb, var(--course-accent) 40%, transparent);
+
+}
+
+html[data-theme='light'].theme-forest .ai-continue:hover {
+
+  color: var(--course-accent);
+  border-bottom-color: var(--course-accent);
+  text-decoration: none;
+
+}
+
+
+/* ===== 岗位地图统计视图 ===== */
+html[data-theme='light'].theme-forest .js-stats {
+
+  margin: 28px 0 8px;
+
+}
+
+html[data-theme='light'].theme-forest .js-title {
+
+  font-family: var(--ifm-heading-font-family);
+  font-size: 24px;
+  margin: 0 0 6px;
+
+}
+
+html[data-theme='light'].theme-forest .js-sub {
+
+  color: var(--course-muted);
+  font-size: 14px;
+  margin-bottom: 16px;
+
+}
+
+html[data-theme='light'].theme-forest .js-sec-title {
+
+  font-size: 16px;
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--course-border);
+
+}
+
+html[data-theme='light'].theme-forest .js-note-plain {
+
+  display: inline-block;
+  color: var(--course-muted);
+  font-size: 12.5px;
+  margin: 4px 0;
+
+}
+
+html[data-theme='light'].theme-forest .js-tabs {
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 18px;
+
+}
+
+html[data-theme='light'].theme-forest .js-tab {
+
+  border: 1px solid var(--course-border);
+  background: var(--course-card);
+  color: var(--course-fg);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 13px;
+  cursor: pointer;
+
+}
+
+html[data-theme='light'].theme-forest .js-tab:hover {
+
+  border-color: var(--course-accent);
+
+}
+
+html[data-theme='light'].theme-forest .js-tab-active {
+
+  background: var(--course-highlight);
+  border-color: var(--course-accent);
+  color: var(--course-accent-ink);
+  font-weight: 700;
+
+}
+
+html[data-theme='light'].theme-forest .js-box-row {
+
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+
+}
+
+html[data-theme='light'].theme-forest .js-box-label {
+
+  flex: 0 0 84px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--course-accent-ink);
+  padding-top: 22px;
+
+}
+
+html[data-theme='light'].theme-forest .js-box-cells {
+
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  flex: 1;
+  padding-bottom: 4px;
+
+}
+
+html[data-theme='light'].theme-forest .js-city {
+
+  flex: 0 0 64px;
+  text-align: center;
+
+}
+
+html[data-theme='light'].theme-forest .js-city-name {
+
+  font-size: 12px;
+  color: var(--course-fg);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+
+}
+
+html[data-theme='light'].theme-forest .js-box {
+
+  position: relative;
+  height: 110px;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 26px,
+    var(--course-border) 26px,
+    var(--course-border) 27px
+  );
+  border-left: 1px solid var(--course-border);
+
+}
+
+html[data-theme='light'].theme-forest .js-box-whisker {
+
+  position: absolute;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--course-muted);
+
+}
+
+html[data-theme='light'].theme-forest .js-box-body {
+
+  position: absolute;
+  left: 12%;
+  width: 76%;
+  background: var(--course-accent);
+  opacity: 0.35;
+  border: 1px solid var(--course-accent);
+  border-radius: 3px;
+
+}
+
+html[data-theme='light'].theme-forest .js-box-median {
+
+  position: absolute;
+  left: 8%;
+  width: 84%;
+  height: 2px;
+  background: var(--course-accent-ink);
+
+}
+
+html[data-theme='light'].theme-forest .js-city-meta {
+
+  font-size: 11px;
+  color: var(--course-muted);
+  display: block;
+  margin-top: 4px;
+
+}
+
+html[data-theme='light'].theme-forest .js-city-empty {
+
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  color: var(--course-muted);
+  border: 1px dashed var(--course-border);
+  border-radius: 8px;
+  line-height: 1.6;
+
+}
+
+html[data-theme='light'].theme-forest .js-box-scale {
+
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--course-muted);
+  padding-top: 12px;
+  writing-mode: vertical-rl;
+
+}
+
+html[data-theme='light'].theme-forest .js-matrix {
+
+  border: 1px solid var(--course-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin-bottom: 8px;
+
+}
+
+html[data-theme='light'].theme-forest .js-matrix-head,
+html[data-theme='light'].theme-forest .js-matrix-row {
+
+  display: grid;
+  grid-template-columns: 150px repeat(5, 84px);
+  gap: 6px;
+  align-items: center;
+  min-width: 700px;
+
+}
+
+html[data-theme='light'].theme-forest .js-matrix-head {
+
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--course-muted);
+  margin-bottom: 8px;
+
+}
+
+html[data-theme='light'].theme-forest .js-matrix-corner {
+
+  font-size: 12px;
+  color: var(--course-muted);
+
+}
+
+html[data-theme='light'].theme-forest .js-matrix-row {
+
+  margin-bottom: 6px;
+  font-size: 13px;
+
+}
+
+html[data-theme='light'].theme-forest .js-matrix-cell {
+
+  text-align: center;
+  border-radius: 6px;
+  padding: 4px 0;
+  font-size: 12px;
+  color: var(--course-fg);
+  background: var(--course-code-bg);
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+}
+
+html[data-theme='light'].theme-forest .js-matrix-new {
+
+  background: var(--course-accent);
+  color: #fff;
+  font-weight: 700;
+
+}
+
+html[data-theme='light'].theme-forest .js-matrix-keep {
+
+  background: var(--course-highlight);
+  color: var(--course-accent-ink);
+
+}
+
+html[data-theme='light'].theme-forest .js-chips {
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+}
+
+html[data-theme='light'].theme-forest .js-chip {
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--course-border);
+  background: var(--course-card);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12.5px;
+
+}
+
+html[data-theme='light'].theme-forest .js-chip-count {
+
+  color: var(--course-muted);
+  font-size: 11px;
+
+}
+
+html[data-theme='light'].theme-forest .js-tag {
+
+  color: var(--course-accent-ink);
+  border-bottom: 1px solid color-mix(in srgb, var(--course-accent) 40%, transparent);
+
+}
+
+html[data-theme='light'].theme-forest .js-tag:hover {
+
+  color: var(--course-accent);
+  text-decoration: none;
+  border-bottom-color: var(--course-accent);
+
+}
+
+html[data-theme='light'].theme-forest .js-tag-plain {
+
+  color: var(--course-fg);
+  border-bottom: none;
+
+}
+
+html[data-theme='light'].theme-forest .js-intersect-row {
+
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+
+}
+
+html[data-theme='light'].theme-forest .js-intersect-label {
+
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--course-fg);
+
+}
+
+html[data-theme='light'].theme-forest .js-intersect-tags {
+
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+}
+
+
+/* 沉浸模式（仅 PC）：隐藏顶部导航栏与左侧菜单，内容占满页面 */
+html[data-theme='light'].theme-forest html.immersive .navbar {
+
+  display: none;
+
+}
+
+/* 侧栏用 visibility 隐藏：保留占位宽度，文档内容位置完全不动 */
+html[data-theme='light'].theme-forest html.immersive .theme-doc-sidebar-container {
+
+  visibility: hidden;
+
+}
+
+html[data-theme='light'].theme-forest .immersive-toggle {
+
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.5rem;
+  z-index: 1000;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--course-border);
+  background: var(--course-card);
+  color: var(--course-muted);
+  font-size: 1.15rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(45, 41, 38, 0.18);
+  transition: transform 0.15s, color 0.15s;
+
+}
+
+html[data-theme='light'].theme-forest .immersive-toggle:hover {
+
+  transform: translateY(-2px);
+  color: var(--course-accent-ink);
+
+}
+
+
+@media (max-width: 996px) {
+
+  html[data-theme='light'].theme-forest .immersive-toggle {
+
+    display: none;
+  
+}
+
+  html[data-theme='light'].theme-forest .ai-tiles {
+
+    grid-template-columns: 1fr 1fr;
+  
+}
+
+
+}
+
+@media (max-width: 640px) {
+
+  html[data-theme='light'].theme-forest .ai-tiles {
+
+    grid-template-columns: 1fr;
+  
+}
+
+
+}
+
+
+/* Forest 主题（仅 Python 框架课程文档页作用域），见 src/css/forest.css */
+
+
+/* ===== 岗位市场情报 /jobs/insights（多维 cube 视图） ===== */
+html[data-theme='light'].theme-forest .ji-root {
+
+  /* 序列色：A 合并快照（朱砂，站点品牌）；B 51job 月度（dataviz 参考色板 slot1 蓝，CVD/色度验证通过） */
+  --ji-series-a: #9d3b2c;
+  --ji-series-b: #2a78d6;
+  margin: 24px 0;
+
+}
+
+html[data-theme='light'].theme-forest [data-theme='dark'] .ji-root {
+
+  /* 深色步进遵循站点品牌（#e8855f）；亮度带略超验证器上限但区分度/CVD 全过，另有线型+形状+直标三重次编码 */
+  --ji-series-a: #e8855f;
+  --ji-series-b: #3987e5;
+
+}
+
+html[data-theme='light'].theme-forest .js-tab-n {
+
+  color: var(--course-muted);
+  font-size: 11px;
+  margin-left: 5px;
+  font-weight: 400;
+
+}
+
+html[data-theme='light'].theme-forest .ji-badge {
+
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--course-accent);
+  color: var(--course-accent-ink);
+  border-radius: 999px;
+  font-size: 11px;
+
+}
+
+
+/* 城市薪资总览 */
+html[data-theme='light'].theme-forest .ji-citychart {
+ margin: 10px 0 14px; 
+}
+
+html[data-theme='light'].theme-forest .ji-city-scale {
+ text-align: right; color: var(--course-muted); font-size: 11.5px; margin-bottom: 6px; 
+}
+
+html[data-theme='light'].theme-forest .ji-city-row {
+ display: flex; align-items: center; gap: 10px; margin: 8px 0; 
+}
+
+html[data-theme='light'].theme-forest .ji-city-label {
+ flex: none; width: 78px; font-size: 12.5px; font-weight: 700; color: var(--course-accent-ink); 
+}
+
+html[data-theme='light'].theme-forest .ji-city-items {
+ flex: 1; min-width: 0; 
+}
+
+html[data-theme='light'].theme-forest .ji-city-item {
+ display: flex; align-items: center; height: 30px; 
+}
+
+html[data-theme='light'].theme-forest .ji-city-name {
+ flex: none; width: 72px; padding-right: 8px; text-align: right; font-size: 12.5px; color: var(--course-fg); font-weight: 600; 
+}
+
+html[data-theme='light'].theme-forest .ji-city-track {
+ position: relative; flex: 1; height: 100%; border-bottom: 1px solid var(--course-border); 
+}
+
+html[data-theme='light'].theme-forest .ji-bar {
+ position: absolute; top: 8px; bottom: 8px; min-width: 6px; background: color-mix(in srgb, var(--course-accent) 16%, transparent); border-radius: 3px; 
+}
+
+html[data-theme='light'].theme-forest .ji-bar-body {
+ position: absolute; top: 3px; bottom: 3px; background: color-mix(in srgb, var(--course-accent) 46%, transparent); border-radius: 2px; 
+}
+
+html[data-theme='light'].theme-forest .ji-bar-median {
+ position: absolute; top: 0; bottom: 0; width: 2px; background: var(--course-accent); 
+}
+
+html[data-theme='light'].theme-forest .ji-bar-empty {
+ position: absolute; top: 6px; bottom: 6px; left: 2%; right: 2%; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--course-border); border-radius: 3px; color: var(--course-muted); font-size: 11px; 
+}
+
+html[data-theme='light'].theme-forest .ji-city-meta {
+ flex: none; width: 132px; padding-left: 8px; font-size: 11.5px; color: var(--course-muted); 
+}
+
+html[data-theme='light'].theme-forest .ji-tip {
+
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 6px 9px;
+  background: var(--course-card);
+  border: 1px solid var(--course-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(45, 41, 38, 0.14);
+  color: var(--course-fg);
+  font-size: 11.5px;
+  line-height: 1.7;
+  white-space: nowrap;
+
+}
+
+html[data-theme='light'].theme-forest .ji-bar:hover .ji-tip {
+ display: block; 
+}
+
+
+/* 经验分层柱状图 */
+html[data-theme='light'].theme-forest .ji-vchart {
+ position: relative; display: flex; gap: 12px; align-items: stretch; height: 200px; padding: 8px 4px 0; 
+}
+
+html[data-theme='light'].theme-forest .ji-vcol {
+ flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; 
+}
+
+html[data-theme='light'].theme-forest .ji-vbar {
+ width: 62%; max-width: 52px; background: color-mix(in srgb, var(--course-accent) 55%, transparent); border-radius: 4px 4px 0 0; min-height: 3px; 
+}
+
+html[data-theme='light'].theme-forest .ji-vbar-muted {
+ background: var(--course-border); 
+}
+
+html[data-theme='light'].theme-forest .ji-vval {
+ font-size: 11.5px; color: var(--course-fg); margin-bottom: 4px; 
+}
+
+html[data-theme='light'].theme-forest .ji-vval-muted {
+ color: var(--course-muted); 
+}
+
+html[data-theme='light'].theme-forest .ji-vn {
+ font-size: 11px; color: var(--course-muted); margin-top: 4px; 
+}
+
+html[data-theme='light'].theme-forest .ji-vname {
+ font-size: 12px; color: var(--course-fg); margin-top: 6px; 
+}
+
+html[data-theme='light'].theme-forest .ji-vscale {
+ position: absolute; top: 0; right: 0; color: var(--course-muted); font-size: 11px; 
+}
+
+
+/* 时间趋势 */
+html[data-theme='light'].theme-forest .ji-trend {
+ margin: 10px 0; 
+}
+
+html[data-theme='light'].theme-forest .ji-legend {
+ display: flex; flex-wrap: wrap; gap: 18px; margin: 8px 0 10px; font-size: 12.5px; color: var(--course-fg); 
+}
+
+html[data-theme='light'].theme-forest .ji-swatch {
+ display: inline-block; width: 20px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; 
+}
+
+html[data-theme='light'].theme-forest .ji-swatch-a {
+ background: var(--ji-series-a); 
+}
+
+html[data-theme='light'].theme-forest .ji-swatch-b {
+ background: var(--ji-series-b); 
+}
+
+html[data-theme='light'].theme-forest .ji-trend-svg {
+ width: 100%; height: auto; 
+}
+
+html[data-theme='light'].theme-forest .ji-grid {
+ stroke: var(--course-border); stroke-width: 1; 
+}
+
+html[data-theme='light'].theme-forest .ji-axis {
+ fill: var(--course-muted); font-size: 10.5px; 
+}
+
+html[data-theme='light'].theme-forest .ji-line-a {
+ stroke: var(--ji-series-a); stroke-width: 2; 
+}
+
+html[data-theme='light'].theme-forest .ji-line-b {
+ stroke: var(--ji-series-b); stroke-width: 2; 
+}
+
+html[data-theme='light'].theme-forest .ji-pt-a {
+ fill: var(--ji-series-a); 
+}
+
+html[data-theme='light'].theme-forest .ji-pt-b {
+ fill: var(--ji-series-b); 
+}
+
+html[data-theme='light'].theme-forest .ji-pt-dim {
+ opacity: 0.45; 
+}
+
+html[data-theme='light'].theme-forest .ji-pt-label {
+ fill: var(--course-accent-ink); font-size: 10.5px; 
+}
+
+html[data-theme='light'].theme-forest [data-theme='dark'] .ji-pt-label {
+ fill: var(--course-accent); 
+}
+
+
+/* 技能热度 */
+html[data-theme='light'].theme-forest .ji-heat {
+ display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; padding: 10px 0 4px; 
+}
+
+html[data-theme='light'].theme-forest .ji-heat-tag {
+ color: var(--course-accent-ink); font-weight: 600; 
+}
+
+html[data-theme='light'].theme-forest .ji-heat-tag:hover {
+ color: var(--course-accent); text-decoration: none; 
+}
+
+html[data-theme='light'].theme-forest .ji-heat-plain {
+ color: var(--course-fg); font-weight: 500; 
+}
+
+html[data-theme='light'].theme-forest .ji-heat-n {
+ color: var(--course-muted); font-size: 10.5px; margin-left: 3px; font-weight: 400; 
+}
+
+
+/* 课程对照参考 */
+html[data-theme='light'].theme-forest .ji-course-ref {
+ margin: 26px 0; padding: 14px 16px; background: var(--course-code-bg); border: 1px solid var(--course-border); border-radius: 10px; 
+}
+
+html[data-theme='light'].theme-forest .ji-course-ref .js-sec-title {
+ margin-top: 0; 
+}
+
+html[data-theme='light'].theme-forest .ji-ref-table td {
+ padding: 4px 14px 4px 0; font-size: 13px; vertical-align: top; 
+}
+
+
+/* 探索器 */
+html[data-theme='light'].theme-forest .ji-filters {
+ display: flex; flex-direction: column; gap: 9px; margin: 12px 0 4px; 
+}
+
+html[data-theme='light'].theme-forest .ji-filter {
+ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; 
+}
+
+html[data-theme='light'].theme-forest .ji-filter-label {
+ flex: none; width: 44px; color: var(--course-muted); font-size: 12.5px; 
+}
+
+html[data-theme='light'].theme-forest .ji-filter-chips {
+ display: flex; flex-wrap: wrap; gap: 6px; 
+}
+
+html[data-theme='light'].theme-forest .ji-fchip {
+ border: 1px solid var(--course-border); background: var(--course-card); color: var(--course-fg); border-radius: 999px; padding: 3px 11px; font-size: 12.5px; cursor: pointer; 
+}
+
+html[data-theme='light'].theme-forest .ji-fchip:hover {
+ border-color: var(--course-accent); 
+}
+
+html[data-theme='light'].theme-forest .ji-fchip-active {
+ background: var(--course-accent); border-color: var(--course-accent); color: #fffdf9; 
+}
+
+html[data-theme='light'].theme-forest [data-theme='dark'] .ji-fchip-active {
+ color: #2d2926; 
+}
+
+html[data-theme='light'].theme-forest .ji-select {
+ border: 1px solid var(--course-border); background: var(--course-card); color: var(--course-fg); border-radius: 8px; padding: 4px 8px; font-size: 12.5px; 
+}
+
+html[data-theme='light'].theme-forest .ji-tiles {
+ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0 10px; 
+}
+
+html[data-theme='light'].theme-forest .ji-tile {
+ background: var(--course-card); border: 1px solid var(--course-border); border-radius: 10px; padding: 12px 14px; 
+}
+
+html[data-theme='light'].theme-forest .ji-tile-label {
+ color: var(--course-muted); font-size: 12px; 
+}
+
+html[data-theme='light'].theme-forest .ji-tile-value {
+ font-size: 22px; font-weight: 700; margin: 4px 0 2px; color: var(--course-fg); 
+}
+
+html[data-theme='light'].theme-forest .ji-tile-sub {
+ color: var(--course-muted); font-size: 11.5px; 
+}
+
+html[data-theme='light'].theme-forest .ji-tile-warn .ji-tile-value {
+ color: var(--course-muted); font-size: 14px; font-weight: 400; 
+}
+
+html[data-theme='light'].theme-forest .ji-dist-grid {
+ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 6px 28px; margin: 12px 0; 
+}
+
+html[data-theme='light'].theme-forest .ji-dist-title {
+ font-size: 13px; margin: 6px 0 4px; color: var(--course-fg); 
+}
+
+html[data-theme='light'].theme-forest .ji-dist-row {
+ display: flex; align-items: center; height: 24px; 
+}
+
+html[data-theme='light'].theme-forest .ji-dist-label {
+ flex: none; width: 96px; font-size: 12px; color: var(--course-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
+}
+
+html[data-theme='light'].theme-forest .ji-dist-track {
+ position: relative; flex: 1; height: 100%; border-bottom: 1px solid var(--course-border); 
+}
+
+html[data-theme='light'].theme-forest .ji-dist-bar {
+ position: absolute; top: 6px; bottom: 6px; left: 0; background: color-mix(in srgb, var(--course-accent) 42%, transparent); border-radius: 2px; 
+}
+
+html[data-theme='light'].theme-forest .ji-dist-meta {
+ flex: none; width: 118px; padding-left: 8px; font-size: 11px; color: var(--course-muted); 
+}
+
+
+/* ==== main 分支 forest.css（守卫版） ==== */
+/**
  * Forest 主题 —— 全站所有课程文档页（2026-09-23 用户决策：应用到所有课程及后续课程，不再限定框架课）。
  * 亮色下对齐 Typora Forest 主题（https://theme.typora.io/theme/Forest/）：
  * 色板/字体栈/代码块/表格/引用 100% 一致；不含 Typora 特有装饰（h1 居中双下划线、H2~H6 标签）。
@@ -7,68 +1567,111 @@
  * （2026-10-02 修：此前只是注释声称不受影响，实际无守卫，暗色下深字压深底、正文几乎不可读。
  *   新增规则请同样带守卫。）
  */
-html[data-theme='light'] .forest-scope {
+html[data-theme='light'].theme-forest .forest-scope {
+
   --forest-accent: #00997B;
+
 }
 
+
 /* 作用域：文档 ID 含 python-framework 的页面 */
-html[data-theme='light'] .docs-wrapper p,
-html[data-theme='light'] .docs-wrapper li {
+html[data-theme='light'].theme-forest .docs-wrapper p,
+html[data-theme='light'].theme-forest .docs-wrapper li {
+
   color: #363C42;
   line-height: 1.6;
+
 }
-html[data-theme='light'] .docs-wrapper {
+
+html[data-theme='light'].theme-forest .docs-wrapper {
+
   font-family: 'SourceHanSansSC', 'JetBrains Mono', -apple-system, sans-serif;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown h1 {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown h1 {
+
   color: rgba(0, 52, 68, 0.9);
   font-weight: 900;
   font-size: 2.1rem;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown h2 {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown h2 {
+
   font-size: 1.7rem;
   font-weight: 800;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown h3 {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown h3 {
+
   font-size: 1.4rem;
   font-weight: 800;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown h2,
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown h3,
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown h4 {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown h2,
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown h3,
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown h4 {
+
   color: #333444;
   line-height: 2;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown h5 {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown h5 {
+
   color: #00997B;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown h6 {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown h6 {
+
   color: rgba(0, 153, 123, 0.838);
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown a {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown a {
+
   color: #00997B;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown a:hover {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown a:hover {
+
   border-bottom: 1px solid;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown code {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown code {
+
   background: #f3f3f3;
   color: #00769A;
   font-weight: 700;
   border-radius: 6px;
   padding: 0 4px;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown mark {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown mark {
+
   background: #FFF3F3;
   color: #FF2F2F;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown blockquote {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown blockquote {
+
   position: relative;
   background-color: rgba(0, 153, 123, 0.05);
   border-radius: 6px;
   padding: 1rem;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown blockquote::before {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown blockquote::before {
+
   content: '';
   position: absolute;
   top: 0;
@@ -77,94 +1680,227 @@ html[data-theme='light'] .docs-wrapper .theme-doc-markdown blockquote::before {
   width: 0.3rem;
   background: #00997B;
   border-radius: 6px 0 0 6px;
-}
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown blockquote p {
-  color: #81888D;
-}
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown hr {
-  border-top: 1px dashed #00997B;
-}
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown table {
-  min-width: 80%;
-}
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown table th,
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown table td {
-  border: 1px solid #DADCDE;
-  padding: 6px 13px;
-}
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown table thead {
-  font-weight: 900;
-  background-color: rgba(0, 153, 123, 0.03);
-}
-html[data-theme='light'] .docs-wrapper .theme-doc-markdown table tr:nth-child(2n) {
-  background-color: rgba(0, 153, 123, 0.03);
-}
-html[data-theme='light'] .docs-wrapper ::selection {
-  background: rgba(0, 153, 123, 0.2);
+
 }
 
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown blockquote p {
+
+  color: #81888D;
+
+}
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown hr {
+
+  border-top: 1px dashed #00997B;
+
+}
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown table {
+
+  min-width: 80%;
+
+}
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown table th,
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown table td {
+
+  border: 1px solid #DADCDE;
+  padding: 6px 13px;
+
+}
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown table thead {
+
+  font-weight: 900;
+  background-color: rgba(0, 153, 123, 0.03);
+
+}
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-doc-markdown table tr:nth-child(2n) {
+
+  background-color: rgba(0, 153, 123, 0.03);
+
+}
+
+html[data-theme='light'].theme-forest .docs-wrapper ::selection {
+
+  background: rgba(0, 153, 123, 0.2);
+
+}
+
+
 /* Forest 代码块：深绿底 + token 配色（映射自 code-mirror.css） */
-html[data-theme='light'] .docs-wrapper .theme-code-block,
-html[data-theme='light'] .docs-wrapper pre {
+html[data-theme='light'].theme-forest .docs-wrapper .theme-code-block,
+html[data-theme='light'].theme-forest .docs-wrapper pre {
+
   background: #003444;
   border-radius: 6px;
+
 }
-html[data-theme='light'] .docs-wrapper .theme-code-block code,
-html[data-theme='light'] .docs-wrapper pre code {
+
+html[data-theme='light'].theme-forest .docs-wrapper .theme-code-block code,
+html[data-theme='light'].theme-forest .docs-wrapper pre code {
+
   color: #EEFFFF;
   background: transparent;
   font-weight: 400;
+
 }
+
 
 /* 代码块标题栏（2026-10-02 修）：Docusaurus 的 codeBlockTitle 只设内边距/边框，
    不设 background/color —— 于是标题栏露出容器底色（下面那条 #003444），文字却是继承来的深色，
    形成「深底深字」看不清。这里显式给两种代码块各自的标题底色与字色。 */
 
 /* ① 普通代码块（非 python/sql，未进 CodeRunner）：与深绿容器同色系的标题条 + 浅字 */
-html[data-theme='light'] .docs-wrapper .theme-code-block > [class*='codeBlockTitle'] {
+html[data-theme='light'].theme-forest .docs-wrapper .theme-code-block > [class*='codeBlockTitle'] {
+
   background: rgba(255, 255, 255, 0.07);
   color: #EEFFFF;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+
 }
+
 
 /* ② CodeRunner 包裹的 python/sql 代码块是纸面主题（--cr-bg / --cr-fg 随亮暗切换）：
    标题栏跟随纸面，避免露出容器的深绿。权重高于上一条，故 CodeRunner 块以本条为准。 */
-html[data-theme='light'] .docs-wrapper .cr .theme-code-block > [class*='codeBlockTitle'] {
+html[data-theme='light'].theme-forest .docs-wrapper .cr .theme-code-block > [class*='codeBlockTitle'] {
+
   background: var(--cr-bg);
   color: var(--cr-fg);
   border-bottom: 1px solid var(--course-border);
+
 }
-html[data-theme='light'] .docs-wrapper .token.keyword {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.keyword {
+
   color: #C792EA;
+
 }
-html[data-theme='light'] .docs-wrapper .token.string {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.string {
+
   color: #C3E88D;
+
 }
-html[data-theme='light'] .docs-wrapper .token.number,
-html[data-theme='light'] .docs-wrapper .token.boolean {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.number,
+html[data-theme='light'].theme-forest .docs-wrapper .token.boolean {
+
   color: #F77669;
+
 }
-html[data-theme='light'] .docs-wrapper .token.function {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.function {
+
   color: #00AEC4;
+
 }
-html[data-theme='light'] .docs-wrapper .token.comment {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.comment {
+
   color: #AEBBC2;
+
 }
-html[data-theme='light'] .docs-wrapper .token.builtin {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.builtin {
+
   color: #DECB6B;
+
 }
-html[data-theme='light'] .docs-wrapper .token.tag {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.tag {
+
   color: #80CBC4;
+
 }
-html[data-theme='light'] .docs-wrapper .token.attr-name,
-html[data-theme='light'] .docs-wrapper .token.property {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.attr-name,
+html[data-theme='light'].theme-forest .docs-wrapper .token.property {
+
   color: #80CBAE;
+
 }
-html[data-theme='light'] .docs-wrapper .token.operator,
-html[data-theme='light'] .docs-wrapper .token.punctuation {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.operator,
+html[data-theme='light'].theme-forest .docs-wrapper .token.punctuation {
+
   color: #E9EDED;
+
 }
-html[data-theme='light'] .docs-wrapper .token.class-name,
-html[data-theme='light'] .docs-wrapper .token.parameter {
+
+html[data-theme='light'].theme-forest .docs-wrapper .token.class-name,
+html[data-theme='light'].theme-forest .docs-wrapper .token.parameter {
+
   color: #82B1FF;
+
+}
+
+
+
+/* ==== 森林模式代码高亮：覆盖为 main 分支 paperInkTheme 配色 ====
+   prism 主题由 prism-react-renderer 内联注入（不随 html class 切换），
+   当前分支全局注入 qingjianTheme（淡绿底/墨绿关键词），
+   main 分支注入 paperInkTheme（暖纸底 #f8f5ed / 墨字 #2d2926 / 朱砂关键词 #9d3b2c）。
+   此处以 !important 覆盖内联样式，使森林模式下代码块与 main 分支完全一致。
+
+   --prism-background-color / --prism-color 由 prism-react-renderer 以内联 style
+   注入在 .codeBlockContainer 上（青简 #eef5e8 / #112238），行号列 .codeLineNumber
+   经 --ifm-pre-background → var(--prism-background-color) 取到绿底，标题栏与容器
+   同样引用该变量。此处以 !important 重定义变量层，令三处统一回到纸底墨字，
+   等价于直接换用 main 分支的 paperInkTheme 颜色变量。 */
+html[data-theme='light'].theme-forest [class*='codeBlockContainer'] {
+  --prism-background-color: #f8f5ed !important;
+  --prism-color: #2d2926 !important;
+}
+html[data-theme='light'].theme-forest pre.prism-code {
+  color: #2d2926 !important;
+  background-color: #f8f5ed !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.comment,
+html[data-theme='light'].theme-forest .prism-code .token.prolog,
+html[data-theme='light'].theme-forest .prism-code .token.doctype,
+html[data-theme='light'].theme-forest .prism-code .token.cdata {
+  color: #73695c !important;
+  font-style: italic !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.punctuation {
+  color: #6b6259 !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.keyword,
+html[data-theme='light'].theme-forest .prism-code .token.atrule,
+html[data-theme='light'].theme-forest .prism-code .token.selector,
+html[data-theme='light'].theme-forest .prism-code .token.tag,
+html[data-theme='light'].theme-forest .prism-code .token.important,
+html[data-theme='light'].theme-forest .prism-code .token.regex {
+  color: #9d3b2c !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.string,
+html[data-theme='light'].theme-forest .prism-code .token.char,
+html[data-theme='light'].theme-forest .prism-code .token.attr-value,
+html[data-theme='light'].theme-forest .prism-code .token.url {
+  color: #1e6e5c !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.number,
+html[data-theme='light'].theme-forest .prism-code .token.boolean,
+html[data-theme='light'].theme-forest .prism-code .token.symbol {
+  color: #2b5876 !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.function,
+html[data-theme='light'].theme-forest .prism-code .token.class-name,
+html[data-theme='light'].theme-forest .prism-code .token.attr-name {
+  color: #7a5200 !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.builtin {
+  color: #7c2d21 !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.operator,
+html[data-theme='light'].theme-forest .prism-code .token.entity {
+  color: #6b6259 !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.inserted {
+  color: #2e7d32 !important;
+}
+html[data-theme='light'].theme-forest .prism-code .token.deleted {
+  color: #c0392b !important;
 }

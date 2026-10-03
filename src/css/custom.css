@@ -3,7 +3,9 @@
  * 配色重构（2026-09-07）：整体对齐「互动教学课程」风格（teach/assets/course.css）
  * 亮色改造（style-qingjian）：对齐青简输入法站（qingjian.app）色板——
  *   薄荷绿底、墨绿主色（#336f33 / #285a28）、深蓝墨正文（#112238）、灰蓝次要文字、淡绿线条；
- *   暗色保留牛皮纸夜读方案不动，forest.css 不动。
+ *   暗色保留牛皮纸夜读方案不动；森林绿主题（forest.css，@import 见文件末尾）
+ *   自 2026-10-02 起为三态下拉可选主题，仅 html[data-theme='light'].theme-forest 时生效，
+ *   青简亮色下文档页回落本文件薄荷绿青简样式。
  */
 
 /* KaTeX 数学公式样式与字体（本地打包，不走 CDN；对应 docusaurus.config.ts 的 remark-math/rehype-katex） */
@@ -183,9 +185,24 @@
   border-left: 3px solid var(--course-accent);
 }
 
-/* 侧边栏：墨绿划线 */
+/* 侧边栏：墨绿划线 + 选中加深 */
 .menu__link--active {
-  border-right: 2px solid var(--course-accent);
+  border-right: 3px solid var(--course-accent);
+  background-color: color-mix(in srgb, var(--course-accent) 14%, #ffffff);
+  font-weight: 600;
+}
+[data-theme='dark'] .menu__link--active {
+  background-color: color-mix(in srgb, var(--course-accent) 16%, #241f16);
+  border-right-color: #c8a165;
+}
+
+/* 右侧目录（TOC）：当前激活项加粗 */
+.table-of-contents__link--active {
+  font-weight: 600;
+  color: var(--course-accent);
+}
+[data-theme='dark'] .table-of-contents__link--active {
+  color: #c8a165;
 }
 
 /* ===== 代码块：淡绿底 + 淡绿边 + 轻抬影 ===== */
@@ -1049,4 +1066,48 @@ html[data-theme='light'] .bamboo-pos-4 .bamboo-img {
 /* 暗色模式（牛皮纸夜读）：隐藏竹林层 */
 [data-theme='dark'] .bamboo-grove {
   display: none;
+}
+
+/* ===== 主题三态下拉（navbar custom-theme-select）===== */
+.navbar .theme-select {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1px solid var(--course-border);
+  border-radius: 6px;
+  background-color: var(--course-card);
+  color: var(--course-fg);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  padding: 6px 26px 6px 10px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23788395' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+  background-size: 12px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.navbar .theme-select:hover {
+  border-color: var(--course-accent);
+}
+.navbar .theme-select:focus-visible {
+  outline: 2px solid var(--course-accent);
+  outline-offset: 2px;
+}
+/* 夜读暗色：牛皮纸系边框与底色 */
+[data-theme='dark'] .navbar .theme-select {
+  border-color: #4a4234;
+  background-color: #241f16;
+  color: #eae3d2;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23c8a165' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+[data-theme='dark'] .navbar .theme-select:hover {
+  border-color: #c8a165;
+}
+/* 移动端窄导航：略收紧内边距，避免挤压搜索按钮 */
+@media (max-width: 996px) {
+  .navbar .theme-select {
+    padding: 5px 24px 5px 8px;
+    font-size: 0.85rem;
+  }
 }

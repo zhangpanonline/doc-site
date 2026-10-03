@@ -142,6 +142,15 @@ document.title='文档';
 var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[i].remove();
 })();`,
     },
+    {
+      // 主题三态首屏同步（与 src/theme/NavbarItem/ThemeSelect.jsx 配合）：
+      // 在 <head> 解析阶段根据 localStorage 的 site-theme 提前设置 html 的
+      // data-theme 与 theme-forest class，避免水合前闪烁；兼容旧值
+      // theme=light→qingjian、theme=dark→night；与沉浸模式脚本互不干扰。
+      tagName: 'script',
+      attributes: {},
+      innerHTML: `(function(){try{var t=localStorage.getItem('site-theme');if(!t){var o=localStorage.getItem('theme');t=(o==='dark')?'night':'qingjian';}var d=document.documentElement;d.setAttribute('data-theme',t==='night'?'dark':'light');if(t==='forest'){d.classList.add('theme-forest');}else{d.classList.remove('theme-forest');}}catch(e){}})();`,
+    },
   ],
 
   presets: [
@@ -171,6 +180,10 @@ var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[
     ],
   ],
   themeConfig: {
+    // 主题切换由自定义三态下拉（navbar custom-theme-select）接管，隐藏 Docusaurus 原生明暗按钮
+    colorMode: {
+      disableSwitch: true,
+    },
     tableOfContents: {
       minHeadingLevel: 2,
       maxHeadingLevel: 6,
@@ -225,6 +238,13 @@ var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[
         {
           // AI 搜索（组件在 src/components/AiSearch，类型注册于 src/theme/NavbarItem/ComponentTypes.js）
           type: 'custom-ai-search',
+          position: 'right',
+        },
+        {
+          // 主题三态下拉（青简亮 / 夜读暗 / 森林亮；组件 src/theme/NavbarItem/ThemeSelect.jsx，
+          // 类型注册于 src/theme/NavbarItem/ComponentTypes.js；原生明暗按钮由
+          // themeConfig.colorMode.disableSwitch 隐藏）
+          type: 'custom-theme-select',
           position: 'right',
         },
       ],
