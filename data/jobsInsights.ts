@@ -28,7 +28,7 @@ export const insightExpBuckets = ['应届及1年内', '1-3年', '3-5年', '5-10�
 export const insightDegBuckets = ['本科', '大专', '硕士及以上', '不限及其他'] as const;
 export const insightSizeBuckets = ['0-20人', '20-99人', '100-499人', '500-999人', '1000-9999人', '10000人以上', '未收录'] as const;
 export const insightDomains = ['软件与互联网', '人工智能', '智能硬件与半导体', '制造/汽车/能源', '金融', '企业服务', '电商与生活服务', '物流与贸易', '教育与培训', '医疗健康', '其他', '未收录'] as const;
-export const insightPlatforms = ['boss', 'job51'] as const;
+export const insightPlatforms = ['boss', 'job51', 'liepin'] as const;
 
 export const unitCategories: Record<string, string[]> = {
   'agents': ['AI 应用', 'Python 工程', '算法'],
