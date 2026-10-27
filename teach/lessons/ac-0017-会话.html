@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>会话</h1>
+      <h1 id="会话">会话</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/会话">17.会话</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清「模型 API 无状态」与「会话对象」的关系：多轮对话靠的是每轮把历史消息整条重发</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「无状态 API → 会话对象 → 持久化与成本」这条线过一遍——细节都在《17.会话》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>从「两次独立调用」到「一个会话」</h3>
+        <h3 id="从两次独立调用到一个会话">从「两次独立调用」到「一个会话」</h3>
         <ul class="pitfall-list">
           <li><strong>问题出在哪</strong>：课件先演示两次独立调用——第 1 次发「uv是什么？」，第 2 次只发 system +「如何安装？」。模型服务端的 Chat API 是<strong>无状态</strong>的：它不记得上一轮，所以它根本不知道「如何安装」安装的是什么</li>
           <li><strong>会话写法</strong>：<code>session = Session()</code> → <code>add_message(system)</code> → <code>add_message(user: uv是什么？)</code> → <code>model.invoke_stream(session)</code>；第二轮只需再 <code>add_message(user: 如何安装？)</code>，整条历史会自动带上</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3><code>model.py</code> 的双入口与「自动回写」</h3>
+        <h3 id="modelpy-的双入口与自动回写"><code>model.py</code> 的双入口与「自动回写」</h3>
         <ul class="pitfall-list">
           <li><strong>参数的双重身份</strong>：<code>def invoke(self, messages: list[dict] | Session)</code> 与 <code>invoke_stream</code> 同一个签名——先 <code>if isinstance(messages, Session)</code>，把 <code>session</code> 记下来，再把 <code>messages = session.messages</code> 抽出来发给 API</li>
           <li><strong><code>invoke</code> 的回写</strong>：<code>session.add_message(response.choices[0].message.to_dict())</code>——直接把响应的消息对象转成 dict 存回去</li>
@@ -56,7 +56,7 @@
       </div>
 
       <div class="card">
-        <h3>持久化：<code>save</code> / <code>load</code> 与两条代价</h3>
+        <h3 id="持久化save--load-与两条代价">持久化：<code>save</code> / <code>load</code> 与两条代价</h3>
         <ul class="pitfall-list">
           <li><strong><code>save</code></strong>：目录固定为<strong>模块同级</strong>的 <code>sessions</code>（<code>Path(__file__).parent / "sessions"</code>），<code>mkdir(parents=True, exist_ok=True)</code> 后写 <code>f"{self.id}.json"</code>，内容 <code>{"id": …, "messages": …}</code>，用 <code>json.dump(..., ensure_ascii=False, indent=2)</code> 保持中文可读</li>
           <li><strong><code>load</code></strong>：<code>@classmethod</code>，读 <code>{session_id}.json</code>；先 <code>cls()</code> 造实例（构造函数会先生成一个新 uuid4），再用文件里的 <code>data["id"]</code> 与 <code>data["messages"]</code> 覆盖——所以「会话 id 是持久身份，不由构造函数决定」</li>
@@ -70,10 +70,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《17.会话》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 本章 <code>Session</code> 的会话 id 是怎么来的？</div>
@@ -107,7 +107,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. <code>Session.load(session_id)</code> 这个 classmethod 具体做了什么？</div>
@@ -141,7 +141,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 有人把本章调用简写成：先 <code>resp = model.invoke_stream(session)</code>，紧接着 <code>session.add_message({"role": "assistant", "content": "我来整理一下"})</code>，然后从不迭代 <code>resp</code>。后果是？</div>
@@ -177,7 +177,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -230,7 +230,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/Prompt_Caching101.ipynb">OpenAI Cookbook《Prompt Caching 101》</a> · <a href="https://raw.githubusercontent.com/openai/openai-agents-python/main/docs/sessions/index.md">OpenAI Agents SDK Sessions 官方文档</a> · <a href="https://docs.python.org/3/tutorial/classes.html#generators">Python 官方教程 Generators</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/会话速查表.html">会话速查表</a>——Session 骨架、双入口调用矩阵、缓存与成本三笔账一页装下，建议打印。</li>

@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Python 框架</p>
-      <h1>测试框架</h1>
+      <h1 id="测试框架">测试框架</h1>
       <p class="lesson-sub">配合《<a href="/agents/python-framework/测试框架">11.测试框架</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出测试框架的三个价值：防回归、保契约、提效率</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《11.测试框架》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>三价值 + 三件套</h3>
+        <h3 id="三价值--三件套">三价值 + 三件套</h3>
         <ul class="pitfall-list">
           <li><strong>防回归</strong>：改一处坏一片，没测试不敢重构</li>
           <li><strong>保契约</strong>：契约即承诺，测试锁死预期输入输出</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>conftest.py 生命周期（课件）</h3>
+        <h3 id="conftestpy-生命周期课件">conftest.py 生命周期（课件）</h3>
         <ul class="pitfall-list">
           <li><strong>session 开始</strong>：连 postgres 库 → 杀掉旧连接 → DROP/CREATE 独立测试库 duyi_test_db → alembic upgrade head → 起真实服务器（18000 端口，等 /docs 就绪）</li>
           <li><strong>每个测试后</strong>：autouse 的 cleanup_db 按 sorted_tables 倒序 TRUNCATE ... RESTART IDENTITY CASCADE</li>
@@ -55,10 +55,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《11.测试框架》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 课件「为什么需要测试框架」的三个理由？</div>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. 为什么测试用独立的 duyi_test_db 而不是开发库？</div>
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 测试断言里为什么同时检查 code 和 status_code？</div>
@@ -162,7 +162,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -215,7 +215,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.pytest.org/en/stable/">pytest 官方文档</a> · <a href="https://fastapi.tiangolo.com/tutorial/testing/">FastAPI 官方：Testing</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/测试框架速查表.html">测试框架速查表</a>——三件套、conftest 生命周期、测试模式一页装下，建议打印。</li>

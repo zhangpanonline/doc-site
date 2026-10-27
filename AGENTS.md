@@ -44,6 +44,7 @@
 
 - 结构：`MISSION.md` / `RESOURCES.md` / `NOTES.md` / `lessons/` / `assets/` / `reference/`；课程受众兼顾网站读者与用户自己（中文内容）。
 - **发布同步**：改完 `teach/lessons|assets|reference` 后必须重新复制到 `static/teach/` 才随站点发布；入口链接指向 `/teach/lessons/NNNN-章名.html`。
+- **课页标题 id 由构建期脚本注入，不要手改**：`scripts/inject-lesson-anchors.mjs` 给 `teach/lessons/*.html` 的 h1–h6 写 `id`（121 个课页 1388 个），再复制到 `static/teach/lessons/`；挂在 `pnpm build` 第一步（必须在建索引之前跑，索引读的就是 static 侧）。2026-10-27 之前标题没有 id，搜索结果带 `#小节锚点` 点进去只是打开页面、不滚动，1267 个课页 chunk 全部受影响。slug 规则在 `scripts/lib/search-text.mjs`，索引脚本与注入脚本**共用同一份**——新增/改写标题后重跑 build 即可，不要手写 id。
 - **面试题规范**：`teach/INTERVIEW-TEMPLATE.md` 是权威规范（5 类题型、弹框单题、用户自判、题数弹性）；新课程在 LESSONS 表登记；批量改造引擎 `teach/tools/rewrite_interview.py`（幂等）。
 - **题源协议 B（强制默认）**：所有新面试题必须实际联网检索到来源（官方文档 FAQ > 公司技术博客 > 面经平台），标注链接+检索日期+层级，禁止纯自创。
 - **代码必须实测运行通过**：Python ≥ 3.12，写 verify 脚本跑通再发布。

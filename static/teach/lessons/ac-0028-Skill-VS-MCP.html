@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Skill VS MCP</h1>
+      <h1 id="skill-vs-mcp">Skill VS MCP</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Skill-VS-MCP">28.Skill VS MCP</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 Skill 与 MCP 的关系——课件原话「完全是两个东西」，为什么还要放一起比</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「为什么这两个东西会被放在一起比、比出来的差异怎么用」这条线过一遍——细节都在《28.Skill VS MCP》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>共同点：标准、社区、体验重叠</h3>
+        <h3 id="共同点标准社区体验重叠">共同点：标准、社区、体验重叠</h3>
         <ul class="pitfall-list">
           <li><strong>前提</strong>：Skill 和 MCP <strong>完全是两个东西</strong>；它们之所以放到一起讨论，是因为在<strong>使用感官上</strong>有一些共同点</li>
           <li><strong>标准化</strong>：无论是 Skill 还是 MCP，都有各自的<strong>事实标准</strong>——Skill 侧是 <code>SKILL.md</code> 那套目录与 frontmatter 约定，MCP 侧是协议规范</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>定位差异：谁来做 VS 怎么做</h3>
+        <h3 id="定位差异谁来做-vs-怎么做">定位差异：谁来做 VS 怎么做</h3>
         <ul class="pitfall-list">
           <li><strong>课件原话</strong>：<strong>MCP 告诉模型「谁来做」，Skill 告诉模型「怎么做」</strong></li>
           <li>读法：MCP 提供的是一个已经实现好、可以确定性执行的<strong>外部执行者</strong>（工具/数据源通过标准协议暴露）；Skill 提供的是让模型自己动手时的<strong>方法与流程知识</strong></li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>差异表：八个维度（背下来就能答题）</h3>
+        <h3 id="差异表八个维度背下来就能答题">差异表：八个维度（背下来就能答题）</h3>
         <table class="cmp-table">
           <tr><th>维度</th><th>Skill</th><th>MCP</th></tr>
           <tr><td>上下文消耗（未命中）</td><td>低</td><td>高 <em>（可通过渐进式披露解决）</em></td></tr>
@@ -75,7 +75,7 @@
       </div>
 
       <div class="card">
-        <h3>最佳实践：MCP 定义底层工具，Skill 定义业务流程</h3>
+        <h3 id="最佳实践mcp-定义底层工具skill-定义业务流程">最佳实践：MCP 定义底层工具，Skill 定义业务流程</h3>
         <ul class="pitfall-list">
           <li><strong>分层判据</strong>：MCP 负责实现<strong>底层工具</strong>——文件读写、命令执行、网络搜索、接口搜索与调用、代码执行，以及<strong>其他对确定性、安全性要求高的操作</strong></li>
           <li><strong>Skill 负责定义业务流程</strong>——机票怎么定、行程怎么规划；退货能不能退、怎么退；怎么介绍产品；怎么成交，以及<strong>其他对灵活性、专业性要求高的流程</strong></li>
@@ -85,10 +85,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《28.Skill VS MCP》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 课件对 Skill 与 MCP 关系的定位是？</div>
@@ -122,7 +122,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 关于「上下文消耗」，课件差异表给出的组合是？</div>
@@ -156,7 +156,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. 某客服 Agent 同时挂了「退货 Skill」和「订单 MCP」。团队抱怨：模型经常不退就直接按自己理解编流程答复用户，甚至答应不该答应的事。按本章的差异表与最佳实践，最合理的整改是？</div>
@@ -192,7 +192,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -245,7 +245,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/code-execution-with-mcp">Anthropic《Code execution with MCP: Building more efficient agents》</a>（MCP 上下文消耗与渐进式披露的第一手数据） · <a href="https://modelcontextprotocol.io/docs/learn/server-concepts">MCP 官方文档 Understanding MCP servers</a>（Tools / Resources / Prompts 三件套与「谁控制」） · <a href="https://agentskills.io/specification">Agent Skills 规范</a>（Skill 目录与 <code>SKILL.md</code> frontmatter 约束）</li>
         <li><strong>打印参考</strong>：<a href="../reference/Skill-VS-MCP速查表.html">Skill-VS-MCP速查表</a>——八维差异表、定位一句话与分层最佳实践一页装下，建议打印。</li>

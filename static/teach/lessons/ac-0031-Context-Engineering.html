@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Context Engineering</h1>
+      <h1 id="context-engineering">Context Engineering</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Context-Engineering">31.Context Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清「提示词工程 → 上下文工程」这次提法的变化，以及上下文工程自己的两个关注点：<strong>编排</strong>与<strong>治理</strong></li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「为什么难 → 难在哪 → 工程上管什么」这条线过一遍——细节都在《31.Context Engineering》里，测验和面试会考。本章是取舍，不是清单：四类取舍（放什么、留多久、怎么压缩、排在哪）背后是同一件事——<strong>注意力的预算有限</strong>。</p>
 
       <div class="card">
-        <h3>从「写提示词」到「管上下文」</h3>
+        <h3 id="从写提示词到管上下文">从「写提示词」到「管上下文」</h3>
         <ul class="pitfall-list">
           <li><strong>提法的变化</strong>：2025 年 6 月，Shopify 的 CEO Tobi Lütke 在社交媒体上表示，他更喜欢用「上下文工程」这个词来替代「提示词工程」，因为它更准确地描述了<strong>为 LLM 提供充分信息以完成任务</strong>的核心技能</li>
           <li><strong>本章的硬判据</strong>：<strong>上下文唯一的影响着模型的输出质量</strong>——模型权重在推理时是固定的，你能动的只有「这一次采样看到哪些 token」</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>上下文不是越多越好：注意力偏差（Attention Bias）</h3>
+        <h3 id="上下文不是越多越好注意力偏差attention-bias">上下文不是越多越好：注意力偏差（Attention Bias）</h3>
         <ul class="pitfall-list">
           <li><strong>长度稀释</strong>：上下文越长，注意力就被分散到更多 token 上，关键信息的权重被摊薄，模型更容易漏掉信息——「都放进去」不等于「都被读到」</li>
           <li><strong>长度分布外（OOD，Out-of-Distribution）</strong>：当上下文长度超过训练语料常见长度后，模型回复的<strong>置信度会有明显下降</strong>——长上下文是「渐变」，不是「无损」</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>上下文工程的两个关注点：编排与治理</h3>
+        <h3 id="上下文工程的两个关注点编排与治理">上下文工程的两个关注点：编排与治理</h3>
         <ul class="pitfall-list">
           <li><strong>编排</strong>：提示词、用户问题、工具、MCP、Skill 等内容<strong>在上下文中如何排列？什么时间加入什么内容？</strong>——对应「放什么、排在哪、什么时候放」</li>
           <li><strong>治理 · 可信</strong>：如何确保上下文的内容<strong>安全可信</strong>？——工具返回、检索结果、外部网页都是不可信输入，进了上下文就可能被当成指令</li>
@@ -66,10 +66,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课、《31.Context Engineering》，以及第 16/17 章已覆盖的判据。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 本章用哪句话概括上下文与输出质量的关系？</div>
@@ -103,7 +103,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 某个 Agent 把检索到的一整份 8000 token 的产品文档塞进上下文，但用户只问了「退货运费谁承担」。按本章的四条注意力偏差，最直接的失效机制是？</div>
@@ -137,7 +137,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 一个编码 Agent 的系统提示词里包含：角色与硬性规则、当前工作目录、今天的日期时间、工具使用规范。代码在<strong>每一轮</strong>都重新拼装这份系统提示词后发请求。结合第 16/17 章，最该先修的是什么？</div>
@@ -173,7 +173,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -226,7 +226,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic《Effective context engineering for AI agents》</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/Prompt_Caching101.ipynb">OpenAI Cookbook《Prompt Caching 101》</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Context-Engineering速查表.html">Context Engineering 速查表</a>——注意力偏差四条、四类取舍、缓存友好的上下文排版一页装下，建议打印。</li>

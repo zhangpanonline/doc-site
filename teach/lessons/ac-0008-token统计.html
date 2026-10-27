@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>token统计</h1>
+      <h1 id="token统计">token统计</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/token统计">08.token统计</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 token 统计为什么分「事前统计」与「事后统计」，各自在哪个环节拿到数</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把 token 统计的时机、路线与换算过一遍——细节都在《08.token统计》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>统计的时机：事前 vs 事后</h3>
+        <h3 id="统计的时机事前-vs-事后">统计的时机：事前 vs 事后</h3>
         <ul class="pitfall-list">
           <li><strong>事后统计</strong>：调用模型服务商的 API 之后，服务商会<strong>告知本次 token 用量</strong>——数最准，但它只在你已经付过费、请求已经发出去之后才拿得到</li>
           <li><strong>事前统计</strong>：把文本发给大模型<strong>之前</strong>先算出来，用于拦截与预估；课件的四个典型场景都靠它</li>
@@ -47,7 +47,7 @@
       </div>
 
       <div class="card">
-        <h3>三条统计路线，各有各的边界</h3>
+        <h3 id="三条统计路线各有各的边界">三条统计路线，各有各的边界</h3>
         <ul class="pitfall-list">
           <li><strong>服务商 API 接口</strong>：某些服务商提供<strong>免费</strong>的 token 统计接口。课件以 Moonshot AI（Kimi）为例：<code>POST https://api.moonshot.cn/v1/tokenizers/estimate-token-count</code>，请求体传 <code>model</code> 与 <code>messages</code>，从 <code>result['data']['total_tokens']</code> 取结果；需要 <code>Authorization: Bearer &lt;API Key&gt;</code>（Key 在 platform.moonshot.cn 申请，用 python-dotenv 从 .env 读）</li>
           <li><strong>tiktoken（SDK，本地）</strong>：<strong>OpenAI 官方的分词库</strong>。课件用 <code>encoding = tiktoken.encoding_for_model("gpt-4o")</code> 拿编码，<code>tokens = encoding.encode(text)</code> 得到 token 序列，<code>len(tokens)</code> 就是 token 数；<strong>首次运行会联网下载词表并缓存，之后统计完全在本地进行，无需 API Key</strong></li>
@@ -57,7 +57,7 @@
       </div>
 
       <div class="card">
-        <h3>从 token 数到「钱」和「窗口」</h3>
+        <h3 id="从-token-数到钱和窗口">从 token 数到「钱」和「窗口」</h3>
         <ul class="pitfall-list">
           <li><strong>字符数不是 token 数</strong>：课件里同一段文本同时打印 <code>len(text)</code> 与 <code>len(tokens)</code>，两个数字<strong>并不相等</strong>；不同模型、不同语料的切法不一样，所以统计必须用<strong>目标模型配套的分词器</strong></li>
           <li><strong>成本换算</strong>：预估 token 数 × 服务商单价 = 预估成本；输入与输出通常分开计价，预估时要连输出上限一起算（课件「报价前置展示」「企业预算前置审批」都是这条链路）</li>
@@ -68,10 +68,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《08.token统计》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 按「什么时候算」，token 统计分成哪两类？</div>
@@ -105,7 +105,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. 用户粘贴了一份 10 万字合同，产品要求「不发起无效 API 调用就拦住超长输入」，正确做法是？</div>
@@ -139,7 +139,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. SaaS 产品要「上传文档后立刻显示预估 token 与费用，用户确认后再调用」，还要求预估与服务商账单口径尽量一致。架构上最稳的是？</div>
@@ -175,7 +175,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -235,7 +235,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://github.com/openai/tiktoken">tiktoken 官方仓库</a> · <a href="https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb">OpenAI Cookbook《How to count tokens with tiktoken》</a> · <a href="https://platform.kimi.ai/docs/api/estimate">Kimi 官方文档 Estimate Tokens</a> · <a href="https://github.com/huggingface/transformers/blob/main/docs/source/en/main_classes/tokenizer.md">Transformers 文档 Tokenizer 一章</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/token统计速查表.html">token统计速查表</a>——事前/事后对照、三条统计路线与核心代码一页装下，建议打印。</li>

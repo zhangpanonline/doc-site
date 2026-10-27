@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>MCP协议</h1>
+      <h1 id="mcp协议">MCP协议</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/MCP协议">24.MCP协议</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 MCP 要解决什么问题——为什么 Agent 与外部工具之间需要一套<strong>通信标准</strong></li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把本章的骨架过一遍——细节都在《24.MCP协议》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>MCP 要解决什么</h3>
+        <h3 id="mcp-要解决什么">MCP 要解决什么</h3>
         <ul class="pitfall-list">
           <li>课件第一句就是全部动机：<strong>MCP 定义了 Agent 和外部工具的通信标准</strong>（官网 <a href="https://modelcontextprotocol.io/">modelcontextprotocol.io</a>）</li>
           <li>官方定义：「MCP (Model Context Protocol) is an open-source standard for connecting AI applications to external systems.」——它的自我类比是 <strong>「AI 应用的 USB-C 接口」</strong></li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>协议内核三要素</h3>
+        <h3 id="协议内核三要素">协议内核三要素</h3>
         <ul class="pitfall-list">
           <li><strong>通信角色</strong>：客户端 <strong>MCP Client</strong>（通常是 Agent）↔ 服务端 <strong>MCP Server</strong>（工具提供者）。任何匹配 MCP 协议的程序都可以作为 MCP Client——所以调试器 inspector 也能当 Client 用</li>
           <li><strong>通信方式</strong>：<code>stdio</code>——Client 把 Server 作为子进程启动，通过 <code>stdin</code> / <code>stdout</code> 在本地进程间通信；<code>http</code>——通过 HTTP 协议通信（现行规范里叫 <strong>Streamable HTTP</strong>，是 2024-11-05 版 HTTP+SSE 的替代者）</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>通信内容与能力协商</h3>
+        <h3 id="通信内容与能力协商">通信内容与能力协商</h3>
         <ul class="pitfall-list">
           <li><code>initialize</code>（初始化）<strong>必须是 Client 与 Server 的第一次交互</strong>：一次谈定<strong>协议版本兼容性</strong>、<strong>双方能力（capabilities）</strong>、<strong>实现信息</strong>（<code>clientInfo</code> / <code>serverInfo</code>）——这个过程就叫<strong>能力协商</strong></li>
           <li>能力只有<strong>声明过</strong>才允许使用：Server 支持工具，<strong>必须</strong>在 <code>initialize</code> 响应里声明 <code>tools</code> 能力；Client 看到之后才去调 <code>tools/list</code></li>
@@ -67,10 +67,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《24.MCP协议》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. MCP（模型上下文协议）定义的是哪两者之间的通信标准？</div>
@@ -104,7 +104,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 在 stdio 传输下，一条 JSON-RPC 消息是怎么从 Client 走到 Server 的？</div>
@@ -138,7 +138,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. 一个自研 Client 连上 MCP Server 后，跳过 <code>initialize</code> 直接发 <code>tools/call</code>。按规范的生命周期，问题出在哪？</div>
@@ -174,7 +174,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -235,7 +235,7 @@ def get_time(timezone: str) -&gt; str:
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://modelcontextprotocol.io/docs/getting-started/intro">MCP 官方文档 What is MCP?</a>（设计与定位）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic">Base Protocol</a>（JSON-RPC 2.0 消息与 <code>id</code> 约束）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports">Transports</a>（stdio 与 Streamable HTTP）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle">Lifecycle</a>（能力协商三步）</li>
         <li><strong>动手自检</strong>：启动 <code>npx -y @modelcontextprotocol/inspector@1.0.0</code>，连 <code>uvx mcp-server-time</code> 与 <code>https://learn.microsoft.com/api/mcp</code>，各跑一遍 <code>tools/list</code> 与 <code>tools/call</code>，把三条消息抄在纸上——通信内容记不牢，多半是没亲眼看过。</li>

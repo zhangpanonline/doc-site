@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Transformer的完整训练流程</h1>
+      <h1 id="transformer的完整训练流程">Transformer的完整训练流程</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Transformer的完整训练流程">12.Transformer的完整训练流程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>按顺序说清单个 Transformer Block 的六个阶段：多头注意力（含 RoPE）→ 残差（Add）→ 归一化（Norm）→ FFN → 残差（Add）→ 归一化（Norm）</li>
@@ -31,7 +31,7 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把一个 Block 的六步、形状契约与训练闭环过一遍——细节都在《12.Transformer的完整训练流程》里，测验和面试会考。</p>
 
       <figure style="margin:0 0 1.2rem">
@@ -40,7 +40,7 @@
       </figure>
 
       <div class="card">
-        <h3>一个 Transformer Block 的六个阶段（顺序不能乱）</h3>
+        <h3 id="一个-transformer-block-的六个阶段顺序不能乱">一个 Transformer Block 的六个阶段（顺序不能乱）</h3>
         <ul class="pitfall-list">
           <li>① <strong>多头注意力</strong>：现代大模型还会在这一步注入 <code>token</code> 位置信息，算法是旋转位置编码（RoPE），针对的矩阵是 <strong>Q 和 K</strong>，时机是<strong>多头切分之后、注意力得分计算之前</strong></li>
           <li>② <strong>残差连接（Add）</strong>：把注意力阶段得到的「残差」和它的输入相加，得到 $4×6$ 的矩阵</li>
@@ -52,7 +52,7 @@
       </div>
 
       <div class="card">
-        <h3>形状契约与「上下文」是怎么攒出来的</h3>
+        <h3 id="形状契约与上下文是怎么攒出来的">形状契约与「上下文」是怎么攒出来的</h3>
         <ul class="pitfall-list">
           <li><strong>进出一致</strong>：单个 block 接收 $4×6$ 的矩阵、输出 $4×6$ 的矩阵。中间经过大量运算，可以让输出的<strong>每一行都包含大量上下文信息</strong></li>
           <li><strong>逐层堆叠</strong>：把输出再传给下一个 block，循环往复。DeepSeek v4 pro 拥有 <strong>61 个</strong> Transformer Block</li>
@@ -62,7 +62,7 @@
       </div>
 
       <div class="card">
-        <h3>从隐藏状态到「下一个 token 的概率」，再到反向传播</h3>
+        <h3 id="从隐藏状态到下一个-token-的概率再到反向传播">从隐藏状态到「下一个 token 的概率」，再到反向传播</h3>
         <ul class="pitfall-list">
           <li><strong>线性变换层</strong>：大多数模型的这一层就是一个单层全连接神经网络，它把一个 $4 × 6$ 的矩阵变成 $4 × 120000$ 的矩阵（120000 就是词表大小）</li>
           <li><strong>权重矩阵形状</strong>：按 $y = xW$ 的写法，$x$ 是 $4×6$、输出是 $4×120000$，所以 $W$ 是 $6×120000$（参数量 720000，不含偏置）；PyTorch 的 <code>nn.Linear(6, 120000)</code> 算的是 $y = xA^T + b$，内部存的是转置后的 $A$，形状 $120000×6$——同一组参数的两种写法</li>
@@ -73,10 +73,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《12.Transformer的完整训练流程》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. Transformer Block 里，「多头注意力」之后紧接着的两步，顺序是？</div>
@@ -110,7 +110,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 线性变换层把 $4×6$ 的矩阵变成 $4×120000$ 的矩阵。按 $y = xW$ 的写法，这一层权重矩阵 $W$ 的形状应该是？</div>
@@ -144,7 +144,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 把 61 个结构相同的 block 串起来，为什么「最后一个 block 的输出，每一行都表达了一个完整的上下文」？</div>
@@ -180,7 +180,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -247,7 +247,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://arxiv.org/abs/1706.03762">《Attention Is All You Need》</a> · <a href="https://pytorch.org/docs/stable/generated/torch.nn.Transformer.html">PyTorch <code>nn.Transformer</code></a> · <a href="https://pytorch.org/docs/stable/generated/torch.nn.TransformerEncoderLayer.html">PyTorch <code>nn.TransformerEncoderLayer</code></a> · <a href="https://arxiv.org/abs/1910.07467">RMSNorm 原论文</a> · <a href="https://arxiv.org/abs/2104.09864">RoFormer（RoPE）</a> · <a href="https://arxiv.org/abs/2412.19437">DeepSeek-V3 技术报告（MoE）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Transformer的完整训练流程速查表.html">Transformer的完整训练流程速查表</a>——六步流程、形状与参数量、训练闭环一页装下，建议打印。</li>

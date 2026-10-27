@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
-      <h1>Matplotlib - 核心概念</h1>
+      <h1 id="matplotlib---核心概念">Matplotlib - 核心概念</h1>
       <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Matplotlib-核心概念">07.Matplotlib - 核心概念</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 Figure / Axes / Artist 三层架构各自的职责与包含关系</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先把这三层对象的关系和常用开关过一遍——细节都在《07.Matplotlib - 核心概念》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>三层架构：Figure → Axes → Artist</h3>
+        <h3 id="三层架构figure--axes--artist">三层架构：Figure → Axes → Artist</h3>
         <ul class="pitfall-list">
           <li><strong>Figure（画布）</strong>：最顶层容器，管整体大小、样式、布局；一个 Figure 可以装一个或多个 Axes。官方文档原话是 Figure "is like a canvas"，Axes "is a part of that canvas on which we will make a particular visualization"</li>
           <li><strong>Axes（绘图区）</strong>：数据真正被画上去的地方，有自己的坐标空间、坐标轴（Axis）、刻度、标签、图例。配置图形的主体 API 都在 Axes 上——"The Axes methods are the primary interface for configuring most parts of your plot"</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>一个 Figure 多个 Axes：<code>plt.subplots(m, n)</code></h3>
+        <h3 id="一个-figure-多个-axespltsubplotsm-n">一个 Figure 多个 Axes：<code>plt.subplots(m, n)</code></h3>
         <ul class="pitfall-list">
           <li><code>fig, ax = plt.subplots()</code>：一张画布 + <strong>一个</strong> Axes，此时 <code>ax</code> 是单个对象，直接 <code>ax.plot(...)</code></li>
           <li><code>fig, axes = plt.subplots(2, 2)</code>：返回一个 <strong>2×2 的 Axes 数组</strong>，用 <code>axes[0, 0]</code>、<code>axes[1, 1]</code> 这种「先行后列」的二维下标取用</li>
@@ -54,7 +54,7 @@
       </div>
 
       <div class="card">
-        <h3>样式、脊线与注解：三处最容易踩坑的开关</h3>
+        <h3 id="样式脊线与注解三处最容易踩坑的开关">样式、脊线与注解：三处最容易踩坑的开关</h3>
         <ul class="pitfall-list">
           <li><strong>样式</strong>：<code>plt.style.available</code> 看可选风格，<code>plt.style.use('ggplot')</code> 切换（影响配色、网格、字体），<code>plt.style.use('default')</code> 恢复默认。<code>rcParams</code> 是全局运行配置（<code>plt.rcParams.update({...})</code>），本章用它设中文字体 <code>font.sans-serif</code>、<code>axes.unicode_minus</code>、<code>figure.dpi</code></li>
           <li><strong>Spines（脊线）</strong>：一个 Axes 有 top / right / left / bottom 四条脊线，是 Axes 边界的那条线。「干净风格」就是隐藏上、右两条：<code>ax.spines['top'].set_visible(False)</code>；也可以直接 <code>ax.spines[['top','right']].set_visible(False)</code> 一次设两条。<strong>spines 属于 Axes 层，不是 Figure 层</strong></li>
@@ -65,10 +65,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《07.Matplotlib - 核心概念》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 在 Matplotlib 的三层架构里，「画布」指的是哪个对象？</div>
@@ -102,7 +102,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. AI 给出两种写法：甲是 <code>plt.plot([1,2,3],[1,4,9]); plt.title('t')</code>，乙是 <code>fig, ax = plt.subplots(); ax.plot([1,2,3],[1,4,9]); ax.set_title('t')</code>。关于两者取舍，下面哪种说法最准确？</div>
@@ -136,7 +136,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 审查这段代码：<code>plt.plot([1,2,3],[1,4,9]); plt.figure(); plt.plot([1,2,3],[3,2,1]); plt.show()</code>。运行图上为什么只看得到一条线？</div>
@@ -172,7 +172,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -225,7 +225,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://matplotlib.org/stable/users/explain/quick_start.html">Quick start guide</a> · <a href="https://matplotlib.org/stable/tutorials/lifecycle.html">The Lifecycle of a Plot</a> · <a href="https://matplotlib.org/stable/users/explain/figure/api_interfaces.html">Matplotlib Application Interfaces (APIs)</a> · <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.annotate.html">Axes.annotate</a> · <a href="https://matplotlib.org/stable/api/spines_api.html">matplotlib.spines</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Matplotlib-核心概念速查表.html">Matplotlib-核心概念速查表</a>——三层架构、subplots 索引、spines/legend/annotate 与两种 API 对照一页装下，建议打印。</li>

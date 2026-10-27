@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
-      <h1>Matplotlib - 交互式组件</h1>
+      <h1 id="matplotlib---交互式组件">Matplotlib - 交互式组件</h1>
       <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Matplotlib-交互式组件">09.Matplotlib - 交互式组件</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>复述 widgets 的通用套路：先给组件建一块 Axes，再建组件对象、连回调、刷新画布</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先把握「五个组件 + 一条套路 + 一个后端前提」，细节都在《09.Matplotlib - 交互式组件》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>五个组件与选型</h3>
+        <h3 id="五个组件与选型">五个组件与选型</h3>
         <ul class="pitfall-list">
           <li><strong>Slider（滑块）</strong>：拖动调整连续数值，参数有 <code>valmin</code> / <code>valmax</code> / <code>valinit</code> / <code>valstep</code>，用 <code>on_changed</code> 绑定回调，回调参数是当前值；多值就是建多个滑块、共用一个回调</li>
           <li><strong>Button（按钮）</strong>：触发一次性动作（重新生成数据、重置），用 <code>on_clicked</code> 绑回调，回调参数是事件对象 <code>event</code></li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>组件通用四步套路（本章每个 demo 都是这个结构）</h3>
+        <h3 id="组件通用四步套路本章每个-demo-都是这个结构">组件通用四步套路（本章每个 demo 都是这个结构）</h3>
         <ul class="pitfall-list">
           <li><strong>① 建 ax</strong>：<code>fig.add_axes((left, bottom, width, height))</code> 给组件单独一块 Axes，并配 <code>fig.subplots_adjust(bottom=…)</code> 给组件腾地方</li>
           <li><strong>② 建组件</strong>：<code>slider = Slider(slider_ax, '频率', 0.1, 5.0, valinit=1.0, valstep=0.1)</code> —— 结果<strong>必须赋值给变量</strong>，否则组件失去引用就不响应了</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>后端前提与常见故障</h3>
+        <h3 id="后端前提与常见故障">后端前提与常见故障</h3>
         <ul class="pitfall-list">
           <li>本章第一段代码是 <code>%matplotlib widget</code>：Notebook 里要交互必须切到交互后端（<strong>ipympl</strong>，需单独安装）；默认的 inline 后端只渲染一次静态图</li>
           <li><strong>组件画出来了但拖不动</strong>：先查后端是不是 inline；再查 ipympl 是否装了；最后查组件对象有没有被垃圾回收（裸调用 <code>Slider(...)</code> 不赋值就是典型）</li>
@@ -66,10 +66,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《09.Matplotlib - 交互式组件》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 要让用户拖拽调整一个连续数值（例如正弦波的频率），应该用哪个组件？</div>
@@ -103,7 +103,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. <code>Slider(..., valinit=1.0, valstep=0.1)</code> 里的 <code>valstep=0.1</code> 是什么语义？</div>
@@ -137,7 +137,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 为什么每个组件都要单独传一个 <code>ax</code>，而不能像 <code>plt.plot(x, y)</code> 那样直接用「当前 Axes」？</div>
@@ -173,7 +173,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -240,7 +240,7 @@ amp_slider.on_changed(update)</code></pre>`,
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://matplotlib.org/stable/api/widgets_api.html">Matplotlib widgets API</a>（模块开头那句「必须先定义 Axes」值一读）· <a href="https://matplotlib.org/stable/users/explain/figure/interactive.html">Interactive figures</a>（Jupyter 后端与 ipympl 的权威说明）· <a href="https://matplotlib.org/stable/gallery/widgets/slider_snap_demo.html">Snap sliders to discrete values</a>（valstep 的官方示例）</li>
         <li><strong>打印参考</strong>：<a href="../reference/Matplotlib-交互式组件速查表.html">Matplotlib-交互式组件速查表</a>——五种组件构造参数与回调对照、通用四步套路、不显示问题排查一页装下，建议打印。</li>

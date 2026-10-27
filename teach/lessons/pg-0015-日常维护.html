@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
-      <h1>日常维护</h1>
+      <h1 id="日常维护">日常维护</h1>
       <p class="lesson-sub">来源：官方文档 §24.1 日常清理（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>背出官方给出的 VACUUM 四个职责（回收空间/统计/可见性映射/防事务 ID 回卷）</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/routine-vacuuming.html">§24.1</a>。</p>
 
       <div class="card">
-        <h3>VACUUM 四个职责（官方原文）</h3>
+        <h3 id="vacuum-四个职责官方原文">VACUUM 四个职责（官方原文）</h3>
         <ul class="pitfall-list">
           <li>① <strong>恢复或重用</strong>被更新/删除行占用的磁盘空间</li>
           <li>② <strong>更新统计信息</strong>（规划器使用）——与 ANALYZE 职责重叠，可分开调</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>两种变体与配套</h3>
+        <h3 id="两种变体与配套">两种变体与配套</h3>
         <ul class="pitfall-list">
           <li><strong>标准 VACUUM</strong>：回收死元组空间供重用；快；<strong>可与生产操作并行</strong>（官方原文）；<strong>实测补充</strong>：会截断表<strong>尾部</strong>的空页——删除的是表尾数据时文件也会变小（pg16 实测 3.6MB→40KB），中部空洞则要 FULL</li>
           <li><strong>VACUUM FULL</strong>：收回更多空间、压缩表文件（含中部空洞）；<strong>慢得多</strong>；需独占锁——生产慎用</li>
@@ -56,10 +56,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 官方说 VACUUM 必须怎样执行？</div>
@@ -93,7 +93,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 标准 VACUUM 与 VACUUM FULL 的官方对比是？</div>
@@ -127,7 +127,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 「事务 ID 回卷」的危害是（官方）？</div>
@@ -165,7 +165,7 @@
     
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -219,7 +219,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/routine-vacuuming.html">postgres.cn · 24.1 日常清理</a></li>
         <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/runtime-config-autovacuum.html">19.10 自动清理配置</a> · <a href="http://www.postgres.cn/docs/current/routine-reindex.html">24.2 重建索引</a></li>

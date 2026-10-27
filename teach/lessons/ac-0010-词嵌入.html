@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>词嵌入</h1>
+      <h1 id="词嵌入">词嵌入</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/词嵌入">10.词嵌入</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 Token ID 序列为什么不能直接拿去训练——它既不能表示语义，也不能表达语义之间的数学关系</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把词嵌入的来龙去脉过一遍——细节都在《10.词嵌入》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>Token ID 的两个致命问题</h3>
+        <h3 id="token-id-的两个致命问题">Token ID 的两个致命问题</h3>
         <ul class="pitfall-list">
           <li><strong>无法表示语义</strong>：Token ID 只是表示一个文字符号，仅靠单个符号无法表示它背后丰富的语义。课件举例：你知道某个 Token 对应的文字 <code>كِتاب</code> 是什么含义吗？</li>
           <li><strong>无法表达语义之间的数学关系</strong：假设「吃苹果」对应的 Token 序列是 <code>[33256, 11789]</code>，那么 $33256 + 11789$ 是什么含义？答案是：没有任何含义。</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>用向量描述 Token</h3>
+        <h3 id="用向量描述-token">用向量描述 Token</h3>
         <ul class="pitfall-list">
           <li><strong>苹果</strong>可以被描述为：一种食物、和科技有关系、昂贵的——数字化成 3 个维度就是（0.9 可被食用的程度、0.6 科技程度、0.5 消费水平）</li>
           <li>另一个 Token 的 3 维值是（0.7、0.8、0.3）。把维度值放进三维空间，可以想象这两个 token 在空间里<strong>比较接近</strong>（课件给出可视化工具 <a href="https://projector.tensorflow.org/">projector.tensorflow.org</a>）</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>维度由谁定？上下文长度与窗口长度</h3>
+        <h3 id="维度由谁定上下文长度与窗口长度">维度由谁定？上下文长度与窗口长度</h3>
         <ul class="pitfall-list">
           <li><strong>只规定学习方法，永远不要告诉机器答案</strong>：三个问题（规定多少个维度？每个维度表达什么含义？每个维度的值是什么？）的答案是——我们仅规定有多少个维度，让机器在训练过程中为每一个 Token 的每一个维度填写具体的值</li>
           <li><strong>上下文长度</strong>：传入到 transformer 神经网络的 Token 数量（本次实际用了多少）</li>
@@ -66,10 +66,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《10.词嵌入》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 为什么分词得到的 Token ID 序列不能直接拿来做训练？</div>
@@ -103,7 +103,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 课件把「苹果」写成三维向量（0.9 可食用 / 0.6 科技 / 0.5 消费水平）。关于这些维度的含义与数值从哪来，哪个说法正确？</div>
@@ -137,7 +137,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 课件说词嵌入是 transformer 架构前向传播的第一个阶段。分词器给出 <code>[33256, 11789]</code>，经过词嵌入之后，送进后续网络的是什么？</div>
@@ -173,7 +173,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -247,7 +247,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://fasttext.cc/docs/en/unsupervised-tutorial.html">fastText 官方文档 Word representations</a> · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html">PyTorch nn.Embedding</a> · <a href="https://huggingface.co/blog/getting-started-with-embeddings">Hugging Face《Getting Started With Embeddings》</a> · <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/models">Azure AI Foundry 模型文档（Context Window）</a></li>
         <li><strong>动手看看</strong>：<a href="https://projector.tensorflow.org/">TensorFlow Embedding Projector</a>——把词向量投到三维空间，直观感受「语义相近的 token 在空间里靠近」。</li>

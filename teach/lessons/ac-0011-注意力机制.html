@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>注意力机制</h1>
+      <h1 id="注意力机制">注意力机制</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/注意力机制">11.注意力机制</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 Embedding 「单独给每个词编码」为什么不够用，以及注意力层要输出什么</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先把本章的骨架过一遍——细节都在《11.注意力机制》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>为什么需要注意力：Embedding 的局限</h3>
+        <h3 id="为什么需要注意力embedding-的局限">为什么需要注意力：Embedding 的局限</h3>
         <ul class="pitfall-list">
           <li><strong>本课的讨论范围</strong>：所有推演都基于<strong>训练</strong>时的前向传播过程，不是推理——先把这一点钉住，后面每一步都是"整句一次性喂进去"的算法</li>
           <li><strong>入口</strong>：假设已经拿到 Embedding 的输出——一个 $4 \times 6$ 的矩阵（4 个 token，每个 token 用 6 维向量表示它的语义）</li>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="card">
-        <h3>Q、K、V：同一份输入，三种角色</h3>
+        <h3 id="qkv同一份输入三种角色">Q、K、V：同一份输入，三种角色</h3>
         <p>$\mathbf{Q} = \mathbf{X}\mathbf{W}^{Q}$，$\mathbf{K} = \mathbf{X}\mathbf{W}^{K}$，$\mathbf{V} = \mathbf{X}\mathbf{W}^{V}$（示例里三个权重矩阵都是 $6 \times 6$）</p>
         <ul class="pitfall-list">
           <li><strong>不是切分，是投影</strong>：Q/K/V 来自<strong>同一份 X</strong> 分别乘三个<strong>不同的、可学习的</strong>权重矩阵，所以形状都还是 $4 \times 6$——把 X 均切成三份是拿不到 Q/K/V 的</li>
@@ -58,7 +58,7 @@
       </div>
 
       <div class="card">
-        <h3>一次自注意力：五步链路</h3>
+        <h3 id="一次自注意力五步链路">一次自注意力：五步链路</h3>
         <p>$\mathrm{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V}) = \mathrm{softmax}\!\left(\dfrac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}}\right)\mathbf{V}$</p>
         <ul class="pitfall-list">
           <li><strong>① 打分</strong>：$\mathbf{Q}\mathbf{K}^{\top}$——$4 \times 6$ 乘 $6 \times 4$ 得到 $4 \times 4$ 的注意力得分矩阵；第 i 行第 j 列 = 第 i 个 token 对第 j 个 token 的原始关注打分</li>
@@ -72,10 +72,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《11.注意力机制》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. Embedding 层「为单独的每一个词编码它的语义」，这带来什么问题？</div>
@@ -109,7 +109,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. Embedding 输出 $\mathbf{X}$ 是 $4 \times 6$，权重矩阵 $\mathbf{W}^{Q}$ 是 $6 \times 6$。关于 $\mathbf{Q} = \mathbf{X}\mathbf{W}^{Q}$，正确的是？</div>
@@ -143,7 +143,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 6 维的 Q/K/V 被切成 2 个头（每头 3 维），各自算完注意力后再拼接回 6 维。这样做的收益与代价是？</div>
@@ -179,7 +179,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -232,7 +232,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need（arXiv:1706.03762）</a> · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.MultiheadAttention.html">PyTorch 官方文档 torch.nn.MultiheadAttention</a> · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html">PyTorch 官方文档 F.scaled_dot_product_attention</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/注意力机制速查表.html">注意力机制速查表</a>——QKV 三角色、五步链路与形状自检、多头与掩码要点一页装下，建议打印。</li>

@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 15 课</p>
-      <h1>迭代器与生成器</h1>
+      <h1 id="迭代器与生成器">迭代器与生成器</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/迭代器与生成器">17-迭代器与生成器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>分清<strong>迭代器、可迭代对象、生成器</strong>三者的关系（源作业先要求费曼复述它们）</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《17.迭代器与生成器》里，测验和考核会考。</p>
 
-      <h3>三者关系</h3>
+      <h3 id="三者关系">三者关系</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">可迭代对象（有 __iter__）</span>
@@ -44,7 +44,7 @@
         <p class="diagram-note">⚙️ 迭代器一定是可迭代对象；生成器一定是迭代器。三者都支持惰性计算：<code>next()</code> 取一个算一个。</p>
       </div>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong>生成器函数 = 含 <code>yield</code> 的函数</strong>：调用它<strong>不执行函数体</strong>，而是返回 generator 对象；每次 <code>next()</code> 执行到下一个 yield 暂停，状态保留。<a href="https://docs.python.org/3/reference/expressions.html#yield-expressions">官方文档：yield</a></li>
         <li><strong><code>yield from</code> 委托子生成器</strong>：<code>yield from flatten(item)</code> 递归扁平化嵌套列表——考核一的答案核心。<a href="https://docs.python.org/3/reference/expressions.html#yield-from">官方文档：yield from</a></li>
@@ -53,10 +53,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 迭代器（Iterator）必须实现哪两个方法？</div>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 迭代器耗尽后继续 <code>next()</code> 会怎样？</div>
@@ -128,7 +128,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 生成器 <code>g</code> 被 <code>close()</code> 之后，再 <code>next(g)</code> 会怎样？</div>
@@ -180,7 +180,7 @@ print(calc.send(20))</code></pre></div>
     
 
                                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -286,7 +286,7 @@ print(sum(data))   # 0  ← ？</code></pre>`,
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/howto/functional.html#iterators">Functional Programming HOWTO: Iterators</a>——迭代器与生成器的权威讲解。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/introduction-to-python-generators/">How to Use Generators and yield in Python</a>，把生成器的状态机讲得很透。</li>

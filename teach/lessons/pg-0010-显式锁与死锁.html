@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
-      <h1>显式锁与死锁</h1>
+      <h1 id="显式锁与死锁">显式锁与死锁</h1>
       <p class="lesson-sub">来源：官方文档 §13.3 显式锁定（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出官方对显式锁的定位（MVCC 无法给出期望行为的情境）与「命令自动取锁」的常识</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/explicit-locking.html">§13.3</a>。</p>
 
       <div class="card">
-        <h3>显式锁的定位（官方要点）</h3>
+        <h3 id="显式锁的定位官方要点">显式锁的定位（官方要点）</h3>
         <ul class="pitfall-list">
           <li>锁模式用于<strong>MVCC 无法给出期望行为的情境</strong>中、由应用控制的锁（官方原文）</li>
           <li><strong>大多数命令自动获取恰当的锁</strong>——官方例：TRUNCATE 取得 ACCESS EXCLUSIVE 锁防止并发冲突</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>表级锁与行级锁</h3>
+        <h3 id="表级锁与行级锁">表级锁与行级锁</h3>
         <ul class="pitfall-list">
           <li><strong>表级锁</strong>：ACCESS SHARE ~ ACCESS EXCLUSIVE 多模式；名字含 row 的（ROW EXCLUSIVE 等）<strong>也是表级锁</strong>——官方原文「这些名称是历史遗产」</li>
           <li><strong>行级锁</strong>：FOR UPDATE / FOR NO KEY UPDATE / FOR SHARE / FOR KEY SHARE——<code>SELECT ... FOR UPDATE</code> 把「先查后改」变原子</li>
@@ -52,7 +52,7 @@
       </div>
 
       <div class="card">
-        <h3>死锁（§13.3.4）</h3>
+        <h3 id="死锁1334">死锁（§13.3.4）</h3>
         <ul class="pitfall-list">
           <li>两个事务互相等待对方的锁 → <strong>PG 自动检测并终止其中一个</strong>（deadlock detected，不会无限挂起）</li>
           <li>预防：<strong>一致的加锁顺序</strong>、缩短事务、缩短锁持有时间</li>
@@ -62,10 +62,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 官方说显式锁用于什么情境？</div>
@@ -99,7 +99,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. ROW EXCLUSIVE 是什么级别的锁？</div>
@@ -133,7 +133,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 预防死锁最常用的工程手段是？</div>
@@ -171,7 +171,7 @@
     
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -225,7 +225,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/explicit-locking.html">postgres.cn · 13.3 显式锁定</a></li>
         <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/sql-lock.html">LOCK 命令参考</a> · <a href="http://www.postgres.cn/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE">SELECT 的锁定子句</a></li>

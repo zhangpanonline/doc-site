@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 9 课</p>
-      <h1>可调用对象</h1>
+      <h1 id="可调用对象">可调用对象</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/可调用对象">11-可调用对象</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>用 <code>callable()</code> 判断对象是否可调用，并说出判断依据</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《11.可调用对象》里，测验和考核会考。</p>
 
-      <h3>调用协议</h3>
+      <h3 id="调用协议">调用协议</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">函数 f()</span>
@@ -52,7 +52,7 @@
         <p class="diagram-note">⚙️ 统一规则：<code>x()</code> 永远查找 <code>type(x).__call__</code>，不直接找 x 自己的 <code>__call__</code>。</p>
       </div>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong>可调用 = 定义了 <code>__call__</code></strong>：函数有、类有（type 的 <code>__call__</code>）、定义了 <code>__call__</code> 的实例也有；列表没有，所以 <code>callable([1,2]) → False</code>。<a href="https://docs.python.org/3/library/functions.html#callable">官方文档：callable</a></li>
         <li><strong>实例调用走类的 <code>__call__</code></strong>：<code>add_5(10)</code> 等效于 <code>Adder.__call__(add_5, 10)</code>——self 就是实例本身。</li>
@@ -61,10 +61,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. <code>callable([1, 2])</code> 的结果是？</div>
@@ -100,7 +100,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 类（如 Dog）可以被调用，是因为？</div>
@@ -136,7 +136,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 调用协议规定：<code>x()</code> 永远查找什么？</div>
@@ -176,7 +176,7 @@
     
 
                                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -286,7 +286,7 @@ print(t())   # TypeError: 'Task' object is not callable</code></pre>
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/reference/datamodel.html#object.__call__">Data Model: object.__call__</a>——调用协议的权威出处。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-callable-instances/">Python's .__call__() Method: Creating Callable Instances</a>，把可调用实例的应用场景讲得很全。</li>

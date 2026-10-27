@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Python 框架</p>
-      <h1>业务逻辑</h1>
+      <h1 id="业务逻辑">业务逻辑</h1>
       <p class="lesson-sub">配合《<a href="/agents/python-framework/业务逻辑">07.业务逻辑</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>按课件「核心关注点」三方面审一段业务代码：代码组织、功能逻辑、边界</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《07.业务逻辑》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>代码组织：类模式 + 异常体系</h3>
+        <h3 id="代码组织类模式--异常体系">代码组织：类模式 + 异常体系</h3>
         <ul class="pitfall-list">
           <li><strong>BaseService</strong>：所有 Service 继承它，构造器共享 <code>self.db: AsyncSession</code></li>
           <li><strong>PageResult[T]</strong>：统一分页返回 <code>items/total/page/page_size</code></li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>边界：DTO 进出、ORM 不外泄</h3>
+        <h3 id="边界dto-进出orm-不外泄">边界：DTO 进出、ORM 不外泄</h3>
         <ul class="pitfall-list">
           <li><strong>入参</strong>：Create/Update DTO（Field 约束即验证）；Update 用 <code>model_dump(exclude_unset=True)</code> 只更新传入字段</li>
           <li><strong>返回</strong>：Response（详情）/ Brief（列表嵌套）/ PageResult（分页），<code>from_attributes</code> + <code>model_validate</code> 把 ORM 对象转 DTO</li>
@@ -55,10 +55,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《07.业务逻辑》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 课件「核心关注点」包括哪三个方面？</div>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. BaseService 里共享的是什么？</div>
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. update_product 里 model_dump(exclude_unset=True) 的作用是？</div>
@@ -162,7 +162,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -215,7 +215,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/tutorial/bigger-applications/">FastAPI 官方：Bigger Applications（分层与 APIRouter）</a> · <a href="https://docs.pydantic.dev/latest/concepts/models/">Pydantic 官方：Models（model_validate/from_attributes）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/业务逻辑速查表.html">业务逻辑速查表</a>——三层关注点、DTO 边界、异常体系一页装下，建议打印。</li>

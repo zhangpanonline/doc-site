@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 3 节</p>
-      <h1>表间关系</h1>
+      <h1 id="表间关系">表间关系</h1>
       <p class="lesson-sub">配合《<a href="/common/database/表间关系">db-0003-表间关系</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>判断 1:1 / 1:N / M:N 场景，并说清每种关系的<strong>建表实现方式</strong>——<strong>作业考的就是这个</strong></li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《03.表间关系》里，测验和考核会考。</p>
 
-      <h3>三种关系的实现口诀</h3>
+      <h3 id="三种关系的实现口诀">三种关系的实现口诀</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">任意一方放外键 + UNIQUE</span>
@@ -52,7 +52,7 @@
         <p class="diagram-note">⚙️ 判断口诀：先问「一个 A 对应几个 B，一个 B 对应几个 A」——两边都是 1 是 1:1；一边多一边 1 是 1:N；两边都多是 M:N。</p>
       </div>
 
-      <h3>外键四种约束行为</h3>
+      <h3 id="外键四种约束行为">外键四种约束行为</h3>
       <ol class="pitfall-list">
         <li><strong><code>NO ACTION</code>（PG 默认）</strong>：有子记录就不许删/改父表，支持延迟检查（DEFERRABLE，配合事务用）。</li>
         <li><strong><code>RESTRICT</code></strong>：与 NO ACTION 行为相同，但<strong>不支持延迟检查</strong>——立即报错。</li>
@@ -60,7 +60,7 @@
         <li><strong><code>SET NULL</code></strong>：父表删除/更新后，子表外键列置为 NULL——要求外键列允许 NULL（软解绑）。</li>
       </ol>
 
-      <h3>ERD 符号速记</h3>
+      <h3 id="erd-符号速记">ERD 符号速记</h3>
       <pre><code>矩形 = 实体（表）   连线 = 关系
 ||--||   一对一
 ||--o{   一对多
@@ -69,10 +69,10 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
 
-      <h3>🌱 初级 · 概念</h3>
+      <h3 id="-初级--概念">🌱 初级 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 一对一关系在数据库中的实现方式是？</div>
@@ -108,7 +108,7 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
         </div>
       </div>
 
-      <h3>🌿 中级 · 应用</h3>
+      <h3 id="-中级--应用">🌿 中级 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. PostgreSQL 中外键不写 ON DELETE 选项时的默认行为是？</div>
@@ -144,7 +144,7 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
         </div>
       </div>
 
-      <h3>🎯 高级 · 综合</h3>
+      <h3 id="-高级--综合">🎯 高级 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 「一次挂号只对应一个医生」——医生与挂号的关系是？</div>
@@ -184,7 +184,7 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
     
 
                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -279,7 +279,7 @@ PK 主键 / FK 外键 / UK 唯一键</code></pre>
 
 
     <section>
-      <h2>巩固延伸</h2>
+      <h2 id="巩固延伸">巩固延伸</h2>
       <ul>
         <li><strong>动手验证</strong>：打开《电商数据库设计.sql》逐行阅读，在 pgAdmin 里建出 product_db 并查看它的 ERD；再故意删一条 category 记录，观察 NO ACTION 与 CASCADE 的行为差异。</li>
         <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/ddl-constraints.html">PostgreSQL 官方文档：约束与外键</a></li>

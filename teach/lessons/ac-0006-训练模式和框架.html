@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>训练模式和框架</h1>
+      <h1 id="训练模式和框架">训练模式和框架</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/训练模式和框架">06.训练模式和框架</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 SGD / 全批量 / 小批量三种训练模式每一步各用多少样本算梯度</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先把本章的四块内容过一遍——细节都在《06.训练模式和框架》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>三种梯度下降训练模式（按「每一步用多少样本」分）</h3>
+        <h3 id="三种梯度下降训练模式按每一步用多少样本分">三种梯度下降训练模式（按「每一步用多少样本」分）</h3>
         <ul class="pitfall-list">
           <li><strong>随机梯度下降 SGD</strong>：每一步<strong>只取 1 个样本</strong>算梯度更新参数；梯度噪声极大、收敛震荡，早年小数据集用，现代大模型基本不用</li>
           <li><strong>全批量梯度下降 Full Batch</strong>：每一轮更新参数时<strong>使用全部训练集所有样本</strong>算损失与梯度；梯度方向最稳定，但大数据集显存 / 内存爆炸、迭代极慢，几乎不用于大模型训练</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>网络架构：CNN 与 Transformer</h3>
+        <h3 id="网络架构cnn-与-transformer">网络架构：CNN 与 Transformer</h3>
         <ul class="pitfall-list">
           <li><strong>卷积神经网络（CNN）</strong>：图像领域的经典架构。模仿人眼视觉——图像是<strong>局部关联</strong>的，不用一次性看整张图，只滑动小窗口（卷积核）提取局部纹理、边缘、色块</li>
           <li><strong>Transformer</strong>：<strong>NLP 起家，现在是通用全能架构</strong>——本章只给定位，机制在后续章节展开</li>
@@ -53,7 +53,7 @@
       </div>
 
       <div class="card">
-        <h3>深度学习框架与模型文件</h3>
+        <h3 id="深度学习框架与模型文件">深度学习框架与模型文件</h3>
         <ul class="pitfall-list">
           <li><strong>PyTorch</strong>：现在的主力训练框架</li>
           <li><strong>TensorFlow</strong>：现在已经不再流行，通常用于做一些边缘计算</li>
@@ -64,10 +64,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《06.训练模式和框架》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 现在 LLM、CV 模型训练时默认使用的梯度下降模式是哪一种？</div>
@@ -101,7 +101,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. 把一个训练脚本的 <code>batch_size</code> 从 1024 调小到 8，最符合本章机制的后果是？</div>
@@ -135,7 +135,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 一个产品既要识别图片里的商品，又要理解用户的文字评论。按本章的架构定位，合理的组合是？</div>
@@ -171,7 +171,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -241,7 +241,7 @@ for epoch in range(10):
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.pytorch.org/docs/stable/generated/torch.optim.SGD.html">PyTorch torch.optim.SGD 官方文档</a>（SGD 的定义与更新式） · <a href="https://keras.io/api/models/model_training_apis/">Keras Model training APIs</a>（batch_size / epochs 的官方定义） · <a href="https://github.com/google-ai-edge/LiteRT">LiteRT（TensorFlow Lite 的延续，端侧运行时）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/训练模式和框架速查表.html">训练模式和框架速查表</a>——三种训练模式对照、架构与框架定位、模型文件构成一页装下，建议打印。</li>

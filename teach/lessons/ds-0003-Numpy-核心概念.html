@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
-      <h1>Numpy - 核心概念</h1>
+      <h1 id="numpy---核心概念">Numpy - 核心概念</h1>
       <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Numpy-核心概念">03.Numpy - 核心概念</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 ndarray 与 Python 列表的三点区别：同质化、连续内存、向量化运算</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把 ndarray 这个数据结构本身过一遍——细节都在《03.Numpy - 核心概念》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>ndarray 与 Python 列表：三点区别</h3>
+        <h3 id="ndarray-与-python-列表三点区别">ndarray 与 Python 列表：三点区别</h3>
         <ul class="pitfall-list">
           <li><strong>同质化</strong>：所有元素必须是相同类型（同一个 dtype）——列表可以混杂字符串、整数、对象，ndarray 不行</li>
           <li><strong>连续内存</strong>：数据存在一整块连续内存里，所以创建后<strong>总大小固定</strong>，不能像列表那样原地追加</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>dtype：把 C 的类型系统暴露给 Python</h3>
+        <h3 id="dtype把-c-的类型系统暴露给-python">dtype：把 C 的类型系统暴露给 Python</h3>
         <ul class="pitfall-list">
           <li>dtype 就是 C 的类型：<code>int64</code>↔<code>int64_t</code>（8 字节）、<code>int32</code>↔<code>int32_t</code>（4 字节）、<code>float64</code>↔<code>double</code>（8 字节）、<code>float32</code>↔<code>float</code>（4 字节）、<code>bool</code> 1 字节</li>
           <li>Python 的 <code>int</code> 是不定长对象（光对象头就 28+ 字节），ndarray 用 C 的定长类型才换来了连续存储与向量化</li>
@@ -54,7 +54,7 @@
       </div>
 
       <div class="card">
-        <h3>strides 与 axis：内存怎么走，运算沿哪走</h3>
+        <h3 id="strides-与-axis内存怎么走运算沿哪走">strides 与 axis：内存怎么走，运算沿哪走</h3>
         <ul class="pitfall-list">
           <li><code>strides</code> 是「在每个维度上前进一个元素要跳过的字节数」：int64 的 (2, 3) 数组步幅是 (24, 8) = (3×8, 1×8)</li>
           <li><strong>转置是零拷贝的</strong>：<code>arr.T</code> 只是把步幅交换成 (8, 24)、shape 换成 (3, 2)，数据一个字节都没搬</li>
@@ -65,10 +65,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《03.Numpy - 核心概念》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. ndarray 与 Python 原生列表的关键区别，主要是下面哪一组？</div>
@@ -102,7 +102,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. 一个 ndarray 的 <code>shape</code> 是 <code>(2, 3, 4)</code>，它的 <code>ndim</code> 与 <code>size</code> 分别是？</div>
@@ -136,7 +136,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 100 万个 float64 与 100 万个 float32，内存占用分别约为多少？</div>
@@ -172,7 +172,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -229,7 +229,7 @@ print(emb[0, 0])   # AI 的注释写的是 0.1
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://numpy.org/doc/stable/user/absolute_beginners.html">NumPy: the absolute basics for beginners</a>（ndim / shape / size / dtype 官方定义）· <a href="https://numpy.org/doc/stable/user/basics.copies.html">Copies and views</a>（视图与拷贝的判据）· <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html">numpy.ndarray.strides</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Numpy-核心概念速查表.html">Numpy-核心概念速查表</a>——四要素、dtype 内存对照与视图要点一页装下，建议打印。</li>

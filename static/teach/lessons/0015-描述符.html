@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 13 课</p>
-      <h1>描述符</h1>
+      <h1 id="描述符">描述符</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/描述符">15-描述符</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清描述符协议与<strong>数据型/非数据型</strong>描述符的区别</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《15.描述符》里，测验和考核会考。</p>
 
-      <h3>描述符与查找顺序</h3>
+      <h3 id="描述符与查找顺序">描述符与查找顺序</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node">数据型描述符（有 __set__）</span>
@@ -46,7 +46,7 @@
         <p class="diagram-note">⚙️ 描述符只有作为<strong>类属性</strong>才有意义；实现了 <code>__set__</code>/<code>__delete__</code> 的叫数据型描述符（最常用）。</p>
       </div>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong>描述符拦截属性的读/写/删</strong>：<code>__get__(self, instance, owner)</code>、<code>__set__(self, instance, value)</code>、<code>__delete__(self, instance)</code>——通过类访问时 instance 是 None。<a href="https://docs.python.org/3/reference/datamodel.html#descriptors">官方文档：Descriptors</a></li>
         <li><strong>数据型描述符压过实例字典</strong>：<code>a.__dict__["x"] = ...</code> 塞进实例字典也白搭——读 <code>a.x</code> 时数据描述符优先（考核四思考题）。</li>
@@ -55,10 +55,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 一个类实现了下面哪个方法就可以叫描述符类？</div>
@@ -94,7 +94,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 实例成员查找的优先级顺序是？</div>
@@ -130,7 +130,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 数据型描述符 D 挂在类属性 x 上，执行 <code>a.__dict__["x"] = "instance"</code> 后，<code>a.x</code> 读到什么？</div>
@@ -170,7 +170,7 @@
     
 
                                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -287,7 +287,7 @@ class Data:
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/howto/descriptor.html">Descriptor HowTo Guide</a>——描述符机制的权威讲解。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-descriptors/">Python Descriptors</a>，把协议与查找顺序讲得很透。</li>

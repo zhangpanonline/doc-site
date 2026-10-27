@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Graph Engineering</h1>
+      <h1 id="graph-engineering">Graph Engineering</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Graph-Engineering">34.Graph Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清图的三个组成部分——共享状态 State、节点 Nodes、边 Edges——各自的职责</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把这张图的三个零件认全——细节都在《34.Graph Engineering》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>三个零件：State / Nodes / Edges（官方定义）</h3>
+        <h3 id="三个零件state--nodes--edges官方定义">三个零件：State / Nodes / Edges（官方定义）</h3>
         <ul class="pitfall-list">
           <li><strong>State（状态）</strong>：一个<strong>共享数据结构</strong>，代表应用当前时刻的快照——通常用一个共享的 state schema 定义</li>
           <li><strong>Nodes（节点）</strong>：编码 Agent 逻辑的<strong>函数</strong>——接收当前 state 作为输入，执行计算或副作用，返回更新后的 state</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>图 vs 线性 loop：怎么选</h3>
+        <h3 id="图-vs-线性-loop怎么选">图 vs 线性 loop：怎么选</h3>
         <ul class="pitfall-list">
           <li><strong>线性 loop 够用</strong>：任务只有一条主干（思考 → 调工具 → 再思考），终止条件简单——第 33 章的循环就能覆盖</li>
           <li><strong>需要图</strong>：出现<strong>条件分支</strong>（按中间结果走不同处理链）、<strong>并行</strong>（多个子任务同时跑再汇合）、<strong>回退/重规划</strong>（失败回到上游节点）</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>图带来的三个工程约束</h3>
+        <h3 id="图带来的三个工程约束">图带来的三个工程约束</h3>
         <ul class="pitfall-list">
           <li><strong>终止必须显式</strong>：条件边要有能走到 END 的路径；否则图会在节点间无限打转——运行时通常有递归/步数上限，超限直接报错</li>
           <li><strong>状态要可观测</strong>：节点只返回「对状态的更新」，调试时要能看到每一步状态怎么变的（回放/快照），否则出错只能靠猜</li>
@@ -65,10 +65,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《34.Graph Engineering》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 在图式编排里，「状态 State」指的是什么？</div>
@@ -102,7 +102,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. 下面哪种需求最需要从线性 loop 升级为图？</div>
@@ -136,7 +136,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 把「并行三个子任务再汇合」建进图里，最需要在状态设计上考虑什么？</div>
@@ -172,7 +172,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -225,7 +225,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.langchain.com/oss/python/langgraph/graph-api">LangGraph 官方文档 · Graph API</a>（State / Nodes / Edges 的权威定义与递归上限）</li>
         <li><strong>打印参考</strong>：<a href="../reference/Graph-Engineering速查表.html">Graph-Engineering速查表</a>——三要素、图 vs 循环的判据、并行合并与幂等要点一页装下，建议打印。</li>

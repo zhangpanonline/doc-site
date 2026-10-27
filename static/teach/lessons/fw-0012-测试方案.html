@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Python 框架</p>
-      <h1>测试方案</h1>
+      <h1 id="测试方案">测试方案</h1>
       <p class="lesson-sub">配合《<a href="/agents/python-framework/测试方案">12.测试方案</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 TLD 与 TDD 的区别与各自适用场景</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《12.测试方案》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>五层测试选型（课件）</h3>
+        <h3 id="五层测试选型课件">五层测试选型（课件）</h3>
         <ul class="pitfall-list">
           <li><strong>单元</strong>（unit/）：屏蔽外部，测单函数/类——复杂重要的代码</li>
           <li><strong>集成</strong>（integration/）：多模块交互——核心，覆盖率的主力</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>Stub 与 Mock</h3>
+        <h3 id="stub-与-mock">Stub 与 Mock</h3>
         <ul class="pitfall-list">
           <li><strong>Stub</strong>：固定返回的替身（SmsServiceStub 永远返回 999999）——只关心「不真发短信」</li>
           <li><strong>Mock</strong>：可验证的替身——调用次数/参数/顺序、side_effect 多返回值、抛异常、调用记录、reset</li>
@@ -56,10 +56,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《12.测试方案》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. TLD 和 TDD 的区别是？</div>
@@ -93,7 +93,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 「登录接口」这种挂掉用户就进不来的功能，属于哪条冒烟红线？</div>
@@ -127,7 +127,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 「获取用户 Token 是所有需要登录接口的前提」属于哪条冒烟红线？</div>
@@ -163,7 +163,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -216,7 +216,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.python.org/3/library/unittest.mock.html">Python 官方：unittest.mock</a> · <a href="https://docs.pytest.org/en/stable/">pytest 官方文档（markers）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/测试方案速查表.html">测试方案速查表</a>——五层选型、冒烟红线、Mock 七大能力一页装下，建议打印。</li>

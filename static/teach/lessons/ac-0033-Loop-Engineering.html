@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Loop Engineering</h1>
+      <h1 id="loop-engineering">Loop Engineering</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Loop-Engineering">33.Loop Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 Loop Engineering 在课程里的位置——它解决的不是「单轮怎么走」，而是「循环怎么自我推动到交付」</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>本章源文档很精炼，就一句话定位加五条循环内的动作；下面把「定位 → 循环的三个工程问题 → 可观测与沉淀」这条线铺开，细节都能在《33.Loop Engineering》与《21.Agent》里对上。</p>
 
       <div class="card">
-        <h3>Loop Engineering 是什么：让 Agent 自我推动到「可交付」</h3>
+        <h3 id="loop-engineering-是什么让-agent-自我推动到可交付">Loop Engineering 是什么：让 Agent 自我推动到「可交付」</h3>
         <ul class="pitfall-list">
           <li><strong>课件定位（原文）</strong>：Loop Engineering 关注的是如何让 Agent <strong>自我推动</strong>，最终完成一个<strong>可交付的产品</strong>；它的实现方式是<strong>循环</strong></li>
           <li><strong>循环里做的五件事（课件原文）</strong>：① 自主发现还未完成的任务；② 驱动多个子代理并行任务，并使用<strong>工作树隔离</strong>；③ 自主沉淀知识；④ 自主接入工具；⑤ 不同的子代理分工</li>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="card">
-        <h3>循环的三个工程问题：终止条件、预算控制、失败重试与退避</h3>
+        <h3 id="循环的三个工程问题终止条件预算控制失败重试与退避">循环的三个工程问题：终止条件、预算控制、失败重试与退避</h3>
         <ul class="pitfall-list">
           <li><strong>终止判据要外化到环境</strong>：第 21 章的退出条件是 <code>registry.invoke(session.messages[-1])</code> 返回 <code>None</code>（这一轮没有 <code>tool_calls</code>），它只说明「模型这一轮不想调工具」，<strong>不等于任务已完成</strong>。Loop 场景的目标是可交付，完成判据必须来自环境里可验证的事实：验收项通过、测试跑绿、产物文件存在。官方记录过对应的失效模式——模型倾向于把功能标记为完成却没做端到端验证，解法是给它一份功能清单并<strong>自验证</strong>，只有通过测试才允许标记</li>
           <li><strong>最大迭代是兜底，不是失败</strong>：官方原文「任务通常在完成时终止，但通常也要包含停止条件（例如<strong>最大迭代次数</strong>）来保持控制」。超限时应当<strong>有界退出</strong>并保留现场（进度文件 + 已完成/未完成清单 + 会话快照），而不是静默继续烧钱</li>
@@ -57,7 +57,7 @@
       </div>
 
       <div class="card">
-        <h3>可观测性与自主沉淀：让循环每一圈都留下痕迹</h3>
+        <h3 id="可观测性与自主沉淀让循环每一圈都留下痕迹">可观测性与自主沉淀：让循环每一圈都留下痕迹</h3>
         <ul class="pitfall-list">
           <li><strong>第 21 章的监听层就是现成的观测面</strong>：<code>ModelListener</code> 挂在 <code>reasoning_* / content_* / tool_call_* / complete</code> 全部事件上，派生出审计监听器即可在 <code>tool_call_end</code> 记下工具名、参数、调用 id 与时间。官方在生产系统里的经验是——加上完整 tracing 之后才能系统性地定位「为什么没找到信息」；至少要能回答：每一轮决定了什么、调了什么工具、结果如何、花了多少 token 与时间、循环因为什么停下</li>
           <li><strong>自主沉淀知识 = 把状态写到 Agent 之外</strong>：每个新会话都是「没有上一班记忆的新工程师」。官方的做法是先跑一个初始化会话搭好环境（<code>init.sh</code>、一份进度文件、一次初始提交），之后每个会话只做增量推进并留下结构化更新；关键洞察是「让 Agent 在全新上下文里能<strong>快速搞清工作状态</strong>」——靠的正是进度文件加 git 历史。另一个实战收获是让 Agent 用描述性的提交信息提交进度、把进展写进进度文件，这样它既能回退坏改动，也能恢复可用状态</li>
@@ -68,10 +68,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课、《33.Loop Engineering》与《20.ReAct》/《21.Agent》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. Loop Engineering 关注的核心问题是？</div>
@@ -105,7 +105,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 课件里的「自主发现还未完成的任务」，落到工程实现上最关键的动作是？</div>
@@ -139,7 +139,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 同事说：「自主循环本来就是让 Agent 一直跑下去，加 <code>max_iterations</code> 就退化成 workflow 了，所以不该加。」这个说法错在哪？</div>
@@ -175,7 +175,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -235,7 +235,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic《Building effective agents》</a> · <a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents">Anthropic《Effective harnesses for long-running agents》</a> · <a href="https://www.anthropic.com/engineering/multi-agent-research-system">Anthropic《How we built our multi-agent research system》</a> · <a href="https://git-scm.com/docs/git-worktree">git 官方文档 git-worktree(1)</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Loop-Engineering速查表.html">Loop Engineering速查表</a>——终止判据、预算与退避公式、工作树隔离命令、可观测挂点一页装下，建议打印。</li>

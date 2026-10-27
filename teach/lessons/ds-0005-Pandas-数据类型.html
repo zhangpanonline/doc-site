@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
-      <h1>Pandas - 数据类型</h1>
+      <h1 id="pandas---数据类型">Pandas - 数据类型</h1>
       <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Pandas-数据类型">05.Pandas - 数据类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 Series 是「带标签的一维数组」，并解释 <code>values</code> / <code>index</code> / <code>dtype</code> / <code>shape</code> 各是什么</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先把本章的三块骨架过一遍——细节都在《05.Pandas - 数据类型》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>Series：带标签的一维数组</h3>
+        <h3 id="series带标签的一维数组">Series：带标签的一维数组</h3>
         <ul class="pitfall-list">
           <li>Pandas 两种核心结构：<strong>Series</strong>（一列带标签的数据）与 <strong>DataFrame</strong>（带标签的二维表格）</li>
           <li>Series 由两部分组成：<code>values</code>（数据本身，类型是 <code>numpy.ndarray</code>）与 <code>index</code>（每个数据点的标签）</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>DataFrame：创建与组成结构</h3>
+        <h3 id="dataframe创建与组成结构">DataFrame：创建与组成结构</h3>
         <ul class="pitfall-list">
           <li>三种常见创建方式：<strong>字典</strong>（key 是列名、value 是列数据）、<strong>嵌套列表</strong>（用 <code>columns=</code> 补列名，否则是 0/1/2）、<strong>NumPy 二维数组</strong>（同样要 <code>columns=</code> 才有列名）</li>
           <li>组成结构四件套：<code>index</code>（行标签，默认 <code>RangeIndex</code>）、<code>columns</code>（列名，类型是 <code>pandas.Index</code>）、<code>values</code> / <code>to_numpy()</code>（核心数据，<code>numpy.ndarray</code>）、<code>dtypes</code>（<strong>每列</strong>一个类型）</li>
@@ -56,7 +56,7 @@
       </div>
 
       <div class="card">
-        <h3>读数据：dtype 与索引列是两个高频雷区</h3>
+        <h3 id="读数据dtype-与索引列是两个高频雷区">读数据：dtype 与索引列是两个高频雷区</h3>
         <ul class="pitfall-list">
           <li><code>pd.read_csv</code> 常用参数：<code>encoding</code>（编码）、<code>header=None</code>（无表头）、<code>index_col</code>（指定索引列）、<code>usecols</code>（只读指定列）、<code>nrows</code>（只读前 N 行）、<code>dtype</code>（指定列类型）</li>
           <li><code>pd.read_excel(..., sheet_name='Sheet1')</code> 要指明工作表；<code>pd.read_sql('SELECT ...', conn)</code> 直接把查询结果变成 DataFrame</li>
@@ -68,10 +68,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《05.Pandas - 数据类型》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 课件把 Series 描述为「带标签的一维数组」，它由哪两个核心部分组成？</div>
@@ -105,7 +105,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 一份 CSV 里 <code>订单号</code> 列的值形如 <code>007</code>、<code>012</code>，直接 <code>pd.read_csv('orders.csv')</code> 之后这一列变成了 <code>7</code>、<code>12</code>。<strong>正确</strong>的处理方式是什么？</div>
@@ -139,7 +139,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 同事让 AI 写「把两个部门各自汇总出来的 Series 相加，得到公司总销售额」。两个 Series 的索引是各自部门里出现过的员工工号，且集合不完全相同（有的员工两边都在，有的只在一侧）。审查这段代码，最大的隐患是？</div>
@@ -175,7 +175,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -228,7 +228,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://pandas.pydata.org/docs/user_guide/10min.html">10 minutes to pandas</a> · <a href="https://pandas.pydata.org/docs/user_guide/dsintro.html">Intro to data structures</a> · <a href="https://pandas.pydata.org/docs/user_guide/io.html">IO tools（read_csv / read_excel / read_sql 参数总表）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Pandas-数据类型速查表.html">Pandas-数据类型速查表</a>——Series vs DataFrame、组成结构四件套、常用读取参数一页装下，建议打印。</li>

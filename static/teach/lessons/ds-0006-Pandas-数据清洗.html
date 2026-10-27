@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
-      <h1>Pandas - 数据清洗</h1>
+      <h1 id="pandas---数据清洗">Pandas - 数据清洗</h1>
       <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Pandas-数据清洗">06.Pandas - 数据清洗</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>用 <code>info()</code> / <code>head()</code> / <code>dtypes</code> / <code>isna().sum()</code> / <code>value_counts()</code> 在一分钟内说清一份数据「脏在哪」</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把清洗的骨架过一遍——细节都在《06.Pandas - 数据清洗》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>先观察，再动手：四个探针</h3>
+        <h3 id="先观察再动手四个探针">先观察，再动手：四个探针</h3>
         <ul class="pitfall-list">
           <li><code>df.info()</code>：一次看全<strong>数据量、列名、非空计数、dtype</strong>——本课数据 679 行 6 列，备注列只有 222 个非空，一眼就知道它大半是空的</li>
           <li><code>df.isna().sum()</code>：按列数缺失。本课：昵称 3 / 学历 2 / 城市 21 / 经验 17 / 薪资 101 / 备注 457</li>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="card">
-        <h3>逐列清洗：五条主线</h3>
+        <h3 id="逐列清洗五条主线">逐列清洗：五条主线</h3>
         <ul class="pitfall-list">
           <li><strong>应届信息提取</strong>：<code>26应届</code> 不是经验、也不是城市，而是<strong>毕业年份</strong>。用 <code>str.contains(r'应届', na=False)</code> 造掩码 → <code>str.extract(r'(\d+)\s*应届')</code> 取数字 → 加 2000 写进新列「毕业年份」；经验列置 0，城市等错位列置空</li>
           <li><strong>学历归类</strong>：「本 / 本科 / 本211 / 985本」都是本科，「专 / 专科 / 大专」都是大专。用 <code>map(edu_map)</code> 做字典映射，<strong>映射表里没有的值自动变 NaN</strong>——「招人」「留美」这类异常值正是靠这一条被清掉；清洗后可 <code>astype('category')</code> 明确它是分类数据</li>
@@ -57,7 +57,7 @@
       </div>
 
       <div class="card">
-        <h3>清洗完必须验证的三件事</h3>
+        <h3 id="清洗完必须验证的三件事">清洗完必须验证的三件事</h3>
         <ul class="pitfall-list">
           <li><strong>前后对比</strong>：再跑一次 <code>df.info()</code>——行数应保持不变（679），变的应该是 dtype（薪资/经验变成 float64）与非空计数。行数变了，说明某一步把行吃掉或造出来了</li>
           <li><strong>口径检查</strong>：<code>df.describe()</code> 看量级是否合理。薪资 max 166.7 来自「200w/年」的换算（200×10÷12），是<strong>正确换算出的极端值</strong>，处理它属于业务判断（后续单独裁剪），不属于解析错误</li>
@@ -68,10 +68,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《06.Pandas - 数据清洗》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 拿到一份陌生的表格数据，课件要求的第一件事是什么？</div>
@@ -105,7 +105,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 想把列名「薪资」「经验」改成带单位的「薪资(k)」「经验(年)」，正确写法是？</div>
@@ -139,7 +139,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 经验列里混进了「26应届」。课件为什么要把这列值提取成独立的「毕业年份」列，而不是直接删掉或当成 0 年经验？</div>
@@ -175,7 +175,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -228,7 +228,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://pandas.pydata.org/docs/user_guide/missing_data.html">pandas 官方 Working with missing data</a> · <a href="https://pandas.pydata.org/docs/user_guide/text.html">pandas 官方 Working with text data</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Pandas-数据清洗速查表.html">Pandas-数据清洗速查表</a>——六步流程、脏数据形态对照、常用 API 速记一页装下，建议打印。</li>

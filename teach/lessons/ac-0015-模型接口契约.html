@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>模型接口契约</h1>
+      <h1 id="模型接口契约">模型接口契约</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/模型接口契约">15.模型接口契约</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出七种本地模型运行方案的定位差异，并解释为什么本章选 Ollama 作为默认入口</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「本地模型 → OpenAI 兼容接口 → SDK 调用 → 流式/视觉」这条链路走一遍——细节都在《15.模型接口契约》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>本地模型的七种打开方式</h3>
+        <h3 id="本地模型的七种打开方式">本地模型的七种打开方式</h3>
         <ul class="pitfall-list">
           <li><strong>Pytorch + Transformers</strong>：主要用于本地训练、微调，也能推理，但需要自行适配硬件加速</li>
           <li><strong>Ollama</strong>：一键部署和运行开源大模型的命令行工具，内置量化支持和 GPU 加速——本章的主角</li>
@@ -48,7 +48,7 @@
       </div>
 
       <div class="card">
-        <h3>从 <code>.env</code> 到 <code>resp.json</code>：一次非流式调用的全链路</h3>
+        <h3 id="从-env-到-respjson一次非流式调用的全链路">从 <code>.env</code> 到 <code>resp.json</code>：一次非流式调用的全链路</h3>
         <ul class="pitfall-list">
           <li><strong>准备模型</strong>：<code>ollama pull qwen3-vl</code> 拉取模型，<code>ollama list</code> 看已下载，<code>ollama show</code> 看信息，<code>ollama ps</code> 看服务；访问 <code>http://localhost:11434/</code> 确认服务在跑；可用 <code>OLLAMA_MODEL_SERVER</code> 环境变量换镜像源</li>
           <li><strong>不写代码先测接口</strong>：<code>curl http://localhost:11434/v1/models</code> 列模型；<code>curl -X POST .../v1/chat/completions</code> 带 <code>{"model":"qwen3-vl","messages":[...],"stream":false}</code> 直接问一句</li>
@@ -62,7 +62,7 @@
       </div>
 
       <div class="card">
-        <h3>流式与视觉：把「打字机效果」和「看得见的输入」拆开</h3>
+        <h3 id="流式与视觉把打字机效果和看得见的输入拆开">流式与视觉：把「打字机效果」和「看得见的输入」拆开</h3>
         <ul class="pitfall-list">
           <li><strong>开流式</strong>：<code>create(..., stream=True)</code> 之后得到的是可迭代的流对象，<code>for chunk in stream</code> 逐块消费；课件里还配了 <code>sys.stdout.flush()</code> 才能看到实时输出</li>
           <li><strong>取文本的位置变了</strong>：非流式读 <code>choices[0].message.content</code>，流式要读 <code>choices[0].delta.content</code>——<code>delta</code> 里可能是一条 role 标记、一段 content，也可能是空的</li>
@@ -76,10 +76,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《15.模型接口契约》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 「一键部署和运行开源大模型的命令行工具，内置量化支持和 GPU 加速」——课件里这句话描述的是？</div>
@@ -113,7 +113,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. <code>utils/config.py</code> 里为什么用 <code>os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.env")</code> 来定位 <code>.env</code>，而不是直接写 <code>load_dotenv(".env")</code>？</div>
@@ -147,7 +147,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 推演：某个模型这一次只输出正文、完全没有思考过程。<code>chunk_generator</code> 依次 yield 的 <code>type</code> 序列是？</div>
@@ -183,7 +183,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -236,7 +236,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.ollama.com/api/openai-compatibility">Ollama 官方文档 OpenAI compatibility</a>（兼容子集与支持字段清单）· <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_stream_completions.ipynb">OpenAI Cookbook《How to stream completions》</a>（delta、include_usage 与流式代价）· <a href="https://ollama.com/library">Ollama 官方模型仓库</a> · <a href="https://ollama.com/">Ollama 下载安装</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/模型接口契约速查表.html">模型接口契约速查表</a>——本地模型选型、CLI 与接口速查、resp.json 字段表、流式事件与视觉组装一页装下，建议打印。</li>

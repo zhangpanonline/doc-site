@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
-      <h1>全文检索</h1>
+      <h1 id="全文检索">全文检索</h1>
       <p class="lesson-sub">来源：官方文档 §12 全文检索（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出全文检索的三件套（tsvector / tsquery / @@）与各自职责</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/textsearch-intro.html">§12</a>。</p>
 
       <div class="card">
-        <h3>三件套（官方要点）</h3>
+        <h3 id="三件套官方要点">三件套（官方要点）</h3>
         <ul class="pitfall-list">
           <li><code>tsvector</code>：存储<strong>预处理后的文档</strong>（分词词位列表）</li>
           <li><code>tsquery</code>：表示<strong>处理过的查询</strong>（词 + 逻辑组合 &amp;/|/!）</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>文档的定义（官方）</h3>
+        <h3 id="文档的定义官方">文档的定义（官方）</h3>
         <ul class="pitfall-list">
           <li>全文搜索系统中<strong>进行搜索的单元</strong>（文章、邮件）</li>
           <li>在 PG 中通常是<strong>表中一行内的一个文本字段</strong>，或<strong>多个字段的组合</strong>（官方例：title || ' ' || author || ' ' || abstract || ' ' || body）</li>
@@ -54,10 +54,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. tsvector 存的是什么？</div>
@@ -91,7 +91,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 在 PG 中，一个「文档」通常是什么？</div>
@@ -125,7 +125,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. tsquery 的逻辑组合支持哪些？</div>
@@ -163,7 +163,7 @@
     
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -217,7 +217,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/textsearch-intro.html">postgres.cn · 12 全文检索</a></li>
         <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/textsearch-tables.html">12.2 表和索引</a> · <a href="http://www.postgres.cn/docs/current/textsearch-controls.html">12.3 控制文本搜索</a></li>

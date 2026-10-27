@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Prompt Engineering</h1>
+      <h1 id="prompt-engineering">Prompt Engineering</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Prompt-Engineering">30.Prompt Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>用一句话说清提示词工程在做什么——它经营的是上下文里的哪两格（系统提示词、用户问题），以及模型推理与回复在链路里的位置</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>本章课件很短：标题、一个指向《Prompt Engineering Guide》的 GitHub 链接、一张图。所以这一课只讲三件事——那张图说的是什么、提示词工程是什么、它在 Agent 工程体系里站在哪。细节都在《30.Prompt Engineering》与它给出的那份指南里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>本章那张图：提示词工程作用在哪一格</h3>
+        <h3 id="本章那张图提示词工程作用在哪一格">本章那张图：提示词工程作用在哪一格</h3>
         <ul class="pitfall-list">
           <li><strong>图里只有一个动作</strong>：「提示词的工程」引出两条箭头，分别落在上下文里的<strong>系统提示词</strong>与<strong>用户问题</strong>上——它经营的就是这两格文本</li>
           <li><strong>这两格与「回复」被同一个框圈住</strong>，框的名字叫<strong>上下文</strong>；整个上下文送进<strong>模型</strong>做推理（Reasoning），再由模型产出<strong>回复</strong>。回复是模型的输出，不是提示词工程能直接写的对象</li>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="card">
-        <h3>提示词工程是什么：定义与四要素</h3>
+        <h3 id="提示词工程是什么定义与四要素">提示词工程是什么：定义与四要素</h3>
         <ul class="pitfall-list">
           <li><strong>本章指定资源的定义</strong>：《Prompt Engineering Guide》仓库 README 原文——Prompt engineering is a relatively new discipline for developing and optimizing prompts to efficiently use language models (LMs) for a wide variety of applications and research topics.（提示词工程是一门相对较新的学科，用于<strong>开发与优化提示词</strong>，以便在各种应用与研究场景中<strong>高效地使用语言模型</strong>。）</li>
           <li><strong>它同时是一门「理解模型」的功夫</strong>：指南紧接着说，提示词工程技能有助于更好地理解大语言模型的能力与局限——所以写提示词不是玄学，而是拿它当探针去摸模型的边界</li>
@@ -57,7 +57,7 @@
       </div>
 
       <div class="card">
-        <h3>它站在哪：工程方法论序列与学习路径</h3>
+        <h3 id="它站在哪工程方法论序列与学习路径">它站在哪：工程方法论序列与学习路径</h3>
         <ul class="pitfall-list">
           <li><strong>序列里的位置</strong>：课程目录把 30–34 章编为「六、工程方法论」——Prompt → Context → Harness → Loop → Graph Engineering，本章是这条线的<strong>开篇</strong></li>
           <li><strong>与上下文工程的关系（官方定义）</strong>：Anthropic 在《Effective context engineering for AI agents》里把上下文工程称为提示词工程的<strong>自然演进</strong>，而不是替代——提示词工程指「为获得最佳结果而编写与组织 LLM 指令的方法」，其主要关注点是「如何写出有效的提示词，尤其是系统提示词」；上下文工程指「在 LLM 推理过程中策划与维护最优 token 集合的策略」，<strong>包括提示词之外还会落进上下文的一切</strong>（系统指令、工具、MCP、外部数据、消息历史）</li>
@@ -69,10 +69,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《30.Prompt Engineering》（含本章指定指南）覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 按本章课件那张图，「提示词的工程」直接经营的是上下文里的哪两部分？</div>
@@ -106,7 +106,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 指南把提示词拆成若干可选要素。提示词「把下面这段客服对话分为：投诉 / 咨询 / 退换。对话：……（一段文本）……类别：」中，最后的「类别：」属于哪个要素？</div>
@@ -140,7 +140,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 官方把上下文工程定义为「在 LLM 推理过程中策划与维护最优 token 集合」。以下四项工作里，哪一项不属于提示词工程，而属于上下文工程？</div>
@@ -176,7 +176,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -229,7 +229,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://github.com/dair-ai/Prompt-Engineering-Guide">dair-ai《Prompt Engineering Guide》（本章课件给的唯一外链）</a> · <a href="https://www.promptingguide.ai/">指南在线阅读版（Introduction / Techniques / Applications / Prompt Hub）</a> · <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic《Effective context engineering for AI agents》（提示词工程与上下文工程的分界）</a> · <a href="https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/prompt-engineering">Microsoft Learn《Prompt engineering techniques》（提示词构件与指令前置）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Prompt-Engineering速查表.html">Prompt-Engineering速查表</a>——课件图链路、提示词要素与技巧、与上下文工程的分界、30–34 章方法论序列一页装下，建议打印。</li>

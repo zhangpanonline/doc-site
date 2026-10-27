@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>封装tools</h1>
+      <h1 id="封装tools">封装tools</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/封装tools">19.封装tools</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清「函数 → 参数模型 → Schema → session.tools → 模型 → 执行 → 结果回灌」这条流水线的每一环由谁负责</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把本章的骨架过一遍——细节都在《19.封装tools》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>要封装的那条流水线</h3>
+        <h3 id="要封装的那条流水线">要封装的那条流水线</h3>
         <ul class="pitfall-list">
           <li>上一章的完整流程是：<strong>定义函数 → 手动拼 JSON Schema → 绑定到 <code>session.tools</code> → 调用模型 → 执行工具</strong>；手拼 Schema 又长又容易写错</li>
           <li>本章的目标只有一句话：<strong>「希望在代码层面更加简洁优雅地完成这条流水线」</strong></li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>Pydantic：校验与 Schema 一步到位</h3>
+        <h3 id="pydantic校验与-schema-一步到位">Pydantic：校验与 Schema 一步到位</h3>
         <ul class="pitfall-list">
           <li><code>uv add pydantic==2.13.4</code> 装依赖；<code>BaseModel</code> + <code>Field(description=…, default=…)</code> 定义参数</li>
           <li>实例化即校验：自动适配默认值（<code>Counter()</code> → n=0）、自动转换类型（<code>Counter(n="123")</code> → 123）、无法转换则报错（<code>Counter(n=[1,2,3])</code> → <code>ValidationError</code>）</li>
@@ -56,7 +56,7 @@
       </div>
 
       <div class="card">
-        <h3>Tool 类、装饰器与调度中心</h3>
+        <h3 id="tool-类装饰器与调度中心">Tool 类、装饰器与调度中心</h3>
         <ul class="pitfall-list">
           <li><code>Tool(func, param_descriptions={…})</code>：<code>name=func.__name__</code>、<code>description=inspect.getdoc(func) or ""</code>、<code>param_model=create_params_model(func, param_descriptions)</code></li>
           <li><code>schema()</code> 返回 <code>{"type": "function", "function": {name, description, parameters}}</code>；<code>parameters.properties</code> 是遍历 <code>param_model.model_json_schema()</code> 后<strong>只保留 <code>type</code> 与 <code>description</code></strong>（<code>prop.get("type", "string")</code>），<code>required</code> 沿用参数模型的 <code>required</code></li>
@@ -68,10 +68,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《19.封装tools》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. <code>create_params_model(func, param_descriptions)</code> 内部实际调用的 Pydantic API 是？</div>
@@ -105,7 +105,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. 用 <code>create_params_model</code> 处理 <code>def read_file(filepath: str, limit: int = 100)</code>，生成的参数模型 Schema 里 <code>required</code> 是什么？</div>
@@ -139,7 +139,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 一轮对话里模型同时返回了 3 个 <code>tool_calls</code>。<code>registry.invoke(session.messages[-1])</code> 的返回值形状是？</div>
@@ -175,7 +175,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -232,7 +232,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://pydantic.dev/docs/validation/2.12/concepts/models/">Pydantic 官方文档 Models</a>（校验与类型转换的真实语义）· <a href="https://pydantic.dev/docs/validation/2.12/examples/dynamic_models/">Dynamic models</a>（<code>create_model</code> 工厂）· <a href="https://pydantic.dev/docs/validation/2.12/concepts/json_schema/">Json schema</a>（<code>model_json_schema()</code> 的产出规范）</li>
         <li><strong>动手自检</strong>：把 <code>create_params_model</code>、<code>Tool</code>、<code>_ToolRegistry</code> 三个片段抄进一个 notebook 跑通——重点验证「必填/可选 → <code>required</code>」与「异常变堆栈字符串」两件事，再对照 <a href="../reference/封装tools速查表.html">封装tools速查表</a> 勾一遍。</li>

@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
-      <h1>数据类型 · 基础</h1>
+      <h1 id="数据类型--基础">数据类型 · 基础</h1>
       <p class="lesson-sub">来源：官方文档 §8.3 字符类型 + §8.5 日期/时间（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>分清 varchar(n) / char(n) / text 的语义与 n 的单位（字符不是字节），说出 text 是 PG 原生字符串类型</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/datatype-character.html">§8.3</a> 与 <a href="http://www.postgres.cn/docs/current/datatype-datetime.html">§8.5</a>。</p>
 
       <div class="card">
-        <h3>字符类型三兄弟（官方要点）</h3>
+        <h3 id="字符类型三兄弟官方要点">字符类型三兄弟（官方要点）</h3>
         <ul class="pitfall-list">
           <li><code>varchar(n)</code> 有限变长 · <code>char(n)</code> 定长补空格 · <code>text</code> 无限变长</li>
           <li><strong>n 是字符数不是字节数</strong>（官方原文：characters, not bytes）</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>日期时间与时区</h3>
+        <h3 id="日期时间与时区">日期时间与时区</h3>
         <ul class="pitfall-list">
           <li><code>timestamp</code>（不带时区）存字面时间；<code>timestamptz</code>（带时区）<strong>内部存 UTC</strong>、按会话时区展示</li>
           <li>精度 <code>p</code> 控制秒的小数位（0~6）；<code>interval</code> 可限字段集合（YEAR TO MONTH 等）</li>
@@ -53,7 +53,7 @@
       </div>
 
       <div class="card">
-        <h3>数值选型速记</h3>
+        <h3 id="数值选型速记">数值选型速记</h3>
         <ul class="pitfall-list">
           <li>整数 smallint(2B)/integer(4B)/bigint(8B)，默认 integer</li>
           <li><strong>钱 = numeric(precision, scale)</strong>（精确十进制）；float 是近似值，<strong>钱不能用浮点</strong></li>
@@ -62,10 +62,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. <code>varchar(10)</code> 里的 10 是指？</div>
@@ -99,7 +99,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. timestamptz 内部存的是什么？</div>
@@ -133,7 +133,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. AI 建表给「备注」列用了 char(255)。审查：有什么问题？</div>
@@ -171,7 +171,7 @@
     
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -225,7 +225,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/datatype-character.html">postgres.cn · 8.3 字符类型</a> · <a href="http://www.postgres.cn/docs/current/datatype-datetime.html">8.5 日期/时间类型</a> · <a href="http://www.postgres.cn/docs/current/datatype-numeric.html">8.1 数字类型</a></li>
         <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/datatype-money.html">8.2 货币类型</a>（money 与 numeric 的取舍）</li>

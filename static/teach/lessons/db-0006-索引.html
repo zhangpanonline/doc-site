@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 6 节</p>
-      <h1>索引</h1>
+      <h1 id="索引">索引</h1>
       <p class="lesson-sub">配合《<a href="/common/database/索引">db-0006-索引</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清<strong>索引为什么快</strong>（B+ 树思想）以及它的代价</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《06.索引》里，测验和考核会考。</p>
 
-      <h3>索引演示的本质</h3>
+      <h3 id="索引演示的本质">索引演示的本质</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">无索引：50 万行全表扫</span>
@@ -47,7 +47,7 @@
         <p class="diagram-note">⚙️ 索引 = 书的目录：没有它只能逐页翻；有了它先查目录再翻到对应页。范围查询（时间区间）更是直接顺着叶子链表扫。</p>
       </div>
 
-      <h3>要点三连</h3>
+      <h3 id="要点三连">要点三连</h3>
       <ol class="pitfall-list">
         <li><strong>B+ 树为什么适合磁盘</strong>：非叶子只存 key → 树矮（2~4 层）→ IO 次数少；叶子用链表相连 → 范围查询顺着扫；所有数据在叶子 → 查找路径稳定。</li>
         <li><strong>ANALYZE 的作用</strong>：更新统计信息，让优化器知道数据分布与索引存在——不 ANALYZE，优化器可能仍选全表扫描。</li>
@@ -57,10 +57,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
 
-      <h3>🌱 初级 · 概念</h3>
+      <h3 id="-初级--概念">🌱 初级 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 没有索引时，WHERE 条件查询的执行方式是？</div>
@@ -96,7 +96,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级 · 应用</h3>
+      <h3 id="-中级--应用">🌿 中级 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 演示脚本里，建完索引后为什么还要执行 ANALYZE？</div>
@@ -132,7 +132,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级 · 综合</h3>
+      <h3 id="-高级--综合">🎯 高级 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 为什么磁盘数据库用 B+ 树而不是普通二叉树/红黑树？</div>
@@ -172,7 +172,7 @@
     
 
                                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -285,7 +285,7 @@ SELECT * FROM orders WHERE user_id = 1 ORDER BY created_at DESC LIMIT 20;</code>
 
 
     <section>
-      <h2>巩固延伸</h2>
+      <h2 id="巩固延伸">巩固延伸</h2>
       <ul>
         <li><strong>动手验证</strong>：把《06.索引》演示脚本完整跑一遍，对比两次 EXPLAIN 的 Execution Time；再试一个「索引失效」写法（如 WHERE created_at + interval '1 day' &gt; …）观察执行计划退回 Seq Scan。</li>
         <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/indexes.html">PostgreSQL 官方文档：索引</a> · <a href="https://www.postgresql.org/docs/16/sql-explain.html">官方文档：EXPLAIN</a></li>

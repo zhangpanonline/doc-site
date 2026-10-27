@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Skill</h1>
+      <h1 id="skill">Skill</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Skill">23.Skill</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 Skill 要解决的问题——为什么把大段场景化提示词全部塞进系统提示词会导致「严重的提示词膨胀」</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「为什么需要 Skill、Skill 长什么样、本章怎么把它接进 Agent」这条线过一遍——细节都在《23.Skill》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>动机：提示词膨胀</h3>
+        <h3 id="动机提示词膨胀">动机：提示词膨胀</h3>
         <ul class="pitfall-list">
           <li><strong>两个典型场景</strong>：SaaS 系统里用户「有时候」要销售数据分析，得告诉模型数据从哪来、字段什么含义、有哪些常见分析方式、结果怎么展现；智能客服系统里用户「经常」问产品，得告诉模型产品清单、参数、用法、价格、活动、购买链接、建议组合……</li>
           <li><strong>直接后果</strong>：如果在系统提示词中完整地塞入这些内容，会导致<strong>严重的提示词膨胀</strong></li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>SKILL.md 的结构：清单常驻，正文按需</h3>
+        <h3 id="skillmd-的结构清单常驻正文按需">SKILL.md 的结构：清单常驻，正文按需</h3>
         <ul class="pitfall-list">
           <li><strong>落盘位置</strong>：<code>agent/.agents/skills/&lt;技能名&gt;/SKILL.md</code>；本章有两个——自写的 <code>no-permission</code>（description：「当用户和你和开发无关的问题时，使用此技能」，正文是统一回复话术）与安装来的 <code>frontend-design</code></li>
           <li><strong>文件结构</strong>：文件开头是一段被 <code>---</code> 包住的 YAML frontmatter（本章用到 <code>name</code>、<code>description</code>），紧跟 Markdown 正文</li>
@@ -56,7 +56,7 @@
       </div>
 
       <div class="card">
-        <h3>本章工程链路（新增 2 个文件、修改 3 个文件）</h3>
+        <h3 id="本章工程链路新增-2-个文件修改-3-个文件">本章工程链路（新增 2 个文件、修改 3 个文件）</h3>
         <ul class="pitfall-list">
           <li><strong>新增 <code>agent/tool/use_skill.py</code></strong>：<code>SKILL_BASE_DIR = Path(__file__).parent.parent / ".agents" / "skills"</code>；<code>parse_skill_file</code> 拼出 <code>SKILL_BASE_DIR / skill_name / "SKILL.md"</code>，不存在就 <code>raise FileNotFoundError(f"未找到 Skill: {skill_name}")</code>；再把内容按 <code>"---"</code> 切分、<code>yaml.safe_load(parts[1])</code> 取 meta，最终 <code>json.dumps</code> 出 <code>{meta, content, path}</code></li>
           <li><strong>修改 <code>agent/prompt.py</code></strong>：新增 <code>list_skills()</code>——遍历 <code>SKILL_BASE_DIR</code> 下的每个目录，读到 <code>SKILL.md</code> 就把 <code>{技能目录名: meta}</code> 收集起来；<code>render_prompt</code> 把它作为 <code>skills</code> 变量传给模板</li>
@@ -69,10 +69,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《23.Skill》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 课件开头用「SaaS 销售数据分析」和「智能客服产品知识」两个场景引出 Skill。这两个场景共同暴露的核心问题是？</div>
@@ -106,7 +106,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 按本章 <code>agent/tool/use_skill.py</code> 的实现，<code>use_skill("frontend-design")</code> 会去读取哪个文件？</div>
@@ -140,7 +140,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. 同事写了个技能元信息解析器：<code>parts = content.split("---")</code>，<code>meta = yaml.safe_load(parts[1]) if len(parts) &gt;= 3 else {}</code>。以下哪种情况会让它<strong>静默</strong>给出错误结果（不报错、但元信息丢了）？</div>
@@ -176,7 +176,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -236,7 +236,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills">Anthropic《Equipping agents for the real world with Agent Skills》</a> · <a href="https://agentskills.io/specification">Agent Skills 规范（SKILL.md 格式、allowed-tools、渐进式披露）</a> · <a href="https://pyyaml.org/wiki/PyYAMLDocumentation">PyYAML 官方文档（safe_load / 文档分隔符 ---）</a> · <a href="https://www.skills.sh/">skills.sh 公共技能检索</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Skill速查表.html">Skill速查表</a>——SKILL.md 格式、渐进式披露两级、本章工程链路与信任边界一页装下，建议打印。</li>

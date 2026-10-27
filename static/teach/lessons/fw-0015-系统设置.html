@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Python 框架</p>
-      <h1>系统设置</h1>
+      <h1 id="系统设置">系统设置</h1>
       <p class="lesson-sub">配合《<a href="/agents/python-framework/系统设置">15.系统设置</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出「声明式配置」模式：代码里的 SETTINGS_DTO 是设置项的唯一事实来源</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《15.系统设置》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>声明式配置 + 启动同步</h3>
+        <h3 id="声明式配置--启动同步">声明式配置 + 启动同步</h3>
         <ul class="pitfall-list">
           <li><strong>SETTINGS_DTO</strong>：frozen dataclass 定义设置组与设置项（key/value/display_name/description）——代码即配置清单</li>
           <li><strong>initialize()</strong>：启动时把数据库收敛到 DTO——DTO 有而库没有 → 建；DTO 没有而库有 → 删；都在 → 同步 display_name/description（value 不动，保留用户配置）</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>模型与落地流程</h3>
+        <h3 id="模型与落地流程">模型与落地流程</h3>
         <ul class="pitfall-list">
           <li><strong>SettingGroup</strong>：key 唯一；<strong>Setting</strong>：group_id 外键 CASCADE + (group_id, key) 联合唯一</li>
           <li><strong>落地三层</strong>：模型层（复制模型+登记+迁移）→ 业务层（DTO/service/测试×2+跑测）→ API 层（API/main/测试×2+跑测+查文档+手测+冒烟+提交）</li>
@@ -53,10 +53,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《15.系统设置》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 课件落地流程分几层？总共几步？</div>
@@ -90,7 +90,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. initialize 的「双向同步」具体怎么双向？</div>
@@ -124,7 +124,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. initialize 里先建组再 flush、再建设置项，为什么必须分两步？</div>
@@ -160,7 +160,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -213,7 +213,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/advanced/events/">FastAPI 官方：Lifespan Events</a> · <a href="https://docs.pydantic.dev/latest/concepts/pydantic_settings/">pydantic-settings 官方文档</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/系统设置速查表.html">系统设置速查表</a>——落地流程、DTO 收敛算法、lifespan 钩子一页装下，建议打印。</li>

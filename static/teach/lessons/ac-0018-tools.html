@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>tools</h1>
+      <h1 id="tools">tools</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/tools">18.tools</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 Tool Calling 的分工边界——模型只产出「调用意图」，真正执行函数的是你自己的代码</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「模型为什么需要工具、工具描述长什么样、流式事件怎么拼」这三件事过一遍——细节都在《18.tools》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>为什么需要 Tool Calling：模型只会「文本进、文本出」</h3>
+        <h3 id="为什么需要-tool-calling模型只会文本进文本出">为什么需要 Tool Calling：模型只会「文本进、文本出」</h3>
         <ul class="pitfall-list">
           <li><strong>能力边界</strong>：大模型只能处理输入得到输出，<strong>没有任何其他功能</strong>。读文件、执行命令、联网搜索这些事，模型都无法直接处理</li>
           <li><strong>于是有了 Tool Calling</strong>：需要模型完成「文本输出之外的功能」时，就把工具描述交给模型，让它输出「要调用哪个函数、参数是什么」</li>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="card">
-        <h3>工具描述：模型能看到的「函数签名」</h3>
+        <h3 id="工具描述模型能看到的函数签名">工具描述：模型能看到的「函数签名」</h3>
         <ul class="pitfall-list">
           <li><strong>外层固定</strong>：<code>"type": "function"</code>，目前各家 API 只支持 <code>function</code> 这一种工具类型</li>
           <li><strong>函数名</strong>：<code>function.name</code>，<strong>会影响模型输出结果</strong>，通常直接取函数名（官方约束：由 a-z、A-Z、0-9、下划线、连字符组成，最长 128 字符，且必须唯一）</li>
@@ -58,7 +58,7 @@
       </div>
 
       <div class="card">
-        <h3>事件流：把「流式的一堆 delta」拼回一条完整消息</h3>
+        <h3 id="事件流把流式的一堆-delta拼回一条完整消息">事件流：把「流式的一堆 delta」拼回一条完整消息</h3>
         <ul class="pitfall-list">
           <li><strong>为什么要它</strong>：流式响应里每块都是 <code>delta</code> 而不是 <code>message</code>；正文、思考、工具调用三路内容可能在同一次响应里交错下发，散在几百个 chunk 里</li>
           <li><strong>事件清单</strong>：<code>agent/events.py</code> 用 <code>Event</code> 常量把事件定型——<code>REASONING_START/REASONING/REASONING_END</code>、<code>CONTENT_START/CONTENT/CONTENT_END</code>、<code>TOOL_CALL_START/TOOL_CALL/TOOL_CALL_END</code>、<code>COMPLETE</code></li>
@@ -73,10 +73,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《18.tools》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 关于 Tool Calling 的分工，下面哪一句是对的？</div>
@@ -110,7 +110,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 你把 <code>read_file</code> 与 <code>write_file</code> 的 <code>description</code> 都写成「文件操作」，结果模型在只想读文件时频繁调用 <code>write_file</code>。按本章与官方文档，根因与修法是？</div>
@@ -144,7 +144,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. <code>ToolCallsBuilder.append_value</code> 必须按 <code>tc_delta.index</code> 归位再累加。为什么不能直接 <code>+=</code> 到第一个工具上？</div>
@@ -180,7 +180,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -240,7 +240,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://api-docs.deepseek.com/zh-cn/guides/tool_calls">DeepSeek Tool Calls 指南</a> · <a href="https://api-docs.deepseek.com/zh-cn/api/create-chat-completion">DeepSeek Chat Completions API</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb">OpenAI Cookbook《How to call functions with chat models》</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_stream_completions.ipynb">OpenAI Cookbook《How to stream completions》</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/tools速查表.html">tools速查表</a>——工具 schema 三段结构、闭环四步、事件流与常见坑一页装下，建议打印。</li>

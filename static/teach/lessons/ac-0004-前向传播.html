@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>前向传播</h1>
+      <h1 id="前向传播">前向传播</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/前向传播">04.前向传播</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>写出单个神经元与某一层的前向传播公式，并说清每个符号的维度</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先把本章的四组公式串成一条链路——细节都在《04.前向传播》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>从单个神经元到一层</h3>
+        <h3 id="从单个神经元到一层">从单个神经元到一层</h3>
         <ul class="pitfall-list">
           <li><strong>单个神经元</strong>：<code>$y = \sigma(\sum_{i=1}^n w_i x_i + b)$</code>——加权和先加上偏置，再整体送进激活函数</li>
           <li><strong>网络里的神经元</strong>：<code>$a^{L}_j = \sigma(\sum_{i=1}^n w_i a^{L-1}_i + b)$</code>，其中 $L$ 是第 $L$ 层，$j$ 是当前层第 $j$ 行神经元——输入从 $x$ 换成了上一层的输出 $a^{L-1}$</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>一层的矩阵形式与维度自检</h3>
+        <h3 id="一层的矩阵形式与维度自检">一层的矩阵形式与维度自检</h3>
         <p>$\mathbf{a}^{(l)} = \sigma\left( \mathbf{W}^{(l)} \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)} \right)$</p>
         <ul class="pitfall-list">
           <li>$\mathbf{a}^{(l)}$：第 $l$ 层输出向量，$n \times 1$；$\mathbf{a}^{(l-1)}$：第 $l-1$ 层输出向量，$m \times 1$</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>总参数量：一层一层加起来</h3>
+        <h3 id="总参数量一层一层加起来">总参数量：一层一层加起来</h3>
         <p>$\text{总参数量} = \sum_{l=1}^{L} \left( n_l \times n_{l-1} + n_l \right)$</p>
         <ul class="pitfall-list">
           <li>每一项拆开看：$n_l \times n_{l-1}$ 是<strong>权重矩阵</strong>的元素个数，$n_l$ 是<strong>偏置向量</strong>的元素个数</li>
@@ -67,10 +67,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《04.前向传播》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 本章给出的「单个神经元」输出公式是哪一个？</div>
@@ -104,7 +104,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 某层有 128 个神经元，上一层的输出是 784 维。这一层的参数量（权重 + 偏置）是多少？</div>
@@ -138,7 +138,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 一个网络结构是 784（输入）→ 128（隐层）→ 10（输出）。按课件的总参数量公式，整个网络的参数量是多少？</div>
@@ -174,7 +174,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -246,7 +246,7 @@ def forward(x):                  # x: (784, 1) 列向量
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html">PyTorch torch.nn.Linear 官方文档</a>（权重形状 out_features × in_features） · <a href="https://numpy.org/doc/stable/reference/generated/numpy.matmul.html">NumPy numpy.matmul 官方文档</a>（(n,k),(k,m)-&gt;(n,m) 与维度报错条件）</li>
         <li><strong>打印参考</strong>：<a href="../reference/前向传播速查表.html">前向传播速查表</a>——四组公式、维度速查与总参数量一页装下，建议打印。</li>

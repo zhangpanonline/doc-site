@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
-      <h1>架构基础</h1>
+      <h1 id="架构基础">架构基础</h1>
       <p class="lesson-sub">来源：官方教程 §1.2（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>画出一次 PG 会话的两类角色（服务器进程 <code>postgres</code> 与客户端应用），说清各自职责</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方教程 <a href="http://www.postgres.cn/docs/current/tutorial-arch.html">§1.2 架构基础</a>。</p>
 
       <div class="card">
-        <h3>客户端 / 服务器模型</h3>
+        <h3 id="客户端--服务器模型">客户端 / 服务器模型</h3>
         <ul class="pitfall-list">
           <li><strong>服务器进程</strong>：管理数据库文件、接受连接、代表客户端执行操作——程序名叫 <code>postgres</code></li>
           <li><strong>客户端应用</strong>：psql 文本工具、图形界面、Web 服务器、管理工具——大部分由用户开发</li>
@@ -43,7 +43,7 @@
       </div>
 
       <div class="card">
-        <h3>进程模型（每连接一个进程）</h3>
+        <h3 id="进程模型每连接一个进程">进程模型（每连接一个进程）</h3>
         <ul class="pitfall-list">
           <li>最初的 <code>postgres</code> 是<strong>守护进程</strong>：始终运行，等待连接</li>
           <li>每个新连接到来 → 守护进程 <strong>fork 一个新进程</strong>服务它</li>
@@ -53,7 +53,7 @@
       </div>
 
       <div class="card">
-        <h3>两个面试常问推论</h3>
+        <h3 id="两个面试常问推论">两个面试常问推论</h3>
         <ul class="pitfall-list">
           <li><strong>进程模型 vs 线程模型</strong>：PG 每连接独立进程——隔离性好（一连接崩不影响他人），但每连接内存开销大 → 对连接数与连接复用敏感 → 连接池（PgBouncer 等）的动机</li>
           <li><strong>文件可见性</strong>：客户机能访问的文件 ≠ 服务器能访问的文件；COPY/导入路径以服务器所在机器为准</li>
@@ -62,10 +62,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方 §1.2 覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. PostgreSQL 采用什么架构模型？</div>
@@ -99,7 +99,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 每当一个新的客户端连接到来，守护进程会做什么？</div>
@@ -133,7 +133,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 相比线程模型数据库，PG 进程模型的典型代价是？</div>
@@ -171,7 +171,7 @@
     
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -225,7 +225,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/tutorial-arch.html">postgres.cn · 1.2 架构基础</a> · <a href="https://www.postgresql.org/docs/current/tutorial-arch.html">官方英文版</a></li>
         <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/runtime-config-connection.html">19.3 连接与认证参数</a>（max_connections 等）</li>

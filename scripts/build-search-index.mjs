@@ -10,6 +10,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {
+  JSX_TAG_RE,
+  HTML_TAG_RE,
+  MD_LINK_RE,
+  MD_EMPH_RE,
+  decodeEntities,
+  slugifyHeading,
+  stripTags,
+  collectHtmlHeadingIds,
+  makeHtmlIdTaker,
+} from './lib/search-text.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS_DIR = path.join(ROOT, 'docs');
@@ -20,50 +31,8 @@ const OUT_FILE = path.join(ROOT, 'api/_index/search-index.ts');
 const MAX_CHUNK = 1600;
 
 // ---------------------------------------------------------------- 文本清洗
-
-const ENTITIES = {
-  '&amp;': '&',
-  '&lt;': '<',
-  '&gt;': '>',
-  '&quot;': '"',
-  '&#39;': "'",
-  '&apos;': "'",
-  '&nbsp;': ' ',
-  '&#8203;': '',
-  '&hellip;': '…',
-};
-
-function decodeEntities(s) {
-  return s.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (m) => ENTITIES[m.toLowerCase()] ?? m);
-}
-
-/** 常见行内 HTML 标签（小写开头）——保留正文里 a < b 这类比较写法 */
-const INLINE_TAGS =
-  'code|a|span|div|pre|em|strong|b|i|u|s|del|ins|sub|sup|mark|small|br|p|li|ul|ol|' +
-  'table|thead|tbody|tr|td|th|blockquote|details|summary|kbd|abbr|cite|q|time|img|' +
-  'iframe|video|audio|figure|figcaption|input|button|label|select|option|h1|h2|h3|' +
-  'h4|h5|h6|section|main|article|aside';
-
-/** 大写开头的 JSX 组件标签（TabItem / ApiTable / Quiz 之类） */
-const JSX_TAG_RE = /<\/?[A-Z][A-Za-z0-9._]*(\s[^<>]*?)?\/?>/g;
-const HTML_TAG_RE = new RegExp(`</?(?:${INLINE_TAGS})(?:\\s[^<>]*?)?/?>`, 'gi');
-const MD_LINK_RE = /!?\[([^\]]*)\]\([^)\s]+(?:\s+["'][^"']*["'])?\)/g;
-const MD_EMPH_RE = /(\*\*|__|\*|_|~~|`)((?:(?!\1).)+?)\1/g;
-
-/** 标题文本 → slug（近似 github-slugger：去标点、空白转连字符、小写） */
-function slugifyHeading(heading) {
-  return (
-    heading
-      .toLowerCase()
-      // 保留 - 和 _（github-slugger 的白名单里就有这两个）
-      .replace(/[^\p{L}\p{N}\s_-]/gu, '')
-      .trim()
-      // 逐个空白替换、不合并连续空白：对齐 github-slugger。
-      // 例：## Lock —— 互斥锁（破折号被移除后留两个空格）→ lock--互斥锁，
-      // 若合并成 \s+ 会得到 lock-互斥锁，与页面真实 id 对不上。
-      .replace(/\s/g, '-') || 'section'
-  );
-}
+// 清洗与锚点规则放在 scripts/lib/search-text.mjs，与静态课页的 id 注入脚本
+// 共用同一份实现——两边各写一份必然漂移，漂移的结果就是锚点跳不动。
 
 /** 分块内标题 → 锚点（近似 docusaurus 的 github-slugger 行为，跳转略偏也能落到本页） */
 function anchorId(heading) {
@@ -121,7 +90,7 @@ function makeIdTaker(seq) {
   let cursor = 0;
   return (text) => {
     for (let i = cursor; i < seq.length; i += 1) {
-      if (seq[i].level >= 2 && seq[i].text === text) {
+      if (seq[i].level === 2 && seq[i].text === text) {
         cursor = i + 1;
         return seq[i].id;
       }
@@ -351,9 +320,11 @@ function extraChunks() {
   for (const sec of sections) {
     const text = sec.x.trim();
     if (!text) continue;
-    const anchor = sec.h ? `#${anchorId(sec.h)}` : '';
+    // 不带锚点：这类补充资料指向的是 React 渲染页（如 /jobs/insights），页面里
+    // 没有对应的 heading id，带 #xxx 只会让链接点了不滚动。小节名仍保留在 h 字段
+    // 供搜索结果展示。若以后指向有 heading id 的 docs 页，这里可以再放开。
     for (const piece of splitLong(text, MAX_CHUNK)) {
-      chunks.push({u: url + anchor, t: title, b: '岗位地图 / 市场情报', h: sec.h, x: piece});
+      chunks.push({u: url, t: title, b: '岗位地图 / 市场情报', h: sec.h, x: piece});
     }
   }
   return chunks;
@@ -396,16 +367,6 @@ function glossaryChunks() {
 
 // ---------------------------------------------------------------- 静态课页解析
 
-function stripTags(html) {
-  return decodeEntities(
-    html
-      .replace(HTML_TAG_RE, '')
-      .replace(JSX_TAG_RE, '')
-      .replace(/[ \t]+/g, ' ')
-      .replace(/\n{3,}/g, '\n\n'),
-  ).trim();
-}
-
 function lessonChunks() {
   const chunks = [];
   for (const file of walkFiles(LESSONS_DIR, ['.html'])) {
@@ -443,11 +404,17 @@ function lessonChunks() {
       rest = rest.slice(m.index + m[0].length);
     }
 
+    // 锚点必须与页面里真实写入的 id 一致：id 由 inject-lesson-anchors.mjs 注入，
+    // 这里用同一套「按出现顺序去重」的规则消费 h2/h3 序列。
+    const takeId = makeHtmlIdTaker(collectHtmlHeadingIds(main), [2, 3]);
     const url = `/teach/lessons/${path.basename(file)}`;
     for (const sec of sections) {
+      // 必须先把 id 取走再判空：taker 是有状态的按顺序消费，空块若跳过不消费，
+      // 后面所有块的锚点会整体错位一格
+      const id = sec.h ? takeId() : '';
       const text = stripTags(sec.x);
       if (!text.trim()) continue;
-      const anchor = sec.h ? `#${anchorId(sec.h)}` : '';
+      const anchor = id ? `#${id}` : '';
       for (const piece of splitLong(text, MAX_CHUNK)) {
         chunks.push({u: url + anchor, t: title, b: breadcrumb, h: sec.h, x: piece});
       }

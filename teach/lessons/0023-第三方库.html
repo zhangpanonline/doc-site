@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 21 课</p>
-      <h1>第三方库</h1>
+      <h1 id="第三方库">第三方库</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/第三方库">23-第三方库</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>熟练使用 <code>pip</code> 安装/升级/卸载/查询，读懂版本约束符号</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《23.第三方库》里，测验和考核会考。</p>
 
-      <h3>pip 核心命令</h3>
+      <h3 id="pip-核心命令">pip 核心命令</h3>
       <table class="cmp-table">
         <tr><th>命令</th><th>作用</th></tr>
         <tr><td><code>pip install 包名</code></td><td>安装最新版（可一次装多个）</td></tr>
@@ -45,7 +45,7 @@
         <tr><td><code>python -m venv .venv</code></td><td>创建虚拟环境（隔离依赖）</td></tr>
       </table>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong>版本约束符号</strong>：<code>==</code> 固定、<code>&gt;=</code> 最低、<code>~=</code> 同系列小版本更新、<code>,</code> 组合多条件——<code>pip install "requests&gt;=2.20,&lt;3.0"</code>。<a href="https://pip.pypa.io/en/stable/reference/requirement-specifiers/">官方文档：Requirement Specifiers</a></li>
         <li><strong>venv 隔离依赖</strong>：<code>python -m venv .venv</code> + <code>source .venv/bin/activate</code>——每个项目一套依赖，互不污染。<a href="https://docs.python.org/3/library/venv.html">官方文档：venv</a></li>
@@ -54,10 +54,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. pip 默认从哪里下载包？</div>
@@ -93,7 +93,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 把当前环境所有依赖锁定到文件，用？</div>
@@ -129,7 +129,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 项目同时依赖 requests（HTTP）与 python-dotenv（读 .env），requirements.txt 正确内容是？</div>
@@ -169,7 +169,7 @@
     
 
                                                                                                     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -270,7 +270,7 @@
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://packaging.python.org/en/latest/tutorials/installing-packages/">Installing Packages</a>（PyPA 打包教程）与 <a href="https://docs.python.org/3/library/venv.html">venv</a>。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/what-is-pip/">Using Python's pip to Manage Your Projects' Dependencies</a>，把 pip/venv 工作流讲得很完整。</li>

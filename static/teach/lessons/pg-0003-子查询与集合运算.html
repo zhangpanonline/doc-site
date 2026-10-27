@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
-      <h1>子查询与集合运算</h1>
+      <h1 id="子查询与集合运算">子查询与集合运算</h1>
       <p class="lesson-sub">来源：官方文档 §7.2 表表达式 + §7.4 组合查询（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出子查询的四种形态（标量 / FROM / EXISTS / IN）与各自的适用场景</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/queries-table-expressions.html">§7.2</a> 与 <a href="http://www.postgres.cn/docs/current/queries-union.html">§7.4</a>。</p>
 
       <div class="card">
-        <h3>子查询四形态</h3>
+        <h3 id="子查询四形态">子查询四形态</h3>
         <ul class="pitfall-list">
           <li><strong>标量子查询</strong>：当做一个<strong>值表达式</strong>用——必须恰好返回一行一列</li>
           <li><strong>FROM 子查询</strong>：子查询结果作为派生表，外层继续 JOIN/过滤/聚合</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>集合运算三兄弟（官方原文）</h3>
+        <h3 id="集合运算三兄弟官方原文">集合运算三兄弟（官方原文）</h3>
         <ul class="pitfall-list">
           <li><strong>UNION</strong>：把 query2 结果<strong>附加</strong>到 query1 结果，并<strong>删除所有重复行</strong>（像 DISTINCT）——除非用 UNION ALL</li>
           <li><strong>INTERSECT</strong>：返回<strong>同时存在于两个查询结果中</strong>的行</li>
@@ -55,10 +55,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 官方文档说标量子查询可以当作什么来使用？</div>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. INTERSECT 返回什么？</div>
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. 标量子查询返回了两行，会发生什么？</div>
@@ -164,7 +164,7 @@
     
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -218,7 +218,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/queries-table-expressions.html">postgres.cn · 7.2 表表达式</a> · <a href="http://www.postgres.cn/docs/current/queries-union.html">7.4 组合查询</a></li>
         <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/functions-subquery.html">9.23 子查询表达式</a>（ANY/SOME/ALL）</li>

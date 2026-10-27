@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Agent接入MCP</h1>
+      <h1 id="agent接入mcp">Agent接入MCP</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Agent接入MCP">26.Agent接入MCP</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>复述本章四项 to do：<code>mcp</code> 独立配置 → 进一步封装描述和工具 → 注册工具 → 修改系统提示词模板和注入</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「四步接入路线 + 两份代码骨架」过一遍——细节都在《26.Agent接入MCP》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>接入路线：四步，一个配置中心</h3>
+        <h3 id="接入路线四步一个配置中心">接入路线：四步，一个配置中心</h3>
         <ul class="pitfall-list">
           <li><strong>本章 to do list（原文四条）</strong>：① <code>mcp</code> 独立配置；② 进一步封装描述和工具；③ 注册工具；④ 修改系统提示词模板和注入</li>
           <li><strong>① 独立配置</strong> <code>agent/.agents/mcp.json</code>：<code>servers</code> 下每台服务器自带 <code>type</code>——<code>{"time": {"type": "stdio", "command": "uvx", "args": ["mcp-server-time"]}}</code> 与 <code>{"microsoft-learn": {"type": "http", "url": "https://learn.microsoft.com/api/mcp"}}</code></li>
@@ -56,7 +56,7 @@ agent.session.save()             # 会话落盘</pre>
       </div>
 
       <div class="card">
-        <h3>骨架一：<code>connect_mcp</code> 与 <code>run_async</code></h3>
+        <h3 id="骨架一connect_mcp-与-run_async">骨架一：<code>connect_mcp</code> 与 <code>run_async</code></h3>
         <ul class="pitfall-list">
           <li><strong>配置在导入时就加载</strong>：模块顶层 <code>open(.../.agents/mcp.json)</code> → <code>mcp = json.load(_f)</code>，随后 <code>_client = MCPClient(mcp)</code>——所以配置写错会在 import 阶段就炸</li>
           <li><strong>两条传输分支</strong>（<code>@asynccontextmanager</code>）：
@@ -82,7 +82,7 @@ else:
       </div>
 
       <div class="card">
-        <h3>骨架二：提示词注入链路与三处错误处理缺口</h3>
+        <h3 id="骨架二提示词注入链路与三处错误处理缺口">骨架二：提示词注入链路与三处错误处理缺口</h3>
         <ul class="pitfall-list">
           <li><strong>注入链路</strong>：<code>list_mcp_info()</code> → <code>list_mcp_tools()</code> → 每个服务器一条 <code>{"server": 名字, "tools": [{name, description, inputSchema}, …]}</code> → <code>json.dumps(result, ensure_ascii=False, indent=2)</code> → <code>render_prompt(..., mcp_servers=list_mcp_info())</code> → <code>system.j2</code> 的 MCP 小节里 <code>{{ mcp_servers }}</code> 被包在 <code>```json</code> 代码块中</li>
           <li><strong>缺口 ①：静默降级</strong>——<code>list_mcp_info()</code> 整个函数体包在 <code>try / except Exception</code> 里，异常一律 <code>return ""</code>。好处是 MCP 挂了不阻塞对话；代价是模型看到的工具清单变成空串，而提示词仍然告诉它「可以用 <code>use_mcp</code>」，日志里也没有任何痕迹</li>
@@ -94,10 +94,10 @@ else:
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《26.Agent接入MCP》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 本章 <code>agent/</code> 工程相对上一章的变更账目是？</div>
@@ -131,7 +131,7 @@ else:
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. <code>run_async()</code> 为什么要专门开一个线程、在里面跑 <code>asyncio.run(coro)</code>？</div>
@@ -165,7 +165,7 @@ else:
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 推演 <code>Session.__init__</code> 的这两行：<code>if not system_prompt: system_prompt = render_prompt("system")</code> 之后紧跟 <code>self.add_message({"role": "system", "content": render_prompt("system")})</code>。接入 MCP 之后，代价为什么明显变大？</div>
@@ -201,7 +201,7 @@ else:
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -261,7 +261,7 @@ else:
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://modelcontextprotocol.io/specification/2025-06-18/server/tools">MCP 规范 Tools</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports">MCP 规范 Transports</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle">MCP 规范 Lifecycle</a> · <a href="https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/v1.28.1/README.md">MCP Python SDK v1.28.1 README</a> · <a href="https://learn.microsoft.com/en-us/training/support/mcp">Microsoft Learn MCP Server overview</a> · <a href="https://docs.python.org/3/library/asyncio-runner.html">Python 官方文档 Runners</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Agent接入MCP速查表.html">Agent接入MCP速查表</a>——四项 to do、5 个文件变更、mcp.json 与 use_mcp 骨架、错误处理缺口一页装下，建议打印。</li>

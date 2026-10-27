@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Harness Engineering</h1>
+      <h1 id="harness-engineering">Harness Engineering</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Harness-Engineering">32.Harness Engineering</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>用「马 / 马具」的比喻说清 Harness Engineering 的主张：把注意力从「选什么马（模型）」转到「怎么驾驭模型」</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>本章文档很短，但它是一个「框架性」的章节：名词先立住，再回头把前几章写过的代码按「外壳」视角重读一遍。测验和面试只考本章文档 + 18/19/20/21 章已经写过的判据。</p>
 
       <div class="card">
-        <h3>Harness 是什么：从「选马」到「做马具」</h3>
+        <h3 id="harness-是什么从选马到做马具">Harness 是什么：从「选马」到「做马具」</h3>
         <ul class="pitfall-list">
           <li><strong>词源</strong>：Harness 意为<strong>马具</strong>。本章文档引的原作者判断是「马具对骑乘的影响非常大」，因此该词也被译为「<strong>驾驭工程</strong>」/「缰绳工程」</li>
           <li><strong>核心主张</strong>：任务落地时，应把更多注意力<strong>从「选择什么马（模型）」转移到「选择什么样的马具（如何驾驭模型）」</strong>——同一匹马，马具不同，结果可以完全不同</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>本章三大核心关注点（文档原文口径）</h3>
+        <h3 id="本章三大核心关注点文档原文口径">本章三大核心关注点（文档原文口径）</h3>
         <ul class="pitfall-list">
           <li><strong>情境与状态管理</strong>：确保 AI 在复杂、长周期任务中能获得正确的上下文信息，并记住任务状态，避免「<strong>失忆</strong>」和「<strong>跑偏</strong>」；强调 <strong>召回 → 规划 → 行动</strong> 这个顺序</li>
           <li><strong>护栏</strong>：像给系统设置权限一样，严格管理 AI 能调用哪些工具、访问哪些数据；核心理念是<strong>最小权限原则</strong>——只给 AI 完成当前任务所必须的权限，以防误操作或恶意利用</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>落到课程代码：外壳的五个部件</h3>
+        <h3 id="落到课程代码外壳的五个部件">落到课程代码：外壳的五个部件</h3>
         <ul class="pitfall-list">
           <li><strong>工具面</strong>：18 章给出工具定义的最小 Schema（<code>type: "function"</code> + <code>name</code> / <code>description</code> / <code>parameters</code>，<code>required</code> 列表）；19 章用 Pydantic 动态建模参数，封装出 <code>Tool</code> 类、<code>@tool</code> 装饰器与全局 <code>registry</code></li>
           <li><strong>权限</strong>：最小权限在本工程里的落点是「<strong>只注册当前任务需要的工具</strong>」——<code>session.tools = registry.schemas()</code> 决定模型能看见什么；另一层是执行前<strong>参数校验</strong>（<code>Tool.__call__</code> 先 <code>param_model(**kwargs)</code> 再调原函数）</li>
@@ -67,10 +67,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《32.Harness Engineering》覆盖的内容（含 18/19/20/21 章已写过的代码判据）。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 本章用「马具」来解释 Harness，原作者的比喻想表达的是？</div>
@@ -104,7 +104,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. 本章「可观测」问的第三问是「从哪里获取判断需要的信息」。结合 21 章的 Agent 循环，下面哪一项最符合这个要求？</div>
@@ -138,7 +138,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 线上现象：模型连续 7 轮都在调用同一个 <code>write_file</code>，每次都失败、每次都再试一遍，进程一直不结束、成本持续上涨。按本章三个关注点，最合理的处置顺序是？</div>
@@ -174,7 +174,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -241,7 +241,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://mitchellh.com/writing/my-ai-adoption-journey">Mitchell Hashimoto《My AI Adoption Journey》</a>（Step 5: Engineer the Harness，本章文档所引来源）· <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic《Building effective agents》</a>（环境真值、检查点、护栏）· <a href="https://learn.microsoft.com/en-us/entra/identity-platform/secure-least-privileged-access">Microsoft Learn：最小权限原则</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Harness-Engineering速查表.html">Harness-Engineering速查表</a>——三大关注点、外壳五部件与检查清单一页装下，建议打印。</li>

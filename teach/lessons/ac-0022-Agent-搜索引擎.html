@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Agent 搜索引擎</h1>
+      <h1 id="agent-搜索引擎">Agent 搜索引擎</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Agent-搜索引擎">22.Agent 搜索引擎</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 <code>web_search</code> 工具到底该把什么返回给 AI——为什么传统搜索引擎的页面不能直接喂给 Agent</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「为什么要换搜索引擎、换完之后工具长什么样」过一遍——细节都在《22.Agent 搜索引擎》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>问题的关键：<code>web_search</code> 该返回什么</h3>
+        <h3 id="问题的关键web_search-该返回什么">问题的关键：<code>web_search</code> 该返回什么</h3>
         <ul class="pitfall-list">
           <li>本章开篇就点题：<strong>问题的关键是，<code>web_search</code> 工具应该返回给 AI 什么调用结果？</strong></li>
           <li>直接把传统搜索引擎的结果页（或被大量标签、样式、JS 代码污染的网页）交给 Agent，会踩一串坑：<strong>更多的 token 消耗</strong>、<strong>注意力被分散</strong>、<strong>很多 CSR 的页面无法得到内容</strong>、<strong>包含大量无关信息（广告图片、菜单、banner 等）</strong>、<strong>深层链接无法一次性获取</strong></li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>Tavily 的三类能力（本章用到的全部 API）</h3>
+        <h3 id="tavily-的三类能力本章用到的全部-api">Tavily 的三类能力（本章用到的全部 API）</h3>
         <ul class="pitfall-list">
           <li><strong><code>client.search(query="…")</code></strong>：用关键词搜索，返回结构化搜索结果——这是 <code>web_search</code> 工具的主体</li>
           <li><strong><code>client.extract(urls=[…], include_images=…)</code></strong>：给定 URL 数组，抓取网页内容——这是 <code>fetch_url</code> 工具的主体；本章集成版里显式写了 <code>include_images=False</code>，不要图片</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>集成进 Agent：从原理图到注册代码</h3>
+        <h3 id="集成进-agent从原理图到注册代码">集成进 Agent：从原理图到注册代码</h3>
         <ul class="pitfall-list">
           <li><strong>原理图（AI搜索原理）的链路</strong>：用户问题 → 模型（上下文 + 工具）→ 发起 <code>web_search</code> 工具调用 → 调用结果回填 → 进入 <strong>Reasoning / Acting</strong> 循环 → 得到普通回复 → 退出循环</li>
           <li><strong>两个工具的定义</strong>（新增文件 <code>agent/tool/web.py</code>）：<code>@tool(query="搜索关键字")</code> 修饰 <code>web_search</code>、<code>@tool(urls="要抓取的url链接数组")</code> 修饰 <code>fetch_url</code>；装饰器里的说明就是给模型看的参数描述</li>
@@ -67,10 +67,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《22.Agent 搜索引擎》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 本章开篇提出的「问题的关键」是什么？</div>
@@ -104,7 +104,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 用户对 Agent 说「帮我查一查苹果最新发布了哪些产品？」。按本章的实现，<strong>最先</strong>被调用的是哪个工具、它拿到什么参数？</div>
@@ -138,7 +138,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 审查本章 <code>_ToolRegistry.invoke</code> 里的这段代码：<code>tool = self._tools[name]</code>，紧接着 <code>result = ""</code>、<code>if not tool: result = "无此工具，请仔细检查你传递的工具名称是否正确"</code>。当模型给出一个不存在的工具名（幻觉）时，实际会发生什么？</div>
@@ -174,7 +174,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -234,7 +234,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.tavily.com/documentation/best-practices/best-practices-search">Tavily Best Practices for Search</a> · <a href="https://docs.tavily.com/documentation/api-reference/endpoint/search">Tavily API Reference：Search</a> · <a href="https://docs.tavily.com/documentation/api-reference/endpoint/extract">Tavily API Reference：Extract</a> · <a href="https://docs.tavily.com/documentation/about">Tavily About（为什么需要 AI 搜索引擎）</a> · <a href="https://github.com/tavily-ai/tavily-python">tavily-python 官方仓库</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Agent-搜索引擎速查表.html">Agent 搜索引擎速查表</a>——三类 API 对照、集成链路与官方参数约束一页装下，建议打印。</li>

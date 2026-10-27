@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>系统提示词</h1>
+      <h1 id="系统提示词">系统提示词</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/系统提示词">16.系统提示词</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清系统提示词在消息序列里的位置，以及它为什么天然承担「全局设定」的角色</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把系统提示词的位置、五条编写原则与本章的渲染链路过一遍——细节都在《16.系统提示词》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>它是什么，为什么在「最前面」</h3>
+        <h3 id="它是什么为什么在最前面">它是什么，为什么在「最前面」</h3>
         <ul class="pitfall-list">
           <li><strong>位置</strong>：系统提示词<strong>往往出现在所有消息的最前面</strong>；大模型在训练的过程中，会重点关注系统提示词</li>
           <li><strong>载体</strong>：本章的 <code>agent/message.py</code> 用 <code>@dataclass</code> 定义了 <code>Message</code> 抽象基类，再由 <code>SystemMessage / UserMessage / AssistantMessage</code> 三个子类分别把 <code>role</code> 默认成 <code>"system" / "user" / "assistant"</code>——发请求时它们被转成 <code>{"role": …, "content": …}</code> 的字典列表</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>五条核心原则（课件的正反对照）</h3>
+        <h3 id="五条核心原则课件的正反对照">五条核心原则（课件的正反对照）</h3>
         <ul class="pitfall-list">
           <li><strong>精简</strong>：能不说就不说，能少说就少说，绝对避免无病呻吟。反例是「你现在要充当一名专业代码顾问……希望你认真仔细地阅读……」；正例压缩成一句「你是代码顾问。精准解答编程问题，不懂直接说明，禁止编造信息。」</li>
           <li><strong>自洽</strong>：提示词不能自我矛盾。反例「回答务必详尽，多角度展开说明；同时所有回复控制在 30 字以内」——两条规则互相打架</li>
@@ -57,7 +57,7 @@
       </div>
 
       <div class="card">
-        <h3>从 <code>.j2</code> 模板到系统提示词：本章工程链路</h3>
+        <h3 id="从-j2-模板到系统提示词本章工程链路">从 <code>.j2</code> 模板到系统提示词：本章工程链路</h3>
         <ul class="pitfall-list">
           <li><strong>先收集环境信息</strong>：<code>get_cwd()</code>（<code>os.getcwd()</code>）、<code>get_is_git()</code>（跑 <code>git rev-parse --is-inside-work-tree</code>，返回码为 0 且输出为 <code>true</code> 才算在仓库里）、<code>get_language()</code>（macOS 读 <code>defaults read -g AppleLocale</code>，Windows 走 <code>ctypes</code> 读区域设置，其它平台返回空串）</li>
           <li><strong>把模板交给 Jinja2</strong>：<code>Environment(loader=FileSystemLoader(template_dir))</code> → <code>env.get_template("system.j2")</code> → <code>template.render(language=…, cwd=…, is_git=…)</code></li>
@@ -70,10 +70,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《16.系统提示词》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 关于系统提示词在消息序列里的位置与分量，本章的说法是？</div>
@@ -107,7 +107,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. 要把 <code>agent/prompt</code> 目录交给 Jinja2 的 <code>FileSystemLoader</code>，并且希望「不管进程从哪个目录启动都能找到模板」。本章 <code>agent/prompt.py</code> 的 <code>render_prompt</code> 选择的是？</div>
@@ -141,7 +141,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. 模板里 <code>{% if language %}</code> 块与 <code>{% endif %}</code> 各自独占一行，<code>Environment</code> 没有传任何空白相关参数。渲染后 <code># Language</code> 前后总是多出空行，没有 <code>language</code> 时同样留下空行。正确的解释与修法是？</div>
@@ -177,7 +177,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -237,7 +237,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://jinja.palletsprojects.com/en/stable/templates/">Jinja2 Template Designer Documentation</a> · <a href="https://jinja.palletsprojects.com/en/stable/api/">Jinja2 API（Environment / FileSystemLoader / Undefined）</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb">OpenAI Cookbook《How to format inputs to ChatGPT models》</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/Prompt_Caching101.ipynb">OpenAI Cookbook《Prompt Caching 101》</a> · <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic《Effective context engineering for AI agents》</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/系统提示词速查表.html">系统提示词速查表</a>——五条原则正反对照、Jinja2 渲染链路与常见故障一页装下，建议打印。</li>

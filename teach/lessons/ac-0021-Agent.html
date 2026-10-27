@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>Agent</h1>
+      <h1 id="agent">Agent</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/Agent">21.Agent</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 <code>Agent</code> 在工程里的位置——入口/编排层，把 Model、Session、Tool、Listener 四个部件组装起来</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「编排层 + 监听层 + 流式解析」三条线过一遍——细节都在《21.Agent》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>Agent 是什么：把四件东西装到一起的编排层</h3>
+        <h3 id="agent-是什么把四件东西装到一起的编排层">Agent 是什么：把四件东西装到一起的编排层</h3>
         <ul class="pitfall-list">
           <li><strong>课件定义</strong>：AI Agent 是通过自主规划、调用工具、持续观察反馈并迭代行动，独立推进复杂任务直至目标达成的人工智能运行单元</li>
           <li><strong>职责分工</strong>：<code>agent/agent.py</code> 是入口/编排层；<code>Model</code>（模型层）、<code>Session</code>（会话层）、<code>tool/</code>（工具层）、<code>Listener</code>（监听层）各管一段，Agent 只负责<strong>串起来 + 驱动循环</strong></li>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="card">
-        <h3>监听层：事件驱动是怎么解耦的</h3>
+        <h3 id="监听层事件驱动是怎么解耦的">监听层：事件驱动是怎么解耦的</h3>
         <ul class="pitfall-list">
           <li><strong>事件常量</strong>（<code>agent/events.py</code>）：推理事件 <code>reasoning_start / reasoning / reasoning_end</code>、内容事件 <code>content_start / content / content_end</code>、工具调用事件 <code>tool_call_start / tool_call / tool_call_end</code>，以及完成事件 <code>complete</code></li>
           <li><strong>事件总线</strong>：<code>EventEmitter</code> 用「事件名 → 回调列表」的映射（<code>defaultdict(list)</code>）管理监听器；<code>on(event, callback)</code> 注册、<code>emit(event, **data)</code> 触发该事件下的所有回调——<strong>一个事件可以挂多个监听器</strong></li>
@@ -57,7 +57,7 @@
       </div>
 
       <div class="card">
-        <h3>流式解析与生命周期：Builder、InvokeResult、print_friendly</h3>
+        <h3 id="流式解析与生命周期builderinvokeresultprint_friendly">流式解析与生命周期：Builder、InvokeResult、print_friendly</h3>
         <ul class="pitfall-list">
           <li><strong>三个 Builder 同时消费每个 chunk</strong>：<code>ReasoningBuilder</code> 盯推理字段（兼容 <code>reasoning_content</code> / <code>reasoning</code>）、<code>ContentBuilder</code> 盯 <code>content</code>、<code>ToolCallsBuilder</code> 盯 <code>tool_calls</code>；谁先拿到值谁就先发 <code>start</code> 事件，之后每个增量发一次中间事件</li>
           <li><strong>结束判定</strong>：<code>is_end</code> 看 <code>chunk.choices[0].finish_reason</code> 是否非空；<code>ReasoningBuilder</code> 额外提前收尾——一旦 <code>delta</code> 里出现 <code>content</code> 或 <code>tool_calls</code>，就认为「思考阶段结束、正文/工具开始」</li>
@@ -70,10 +70,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《21.Agent》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 本章新增的 <code>agent/agent.py</code> 里，<code>Agent</code> 类承担的角色是？</div>
@@ -107,7 +107,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 关于 <code>Agent.__init__(self, *, session=None, model=None, model_listener=None)</code>，下面说法正确的是？</div>
@@ -141,7 +141,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 同样发来一条工具调用，为什么非流式下 <code>_normalize_result_from_response</code> 直接取 <code>message.tool_calls</code> 就行，而流式下 <code>ToolCallsBuilder.append_value</code> 必须按 <code>tc_delta.index</code> 归位、再把 <code>arguments</code> 逐片拼接？</div>
@@ -177,7 +177,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -237,7 +237,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic《Building effective agents》</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb">OpenAI Cookbook《How to call functions with chat models》</a> · <a href="https://docs.python.org/3/library/abc.html">Python 官方文档 abc — Abstract Base Classes</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Agent速查表.html">Agent速查表</a>——编排层结构、事件监听链路、三个 Builder 与停止条件一页装下，建议打印。</li>

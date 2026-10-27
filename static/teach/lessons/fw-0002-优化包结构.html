@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Python 框架</p>
-      <h1>优化包结构</h1>
+      <h1 id="优化包结构">优化包结构</h1>
       <p class="lesson-sub">配合《<a href="/agents/python-framework/优化包结构">02.优化包结构</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出 app 包的四层职责（main 入口 / core 基础设施 / api 路由层 / schema 模型层）</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《02.优化包结构》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>四层结构</h3>
+        <h3 id="四层结构">四层结构</h3>
         <ul class="pitfall-list">
           <li><code>main.py</code>：FastAPI 应用入口（创建 app、挂载路由）</li>
           <li><code>core/</code>：核心基础设施（配置 config.py）</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>配置与路由要点</h3>
+        <h3 id="配置与路由要点">配置与路由要点</h3>
         <ul class="pitfall-list">
           <li><strong>pydantic-settings</strong>：<code>model_config = {"env_file": ".env", "env_prefix": "WEB_"}</code>——app_name 字段实际读取 <code>WEB_APP_NAME</code></li>
           <li><strong>路由拆分</strong>：<code>APIRouter(prefix="/items")</code> + <code>app.include_router(...)</code>——前缀在路由器上声明</li>
@@ -54,10 +54,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《02.优化包结构》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 分层结构中 core/ 的职责是？</div>
@@ -91,7 +91,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. env_file 配置项的作用是？</div>
@@ -125,7 +125,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. CommonSettings 的 environment 字段（默认 development）与 WebSettings 分开的理由是？</div>
@@ -161,7 +161,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -214,7 +214,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.pydantic.dev/latest/concepts/pydantic_settings/">pydantic-settings 官方文档</a> · <a href="https://fastapi.tiangolo.com/tutorial/bigger-applications/">FastAPI 官方：Bigger Applications</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/优化包结构速查表.html">优化包结构速查表</a>——分层与配置一页装下，建议打印。</li>

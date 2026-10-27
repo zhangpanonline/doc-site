@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 5 节</p>
-      <h1>事务</h1>
+      <h1 id="事务">事务</h1>
       <p class="lesson-sub">配合《<a href="/common/database/事务">db-0005-事务</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>用银行转账案例说清<strong>事务的价值</strong>，会写 BEGIN / COMMIT / ROLLBACK / SAVEPOINT——<strong>作业考的就是这个</strong></li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《05.事务》里，测验和考核会考。</p>
 
-      <h3>转账为什么需要事务</h3>
+      <h3 id="转账为什么需要事务">转账为什么需要事务</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">UPDATE B 加 100</span>
@@ -52,7 +52,7 @@
         <p class="diagram-note">⚙️ 事务 = 一组操作打包成「不可分割」的整体：全成功（COMMIT）或全撤销（ROLLBACK）。</p>
       </div>
 
-      <h3>ACID 一句话记忆</h3>
+      <h3 id="acid-一句话记忆">ACID 一句话记忆</h3>
       <ol class="pitfall-list">
         <li><strong>A 原子性</strong>：要么全成功、要么全回滚，不存在做一半。</li>
         <li><strong>C 一致性</strong>：事务前后数据都满足约束（总金额不变、余额 ≥ 0）——<strong>是最终目的</strong>，另外三个特性都为它服务。</li>
@@ -60,7 +60,7 @@
         <li><strong>D 持久性</strong>：COMMIT 后永久生效，断电也不丢。</li>
       </ol>
 
-      <h3>并行问题 × 隔离级别矩阵（PG 版）</h3>
+      <h3 id="并行问题--隔离级别矩阵pg-版">并行问题 × 隔离级别矩阵（PG 版）</h3>
       <pre><code>               脏读   不可重复读   幻读   更新丢失
 READ COMMITTED   ❌     可能       可能    可能     ← PG 默认，够用
 REPEATABLE READ  ❌      ❌         ❌     可能     ← 快照实现，PG 防幻读
@@ -71,10 +71,10 @@ PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pr
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
 
-      <h3>🌱 初级 · 概念</h3>
+      <h3 id="-初级--概念">🌱 初级 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 事务（Transaction）是什么？</div>
@@ -110,7 +110,7 @@ PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pr
         </div>
       </div>
 
-      <h3>🌿 中级 · 应用</h3>
+      <h3 id="-中级--应用">🌿 中级 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 事务里执行了 3 条 UPDATE 后设置 SAVEPOINT a，再执行 2 条 UPDATE 后执行 ROLLBACK TO SAVEPOINT a，结果是？</div>
@@ -146,7 +146,7 @@ PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pr
         </div>
       </div>
 
-      <h3>🎯 高级 · 综合</h3>
+      <h3 id="-高级--综合">🎯 高级 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 同一事务内两次查询「余额 &gt; 500 的用户」：第二次比第一次多了一行。这是？</div>
@@ -186,7 +186,7 @@ PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pr
     
 
                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -281,7 +281,7 @@ PG 没有 READ UNCOMMITTED（设置了也按 READ COMMITTED 处理）</code></pr
 
 
     <section>
-      <h2>巩固延伸</h2>
+      <h2 id="巩固延伸">巩固延伸</h2>
       <ul>
         <li><strong>动手验证</strong>：在 pgAdmin 关掉自动提交，把转账案例跑一遍：① 正常 COMMIT 看总金额；② 故意失败再 ROLLBACK；③ 开两个查询窗口，用两个事务体会「另一事务提交后本事务才看得到」。再试 SAVEPOINT 部分回滚。</li>
         <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/tutorial-transactions.html">PostgreSQL 官方文档：事务教程</a> · <a href="https://www.postgresql.org/docs/16/transaction-iso.html">官方文档：事务隔离</a></li>

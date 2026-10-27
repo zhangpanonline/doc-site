@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 2 课</p>
-      <h1>容器类型</h1>
+      <h1 id="容器类型">容器类型</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/容器类型">4-容器类型</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 <strong>list / tuple / dict / set / str</strong> 五种容器的可变、有序、可重复特征，选对容器</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《4.容器类型》里，测验和考核会考。</p>
 
-      <h3>五种容器一张表</h3>
+      <h3 id="五种容器一张表">五种容器一张表</h3>
       <table class="cmp-table">
         <tr><th>容器</th><th>可变</th><th>有序</th><th>元素可重复</th><th>一句话记忆</th></tr>
         <tr><td><code>list</code> 列表</td><td>✅</td><td>✅</td><td>✅</td><td>最常用，什么都能装</td></tr>
@@ -42,7 +42,7 @@
         <tr><td><code>str</code> 字符串</td><td>❌</td><td>✅</td><td>✅</td><td>不可变的字符序列</td></tr>
       </table>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong><code>==</code> 比内容，<code>is</code> 比身份</strong>：<code>[1, 2] == [1, 2]</code> 为 True，但两个变量 <code>is</code> 只有指向<strong>同一对象</strong>才为 True；判断 <code>None</code> 永远用 <code>is</code>。<a href="https://docs.python.org/3/reference/expressions.html#value-comparisons">官方文档：Value Comparisons</a> · <a href="https://docs.python.org/3/reference/expressions.html#is-not">Identity Comparisons</a></li>
         <li><strong><code>in</code> 的语义因容器而异</strong>：字典查的是<strong>键</strong>不是值（<code>"Alice" in {"name": "Alice"} → False</code>）；字符串查的是子串（<code>"el" in "hello" → True</code>）。</li>
@@ -51,10 +51,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. <code>print([1, 2] == (1, 2))</code> 的输出是？</div>
@@ -90,7 +90,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. <code>print("Alice" in {"name": "Alice"})</code> 的输出是？</div>
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. <code>fruits = ["苹果", "香蕉", "橙子"]; print(fruits[::-1])</code> 的输出是？</div>
@@ -166,7 +166,7 @@
     
 
                                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -277,7 +277,7 @@ print(drop_evens([1, 2, 4, 5, 8]))  # 结果不对</code></pre>
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/datastructures.html">5. Data Structures</a>——列表、元组、字典、集合的权威讲解。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-lists-tuples/">Lists and Tuples in Python</a>，深入两种序列型容器的取舍。</li>

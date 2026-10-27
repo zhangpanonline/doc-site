@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 8 课</p>
-      <h1>对象的创建过程</h1>
+      <h1 id="对象的创建过程">对象的创建过程</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/对象的创建过程">10-对象的创建过程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出对象创建的三步：<strong><code>__new__</code> → 类型检查 → <code>__init__</code></strong></li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《10.对象的创建过程》里，测验和考核会考。</p>
 
-      <h3>创建三步</h3>
+      <h3 id="创建三步">创建三步</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node">1. cls.__new__(cls)</span>
@@ -44,7 +44,7 @@
         <p class="diagram-note">⚙️ <code>__new__</code> 负责「造出来」，<code>__init__</code> 只负责「初始化」。返回的不是本类实例时，<code>__init__</code> 会被跳过。</p>
       </div>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong><code>__new__</code> 是静态方法，第一参数是 cls</strong>：必须 <code>return super().__new__(cls)</code> 才能真正分配实例，忘了 return 会得到 None。<a href="https://docs.python.org/3/reference/datamodel.html#object.__new__">官方文档：object.__new__</a></li>
         <li><strong>单例/对象池重写 <code>__new__</code></strong>：把实例缓存到类属性，命中缓存就直接返回旧对象——因为 <code>__new__</code> 发生在 <code>__init__</code> 之前，能拦截住实例的创建。</li>
@@ -53,10 +53,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 对象创建的完整顺序是？</div>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. 为什么说 <code>__init__</code> 不是「构造函数」？</div>
@@ -128,7 +128,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 单例类 Database 实例化两次（有 __init__ 且用 _instance 缓存），<code>__init__</code> 会被调用几次？</div>
@@ -181,7 +181,7 @@ print(type(p).__name__, type(n).__name__)</code></pre></div>
     
 
                                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -284,7 +284,7 @@ print(type(p).__name__, type(n).__name__)</code></pre></div>
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/reference/datamodel.html#object.__new__">Data Model: object.__new__</a>——创建过程的权威出处。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-singleton/">Creating a Singleton in Python</a>，横评各种单例实现的取舍。</li>

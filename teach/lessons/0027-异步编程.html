@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 25 课</p>
-      <h1>异步编程</h1>
+      <h1 id="异步编程">异步编程</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/异步编程">27-异步编程</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>使用官方 API 高效开发：<code>async for</code> / <code>async with</code> / <code>gather</code> / <code>TaskGroup</code> / <code>timeout</code></li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《27.异步编程》里，测验和考核会考。</p>
 
-      <h3>同步 ↔ 异步协议对照</h3>
+      <h3 id="同步--异步协议对照">同步 ↔ 异步协议对照</h3>
       <table class="cmp-table">
         <tr><th>同步</th><th>异步</th></tr>
         <tr><td><code>__iter__</code> / <code>__next__</code></td><td><code>__aiter__</code> / <code>__anext__</code></td></tr>
@@ -41,7 +41,7 @@
         <tr><td><code>with ctx</code></td><td><code>async with ctx</code></td></tr>
       </table>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong>协程里别调同步阻塞函数</strong>：<code>time.sleep(1)</code> 会卡死整个事件循环——用 <code>await asyncio.sleep(1)</code>，或 <code>await asyncio.to_thread(time.sleep, 1)</code> 丢给线程池。<a href="https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread">官方文档：asyncio.to_thread</a></li>
         <li><strong><code>gather(..., return_exceptions=True)</code> 让异常变成结果</strong>：每个结果是「正常值或异常对象」，用 <code>isinstance(r, BaseException)</code> 逐个判断——多智能体系统靠它让单个子任务失败不拖垮整体。<a href="https://docs.python.org/3/library/asyncio-task.html#asyncio.gather">官方文档：asyncio.gather</a></li>
@@ -50,10 +50,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 遍历异步生成器必须用？</div>
@@ -89,7 +89,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">4. <code>gather(..., return_exceptions=True)</code> 的作用是？</div>
@@ -125,7 +125,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 任务被取消时（收到 CancelledError），做了清理后应该？</div>
@@ -165,7 +165,7 @@
     
 
                                                                                                 <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -269,7 +269,7 @@
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方文档 <a href="https://docs.python.org/3/library/asyncio-task.html">Coroutines and Tasks</a>——gather/TaskGroup/timeout 的权威出处。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/async-io-python/">Async IO in Python: A Complete Walkthrough</a>，把异步全景串起来。</li>

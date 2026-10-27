@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 29 课</p>
-      <h1>monorepo</h1>
+      <h1 id="monorepo">monorepo</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/monorepo">31-monorepo</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 Monorepo 与 MultiRepo 的取舍：<strong>源码级共享、原子提交 vs 发版才能共享</strong></li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《31.monorepo》里，测验和考核会考。</p>
 
-      <h3>workspace 三步</h3>
+      <h3 id="workspace-三步">workspace 三步</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node">1. 根项目 members = ["packages/*", "app/*"]</span>
@@ -48,7 +48,7 @@
         <p class="diagram-note">⚙️ <code>uv sync --all-packages</code> 解析全部成员依赖，生成统一 uv.lock 与根 .venv。</p>
       </div>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong><code>[tool.uv.sources]</code> 是 workspace 核心</strong>：声明 <code>shared = { workspace = true }</code> 后，依赖从<strong>工作区源码</strong>链接而不是 PyPI 下载；同名时 workspace 优先。<a href="https://docs.astral.sh/uv/concepts/projects/workspaces/">官方文档：uv workspaces</a></li>
         <li><strong>三种引用模式</strong>：<code>workspace = true</code>（仓内成员，改码即时生效）；<code>path = "../utils"</code>（仓外本地路径）；<code>git = "..." rev = "v0.1.0"</code>（Git 仓库）。</li>
@@ -57,10 +57,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. Monorepo 相比 MultiRepo 的核心优势是？</div>
@@ -96,7 +96,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 解析全部成员依赖并统一安装的命令是？</div>
@@ -132,7 +132,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 根项目要纳入 packages/ 与 app/ 下的成员，正确的 members 写法是？</div>
@@ -172,7 +172,7 @@
     
 
                                                                                             <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -269,7 +269,7 @@
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：uv 官方文档 <a href="https://docs.astral.sh/uv/concepts/projects/workspaces/">Using workspaces</a>——members/sources 的权威出处。</li>
         <li><strong>系统梳理</strong>：官方指南 <a href="https://docs.astral.sh/uv/guides/integration/docker/">uv 与容器集成</a> 等延伸场景。</li>

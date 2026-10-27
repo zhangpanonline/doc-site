@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
-      <h1>Seaborn</h1>
+      <h1 id="seaborn">Seaborn</h1>
       <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Seaborn">10.Seaborn</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>用 histplot / kdeplot 做单变量分布分析，并读出偏态与异常</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把三条分析主线过一遍——细节都在《10.Seaborn》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>三类任务，三组函数</h3>
+        <h3 id="三类任务三组函数">三类任务，三组函数</h3>
         <ul class="pitfall-list">
           <li><strong>单变量分布</strong>：<code>histplot</code>（直方图）、<code>kdeplot</code>（核密度曲线）、<code>displot</code>（Figure 级）</li>
           <li><strong>分类对比</strong>：<code>boxplot</code>（四分位与离群点）、<code>violinplot</code>（分布形状 + 密度）、<code>barplot</code>（默认聚合<strong>均值</strong> + 误差棒）、<code>countplot</code>（计数）</li>
@@ -43,7 +43,7 @@
       </div>
 
       <div class="card">
-        <h3>Seaborn 与 Matplotlib 的关系</h3>
+        <h3 id="seaborn-与-matplotlib-的关系">Seaborn 与 Matplotlib 的关系</h3>
         <ul class="pitfall-list">
           <li><strong>Seaborn 建在 Matplotlib 之上</strong>：它负责统计语义与默认样式，最终仍然由 Matplotlib 渲染</li>
           <li><strong>Axes 级 vs Figure 级</strong>：<code>boxplot</code>/<code>regplot</code> 返回 <code>Axes</code>，可用 <code>ax=</code> 画进已有子图；<code>displot</code>/<code>catplot</code>/<code>lmplot</code> 自带 Figure（分面能力）</li>
@@ -52,7 +52,7 @@
       </div>
 
       <div class="card">
-        <h3>读图时的两个易错点</h3>
+        <h3 id="读图时的两个易错点">读图时的两个易错点</h3>
         <ul class="pitfall-list">
           <li><strong>离群点不等于错误数据</strong>：箱线图的须默认延伸到最近 hinge <code>1.5 × IQR</code> 内最远的点，超出者只是「按 IQR 规则被标为离群」</li>
           <li><strong>barplot 画的是聚合值不是原始点</strong>：默认画均值，样本少或分布偏斜时，均值条会掩盖真实分布——这种情况该用箱线图或小提琴图</li>
@@ -61,10 +61,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《10.Seaborn》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 想看一列薪资数据的整体分布形态（是否偏斜、有没有双峰），首选的函数是？</div>
@@ -98,7 +98,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 关于箱线图的「离群点」（flier），下面说法正确的是？</div>
@@ -132,7 +132,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 一份数据里「经验 1 年」样本只有 3 条却恰好都是高薪。用 regplot 画经验-薪资回归线时，需要注意什么？</div>
@@ -168,7 +168,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -221,7 +221,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://seaborn.pydata.org/tutorial/distributions.html">Seaborn 官方教程 · Visualizing distributions</a> · <a href="https://seaborn.pydata.org/generated/seaborn.boxplot.html">seaborn.boxplot 官方文档</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Seaborn速查表.html">Seaborn速查表</a>——三类分析任务、常用函数参数与和 Matplotlib 的分工一页装下，建议打印。</li>

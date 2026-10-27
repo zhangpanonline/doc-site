@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
-      <h1>客户端认证</h1>
+      <h1 id="客户端认证">客户端认证</h1>
       <p class="lesson-sub">来源：官方文档 §20.1 pg_hba.conf（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出 pg_hba.conf 的定位（官方：基于主机的身份验证、数据目录中）与读取时机</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/auth-pg-hba-conf.html">§20.1</a>。</p>
 
       <div class="card">
-        <h3>pg_hba.conf（官方要点）</h3>
+        <h3 id="pg_hbaconf官方要点">pg_hba.conf（官方要点）</h3>
         <ul class="pitfall-list">
           <li>客户端身份验证由 <strong>pg_hba.conf</strong> 控制，存储在<strong>集簇数据目录</strong>；<strong>HBA = 基于主机的身份验证</strong>（官方原文）</li>
           <li>initdb 初始化时安装默认文件；可用 <code>hba_file</code> 参数改位置</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>条目与匹配</h3>
+        <h3 id="条目与匹配">条目与匹配</h3>
         <ul class="pitfall-list">
           <li>五个字段：<code>TYPE DATABASE USER ADDRESS METHOD</code>（连接类型/数据库/用户/地址/认证方法）</li>
           <li><strong>从上到下逐条匹配，命中第一条即生效</strong>——宽规则放前面会挡住后面的细规则</li>
@@ -55,10 +55,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. HBA 代表什么（官方）？</div>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. pg_hba 条目的匹配规则是？</div>
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 「远程连接被拒，日志显示 no pg_hba.conf entry」——最可能原因？</div>
@@ -164,7 +164,7 @@
     
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -218,7 +218,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/auth-pg-hba-conf.html">postgres.cn · 20.1 pg_hba.conf 文件</a></li>
         <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/auth-methods.html">20.3 认证方法</a>（scram/cert/peer 细节）</li>

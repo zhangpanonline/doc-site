@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Python 框架</p>
-      <h1>中间件</h1>
+      <h1 id="中间件">中间件</h1>
       <p class="lesson-sub">配合《<a href="/agents/python-framework/中间件">10.中间件</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清横切关注点 / AOP / DI 与 FastAPI 中间件的关系</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《10.中间件》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>概念与中间件骨架</h3>
+        <h3 id="概念与中间件骨架">概念与中间件骨架</h3>
         <ul class="pitfall-list">
           <li><strong>横切关注点</strong>：跨越多个功能、可被横切的共同逻辑（响应格式/耗时/跨域/日志）</li>
           <li><strong>AOP</strong>：把共同逻辑分离出去，不侵入功能本身；FastAPI 中间件是 AOP 的一种实现手段</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>三个中间件（课件）</h3>
+        <h3 id="三个中间件课件">三个中间件（课件）</h3>
         <ul class="pitfall-list">
           <li><strong>unified_response</strong>：仅处理 /api/ 路径；<code>response.body_iterator</code> 重拼 body；弹掉 content-length 防失真</li>
           <li><strong>process_time</strong>：perf_counter 计时，写入 <code>X-Process-Time</code> 响应头</li>
@@ -55,10 +55,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《10.中间件》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 横切关注点（Cross-Cutting Concerns）指的是什么？</div>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. unified_response 为什么只处理 /api/ 开头的路径？</div>
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. 失败响应（>=400）的信封里，code 和 message 从哪里来？</div>
@@ -162,7 +162,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -215,7 +215,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://fastapi.tiangolo.com/advanced/middleware/">FastAPI 官方：Middleware（含 CORS）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/中间件速查表.html">中间件速查表</a>——骨架、三中间件、注册分派一页装下，建议打印。</li>

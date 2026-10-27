@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 3 课</p>
-      <h1>函数</h1>
+      <h1 id="函数">函数</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/函数">5-函数</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>分清<strong>位置参数、默认参数、关键字参数、<code>*args</code>、<code>**kwargs</code></strong> 的用法与顺序</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《5.函数》里，测验和考核会考。</p>
 
-      <h3>参数全景图</h3>
+      <h3 id="参数全景图">参数全景图</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">def f(a, b=2, *args, **kwargs)</span>
@@ -49,7 +49,7 @@
         <p class="diagram-note">⚙️ 顺序固定：位置 → 默认 → *args → **kwargs。默认参数必须放在非默认参数后面。</p>
       </div>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong><code>*args</code> 收成元组，<code>**kwargs</code> 收成字典</strong>：函数内部 <code>args</code> 是 <code>tuple</code>、<code>kwargs</code> 是 <code>dict</code>——它们是「收纳袋」，不是特殊语法。<a href="https://docs.python.org/3/tutorial/controlflow.html#arbitrary-argument-lists">官方教程：Arbitrary Argument Lists</a></li>
         <li><strong>多返回值本质是元组</strong>：<code>return a, b</code> 打包成一个元组返回，<code>x, y = f()</code> 只是解包。<a href="https://docs.python.org/3/tutorial/controlflow.html#defining-functions">官方教程：Defining Functions</a></li>
@@ -58,10 +58,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 函数没有 <code>return</code> 语句时，调用它的返回值是？</div>
@@ -97,7 +97,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. <code>def show_kwargs(**kwargs)</code> 中，<code>kwargs</code> 的类型是？</div>
@@ -133,7 +133,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. <code>def demo(a, b=2, *args, **kwargs)</code>，调用 <code>demo(1, 3, 4, 5, x=10, y=20)</code> 后各参数的值是？</div>
@@ -185,7 +185,7 @@ print(x * 10 + y)</code></pre></div>
     
 
                                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -303,7 +303,7 @@ print(fetch_data.__name__, fetch_data.__doc__)</code></pre>`,
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/controlflow.html#defining-functions">4. More Control Flow Tools</a>——函数定义、默认参数、可变参数的权威讲解。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/defining-your-own-python-function/">Defining Your Own Python Function</a>，把参数类型与调用约定讲得很透。</li>

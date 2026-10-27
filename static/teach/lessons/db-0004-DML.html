@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 4 节</p>
-      <h1>DML</h1>
+      <h1 id="dml">DML</h1>
       <p class="lesson-sub">配合《<a href="/common/database/DML">db-0004-DML</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>熟练写 INSERT / DELETE / UPDATE，并<strong>避开「忘写 WHERE」两大危险操作</strong></li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《04.DML》里，测验和考核会考。</p>
 
-      <h3>增删改三件套</h3>
+      <h3 id="增删改三件套">增删改三件套</h3>
       <ol class="pitfall-list">
         <li><strong>INSERT 省略列</strong>：省略的列用 DEFAULT 或 NULL；PG 特有 <code>RETURNING</code> 直接拿回插入/删除/更新后的行（省一次 SELECT）。</li>
         <li><strong>ON CONFLICT（UPSERT）</strong>：<code>ON CONFLICT (唯一列) DO UPDATE SET …</code> 冲突则更新，<code>EXCLUDED</code> 指本次要插入的新值；<code>DO NOTHING</code> 忽略冲突。</li>
@@ -40,11 +40,11 @@
         <li><strong>TRUNCATE vs DELETE</strong>：TRUNCATE 快、<strong>重置自增序列</strong>、不触发 DELETE 触发器；DELETE 逐行、可带 WHERE、序列继续递增。</li>
       </ol>
 
-      <h3>SELECT 执行顺序（面试必考）</h3>
+      <h3 id="select-执行顺序面试必考">SELECT 执行顺序（面试必考）</h3>
       <pre><code>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</code></pre>
       <p>推论：<strong>WHERE 里不能用聚合函数</strong>（聚合在 GROUP BY 阶段才有）；<strong>HAVING 里能</strong>（它在分组之后）。WHERE 过滤「原始行」，HAVING 过滤「分组结果」。</p>
 
-      <h3>JOIN 与子查询速记</h3>
+      <h3 id="join-与子查询速记">JOIN 与子查询速记</h3>
       <pre><code>INNER JOIN   两边都匹配的行
 LEFT JOIN    左表全保留，右表没匹配补 NULL（最常用）
 RIGHT JOIN   右表全保留（可换成 LEFT JOIN）
@@ -54,10 +54,10 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
 
-      <h3>🌱 初级 · 概念</h3>
+      <h3 id="-初级--概念">🌱 初级 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. <code>INSERT INTO students (name, email) VALUES ('李四', 'lisi@example.com')</code>——省略的 age 和 score 会怎样？</div>
@@ -93,7 +93,7 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
         </div>
       </div>
 
-      <h3>🌿 中级 · 应用</h3>
+      <h3 id="-中级--应用">🌿 中级 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. <code>ON CONFLICT (email) DO UPDATE SET age = EXCLUDED.age</code> 中 EXCLUDED 指什么？</div>
@@ -129,7 +129,7 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
         </div>
       </div>
 
-      <h3>🎯 高级 · 综合</h3>
+      <h3 id="-高级--综合">🎯 高级 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 想在 WHERE 里写 <code>COUNT(score) &gt; 3</code> 筛选行，结果会怎样？</div>
@@ -169,7 +169,7 @@ EXISTS       只关心有无  → WHERE EXISTS (SELECT 1 …)</code></pre>
     
 
                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -268,7 +268,7 @@ WHERE d.active = true;   -- ← 把未匹配行滤掉了</code></pre>`,
 
 
     <section>
-      <h2>巩固延伸</h2>
+      <h2 id="巩固延伸">巩固延伸</h2>
       <ul>
         <li><strong>动手验证</strong>：在 pgAdmin 里把作业 35 题全部跑一遍（先用《电商数据库设计.sql》+《电商数据库示例数据.sql》建库灌数据），对照本课 5 道考核题的写法举一反三。</li>
         <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/dml.html">PostgreSQL 官方文档：数据操纵</a> · <a href="https://www.postgresql.org/docs/16/queries.html">官方文档：查询</a></li>

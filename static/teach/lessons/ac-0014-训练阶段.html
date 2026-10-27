@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>训练阶段</h1>
+      <h1 id="训练阶段">训练阶段</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/训练阶段">14.训练阶段</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清预训练与后训练的分工：一个负责「能力底座」，一个负责「怎么用」</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把两个训练阶段的分工过一遍——细节都在《14.训练阶段》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>预训练：把「世界」压进权重</h3>
+        <h3 id="预训练把世界压进权重">预训练：把「世界」压进权重</h3>
         <ul class="pitfall-list">
           <li><strong>耗时最长</strong>：通常占总计算时间的 <strong>90% 以上</strong></li>
           <li><strong>自监督学习</strong>：监督信号来自文本自身，不需要人工逐条标注；<strong>算力是主要成本</strong></li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>后训练：把「能力」变成「可用的助手」</h3>
+        <h3 id="后训练把能力变成可用的助手">后训练：把「能力」变成「可用的助手」</h3>
         <ul class="pitfall-list">
           <li><strong>耗时很短</strong>：几小时、几天、几个月；<strong>主要依靠监督学习、强化学习</strong>，<strong>数据与人力是主要成本</strong></li>
           <li><strong>让模型学会对话格式</strong>：数据里是带特殊标记的完整对话，例如 <code>&lt;|im_start|&gt;system&lt;|im_sep|&gt;你是一个AI聊天助手…&lt;|im_end|&gt;&lt;|im_start|&gt;user&lt;|im_sep|&gt;你好，你是谁？&lt;|im_end|&gt;&lt;|im_start|&gt;assistant&lt;|im_sep|&gt;</code>，模型要学会输出「我是……&lt;|im_end|&gt;」并在该停的地方停。它由此学会<strong>对话格式、角色身份、对话语气</strong></li>
@@ -56,7 +56,7 @@
       </div>
 
       <div class="card">
-        <h3>思维链 CoT 与持续学习</h3>
+        <h3 id="思维链-cot-与持续学习">思维链 CoT 与持续学习</h3>
         <ul class="pitfall-list">
           <li><strong>思维链（Chain of Thought, CoT）</strong>：通过训练和引导，让模型在给出最终答案之前，先把内部的推理步骤「说出来」——<strong>先输出思考过程，再输出最终回答</strong></li>
           <li>课件里的形态是：assistant 回合先输出 <code>&lt;think&gt;</code> … <code>&lt;/think&gt;</code>，标签里写推理（开始有 10 个，给了小红 3 个，还剩 $10 - 3 = 7$ 个；又买了 5 个，现在有 $7 + 5 = 12$ 个），标签外再给「最终答案是 12。」</li>
@@ -67,10 +67,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《14.训练阶段》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 训练一个现代大模型，耗时最长、通常占总计算时间 90% 以上的阶段是？</div>
@@ -104,7 +104,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 「能力校准」——加入大量「承认无知」的问答对，最直接的作用是？</div>
@@ -138,7 +138,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 综合推演：某团队发现模型「知道 Python 的创始人是谁」，但在客服场景里不会按指定口吻称呼用户，也不知道时就说不知道。对照本章的两个阶段，正确的诊断是？</div>
@@ -174,7 +174,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -234,7 +234,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/reasoning">Microsoft Learn《Azure OpenAI reasoning models》</a> · <a href="https://docs.nvidia.com/nemotron/latest/train-models/explanation/basics.html">NVIDIA Nemotron《Training Basics》</a> · <a href="https://api-docs.deepseek.com/guides/thinking_mode/">DeepSeek API Docs《Thinking Mode》</a> · <a href="https://learn.microsoft.com/en-us/training/modules/optimize-finetune-agents/4-prepare-data">Microsoft Learn《Prepare training data for fine-tuning》</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/训练阶段速查表.html">训练阶段速查表</a>——两阶段对照、后训练五件事、对话模板与 CoT 格式一页装下，建议打印。</li>

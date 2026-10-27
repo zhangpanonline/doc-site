@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>神经元</h1>
+      <h1 id="神经元">神经元</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/神经元">03.神经元</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>写出单个神经元的数学模型 $y = \sigma(\sum_{i=1}^n w_i x_i + b)$，说清输入值、输出值、权重、偏置各是什么</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>神经网络是目前机器学习领域最常见、最重要的实现智能的手段，而学习神经网络，一切要从神经元开始。先用几分钟把本章的骨架过一遍——细节都在《03.神经元》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>神经元的数学模型</h3>
+        <h3 id="神经元的数学模型">神经元的数学模型</h3>
         <ul class="pitfall-list">
           <li><strong>起点</strong>：1943 年，Warren McCulloch（神经科学家）与 Walter Pitts（逻辑学家）为神经元建立了数学模型；经过几十年发展，今天每个神经元的数学模型是 $y = \sigma(\sum_{i=1}^n w_i x_i + b) = \sigma(w_1 x_1 + w_2 x_2 + ... + w_n x_n + b)$</li>
           <li><strong>输入值</strong>：$[x_1, x_2, ... x_n]$——输入值中的每一个分量表示某一个维度的信息</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>权重、偏置与参数</h3>
+        <h3 id="权重偏置与参数">权重、偏置与参数</h3>
         <ul class="pitfall-list">
           <li><strong>权重</strong> $[w_1, w_2, ... w_n]$：每个权重表示该维度信息的重要程度（它是带符号的——负权重表示该维度与输出负相关，不是「不重要」）</li>
           <li><strong>偏置</strong> $b$：改变被激活的阈值——加上 $b$ 之后，加权和要越过 $-b$ 这个门槛，神经元才输出有效值</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>激活函数与三条总结</h3>
+        <h3 id="激活函数与三条总结">激活函数与三条总结</h3>
         <ul class="pitfall-list">
           <li>$\sigma$ 是<strong>激活函数</strong>，决定了是否输出有效值；经典激活函数 $ReLU(z)=max(0, z)$</li>
           <li><strong>激活函数是固定的</strong>——它不是参数，不参与训练；能与梯度一起被更新的只有权重和偏置</li>
@@ -66,10 +66,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《03.神经元》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 在公式 $y = \sigma(\sum_{i=1}^n w_i x_i + b)$ 中，$b$ 是什么？</div>
@@ -103,7 +103,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 某神经元先用 ReLU 做激活，加权和记为 $z = \sum_{i=1}^n w_i x_i + b$。把 $b$ 从 0 调到 $-3$，同一个输入 x 的输出会怎样变化？</div>
@@ -137,7 +137,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 某神经元 σ 取 ReLU，$w = [1, 1]$、$b = -1$。输入 $x = [0.4, 0.4]$ 与 $x = [2, 2]$ 时，输出分别是？</div>
@@ -173,7 +173,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -243,7 +243,7 @@ print(neuron(x, w, b))</code></pre>`,
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html">PyTorch torch.nn.Linear 官方文档</a>（仿射变换 $y = xA^T + b$、weight/bias 的形状） · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.ReLU.html">PyTorch torch.nn.ReLU 官方文档</a>（$ReLU(x) = max(0, x)$） · <a href="https://keras.io/api/layers/core_layers/dense/">Keras Dense layer 官方文档</a>（activation 是构造参数，kernel/bias 才是可训练量） · <a href="https://numpy.org/doc/stable/reference/generated/numpy.dot.html">NumPy numpy.dot 官方文档</a>（点积 vs 逐元素乘）</li>
         <li><strong>打印参考</strong>：<a href="../reference/神经元速查表.html">神经元速查表</a>——数学模型、六个符号的含义、偏置阈值与三个易错点一页装下，建议打印。</li>

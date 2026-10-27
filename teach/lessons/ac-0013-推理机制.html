@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>推理机制</h1>
+      <h1 id="推理机制">推理机制</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/推理机制">13.推理机制</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清一次自回归推理为什么分成预填充 Prefill 与解码 Decode 两个阶段，各自在算什么、瓶颈在哪</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把推理的三个关键词过一遍——预填充、K-V 缓存、采样策略，细节都在《13.推理机制》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>推理的两个阶段：预填充 Prefill 与解码 Decode</h3>
+        <h3 id="推理的两个阶段预填充-prefill-与解码-decode">推理的两个阶段：预填充 Prefill 与解码 Decode</h3>
         <ul class="pitfall-list">
           <li>自回归生成分成两个阶段：先 <strong>预填充 Prefill</strong> 处理输入，再 <strong>解码 Decode</strong> 逐个吐字（官方原文：This process involves two phases: the prefill phase and the decode phase）</li>
           <li><strong>Prefill</strong>：把整段输入 token 一次送进模型，算出中间状态（keys 和 values），用来生成<strong>第一个</strong>新 token。因为输入全长已知，这是一次<strong>矩阵×矩阵</strong>运算，高度并行，能把 GPU 吃满</li>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="card">
-        <h3>K-V 缓存：用显存换计算</h3>
+        <h3 id="k-v-缓存用显存换计算">K-V 缓存：用显存换计算</h3>
         <ul class="pitfall-list">
           <li><strong>它解决什么</strong>：Decode 每一步都要用到前面所有 token 的 K/V；如果每步都重算，重复计算会随序列长度急剧膨胀。把已算出的 K/V 张量留在显存里，新元素直接追加进缓存，下一步直接复用（官方原文：To avoid recomputing all these tensors for all tokens at each time step, it is possible to cache them in GPU memory）</li>
           <li><strong>常见形态</strong>：多数实现里<strong>每一层都有自己的 K-V 缓存</strong></li>
@@ -57,7 +57,7 @@
       </div>
 
       <div class="card">
-        <h3>采样策略：温度 Temperature / Top-K / Top-P</h3>
+        <h3 id="采样策略温度-temperature--top-k--top-p">采样策略：温度 Temperature / Top-K / Top-P</h3>
         <ul class="pitfall-list">
           <li>模型每一步输出的是<strong>整个词表上的概率分布</strong>（logits 经 Softmax）；「采样策略」决定怎么从这张分布里挑出下一个 token</li>
           <li><strong>温度 Temperature</strong>：在 Softmax 之前把所有 logits 除以 $T$，即 $p_i = \dfrac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}$。$T=1$ 不作干预；<strong>$T&lt;1$（如 0.5）</strong>分布更尖锐，高概率的词更高、低概率的词更低，文本更稳定、保守、确定；<strong>$T&gt;1$（如 1.5）</strong>分布更平滑，词间概率差距缩小，文本更随机、多样、有创造力。官方表述：温度调制概率质量函数，低温把函数变陡（steepens）→ 更确定，高温把它压平（flattens）→ 更随机</li>
@@ -70,10 +70,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《13.推理机制》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 一次自回归推理被分成哪两个阶段？</div>
@@ -107,7 +107,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 关于 K-V 缓存的作用与代价，下面哪一条正确？</div>
@@ -141,7 +141,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 用户反馈：问一个 3 万字文档的问题，「第一个字要等 8 秒，之后每个字出得挺快」。按 Prefill / Decode 的分工，诊断与优化方向是？</div>
@@ -177,7 +177,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -248,7 +248,7 @@ speed = output_tokens / elapsed      # 上报为「模型速度」</code></pre>�
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/">NVIDIA《Mastering LLM Techniques: Inference Optimization》</a> · <a href="https://docs.vllm.ai/en/latest/api/vllm/sampling_params.html">vLLM 官方文档 SamplingParams</a> · <a href="https://docs.vllm.ai/en/latest/features/disagg_prefill.html">vLLM Disaggregated Prefilling</a> · <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/inference-parameters.html">AWS Bedrock 推理参数</a> · <a href="https://poloclub.github.io/transformer-explainer/">Transformer Explainer（逐 token 可视化）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/推理机制速查表.html">推理机制速查表</a>——Prefill/Decode 对照、K-V 缓存算例与三种采样策略的官方定义一页装下，建议打印。</li>

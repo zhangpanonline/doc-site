@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>梯度下降</h1>
+      <h1 id="梯度下降">梯度下降</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/梯度下降">05.梯度下降</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>用自己的话说清梯度下降在做什么——为什么沿「负梯度方向」走</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把三个术语和一条公式过一遍——细节都在《05.梯度下降》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>梯度下降：朝「下坡最快」的方向走</h3>
+        <h3 id="梯度下降朝下坡最快的方向走">梯度下降：朝「下坡最快」的方向走</h3>
         <ul class="pitfall-list">
           <li>损失函数把「当前这组参数好不好」变成一个数字：数字越小，预测越接近真实值</li>
           <li><strong>梯度</strong>指向函数值上升最快的方向，所以<strong>负梯度方向</strong>才是当前点的最速下降方向</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>损失函数：一个数字背后的四个符号</h3>
+        <h3 id="损失函数一个数字背后的四个符号">损失函数：一个数字背后的四个符号</h3>
         <ul class="pitfall-list">
           <li><strong>公式</strong>：$$L = \frac{1}{m}\sum_{i=1}^{m}(y_i-\hat y_i)^2$$</li>
           <li>$m$：这一批参与计算的<strong>样本个数</strong>；$i$ 从 1 遍历到 $m$</li>
@@ -57,7 +57,7 @@
       </div>
 
       <div class="card">
-        <h3>学习率与「一次训练迭代」</h3>
+        <h3 id="学习率与一次训练迭代">学习率与「一次训练迭代」</h3>
         <ul class="pitfall-list">
           <li>学习率 $\eta$ 是梯度下降的<strong>幅度</strong>：梯度给方向，学习率给步长</li>
           <li><strong>过大</strong>：一步迈过谷底，损失来回震荡甚至越来越大（发散）；<strong>过小</strong>：每步都很小，收敛极慢</li>
@@ -68,10 +68,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《05.梯度下降》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 「梯度下降」中，参数每一步朝哪个方向移动？</div>
@@ -105,7 +105,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 损失函数 $L=\frac{1}{m}\sum_{i=1}^{m}(y_i-\hat y_i)^2$ 里，$m$ 和前面的 $\frac{1}{m}$ 分别是什么？</div>
@@ -139,7 +139,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 按本课术语，一次训练迭代的正确顺序是？</div>
@@ -175,7 +175,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -240,7 +240,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html">PyTorch Optimizing Model Parameters</a>（损失、学习率、一次迭代的完整顺序） · <a href="https://docs.pytorch.org/tutorials/beginner/blitz/autograd_tutorial.html">PyTorch A Gentle Introduction to torch.autograd</a>（反向传播怎么收集梯度） · <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.MSELoss.html">torch.nn.MSELoss</a>（均方误差的官方定义）</li>
         <li><strong>打印参考</strong>：<a href="../reference/梯度下降速查表.html">梯度下降速查表</a>——三个术语、损失函数逐符号拆解、一次迭代顺序与学习率调参一页装下，建议打印。</li>

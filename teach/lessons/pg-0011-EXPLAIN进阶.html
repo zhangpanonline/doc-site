@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
-      <h1>EXPLAIN 进阶与查询优化</h1>
+      <h1 id="explain-进阶与查询优化">EXPLAIN 进阶与查询优化</h1>
       <p class="lesson-sub">来源：官方文档 §14.1 使用 EXPLAIN（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出官方对查询计划与规划器的定位（计划选择对性能绝对关键）</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/using-explain.html">§14.1</a>。</p>
 
       <div class="card">
-        <h3>官方定位与工具</h3>
+        <h3 id="官方定位与工具">官方定位与工具</h3>
         <ul class="pitfall-list">
           <li>每个查询产生一个<strong>查询计划</strong>；选择正确计划对性能<strong>绝对关键</strong>——系统内置复杂<strong>规划器</strong>（官方原文）</li>
           <li><code>EXPLAIN</code>：察看计划（估算成本与行数）；<strong>阅读查询计划是一门艺术</strong>（官方原文）</li>
@@ -43,7 +43,7 @@
       </div>
 
       <div class="card">
-        <h3>EXPLAIN ANALYZE：估算 vs 实际</h3>
+        <h3 id="explain-analyze估算-vs-实际">EXPLAIN ANALYZE：估算 vs 实际</h3>
         <ul class="pitfall-list">
           <li>ANALYZE 选项：<strong>实际执行查询</strong>，显示每个计划节点<strong>真实行数与真实运行时间</strong>，同时保留估算值（官方原文）</li>
           <li>两相对照：<code>(cost=... rows=10)</code> 估算 vs <code>(actual time=... rows=98000)</code> 实测——估错一目了然</li>
@@ -54,10 +54,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 官方说选择正确的查询计划对性能意味着什么？</div>
@@ -91,7 +91,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. EXPLAIN ANALYZE 与普通 EXPLAIN 的区别是？</div>
@@ -125,7 +125,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. EXPLAIN ANALYZE 显示估算 rows=10 但 actual rows=98000。这说明什么？</div>
@@ -163,7 +163,7 @@
     
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -217,7 +217,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/using-explain.html">postgres.cn · 14.1 使用 EXPLAIN</a></li>
         <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/planner-stats.html">14.2 规划器使用的统计信息</a> · <a href="http://www.postgres.cn/docs/current/runtime-config-query.html">19.7 查询规划配置</a></li>

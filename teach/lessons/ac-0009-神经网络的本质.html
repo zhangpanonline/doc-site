@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>神经网络的本质</h1>
+      <h1 id="神经网络的本质">神经网络的本质</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/神经网络的本质">09.神经网络的本质</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清矩阵相加、矩阵的点乘、矩阵的转置三种运算各自的规则与形状变化</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>本章是纯数学打底：把「神经网络」拆成三种矩阵运算。公式看起来多，规则其实只有三条——形状对得上才能算。</p>
 
       <div class="card">
-        <h3>三种矩阵运算：相加、点乘、转置</h3>
+        <h3 id="三种矩阵运算相加点乘转置">三种矩阵运算：相加、点乘、转置</h3>
         <ul class="pitfall-list">
           <li><strong>相加</strong>：$c_{ij}=(a_{ij}+b_{ij})$，两个矩阵必须同为 $m\times n$，对应位置相加，结果仍是 $m\times n$：$A_{(m\times n)} + B_{(m\times n)} = AB_{(m\times n)}$</li>
           <li><strong>点乘（矩阵乘法）</strong>：$c_{ij}=\sum_{k=1}^{n} a_{ik}b_{kj}$——第 i 行第 j 列的结果，是 A 的第 i 行与 B 的第 j 列「对应相乘再求和」；形状规则 $A_{(m\times n)} \cdot B_{(n\times p)} = AB_{(m\times p)}$，<strong>中间维 n 被求和消掉</strong>，所以左边列数必须等于右边行数</li>
@@ -47,7 +47,7 @@
       </div>
 
       <div class="card">
-        <h3>向量与矩阵：方向决定成败</h3>
+        <h3 id="向量与矩阵方向决定成败">向量与矩阵：方向决定成败</h3>
         <p>课件原文：向量可以和矩阵进行运算，运算时，可以把向量看作是 $n\times1$ 的矩阵，也可以看作是 $1\times n$ 的矩阵，<strong>如何看待根据算法而不同</strong>。</p>
         <ul class="pitfall-list">
           <li>$A_{(m\times n)} \cdot x_{(n\times 1)} = y_{(m\times 1)}$——中间维 n↔n 匹配，成立</li>
@@ -58,7 +58,7 @@
       </div>
 
       <div class="card">
-        <h3>神经网络的本质：一层 = 一次矩阵运算</h3>
+        <h3 id="神经网络的本质一层--一次矩阵运算">神经网络的本质：一层 = 一次矩阵运算</h3>
         <p>课件结论：<strong>神经网络中的每一层，实际上做的是矩阵运算，并不存在所谓「神经元」。</strong></p>
         <p>$$\begin{bmatrix} a_1^{(l)} \\ a_2^{(l)} \\ \vdots \\ a_n^{(l)} \end{bmatrix} = \sigma\left( \begin{bmatrix} w_{11}^{(l)} & w_{12}^{(l)} & \cdots & w_{1m}^{(l)} \\ w_{21}^{(l)} & w_{22}^{(l)} & \cdots & w_{2m}^{(l)} \\ \vdots & \vdots & \ddots & \vdots \\ w_{n1}^{(l)} & w_{n2}^{(l)} & \cdots & w_{nm}^{(l)} \end{bmatrix} \begin{bmatrix} a_1^{(l-1)} \\ a_2^{(l-1)} \\ \vdots \\ a_m^{(l-1)} \end{bmatrix} + \begin{bmatrix} b_1^{(l)} \\ b_2^{(l)} \\ \vdots \\ b_n^{(l)} \end{bmatrix} \right)$$</p>
         <p>$$\text{简写形式：} \quad \mathbf{a}^{(l)} = \sigma\left( \mathbf{W}^{(l)} \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)} \right)$$</p>
@@ -73,10 +73,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《09.神经网络的本质》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 课件对「矩阵相加」的定义是 $c_{ij}=(a_{ij}+b_{ij})$。据此，$A_{(m\times n)} + B_{(m\times n)} = AB_{(m\times n)}$ 的含义是？</div>
@@ -110,7 +110,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 按点乘定义算出 $\begin{bmatrix}1&amp;2&amp;3\\4&amp;5&amp;6\end{bmatrix} \cdot \begin{bmatrix}7&amp;8\\9&amp;10\\11&amp;12\end{bmatrix}$，结果（课件算例）是？</div>
@@ -144,7 +144,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. 某层输入 $m=768$、输出 $n=3072$，按 $\mathbf{a}^{(l)}=\sigma(\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)})$，$\mathbf{W}^{(l)}$、$\mathbf{a}^{(l-1)}$、$\mathbf{b}^{(l)}$、$\mathbf{a}^{(l)}$ 的形状依次是？</div>
@@ -180,7 +180,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -242,7 +242,7 @@ model.forward(x)   # 结果与预期差很远</code></pre>请找出根因、解�
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://numpy.org/doc/stable/reference/generated/numpy.matmul.html">NumPy numpy.matmul 官方文档</a>（(n,k),(k,m)-&gt;(n,m)、1-D 提升规则与维度报错条件） · <a href="https://numpy.org/doc/stable/reference/generated/numpy.transpose.html">NumPy numpy.transpose 官方文档</a>（1-D 转置是原样视图、2-D 转置 whenever possible 返回视图） · <a href="https://numpy.org/doc/stable/user/basics.broadcasting.html">NumPy Broadcasting</a>（广播规则：相等，或其中一个为 1）</li>
         <li><strong>打印参考</strong>：<a href="../reference/神经网络的本质速查表.html">神经网络的本质速查表</a>——三种运算的规则、向量方向三条式子、一层公式的维度表一页装下，建议打印。</li>

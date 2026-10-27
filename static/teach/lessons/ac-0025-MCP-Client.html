@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>MCP Client</h1>
+      <h1 id="mcp-client">MCP Client</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/MCP-Client">25.MCP Client</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>以客户端身份连上 MCP 服务器，并按 <code>initialize → tools/list → tools/call</code> 的顺序完成第一次工具发现与调用</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把本章的骨架过一遍——细节都在《25.MCP Client》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>一次客户端会话的固定三步</h3>
+        <h3 id="一次客户端会话的固定三步">一次客户端会话的固定三步</h3>
         <ul class="pitfall-list">
           <li>装依赖：<code>!uv add mcp==1.28.1</code>（python-sdk 的 v1.28.1）</li>
           <li><strong>第 1 步 initialize</strong>：<code>await session.initialize()</code>——协商协议版本与能力，官方规范把它定为客户端与服务器之间的<strong>第一次交互</strong></li>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="card">
-        <h3>两种传输：stdio 与 Streamable HTTP</h3>
+        <h3 id="两种传输stdio-与-streamable-http">两种传输：stdio 与 Streamable HTTP</h3>
         <ul class="pitfall-list">
           <li><strong>stdio</strong>：客户端把服务器<strong>作为子进程启动</strong>，用标准输入输出传换行分隔的 JSON-RPC 消息。参数用 <code>StdioServerParameters(command="uvx", args=["mcp-server-time"])</code>，连接写 <code>async with stdio_client(server_params) as (read, write)</code>——<strong>二元组</strong></li>
           <li><strong>Streamable HTTP</strong>：服务器是独立进程、可服务多个客户端，客户端连的是一个 <strong>MCP endpoint URL</strong>。写法是 <code>async with streamable_http_client("https://learn.microsoft.com/api/mcp") as (read_stream, write_stream, _)</code>——<strong>三元组，第三个值用 <code>_</code> 丢掉</strong>，这正是本章最常见的抄错点</li>
@@ -56,7 +56,7 @@
       </div>
 
       <div class="card">
-        <h3>三层封装：connect_mcp → 单服务器函数 → MCPClient</h3>
+        <h3 id="三层封装connect_mcp--单服务器函数--mcpclient">三层封装：connect_mcp → 单服务器函数 → MCPClient</h3>
         <ul class="pitfall-list">
           <li>配置驱动：<code>mcp = {"servers": {"time": {"type": "stdio", "command": "uvx", "args": [...]}, "microsoft-learn": {"type": "http", "url": "..."}}}</code>，每个服务器带一个 <code>type</code> 字段</li>
           <li><strong>第一层 <code>connect_mcp(server_config)</code></strong>：<code>@asynccontextmanager</code> 装饰的异步生成器，按 <code>type</code> 选传输、建会话、<code>initialize()</code>，然后 <code>yield session</code>；<strong>不认识就 <code>raise ValueError</code></strong>。</li>
@@ -69,10 +69,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《25.MCP Client》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 客户端连上一个 MCP 服务器后，做「工具发现 + 工具调用」之前必须先完成哪一步？</div>
@@ -106,7 +106,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 下面这段配置传给 <code>connect_mcp</code>，会发生什么？<br><code>{"type": "sse", "url": "https://example.com/mcp"}</code></div>
@@ -140,7 +140,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 只想调用 time 服务器上的一个工具，却有 300 个 MCP 服务器配置在 <code>mcp["servers"]</code> 里。用课件的 <code>MCPClient</code>，一次 <code>acall_tool("time", ...)</code> 大概要付出什么连接成本？</div>
@@ -176,7 +176,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -234,7 +234,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle">MCP 规范 · Lifecycle</a>（initialize 的三件事、版本协商、超时建议）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports">MCP 规范 · Transports</a>（stdio 与 Streamable HTTP 的差别）· <a href="https://modelcontextprotocol.io/specification/2025-06-18/server/tools">MCP 规范 · Tools</a>（tools/list 分页、tools/call、两套错误机制）</li>
         <li><strong>动手自检</strong>：把 <code>connect_mcp</code> + <code>run_async</code> + <code>MCPClient</code> 抄进一个 notebook，用 <code>uvx mcp-server-time</code> 与 <code>https://learn.microsoft.com/api/mcp</code> 各跑一遍 <code>list_tools()</code>；重点验证「HTTP 三元组解包」「漏传 timezone → <code>isError: true</code>」「写错工具名 → <code>isError: true</code>」三件事，再对照 <a href="../reference/MCP-Client速查表.html">MCP-Client速查表</a> 勾一遍。</li>

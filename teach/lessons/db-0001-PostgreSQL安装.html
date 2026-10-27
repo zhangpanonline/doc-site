@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 1 节</p>
-      <h1>PostgreSQL 安装</h1>
+      <h1 id="postgresql-安装">PostgreSQL 安装</h1>
       <p class="lesson-sub">配合《<a href="/common/database/PostgreSQL安装">db-0001-PostgreSQL安装</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 <strong>PostgreSQL 相对其他主流数据库的定位</strong>（开源免费、MVCC、扩展、JSONB）</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《01.PostgreSQL安装》里，测验和考核会考。</p>
 
-      <h3>为什么选 PostgreSQL</h3>
+      <h3 id="为什么选-postgresql">为什么选 PostgreSQL</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">社区开发 · PostgreSQL License</span>
@@ -52,7 +52,7 @@
         <p class="diagram-note">⚙️ 对照 MySQL 记：MySQL 的 ACID 依赖 InnoDB、SQL 方言多、扩展少；PG 原生完整 ACID、最贴近标准 SQL。</p>
       </div>
 
-      <h3>docker run 参数拆解</h3>
+      <h3 id="docker-run-参数拆解">docker run 参数拆解</h3>
       <ol class="pitfall-list">
         <li><strong><code>-d</code> 后台运行</strong>：容器在后台跑，不占用当前终端；交互式进入用 <code>docker exec -it</code>。</li>
         <li><strong><code>-e POSTGRES_PASSWORD</code> 必填</strong>：不设置这个环境变量，postgres 镜像会拒绝启动（初始化超级用户密码）。<code>POSTGRES_USER</code> 默认 <code>postgres</code>，<code>POSTGRES_DB</code> 默认取用户名。</li>
@@ -60,7 +60,7 @@
         <li><strong><code>-v 本地路径:/var/lib/postgresql/data</code> 是数据保命的参数</strong>：容器是易失的，<code>docker rm</code> 删除容器后，没挂卷的数据随可写层一起消失；挂卷后数据落在宿主机，容器删了数据还在。</li>
       </ol>
 
-      <h3>psql 验证三步</h3>
+      <h3 id="psql-验证三步">psql 验证三步</h3>
       <pre><code>docker exec -it pg16 psql -U admin -d admin   # 进入容器连接数据库
 \conninfo        # 当前连接信息
 \l               # 列出所有数据库
@@ -69,10 +69,10 @@ SELECT current_user;   # 当前用户</code></pre>
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
 
-      <h3>🌱 初级 · 概念</h3>
+      <h3 id="-初级--概念">🌱 初级 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. PostgreSQL 的许可证是？</div>
@@ -108,7 +108,7 @@ SELECT current_user;   # 当前用户</code></pre>
         </div>
       </div>
 
-      <h3>🌿 中级 · 应用</h3>
+      <h3 id="-中级--应用">🌿 中级 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. <code>docker run -p 5432:5432</code> 中两个端口的含义是？</div>
@@ -144,7 +144,7 @@ SELECT current_user;   # 当前用户</code></pre>
         </div>
       </div>
 
-      <h3>🎯 高级 · 综合</h3>
+      <h3 id="-高级--综合">🎯 高级 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 启动容器时<strong>没有</strong>挂任何数据卷，随后 <code>docker rm</code> 删除容器再重建一个同名容器，之前的表数据会？</div>
@@ -184,7 +184,7 @@ SELECT current_user;   # 当前用户</code></pre>
     
 
                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -279,7 +279,7 @@ SELECT current_user;   # 当前用户</code></pre>
 
 
     <section>
-      <h2>巩固延伸</h2>
+      <h2 id="巩固延伸">巩固延伸</h2>
       <ul>
         <li><strong>动手验证</strong>：把本课的四条命令在你自己机器上跑一遍，观察 <code>docker ps</code> 里 pg16 的状态；再故意删掉容器体会一次「数据消失」，然后挂卷重建。</li>
         <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/index.html">PostgreSQL 16 官方文档</a> · <a href="https://hub.docker.com/_/postgres">Docker Hub postgres 镜像文档</a>（环境变量完整说明）</li>

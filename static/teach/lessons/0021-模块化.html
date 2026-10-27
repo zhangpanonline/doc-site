@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 第 19 课</p>
-      <h1>模块化</h1>
+      <h1 id="模块化">模块化</h1>
       <p class="lesson-sub">配合《<a href="/agents/python/模块化">21-模块化</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清<strong>包、模块、成员</strong>的关系与 <code>__init__.py</code>、<code>__all__</code> 的作用——源作业的费曼复述主题</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《21.模块化》里，测验和考核会考。</p>
 
-      <h3>包、模块、成员</h3>
+      <h3 id="包模块成员">包、模块、成员</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">包（含 __init__.py 的目录）</span>
@@ -44,7 +44,7 @@
         <p class="diagram-note">⚙️ 模块首次导入执行一次并缓存进 <code>sys.modules</code>；搜索顺序：内置模块 → 脚本目录 → PYTHONPATH → site-packages。</p>
       </div>
 
-      <h3>三个要点</h3>
+      <h3 id="三个要点">三个要点</h3>
       <ol class="pitfall-list">
         <li><strong><code>__all__</code> 控制 <code>from 模块 import *</code> 的清单</strong>：没进 <code>__all__</code> 的公开成员星号导入不进来；下划线开头的成员本来也不会被星号导入。它同时是模块的「公开 API 文档」。<a href="https://docs.python.org/3/reference/simple_stmts.html#the-import-statement">官方文档：import 语句</a></li>
         <li><strong><code>if __name__ == "__main__"</code> 区分直接运行与导入</strong>：直接运行脚本时 <code>__name__</code> 是 <code>"__main__"</code>，被导入时是模块名——测试代码放进这个分支。</li>
@@ -53,10 +53,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>点击选项立即获得反馈。答错也没关系——仔细读解释，它会把文档里对应的小节指给你。三级难度：初级考概念，中级考应用，高级考综合与陷阱。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 一个 <code>.py</code> 文件在模块化体系中是什么？</div>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 直接运行 <code>python my_math.py</code> 时，模块内 <code>__name__</code> 的值是？</div>
@@ -128,7 +128,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. a.py 里 <code>from b import bar</code>；b.py 里 <code>from a import foo</code>。直接运行 a.py 会怎样？</div>
@@ -168,7 +168,7 @@
     
 
                                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -271,7 +271,7 @@
 
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>首选阅读</strong>：Python 官方教程 <a href="https://docs.python.org/3/tutorial/modules.html">6. Modules</a>——模块与包的权威讲解。</li>
         <li><strong>系统梳理</strong>：Real Python 的 <a href="https://realpython.com/python-modules-packages/">Python Modules and Packages</a>，从模块到打包的完整路径。</li>

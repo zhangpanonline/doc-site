@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>词元</h1>
+      <h1 id="词元">词元</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/词元">07.词元</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清「直接把 UTF-8 字节数字当分词结果」为什么不行，以及分词表（Vocab）要解决的问题</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把词元的来龙去脉过一遍——细节都在《07.词元》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>从字符编码到词元</h3>
+        <h3 id="从字符编码到词元">从字符编码到词元</h3>
         <ul class="pitfall-list">
           <li>最简单的中文「分词」方案是把文字转成 <strong>UTF-8 编码的数字</strong>：<code>"你好Hello!123"</code> → 15 个数字</li>
           <li>不能直接用它的三个原因：<strong>长度膨胀</strong>（中文一字 = 3 个字节数字，计算量／显存／训练速度全恶化）、<strong>信息浪费</strong>（每层都要重复学「228,189,160 = 你」）、<strong>语义不明</strong>（很难学到字、词的边界规律）</li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>BPE：词表是怎么长出来的</h3>
+        <h3 id="bpe词表是怎么长出来的">BPE：词表是怎么长出来的</h3>
         <ul class="pitfall-list">
           <li>统计大量文字，<strong>合并高频出现的组合</strong>——这就是 BPE（字节对编码）的核心</li>
           <li>初始词表是 <strong>256 个单字节</strong>（<code>vocab = {i: bytes([i]) for i in range(256)}</code>），这样任何文本都不会出现「未知字符」</li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>分词：查表 + 最长匹配</h3>
+        <h3 id="分词查表--最长匹配">分词：查表 + 最长匹配</h3>
         <ul class="pitfall-list">
           <li><strong>词表固定下来后就不再改动</strong>：分词阶段只读词表做匹配，就能高效把文本变成 token 序列</li>
           <li>课件实现是<strong>贪心最长匹配</strong>：从可匹配的最长片段往下试，命中就前进相应字节数</li>
@@ -67,10 +67,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《07.词元》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 把 <code>"你好Hello!123"</code> 按 UTF-8 编码，会得到多少个字节数字？</div>
@@ -104,7 +104,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. 课件 <code>bpe_train(corpus, target_vocab_size=400)</code> 的初始词表是 256 个单字节。训练结束时，词表大小与合并次数分别是？</div>
@@ -138,7 +138,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 同一份语料、同一份分词代码，只把 <code>target_vocab_size</code> 从 400 提到 4000，对同一段测试文本最可能发生的整体变化是？</div>
@@ -174,7 +174,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -241,7 +241,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://huggingface.co/docs/transformers/en/tokenizer_summary">Hugging Face Transformers 官方文档《Tokenization algorithms》</a> · <a href="https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken">OpenAI Cookbook《How to count tokens with tiktoken》</a> · <a href="https://huggingface.co/learn/llm-course/chapter6/5">HF 课程《Byte-Pair Encoding tokenization》</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/词元速查表.html">词元速查表</a>——术语、BPE 流程、实测数字与 token 估算一页装下，建议打印。</li>

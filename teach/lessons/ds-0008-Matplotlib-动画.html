@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
-      <h1>Matplotlib - 动画</h1>
+      <h1 id="matplotlib---动画">Matplotlib - 动画</h1>
       <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Matplotlib-动画">08.Matplotlib - 动画</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 FuncAnimation 三要素（fig / func / frames）以及 interval、init_func、blit 各自管什么</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把动画的骨架过一遍——细节都在《08.Matplotlib - 动画》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>FuncAnimation：先有静态图，再让函数改数据</h3>
+        <h3 id="funcanimation先有静态图再让函数改数据">FuncAnimation：先有静态图，再让函数改数据</h3>
         <ul class="pitfall-list">
           <li>三要素：<strong>fig</strong>（画布）、<strong>func</strong>（每帧调用的更新函数）、<strong>frames</strong>（帧总数或可迭代对象）</li>
           <li>写法套路是「<strong>先画静态图并保存 Artist 引用</strong> → 更新函数里调用 <code>set_data</code> / <code>set_ydata</code> 改数据 → 用 <code>FuncAnimation</code> 串起来」</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>Blit 模式：只重绘变化的部分</h3>
+        <h3 id="blit-模式只重绘变化的部分">Blit 模式：只重绘变化的部分</h3>
         <ul class="pitfall-list">
           <li><code>blit=True</code> 时只重绘<strong>被动过的那些 Artist</strong>，而不是整张 Axes，性能提升明显</li>
           <li>代价：更新函数（以及 blit 下的 <code>init_func</code>）<strong>必须返回 Artist 序列</strong>，blitting 算法靠它判断 Figure 上哪块区域要更新——忘了返回就报错</li>
@@ -54,7 +54,7 @@
       </div>
 
       <div class="card">
-        <h3>两种方案与保存：按内存和场景选</h3>
+        <h3 id="两种方案与保存按内存和场景选">两种方案与保存：按内存和场景选</h3>
         <ul class="pitfall-list">
           <li><strong>FuncAnimation</strong>：画一次、之后只改数据，<strong>省内存、适合长动画与实时数据流</strong>（滚动窗口用 <code>deque(maxlen=100)</code> + 无限生成器）</li>
           <li><strong>ArtistAnimation</strong>：接收一个「每帧要显示的 Artist 列表」的列表，<strong>所有帧都要事先存下来</strong>，内存随帧数增长；换来的好处是能精确控制每一帧的内容（比如柱状图竞赛）</li>
@@ -65,10 +65,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《08.Matplotlib - 动画》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 用 FuncAnimation 做动画，你提供的那个函数（课件里的 <code>update(frame)</code>）的职责是？</div>
@@ -102,7 +102,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 同事按课件写了 <code>FuncAnimation(fig, update, frames=100, blit=True, interval=50)</code>，但运行报错 <code>RuntimeError: When blit=True, the animation function must return a sequence of Artist objects.</code>。最可能的原因是？</div>
@@ -136,7 +136,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. 下面四种说法，哪一个是错的？</div>
@@ -172,7 +172,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -225,7 +225,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://matplotlib.org/stable/users/explain/animations/animations.html">Animations using Matplotlib（官方教程）</a> · <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.FuncAnimation.html">matplotlib.animation.FuncAnimation API</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Matplotlib-动画速查表.html">Matplotlib-动画速查表</a>——FuncAnimation 参数表、两种方案对照、保存命令速记一页装下，建议打印。</li>

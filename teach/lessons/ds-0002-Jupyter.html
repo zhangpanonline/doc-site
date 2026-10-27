@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据科学工具包</p>
-      <h1>Jupyter</h1>
+      <h1 id="jupyter">Jupyter</h1>
       <p class="lesson-sub">配合《<a href="/agents/数据科学工具包/Jupyter">02.Jupyter</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>装好 VS Code 的 Jupyter 插件，用 <code>uv init .</code> 初始化一个数据科学工程</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把这一章的骨架过一遍——细节都在《02.Jupyter》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>三步起步：插件 → 工程 → 依赖</h3>
+        <h3 id="三步起步插件--工程--依赖">三步起步：插件 → 工程 → 依赖</h3>
         <ul class="pitfall-list">
           <li><strong>装插件</strong>：VS Code 里安装 <code>Jupyter</code> 插件（Notebook 支持由此而来）</li>
           <li><strong>初始化工程</strong>：<code>uv init .</code> 在当前目录建 uv 工程，生成 <code>pyproject.toml</code></li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>为什么数据科学课程用 Notebook</h3>
+        <h3 id="为什么数据科学课程用-notebook">为什么数据科学课程用 Notebook</h3>
         <ul class="pitfall-list">
           <li>Notebook 把<strong>代码 + 运行结果 + 说明文字</strong>放在同一个文件里，一次运行就能看到表格、图表的输出</li>
           <li>数据科学与 AI Agents 场景里最常见的交互是：<strong>读入一份数据</strong>（CSV / 数据库 / 接口）→ <strong>逐段试探性地转换、清洗、观察中间结果</strong></li>
@@ -54,7 +54,7 @@
       </div>
 
       <div class="card">
-        <h3>环境要点（最容易踩的一条）</h3>
+        <h3 id="环境要点最容易踩的一条">环境要点（最容易踩的一条）</h3>
         <ul class="pitfall-list">
           <li><strong>解释器必须选本工程的虚拟环境</strong>（<code>.venv</code>），不要用系统 Python：否则 <code>numpy</code> / <code>pandas</code> 装到了别处，Notebook 里会 <code>ModuleNotFoundError</code></li>
           <li>依赖统一用 UV 追加：<code>uv add &lt;package&gt;</code>；开发期的工具库用 <code>uv add --dev &lt;package&gt;</code>（例如 Jupyter 本身）</li>
@@ -65,10 +65,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《02.Jupyter》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 要在一个 <code>.ipynb</code> 文件里编辑并运行单元格式代码，VS Code 至少需要装哪个插件？</div>
@@ -102,7 +102,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 安装 Jupyter 本身用 <code>uv add --dev jupyter</code>、而不用 <code>uv add jupyter</code>，因为？</div>
@@ -136,7 +136,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 新建工程的执行顺序：① 新建 <code>.ipynb</code> ② 运行 <code>uv add --dev jupyter</code> ③ 运行 <code>uv init .</code> ④ 运行 <code>uv add numpy</code> ⑤ 在解释器选择器里选 <code>.venv</code>。只考虑「顺畅、不返工」，正确的顺序是？</div>
@@ -172,7 +172,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -225,7 +225,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.astral.sh/uv/guides/integration/jupyter/">uv 官方文档 Using uv with Jupyter</a> · <a href="https://code.visualstudio.com/docs/datascience/jupyter-notebooks">VS Code 官方文档 Jupyter Notebooks in VS Code</a> · <a href="https://docs.jupyter.org/en/latest/">Jupyter 官方文档</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/Jupyter速查表.html">Jupyter速查表</a>——uv 命令速记、解释器选择要点、常见报错与修法一页装下，建议打印。</li>

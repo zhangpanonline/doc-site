@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>实现MCP服务器</h1>
+      <h1 id="实现mcp服务器">实现MCP服务器</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/实现MCP服务器">27.实现MCP服务器</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出 <code>FastMCP</code> 替你接管了哪些活：<strong>连接管理、协议合规、消息路由</strong></li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把「服务端最小形态 → 协议定义 → 传输方式 → 上线边界」这条链路过一遍——细节都在《27.实现MCP服务器》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>服务端最小形态：四步走</h3>
+        <h3 id="服务端最小形态四步走">服务端最小形态：四步走</h3>
         <ul class="pitfall-list">
           <li><strong>装包</strong>：<code>uv add mcp==1.28.1</code>——课程锁定 <code>mcp 1.28.1</code>（对应 python-sdk 的 <code>v1.28.1</code> 标签），安装前先看清对应版本的官方文档</li>
           <li><strong>建服务</strong>：<code>from mcp.server.fastmcp import FastMCP</code> → <code>mcp = FastMCP("Weather Service", json_response=True)</code></li>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="card">
-        <h3>一个装饰器，换来一份协议级工具定义</h3>
+        <h3 id="一个装饰器换来一份协议级工具定义">一个装饰器，换来一份协议级工具定义</h3>
         <ul class="pitfall-list">
           <li><strong>你不用写 JSON Schema</strong>：官方原话是「no JSON Schema、no request parsing、no validation code、no protocol handling」——<strong>类型标注就是 schema</strong>（<code>a: int, b: int</code> is the schema），docstring 就是给模型看的工具描述</li>
           <li><strong>协议侧长什么样</strong>：服务端在 <code>tools/list</code> 里回给你 <code>name</code> / <code>title</code> / <code>description</code> / <code>inputSchema</code> / <code>outputSchema</code>；<strong><code>description</code> 与 <code>inputSchema</code> 里每个参数的说明，直接决定模型选不选这个工具、参数填得对不对</strong></li>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="card">
-        <h3>传输方式与运行地址</h3>
+        <h3 id="传输方式与运行地址">传输方式与运行地址</h3>
         <ul class="pitfall-list">
           <li><strong>三种标准传输</strong>：<code>stdio</code>（客户端把服务端当子进程拉起，走 stdin/stdout）、<strong>Streamable HTTP</strong>（HTTP POST + 可选 SSE 流）、以及被它取代的 SSE</li>
           <li><strong>为什么选它</strong>：官方把 Streamable HTTP 标为「the recommended transport for production deployments」，好处是<strong>有状态/无状态两种运行模式、支持断线重连（resumability）、JSON 或 SSE 两种响应格式、多节点部署扩展性更好</strong>；<code>json_response=True</code> 让响应直接从 SSE 流切到 JSON，<code>stateless_http=True</code> 则进一步去掉会话状态</li>
@@ -65,7 +65,7 @@
       </div>
 
       <div class="card">
-        <h3>上线前必须补的边界（课程代码没写，但面试会问）</h3>
+        <h3 id="上线前必须补的边界课程代码没写但面试会问">上线前必须补的边界（课程代码没写，但面试会问）</h3>
         <ul class="pitfall-list">
           <li><strong>传输安全</strong>：规范要求服务端<strong>必须校验 <code>Origin</code> 头</strong>（防 DNS rebinding），本地运行<strong>应只绑 127.0.0.1</strong>，并对所有连接做认证</li>
           <li><strong>工具安全</strong>：服务端必须校验全部工具入参、做访问控制、对调用限流、清洗工具输出；客户端侧则应弹确认、向用户展示调用参数、做超时与审计日志</li>
@@ -76,10 +76,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《27.实现MCP服务器》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">1. 给 <code>get_weather</code> 加上 <code>@mcp.tool()</code> 之后，客户端在 <code>tools/list</code> 里看到的工具描述与参数结构（JSON Schema）从哪来？</div>
@@ -113,7 +113,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. 接第 3 题：Streamable HTTP 的「两种响应格式」是客户端能自由选择、还是服务端已经定死的？规范怎么说？</div>
@@ -147,7 +147,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 你按本章把服务跑起来（<code>transport="streamable-http"</code>，其余保持默认），同事用 <code>curl</code> 打 <code>http://localhost:8000/</code> 得到 404，于是断定服务没起来。最站得住脚的判断是？</div>
@@ -183,7 +183,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -236,7 +236,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://modelcontextprotocol.io/specification/2025-06-18/server/tools">MCP 规范 Tools</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports">MCP 规范 Transports</a> · <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle">MCP 规范 Lifecycle</a> · <a href="https://modelcontextprotocol.io/docs/2026-07-28/tools/inspector">MCP Inspector 官方文档</a> · <a href="https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/v1.28.1/docs/server.md">MCP Python SDK v1.28.1《Building MCP Servers》</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/实现MCP服务器速查表.html">实现MCP服务器速查表</a>——四步建服务、装饰器映射、传输对比与易错点一页装下，建议打印。</li>

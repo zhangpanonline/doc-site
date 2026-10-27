@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 7 节</p>
-      <h1>拓展知识</h1>
+      <h1 id="拓展知识">拓展知识</h1>
       <p class="lesson-sub">配合《<a href="/common/database/拓展知识">db-0007-拓展知识</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>对着 PG 的 18 项能力说出<strong>「它是什么 + 什么场景用它」</strong>——<strong>作业考的就是这个</strong></li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《07.拓展知识》里，测验和考核会考。</p>
 
-      <h3>PG 能力地图（高频几项）</h3>
+      <h3 id="pg-能力地图高频几项">PG 能力地图（高频几项）</h3>
       <ol class="pitfall-list">
         <li><strong>备份与恢复</strong>：pg_dump 倒出存档、pg_restore 还原——上线第一件事。</li>
         <li><strong>视图 vs 物化视图</strong>：视图 = 存 SQL 的虚拟表（实时）；物化视图 = 把结果存成物理表（快、但需定时刷新）。</li>
@@ -43,7 +43,7 @@
         <li><strong>复制</strong>：流复制（高可用/备机）、逻辑复制（按表按行选择性同步）。</li>
       </ol>
 
-      <h3>数据库分类</h3>
+      <h3 id="数据库分类">数据库分类</h3>
       <pre><code>关系型（SQL）  表+行，强 ACID，JOIN        PostgreSQL / MySQL
 文档型          JSON 文档，Schema-less       MongoDB
 键值型         K-V，超高读写                Redis
@@ -51,17 +51,17 @@
 图数据库        节点+边，深度关联            Neo4j
 （键值/列族/图 统称 NoSQL；文档型常归入 NoSQL）</code></pre>
 
-      <h3>三范式一句话</h3>
+      <h3 id="三范式一句话">三范式一句话</h3>
       <pre><code>1NF  列不可再分（一个格子一个值）
 2NF  非主键列完全依赖主键（复合主键时不能只依赖一部分）
 3NF  非主键列之间无传递依赖（院系名不能跟着院系ID一起塞进学生表）</code></pre>
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
 
-      <h3>🌱 初级 · 概念</h3>
+      <h3 id="-初级--概念">🌱 初级 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. 视图（View）与物化视图（Materialized View）的区别是？</div>
@@ -97,7 +97,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级 · 应用</h3>
+      <h3 id="-中级--应用">🌿 中级 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. 审计日志（对某表的每次修改自动记录）最适合用哪个能力？</div>
@@ -133,7 +133,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级 · 综合</h3>
+      <h3 id="-高级--综合">🎯 高级 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">7. 学生表里同时存「院系ID」和「院系名称」，违反哪条范式？怎么修？</div>
@@ -173,7 +173,7 @@
     
 
                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -268,7 +268,7 @@
 
 
     <section>
-      <h2>巩固延伸</h2>
+      <h2 id="巩固延伸">巩固延伸</h2>
       <ul>
         <li><strong>动手验证</strong>：对 04 课建好的电商库试三个能力：① 用 <code>pg_dump</code> 做一次完整备份并还原到新库；② 建一个视图封装「订单明细 JOIN」查询；③ 用 EXPLAIN 看一个 JSONB 字段查询，再给它建 GIN 索引对比。</li>
         <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/backup.html">PostgreSQL 官方文档：备份与恢复</a> · <a href="https://www.postgresql.org/docs/16/ddl-partitioning.html">官方文档：表分区</a></li>

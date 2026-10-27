@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · 数据库 · 第 2 节</p>
-      <h1>DDL</h1>
+      <h1 id="ddl">DDL</h1>
       <p class="lesson-sub">配合《<a href="/common/database/DDL">db-0002-DDL</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 SQL 四分类（DDL/DML/DCL/TCL）各自管什么</li>
@@ -29,10 +29,10 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《02.DDL》里，测验和考核会考。</p>
 
-      <h3>SQL 四分类</h3>
+      <h3 id="sql-四分类">SQL 四分类</h3>
       <div class="diagram">
         <div class="diagram-row">
           <span class="diagram-node plain">CREATE / ALTER / DROP / TRUNCATE</span>
@@ -52,7 +52,7 @@
         <p class="diagram-note">⚙️ 学习顺序 DDL → DML：先有结构，才能装数据。</p>
       </div>
 
-      <h3>类型与约束要点</h3>
+      <h3 id="类型与约束要点">类型与约束要点</h3>
       <ol class="pitfall-list">
         <li><strong>精确 vs 不精确</strong>：<code>NUMERIC(m,n)</code> 定点精确（金额用它）；<code>REAL</code> / <code>DOUBLE PRECISION</code> 浮点不精确（科学计算用）。</li>
         <li><strong><code>SERIAL</code> = INTEGER + 自动序列</strong>：自增主键的懒人写法，<code>BIGSERIAL</code> 对应 BIGINT。</li>
@@ -61,7 +61,7 @@
         <li><strong>JSON vs JSONB</strong>：JSONB 是二进制存储，支持索引、查询更快——能选 JSONB 就不选 JSON。</li>
       </ol>
 
-      <h3>DELETE / TRUNCATE / DROP 一句话对比</h3>
+      <h3 id="delete--truncate--drop-一句话对比">DELETE / TRUNCATE / DROP 一句话对比</h3>
       <pre><code>DELETE    删「行」——慢、逐行、可带 WHERE、可回滚、结构在
 TRUNCATE  清「数据」——快、整表、不可带 WHERE、PG 中可回滚、结构在
 DROP      删「表」——最快、连结构带数据一起删、不可回滚</code></pre>
@@ -69,10 +69,10 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>三道一组，先做后点——点击选项立刻出对错与解释。</p>
 
-      <h3>🌱 初级 · 概念</h3>
+      <h3 id="-初级--概念">🌱 初级 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">1. DDL 操作的对象是？</div>
@@ -108,7 +108,7 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
         </div>
       </div>
 
-      <h3>🌿 中级 · 应用</h3>
+      <h3 id="-中级--应用">🌿 中级 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="1">
           <div class="quiz-prompt">4. <code>price NUMERIC(10,2)</code> 的含义是？</div>
@@ -144,7 +144,7 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
         </div>
       </div>
 
-      <h3>🎯 高级 · 综合</h3>
+      <h3 id="-高级--综合">🎯 高级 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. 在 PostgreSQL 中，BEGIN 事务里执行 TRUNCATE 再 ROLLBACK，数据会？</div>
@@ -184,7 +184,7 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
     
 
                                                                                         <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
 <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里（AI 生成的代码、Agent 工具开发、慢查询诊断）——练的就是你实际要面对的面试。</p><button type="button" class="interview-launch">开始面试实战</button>
       <script>
         window.__interview = {
@@ -279,7 +279,7 @@ DROP      删「表」——最快、连结构带数据一起删、不可回滚<
 
 
     <section>
-      <h2>巩固延伸</h2>
+      <h2 id="巩固延伸">巩固延伸</h2>
       <ul>
         <li><strong>动手验证</strong>：把考核一、考核二的建表语句在 pgAdmin 里执行；再分别试 DELETE（带 WHERE）/TRUNCATE/DROP，观察 <code>\d students</code> 的结构变化。</li>
         <li><strong>推荐阅读</strong>：<a href="https://www.postgresql.org/docs/16/ddl.html">PostgreSQL 官方文档：数据定义</a> · <a href="https://www.postgresql.org/docs/16/app-pgdump.html">pg_dump 官方文档</a></li>

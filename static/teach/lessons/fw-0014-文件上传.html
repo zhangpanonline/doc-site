@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Python 框架</p>
-      <h1>文件上传</h1>
+      <h1 id="文件上传">文件上传</h1>
       <p class="lesson-sub">配合《<a href="/agents/python-framework/文件上传">14.文件上传</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清「客户端直传 OSS」模式：服务端只发凭证，文件流不经过应用服务器</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《14.文件上传》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>直传模式与凭证（课件要点）</h3>
+        <h3 id="直传模式与凭证课件要点">直传模式与凭证（课件要点）</h3>
         <ul class="pitfall-list">
           <li><strong>直传</strong>：浏览器拿凭证后直接把文件 POST 到 OSS——大文件不经过应用服务器（省带宽、省内存）</li>
           <li><strong>host</strong>：OSS Bucket 域名（表单 POST 目标）；<strong>access_id</strong>：OSSAccessKeyId 表单字段</li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>安全三件套（课件）</h3>
+        <h3 id="安全三件套课件">安全三件套（课件）</h3>
         <ul class="pitfall-list">
           <li><strong>conditions 三条</strong>：eq $key（只能传这个 key）、eq $Content-Type（只能传这个类型）、content-length-range 0..file_size（限制大小）</li>
           <li><strong>目录策略</strong>：date_uuid（uploads/YYYY/MM/DD/，按天分桶）vs flat_uuid（uploads/ 平铺）</li>
@@ -54,10 +54,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《14.文件上传》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 课件「上传模式」图里，文件流走的是哪条路？</div>
@@ -91,7 +91,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. conditions 里 ["eq", "$key", key] 的作用是？</div>
@@ -125,7 +125,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">7. content-length-range 条件里第二个值为什么是 file_size 而不是一个固定上限？</div>
@@ -161,7 +161,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -214,7 +214,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://www.alibabacloud.com/help/en/oss/developer-reference/postobject">阿里云官方：PostObject（表单直传）</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/文件上传速查表.html">文件上传速查表</a>——直传流程、凭证六字段、安全三件套一页装下，建议打印。</li>

@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · PostgreSQL 官方文档拓展</p>
-      <h1>RETURNING 与 UPSERT</h1>
+      <h1 id="returning-与-upsert">RETURNING 与 UPSERT</h1>
       <p class="lesson-sub">来源：官方文档 §6.4 + INSERT 命令参考（postgres.cn）<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说出 RETURNING 的动机（官方原文：避免额外查询）与三大典型场景</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节与测验依据都来自官方文档 <a href="http://www.postgres.cn/docs/current/dml-returning.html">§6.4</a> 与 <a href="http://www.postgres.cn/docs/current/sql-insert.html">INSERT 命令参考</a>。</p>
 
       <div class="card">
-        <h3>RETURNING：改完直接拿回行</h3>
+        <h3 id="returning改完直接拿回行">RETURNING：改完直接拿回行</h3>
         <ul class="pitfall-list">
           <li>官方动机：<strong>避免执行额外的数据库查询来收集数据</strong>，难以可靠识别被修改行时更有价值</li>
           <li><strong>INSERT 返回默认数据</strong>：serial/identity 新分配的 id 最有用——<code>INSERT ... RETURNING id</code></li>
@@ -44,7 +44,7 @@
       </div>
 
       <div class="card">
-        <h3>UPSERT：ON CONFLICT</h3>
+        <h3 id="upserton-conflict">UPSERT：ON CONFLICT</h3>
         <ul class="pitfall-list">
           <li><strong>DO NOTHING</strong>：冲突跳过——幂等批量导入</li>
           <li><strong>DO UPDATE SET</strong>：冲突更新；<code>EXCLUDED.列名</code> 引用「本应插入的那行」的值</li>
@@ -55,10 +55,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与官方文档覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">1. 官方文档说 RETURNING 的主要价值是什么？</div>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">4. <code>ON CONFLICT DO NOTHING</code> 的行为是？</div>
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="2">
           <div class="quiz-prompt">7. AI 写「先 SELECT 查是否存在，再决定 INSERT 还是 UPDATE」。在并发场景这有什么问题？</div>
@@ -164,7 +164,7 @@
     
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -218,7 +218,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>官方原文</strong>：<a href="http://www.postgres.cn/docs/current/dml-returning.html">postgres.cn · 6.4 从修改的行中返回数据</a> · <a href="http://www.postgres.cn/docs/current/sql-insert.html">INSERT 命令参考</a></li>
         <li><strong>深读推荐</strong>：官方文档 <a href="http://www.postgres.cn/docs/current/dml-update.html">UPDATE</a> / <a href="http://www.postgres.cn/docs/current/dml-delete.html">DELETE</a> 的 RETURNING 细节</li>

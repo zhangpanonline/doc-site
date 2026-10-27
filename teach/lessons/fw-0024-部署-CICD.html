@@ -14,12 +14,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Python 框架</p>
-      <h1>部署-CICD</h1>
+      <h1 id="部署-cicd">部署-CICD</h1>
       <p class="lesson-sub">配合《<a href="/agents/python-framework/部署-CICD">24.部署-CICD</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 CI（集成验证）与 CD（部署交付）各自的职责边界</li>
@@ -30,11 +30,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把核心机制过一遍——细节都在《24.部署-CICD》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>CI 与 CD 的职责</h3>
+        <h3 id="ci-与-cd-的职责">CI 与 CD 的职责</h3>
         <ul class="pitfall-list">
           <li><strong>CI 持续集成</strong>：代码提交触发——装依赖（uv sync）+ 跑测试（make test-unit，注释里的 test/test-e2e/test-smoke 按需开）+ 通知</li>
           <li><strong>CD 持续交付</strong>：构建镜像 → 推 ACR → 部署集群（kubectl + Helm）</li>
@@ -43,7 +43,7 @@
       </div>
 
       <div class="card">
-        <h3>CD 的密钥与命令</h3>
+        <h3 id="cd-的密钥与命令">CD 的密钥与命令</h3>
         <ul class="pitfall-list">
           <li><strong>6 个环境变量</strong>：KUBECONFIG_BASE64（k8s 配置编码）、ACR_USERNAME/ACR_PASSWORD、DOCKER_SERVER、DB_PASSWORD、JWT_SECRET_KEY</li>
           <li><strong>三步命令</strong>：还原 kubeconfig → 重建拉取凭证 secret（dry-run 管道 apply）→ helm 部署（TAG=${CI_COMMIT_REF_NAME}）</li>
@@ -53,10 +53,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《24.部署-CICD》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. CI/CD 全称是？</div>
@@ -90,7 +90,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. CD 第一步「还原 kubeconfig」为什么用 base64？</div>
@@ -124,7 +124,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. CI 里 make test-e2e / test-smoke 为什么被注释掉了？</div>
@@ -160,7 +160,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -213,7 +213,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://docs.github.com/en/actions/about-github-actions/understanding-github-actions">GitHub 官方：Understanding GitHub Actions</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/部署-CICD速查表.html">部署-CICD速查表</a>——CI/CD 职责、三仓库、六变量一页装下，建议打印。</li>

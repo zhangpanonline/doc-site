@@ -15,12 +15,12 @@
 
     <header class="lesson-header">
       <p class="lesson-kicker">互动教学课程 · Agents底层逻辑</p>
-      <h1>ReAct</h1>
+      <h1 id="react">ReAct</h1>
       <p class="lesson-sub">配合《<a href="/agents/Agents底层逻辑/ReAct">20.ReAct</a>》使用<span class="dot"></span>预计 15–20 分钟<span class="dot"></span>9 道分级测验 + 面试实战</p>
     </header>
 
     <section class="lesson-goal card">
-      <h2 style="margin-top:0">本课目标</h2>
+      <h2 style="margin-top:0" id="本课目标">本课目标</h2>
       <p style="margin:0 0 .4rem">完成本课后，你将能：</p>
       <ol>
         <li>说清 ReAct 的核心是「推理与行动<strong>交替</strong>」——以及它为什么比「先想完、再一次性行动」更稳</li>
@@ -31,11 +31,11 @@
     </section>
 
     <section>
-      <h2>知识速览</h2>
+      <h2 id="知识速览">知识速览</h2>
       <p>先花几分钟把 ReAct 循环的骨架、本章的 <code>agent/</code> 变更过一遍——细节都在《20.ReAct》里，测验和面试会考。</p>
 
       <div class="card">
-        <h3>ReAct 是什么：想一步、做一步、看结果、再想</h3>
+        <h3 id="react-是什么想一步做一步看结果再想">ReAct 是什么：想一步、做一步、看结果、再想</h3>
         <ul class="pitfall-list">
           <li><strong>原始定义</strong>：让模型以<strong>交替（interleaved）</strong>的方式同时产生「推理轨迹」与「任务动作」——推理帮模型诱导、跟踪、更新行动计划并处理异常；行动让它接入外部信息源（知识库、环境）去补充信息</li>
           <li><strong>本章的落地（一行都不能少）</strong>：
@@ -56,7 +56,7 @@
       </div>
 
       <div class="card">
-        <h3>本章 <code>agent/</code> 的四处变更</h3>
+        <h3 id="本章-agent-的四处变更">本章 <code>agent/</code> 的四处变更</h3>
         <ul class="pitfall-list">
           <li><strong>新增 bash 工具</strong> <code>agent/tool/bash_command.py</code>：<code>subprocess.run(command, shell=True, executable=...</code>（Windows 用 <code>"cmd"</code>，其它平台 <code>"/bin/bash"</code><code>), capture_output=True, text=True, timeout=30)</code>；返回码为 0 时回 <code>stdout</code>（空则回「(命令执行成功，无输出)」），非 0 时回 <code>[退出码 N]</code> 加 <code>stderr</code></li>
           <li><strong>系统提示词注入操作系统信息</strong>：<code>agent/prompt.py</code> 新增 <code>get_os()</code>（<code>platform.system()</code>），<code>render_prompt</code> 的渲染上下文变成 <code>language / cwd / os / is_git</code>；<code>system.j2</code> 的 <code># Environment</code> 小节多出 <code>Operating system: {{ os }}</code></li>
@@ -67,7 +67,7 @@
       </div>
 
       <div class="card">
-        <h3>循环跑出来的那份「分析.md」</h3>
+        <h3 id="循环跑出来的那份分析md">循环跑出来的那份「分析.md」</h3>
         <ul class="pitfall-list">
           <li><strong>它的来路</strong>：把「请帮我分析 ./agent 目录中的核心实现逻辑，将结果放到当前目录的 分析.md 中」交给 <code>query()</code>——Agent 靠 <code>bash_command</code> / <code>read_file</code> / <code>write_file</code> 三个工具自己看代码、自己写文件，最后 <code>session.save()</code> 把会话存进 <code>agent/sessions/&lt;id&gt;.json</code></li>
           <li><strong>它给出的架构结论</strong>：<code>config.py</code>（pydantic-settings 读 <code>.env</code>）、<code>events.py</code>（EventEmitter 发布-订阅）、<code>model.py</code>（OpenAI 封装 + Builder 流式处理）、<code>session.py</code>（消息与工具）、<code>prompt.py</code>（Jinja2 渲染）、<code>printer.py</code>（流式打印）、<code>tool/</code>（Tool 基类 + 注册表 + 三个工具）</li>
@@ -78,10 +78,10 @@
     </section>
 
     <section>
-      <h2>分级测验</h2>
+      <h2 id="分级测验">分级测验</h2>
       <p>即时反馈：点击选项立刻显示对错与解释。题目只考本课与《20.ReAct》覆盖的内容。</p>
 
-      <h3>🌱 初级测验 · 概念</h3>
+      <h3 id="-初级测验--概念">🌱 初级测验 · 概念</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">1. 本次代码变动中，新增的工具文件是哪个？它提供什么能力？</div>
@@ -115,7 +115,7 @@
         </div>
       </div>
 
-      <h3>🌿 中级测验 · 应用</h3>
+      <h3 id="-中级测验--应用">🌿 中级测验 · 应用</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="0">
           <div class="quiz-prompt">4. <code>registry.invoke(session.messages[-1])</code> 里，为什么取的偏偏是「最后一条」消息？</div>
@@ -149,7 +149,7 @@
         </div>
       </div>
 
-      <h3>🎯 高级测验 · 综合</h3>
+      <h3 id="-高级测验--综合">🎯 高级测验 · 综合</h3>
       <div class="quiz">
         <div class="quiz-q" data-correct="3">
           <div class="quiz-prompt">7. 有人把循环改写成：<code>model.invoke_stream(session)</code> → <code>call_msg = registry.invoke(session.messages[-1])</code> → <code>if call_msg is None: break</code>，但<strong>删掉了</strong> <code>session.messages += call_msg</code>。推演一下会发生什么？</div>
@@ -185,7 +185,7 @@
     </section>
 
     <section>
-      <h2>💼 面试实战</h2>
+      <h2 id="-面试实战">💼 面试实战</h2>
       <p>与真实面试官对练：弹框里一次一道，先写下答案再核对思路，答案自动保存在本地。题型覆盖陷阱、机制、代码审查、设计选型与 AI 辅助场景，题干都放在当下的 AI 工作环境里——练的就是你实际要面对的面试。</p>
       <button type="button" class="interview-launch">开始面试实战</button>
       <script>
@@ -245,7 +245,7 @@
     </section>
 
     <section>
-      <h2>巩固与延伸</h2>
+      <h2 id="巩固与延伸">巩固与延伸</h2>
       <ul class="pitfall-list">
         <li><strong>深读推荐</strong>：<a href="https://arxiv.org/abs/2210.03629">ReAct: Synergizing Reasoning and Acting in Language Models</a> · <a href="https://raw.githubusercontent.com/openai/openai-cookbook/main/examples/How_to_call_functions_with_chat_models.ipynb">OpenAI Cookbook《How to call functions with chat models》</a> · <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic《Building effective agents》</a> · <a href="https://docs.python.org/3/library/subprocess.html">Python 官方文档 subprocess</a></li>
         <li><strong>打印参考</strong>：<a href="../reference/ReAct速查表.html">ReAct速查表</a>——循环三拍、agent/ 变更清单、bash_command 参数与易错点一页装下，建议打印。</li>
