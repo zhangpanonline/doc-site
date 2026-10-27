@@ -35,6 +35,7 @@
 - **docs/ 下每篇 .md/.mdx 必须带 `description` frontmatter**（SEO 唯一摘要）：15~40 字、含标题关键词、写在 title 行后、双引号包裹。2026-09-09 已全量补过 92 篇，新增文档必须保持完整率。
 - **文档路由去掉文件名数字前缀**：`python/语言核心/24.协程.mdx` 的真实路由是 `/python/语言核心/协程/`，回链必须用去前缀后的真实路由。
 - **指向 static 资源的链接必须用原生 `<a>` 标签**：站点 `onBrokenLinks: 'throw'`，markdown 链接会被判为断链导致构建失败。
+- **课件图片必须本地化，禁止外链第三方图床**：导入课件时把图片下载到 `static/img/duyi/`，文档里写 `/img/duyi/xxx.png`。2026-10-27 事故：源课件图片全部外链 `resource.duyiedu.com`，该域名 TLS 证书 2026-10-24 到期未续，浏览器按证书失效阻断子资源，全站 28 篇文档（33 张图）集体破图——对方续期不可控，本地化是唯一可靠解。注意导入时别抄错 URL（`04.ORM` 曾把 `...092.png` 抄成 `...046.png`，真 404）。
 - 每个提交前跑 `pnpm build` 验证；类型检查存量错误（如 CourseUI.tsx:550）与本次改动无关时不要顺手改坏。
 - 发布前可用 `python3 scripts/check-sitemap.py` 对账 sitemap 与构建产物（查生产 404；需先 build）。
 
