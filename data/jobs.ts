@@ -32,7 +32,7 @@ export type UnitJobs = {
 /**
  * 岗位地图数据（聚合统计，按学习路线递进）
  * 数据来源：各招聘平台公开岗位信息的聚合统计，不含公司信息与岗位原文。
- * - BOSS 直聘：逐城轮换口径（11 组岗位关键词 × 50 城；2026-09-28 起 50 批 = 每批 1 城防封控，已完成批次 1-8 北京/上海/广州/深圳/成都/杭州/重庆/苏州）
+ * - BOSS 直聘：逐城轮换口径（11 组岗位关键词 × 50 城；2026-09-28 起 50 批 = 每批 1 城防封控，已完成批次 1-9 北京/上海/广州/深圳/成都/杭州/重庆/苏州/武汉）
  * - 前程无忧：10 城口径（北上广深杭蓉汉宁西渝，12 组岗位关键词），2026-09-28 全量扩采
  * - 猎聘：免登录 SPA 搜索口径（11 组岗位关键词，与 BOSS 批次同城对齐；卡片无发布时间，行业/规模按 cube_rules 归并）
  * 已过滤已失效/代招/实习及非本路线岗位（硬件、销售、现场运维、培训、数据标注等）。
@@ -51,21 +51,21 @@ export const jobs: Record<string, UnitJobs> = {
     skills: ['Python', 'PostgreSQL', 'LangChain', 'FastAPI', 'asyncio'],
     salaryRange: [8, 60],
     salaryMedian: 20,
-    sampleSize: 2802,
+    sampleSize: 3014,
     updatedAt: '2026-10-27',
     platforms: [
       {
         platform: 'boss',
         label: 'BOSS 直聘',
-        sampleSize: 1058,
+        sampleSize: 1147,
         salaryRange: [8, 40],
-        salaryMedian: 18,
+        salaryMedian: 17,
         updatedAt: '2026-10-27',
       },
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 840,
+        sampleSize: 862,
         salaryRange: [7, 45],
         salaryMedian: 18,
         updatedAt: '2026-10-27',
@@ -73,7 +73,7 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'liepin',
         label: '猎聘',
-        sampleSize: 904,
+        sampleSize: 1005,
         salaryRange: [12, 80],
         salaryMedian: 30,
         updatedAt: '2026-10-27',
@@ -88,13 +88,13 @@ export const jobs: Record<string, UnitJobs> = {
     skills: ['Java', 'Spring Boot', 'Spring Cloud', 'Redis'],
     salaryRange: [9, 40],
     salaryMedian: 17,
-    sampleSize: 2319,
+    sampleSize: 2498,
     updatedAt: '2026-10-27',
     platforms: [
       {
         platform: 'boss',
         label: 'BOSS 直聘',
-        sampleSize: 1040,
+        sampleSize: 1116,
         salaryRange: [9, 30],
         salaryMedian: 15,
         updatedAt: '2026-10-27',
@@ -102,7 +102,7 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 543,
+        sampleSize: 561,
         salaryRange: [8, 30],
         salaryMedian: 15,
         updatedAt: '2026-10-27',
@@ -110,9 +110,9 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'liepin',
         label: '猎聘',
-        sampleSize: 736,
-        salaryRange: [12, 60],
-        salaryMedian: 25,
+        sampleSize: 821,
+        salaryRange: [11, 60],
+        salaryMedian: 23,
         updatedAt: '2026-10-27',
       },
     ],
@@ -125,21 +125,21 @@ export const jobs: Record<string, UnitJobs> = {
     skills: ['Linux', 'Docker', 'Kubernetes', 'CI/CD'],
     salaryRange: [6, 50],
     salaryMedian: 16,
-    sampleSize: 1581,
+    sampleSize: 1747,
     updatedAt: '2026-10-27',
     platforms: [
       {
         platform: 'boss',
         label: 'BOSS 直聘',
-        sampleSize: 641,
-        salaryRange: [6, 50],
-        salaryMedian: 16,
+        sampleSize: 728,
+        salaryRange: [6, 45],
+        salaryMedian: 15,
         updatedAt: '2026-10-27',
       },
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 390,
+        sampleSize: 402,
         salaryRange: [5, 30],
         salaryMedian: 12,
         updatedAt: '2026-10-27',
@@ -147,8 +147,8 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'liepin',
         label: '猎聘',
-        sampleSize: 550,
-        salaryRange: [9, 60],
+        sampleSize: 617,
+        salaryRange: [8, 60],
         salaryMedian: 22,
         updatedAt: '2026-10-27',
       },
@@ -160,16 +160,16 @@ export const jobs: Record<string, UnitJobs> = {
     stage: 4,
     positions: ['AI 辅助开发工程师', '研发效能工程师'],
     skills: ['Claude Code', '提示工程', 'AI 工作流'],
-    salaryRange: [12, 90],
-    salaryMedian: 34,
-    sampleSize: 260,
+    salaryRange: [10, 90],
+    salaryMedian: 31,
+    sampleSize: 276,
     updatedAt: '2026-10-27',
     platforms: [
       {
         platform: 'boss',
         label: 'BOSS 直聘',
-        sampleSize: 111,
-        salaryRange: [11, 90],
+        sampleSize: 126,
+        salaryRange: [10, 82],
         salaryMedian: 30,
         updatedAt: '2026-10-27',
       },
@@ -198,32 +198,32 @@ export const jobs: Record<string, UnitJobs> = {
     positions: ['全栈工程师', '技术负责人'],
     skills: ['前后端全栈', '架构设计', '项目管理'],
     salaryRange: [9, 50],
-    salaryMedian: 19,
-    sampleSize: 1187,
+    salaryMedian: 18,
+    sampleSize: 1303,
     updatedAt: '2026-10-27',
     platforms: [
       {
         platform: 'boss',
         label: 'BOSS 直聘',
-        sampleSize: 526,
-        salaryRange: [9, 40],
-        salaryMedian: 17,
+        sampleSize: 592,
+        salaryRange: [9, 35],
+        salaryMedian: 16,
         updatedAt: '2026-10-27',
       },
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 268,
-        salaryRange: [8, 34],
+        sampleSize: 276,
+        salaryRange: [8, 33],
         salaryMedian: 16,
         updatedAt: '2026-10-27',
       },
       {
         platform: 'liepin',
         label: '猎聘',
-        sampleSize: 393,
+        sampleSize: 435,
         salaryRange: [11, 60],
-        salaryMedian: 26,
+        salaryMedian: 25,
         updatedAt: '2026-10-27',
       },
     ],
