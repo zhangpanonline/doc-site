@@ -35,6 +35,7 @@
 - **docs/ 下每篇 .md/.mdx 必须带 `description` frontmatter**（SEO 唯一摘要）：15~40 字、含标题关键词、写在 title 行后、双引号包裹。2026-09-09 已全量补过 92 篇，新增文档必须保持完整率。
 - **文档路由去掉文件名数字前缀**：`python/语言核心/24.协程.mdx` 的真实路由是 `/python/语言核心/协程/`，回链必须用去前缀后的真实路由。
 - **指向 static 资源的链接必须用原生 `<a>` 标签**：站点 `onBrokenLinks: 'throw'`，markdown 链接会被判为断链导致构建失败。
+- **AI 搜索索引的链接必须复刻 docusaurus 路由规则**（`scripts/build-search-index.mjs` 生成，`api/_index/` 已被 gitignore、部署时构建期重生成）：文件名带 `01.` 这类数字前缀时**真实路由没有前缀**，文件名里的空格在路由里是连字符（`26.协程 Coroutine` → `/agents/python/协程-Coroutine`），而**目录名原样保留**（含空格与 `+`，如 `LangChain + DeepAgent 开发实战`）。2026-10-27 事故：索引直接拼相对路径，177 个 docs 链接里 120 个指向带前缀的假 URL，用户点搜索结果全部 404。锚点还要对齐 github-slugger 的三条细节：重复标题加 `-1/-2` 后缀、空白**逐个**替换成连字符（不合并，`Lock —— 互斥锁` → `lock--互斥锁`）、下划线保留。代码围栏按 CommonMark 判定（```` 里嵌 ``` 不闭合），否则代码块内的示例标题会被当成真标题切出假 chunk。改完用 `node scripts/build-search-index.mjs` 重建后，应校验 docs 链接 177/177、锚点命中率 ≥99%。
 - **课件图片必须本地化，禁止外链第三方图床**：导入课件时把图片下载到 `static/img/duyi/`，文档里写 `/img/duyi/xxx.png`。2026-10-27 事故：源课件图片全部外链 `resource.duyiedu.com`，该域名 TLS 证书 2026-10-24 到期未续，浏览器按证书失效阻断子资源，全站 28 篇文档（33 张图）集体破图——对方续期不可控，本地化是唯一可靠解。注意导入时别抄错 URL（`04.ORM` 曾把 `...092.png` 抄成 `...046.png`，真 404）。
 - 每个提交前跑 `pnpm build` 验证；类型检查存量错误（如 CourseUI.tsx:550）与本次改动无关时不要顺手改坏。
 - 发布前可用 `python3 scripts/check-sitemap.py` 对账 sitemap 与构建产物（查生产 404；需先 build）。

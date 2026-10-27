@@ -50,42 +50,145 @@ const HTML_TAG_RE = new RegExp(`</?(?:${INLINE_TAGS})(?:\\s[^<>]*?)?/?>`, 'gi');
 const MD_LINK_RE = /!?\[([^\]]*)\]\([^)\s]+(?:\s+["'][^"']*["'])?\)/g;
 const MD_EMPH_RE = /(\*\*|__|\*|_|~~|`)((?:(?!\1).)+?)\1/g;
 
+/** 标题文本 → slug（近似 github-slugger：去标点、空白转连字符、小写） */
+function slugifyHeading(heading) {
+  return (
+    heading
+      .toLowerCase()
+      // 保留 - 和 _（github-slugger 的白名单里就有这两个）
+      .replace(/[^\p{L}\p{N}\s_-]/gu, '')
+      .trim()
+      // 逐个空白替换、不合并连续空白：对齐 github-slugger。
+      // 例：## Lock —— 互斥锁（破折号被移除后留两个空格）→ lock--互斥锁，
+      // 若合并成 \s+ 会得到 lock-互斥锁，与页面真实 id 对不上。
+      .replace(/\s/g, '-') || 'section'
+  );
+}
+
 /** 分块内标题 → 锚点（近似 docusaurus 的 github-slugger 行为，跳转略偏也能落到本页） */
 function anchorId(heading) {
-  return heading
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s-]/gu, '')
-    .trim()
-    .replace(/\s+/g, '-');
+  return slugifyHeading(heading);
+}
+
+/** 单行 markdown 清洗成纯文本（与 cleanMarkdownText 对非代码行的处理保持一致） */
+function cleanLine(line) {
+  return decodeEntities(
+    line
+      .replace(JSX_TAG_RE, '')
+      .replace(HTML_TAG_RE, '')
+      .replace(MD_LINK_RE, '$1')
+      .replace(MD_EMPH_RE, '$2'),
+  )
+    .replace(/[ \t]+/g, ' ')
+    .trim();
 }
 
 /**
- * 把一段 markdown 正文清洗成纯文本。
- * 代码围栏内容原样保留（代码是课程搜索的高价值内容），围栏行与 title 属性去掉。
+ * 按文档里标题的**出现顺序**生成锚点 id 序列（h1–h6 全算）。
+ * github-slugger 会对同页面内重复标题加 -1/-2 后缀（如两个「总结」→ 总结、总结-1），
+ * 只按文本算 slug 会漏掉后缀，锚点就指不到真实标题。
+ * 代码围栏里的 # 注释不是标题，必须跳过，否则计数会被带偏。
  */
-function cleanMarkdownText(md) {
-  const lines = [];
-  let inFence = false;
-  for (let line of md.split('\n')) {
-    const fence = line.trim().match(/^(```+|~~~+)/);
-    if (fence) {
-      inFence = !inFence;
+function collectHeadingIds(body) {
+  const seq = [];
+  const occ = new Map();
+  let fence = null;
+  for (const line of body.split('\n')) {
+    const next = fenceToggle(fence, line);
+    if (next !== fence) {
+      fence = next;
+      continue;
+    }
+    if (fence) continue;
+    const m = /^#{1,6}\s+(.+?)\s*$/.exec(line);
+    if (!m) continue;
+    const text = cleanLine(m[1]);
+    if (!text) continue;
+    const base = slugifyHeading(text);
+    const n = occ.get(base) ?? 0;
+    occ.set(base, n + 1);
+    const level = /^(#{1,6})/.exec(line)[1].length;
+    seq.push({text, id: n === 0 ? base : `${base}-${n}`, level});
+  }
+  return seq;
+}
+
+/**
+ * 按顺序消费标题 id 序列：同名标题第二次出现时拿到 -1 后缀的那份。
+ * 只消费 h2 及更深层——分块以 ## 为边界，h1 虽参与去重计数但不对应任何 chunk。
+ */
+function makeIdTaker(seq) {
+  let cursor = 0;
+  return (text) => {
+    for (let i = cursor; i < seq.length; i += 1) {
+      if (seq[i].level >= 2 && seq[i].text === text) {
+        cursor = i + 1;
+        return seq[i].id;
+      }
+    }
+    return anchorId(text); // 兜底：文本没对上时退回纯 slug
+  };
+}
+
+/**
+ * 代码围栏检测（CommonMark 规则）：只有**同类且长度不小于**开启标记的那一行才闭合。
+ * 早期版本用 toggle 开关，遇到 ````markdown 里嵌 ```python 的嵌套块会提前闭合，
+ * 于是代码块内的 # 示例标题被当成真标题、示例代码被当正文（2026-10-27 修复）。
+ */
+function fenceToggle(state, line) {
+  const m = /^(`{3,}|~{3,})/.exec(line.trim());
+  if (!m) return state;
+  if (!state) return m[1];
+  return m[1][0] === state[0] && m[1].length >= state.length ? null : state;
+}
+
+/**
+ * 按行清洗 markdown，并标记每行是否处于代码围栏内。
+ * 分块必须依赖这个标记：课件里常见 ````markdown 内嵌 ```bash 的嵌套块，其中的
+ * `## 什么是 UV？` 是示例文档而非真标题——只看 `^##` 切块会把示例代码切成独立
+ * chunk，锚点也就指到了页面上不存在的标题（2026-10-27 修复）。
+ * 代码内容本身要保留（对课程搜索是高价值内容），只是不能被当标题。
+ */
+function parseMarkdownRows(md) {
+  const rows = [];
+  let fence = null;
+  for (const line of md.split('\n')) {
+    const next = fenceToggle(fence, line);
+    if (next !== fence) {
+      fence = next;
       continue; // 围栏标记行本身丢弃
     }
-    if (!inFence) {
-      if (/^\s*(import|export)\s+/.test(line)) continue; // MDX 导入/导出
-      if (/^:{1,4}[a-z-]+/.test(line.trim())) continue; // :::note / :::tip 围栏行
-      if (/^\s*\|[- :|]+\|\s*$/.test(line)) continue; // 表格分隔行
-      line = line.replace(JSX_TAG_RE, '').replace(HTML_TAG_RE, '');
-      line = line.replace(MD_LINK_RE, '$1').replace(MD_EMPH_RE, '$2');
-      line = line.replace(/\|/g, ' '); // 表格单元格分隔符
+    if (fence) {
+      rows.push({text: line, fence: true});
+      continue;
     }
-    lines.push(line);
+    if (/^\s*(import|export)\s+/.test(line)) continue; // MDX 导入/导出
+    if (/^:{1,4}[a-z-]+/.test(line.trim())) continue; // :::note / :::tip 围栏行
+    if (/^\s*\|[- :|]+\|\s*$/.test(line)) continue; // 表格分隔行
+    rows.push({
+      text: line
+        .replace(JSX_TAG_RE, '')
+        .replace(HTML_TAG_RE, '')
+        .replace(MD_LINK_RE, '$1')
+        .replace(MD_EMPH_RE, '$2')
+        .replace(/\|/g, ' '), // 表格单元格分隔符
+      fence: false,
+    });
   }
-  return decodeEntities(lines.join('\n'))
+  return rows;
+}
+
+/** 文本收尾：实体解码 + 空白压缩（块拼好后再调用，避免破坏行结构） */
+function finishText(s) {
+  return decodeEntities(s)
     .replace(/[ \t]+/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+/** 把一段 markdown 清洗成纯文本（不区分围栏行，供结构简单的补充资料使用） */
+function cleanMarkdownText(md) {
+  return finishText(parseMarkdownRows(md).map((r) => r.text).join('\n'));
 }
 
 /** 解析 frontmatter 的 title / slug / description（值是裸词、单双引号均可） */
@@ -103,6 +206,29 @@ function parseFrontmatter(raw) {
     out[kv[1]] = v;
   }
   return out;
+}
+
+/**
+ * 复刻 docusaurus 默认 numberPrefixParser：文件名前的「数字 + [-_.]」前缀会被剥离。
+ * 只作用于 basename——目录名里的数字前缀不会被剥。
+ * 例：01.必看导言 → 必看导言；26.协程 Coroutine → 协程 Coroutine
+ */
+function stripNumberPrefix(name) {
+  const m = /^\d+[-_.]+/.exec(name);
+  return m ? name.slice(m[0].length) : name;
+}
+
+/**
+ * 近似 docusaurus 的 slugify（github-slugger，maintainCase=true）：
+ * 去掉标点、空白折叠为连字符，大小写保留。
+ * 注意只用于文件名段——目录名 docusaurus 原样保留（含空格与 + 号）。
+ * 例：协程 Coroutine → 协程-Coroutine；Future类 → Future类
+ */
+function slugifySegment(s) {
+  return s
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .trim()
+    .replace(/\s+/g, '-');
 }
 
 /** 超长正文按段落边界切块 */
@@ -141,45 +267,49 @@ function docsChunks() {
     const fm = parseFrontmatter(raw);
     const body = raw.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '');
 
-    // 文档 URL：docusaurus 的 permalink = 目录路径 + slug；
-    // 无 slug 时按相对路径，index.* 是目录页（docusaurus 默认 permalink 行为）
+    // 文档 URL：docusaurus 的 permalink = 目录路径（原样）+ 文件名段（去数字前缀后 slugify）
+    // 关键点：文件名带「01.」这类数字前缀时，真实路由里没有前缀——早期版本直接拼相对路径，
+    // 导致搜索结果的链接 404（2026-10-27 修复，177 个 URL 里 120 个是错的）。
     const relNoExt = rel.replace(/\.(mdx?)$/, '');
-    const dir = relNoExt.includes('/') ? relNoExt.split('/').slice(0, -1).join('/') : '';
+    const parts = relNoExt.split('/');
+    const dir = parts.slice(0, -1).join('/');
+    const base = parts[parts.length - 1];
+    const withDir = (seg) => `/${dir ? `${dir}/` : ''}${seg}`;
     let url;
     if (fm.slug) {
-      url = `/${dir ? `${dir}/` : ''}${fm.slug.replace(/^\/+/, '')}`;
-    } else if (relNoExt === 'index' || relNoExt.endsWith('/index')) {
-      url = `/${dir ? `${dir}/` : ''}`;
+      // slug 以 / 开头表示站点绝对路径，否则相对所在目录
+      url = fm.slug.startsWith('/') ? fm.slug : withDir(fm.slug.replace(/^\/+/, ''));
+    } else if (base === 'index') {
+      url = withDir('');
     } else {
-      url = `/${relNoExt}`;
+      url = withDir(slugifySegment(stripNumberPrefix(base)));
     }
 
     const breadcrumb =
       rel === 'index.mdx' || rel === 'index.md' ? '' : rel.split('/').slice(0, -1).join(' / ');
     const title = fm.title ?? rel.split('/').pop().replace(/\.(mdx?)$/, '');
 
-    const cleaned = cleanMarkdownText(body);
-    // 以 ## 为分块边界；# 标题行直接并入正文（与 frontmatter title 重复）
+    const rows = parseMarkdownRows(body);
+    const takeId = makeIdTaker(collectHeadingIds(body));
+    // 以 ## 为分块边界（**仅限非代码行**）；# 标题行直接并入正文（与 frontmatter title 重复）
     const sections = [];
-    let curHead = '';
-    for (const line of cleaned.split('\n')) {
-      if (/^##\s+/.test(line)) {
-        curHead = line.replace(/^##\s+/, '').trim();
-        sections.push({h: curHead, x: ''});
+    for (const row of rows) {
+      if (!row.fence && /^##\s+/.test(row.text)) {
+        sections.push({h: row.text.replace(/^##\s+/, '').trim(), x: ''});
       } else if (sections.length === 0) {
-        sections.push({h: '', x: line});
+        sections.push({h: '', x: row.text});
       } else {
-        sections[sections.length - 1].x += `\n${line}`;
+        sections[sections.length - 1].x += `\n${row.text}`;
       }
     }
 
     for (const sec of sections) {
       // 首块带 description（高质量的检索摘要）
+      const secText = finishText(sec.x);
       const text =
-        (sections.indexOf(sec) === 0 && fm.description ? `${fm.description}\n\n` : '') +
-        sec.x.trim();
+        (sections.indexOf(sec) === 0 && fm.description ? `${fm.description}\n\n` : '') + secText;
       if (!text.trim()) continue;
-      const anchor = sec.h ? `#${anchorId(sec.h)}` : '';
+      const anchor = sec.h ? `#${takeId(sec.h)}` : '';
       for (const piece of splitLong(text, MAX_CHUNK)) {
         chunks.push({u: url + anchor, t: title, b: breadcrumb, h: sec.h, x: piece});
       }
