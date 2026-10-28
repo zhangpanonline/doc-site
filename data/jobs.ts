@@ -32,7 +32,7 @@ export type UnitJobs = {
 /**
  * 岗位地图数据（聚合统计，按学习路线递进）
  * 数据来源：各招聘平台公开岗位信息的聚合统计，不含公司信息与岗位原文。
- * - BOSS 直聘：逐城轮换口径（11 组岗位关键词 × 50 城；2026-09-28 起 50 批 = 每批 1 城防封控，已完成批次 1-10 北京/上海/广州/深圳/成都/杭州/重庆/苏州/武汉/西安）
+ * - BOSS 直聘：逐城轮换口径（11 组岗位关键词 × 50 城；2026-09-28 起 50 批 = 每批 1 城防封控，已完成批次 1-11 北京/上海/广州/深圳/成都/杭州/重庆/苏州/武汉/西安/咸阳）
  * - 前程无忧：10 城口径（北上广深杭蓉汉宁西渝，12 组岗位关键词），2026-09-28 全量扩采
  * - 猎聘：免登录 SPA 搜索口径（11 组岗位关键词，与 BOSS 批次同城对齐；卡片无发布时间，行业/规模按 cube_rules 归并）
  * 已过滤已失效/代招/实习及非本路线岗位（硬件、销售、现场运维、培训、数据标注等）。
@@ -51,13 +51,13 @@ export const jobs: Record<string, UnitJobs> = {
     skills: ['Python', 'PostgreSQL', 'LangChain', 'FastAPI', 'asyncio'],
     salaryRange: [8, 60],
     salaryMedian: 20,
-    sampleSize: 3218,
+    sampleSize: 3295,
     updatedAt: '2026-10-28',
     platforms: [
       {
         platform: 'boss',
         label: 'BOSS 直聘',
-        sampleSize: 1243,
+        sampleSize: 1291,
         salaryRange: [7, 40],
         salaryMedian: 16,
         updatedAt: '2026-10-28',
@@ -65,7 +65,7 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 872,
+        sampleSize: 874,
         salaryRange: [7, 45],
         salaryMedian: 18,
         updatedAt: '2026-10-28',
@@ -73,7 +73,7 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'liepin',
         label: '猎聘',
-        sampleSize: 1103,
+        sampleSize: 1130,
         salaryRange: [12, 80],
         salaryMedian: 30,
         updatedAt: '2026-10-28',
@@ -87,22 +87,22 @@ export const jobs: Record<string, UnitJobs> = {
     positions: ['Java 开发工程师', '后端开发工程师', '微服务架构师'],
     skills: ['Java', 'Spring Boot', 'Spring Cloud', 'Redis'],
     salaryRange: [9, 40],
-    salaryMedian: 17,
-    sampleSize: 2666,
+    salaryMedian: 16,
+    sampleSize: 2755,
     updatedAt: '2026-10-28',
     platforms: [
       {
         platform: 'boss',
         label: 'BOSS 直聘',
-        sampleSize: 1196,
-        salaryRange: [9, 30],
-        salaryMedian: 15,
+        sampleSize: 1264,
+        salaryRange: [8, 30],
+        salaryMedian: 14,
         updatedAt: '2026-10-28',
       },
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 571,
+        sampleSize: 574,
         salaryRange: [8, 30],
         salaryMedian: 15,
         updatedAt: '2026-10-28',
@@ -110,9 +110,9 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'liepin',
         label: '猎聘',
-        sampleSize: 899,
-        salaryRange: [11, 60],
-        salaryMedian: 23,
+        sampleSize: 917,
+        salaryRange: [10, 60],
+        salaryMedian: 22,
         updatedAt: '2026-10-28',
       },
     ],
@@ -125,21 +125,21 @@ export const jobs: Record<string, UnitJobs> = {
     skills: ['Linux', 'Docker', 'Kubernetes', 'CI/CD'],
     salaryRange: [6, 50],
     salaryMedian: 16,
-    sampleSize: 1878,
+    sampleSize: 1919,
     updatedAt: '2026-10-28',
     platforms: [
       {
         platform: 'boss',
         label: 'BOSS 直聘',
-        sampleSize: 788,
-        salaryRange: [6, 45],
-        salaryMedian: 15,
+        sampleSize: 812,
+        salaryRange: [6, 40],
+        salaryMedian: 14,
         updatedAt: '2026-10-28',
       },
       {
         platform: 'job51',
         label: '前程无忧',
-        sampleSize: 408,
+        sampleSize: 412,
         salaryRange: [5, 30],
         salaryMedian: 12,
         updatedAt: '2026-10-28',
@@ -147,7 +147,7 @@ export const jobs: Record<string, UnitJobs> = {
       {
         platform: 'liepin',
         label: '猎聘',
-        sampleSize: 682,
+        sampleSize: 695,
         salaryRange: [8, 60],
         salaryMedian: 22,
         updatedAt: '2026-10-28',
@@ -199,13 +199,13 @@ export const jobs: Record<string, UnitJobs> = {
     skills: ['前后端全栈', '架构设计', '项目管理'],
     salaryRange: [9, 45],
     salaryMedian: 18,
-    sampleSize: 1389,
+    sampleSize: 1407,
     updatedAt: '2026-10-28',
     platforms: [
       {
         platform: 'boss',
         label: 'BOSS 直聘',
-        sampleSize: 633,
+        sampleSize: 651,
         salaryRange: [8, 35],
         salaryMedian: 16,
         updatedAt: '2026-10-28',
