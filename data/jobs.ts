@@ -41,6 +41,11 @@ export type UnitJobs = {
  * ai-coding 阶段仅采「研发效能/AI 辅助开发」类工程岗（职位名须含工程信号），前程无忧侧样本较少（20 份）。
  * 递进规则：第 N 阶段岗位要求 = 本阶段新增技能 + 第 1..N-1 阶段全部技能。
  * 分城市薪资与技能标签词频统计见 data/jobsStats.ts（由 boss-crawler 归档目录 city_stats.py 生成，勿手改）。
+ *
+ * 【状态·勿删】2026-10-30 起 /jobs 收成单页面工具后，前端页面不再渲染本文件的「阶段 × 岗位方向 × 技能」
+ * 视角（原 JobBoard / JobsTiles / JobStageStats 组件已删除），页面统计改用 data/jobsInsights.ts。
+ * 但采集链照常运行、本文件照常回填——它是岗位数据的基础沉淀，后续功能可能重新消费。
+ * 数值来源：agg_jobs.py（读 post_data/ 全量 CSV 聚合），按批次采集后回填，勿手改数值。
  */
 export const jobs: Record<string, UnitJobs> = {
   agents: {
