@@ -14,7 +14,17 @@ import {
   trendSnapshots,
 } from '@site/data/jobsInsights';
 import {skillLinks} from '@site/data/skillLinks';
-import {DIM, MIN_CELL_N, crossByDim, filterRows, groupByDim, statOf} from './jobsInsightsUtils';
+import {
+  DIM,
+  MIN_CELL_N,
+  crossByDim,
+  filterRows,
+  filterSkillRows,
+  groupByDim,
+  skillStatsOf,
+  statOf,
+  statOfSkillRows,
+} from './jobsInsightsUtils';
 import type {SalaryStat} from './jobsInsightsUtils';
 import './jobsMarket.css';
 
@@ -777,6 +787,111 @@ function CityScatter({rows, city, onPickCity}: {rows: number[][]; city: string |
   );
 }
 
+/* ================= 视图 9：技能溢价（JD 全文切词交叉） ================= */
+
+const SKILL_GROUPS = [
+  'AI 与算法',
+  '语言与框架',
+  '数据与中间件',
+  '云与运维',
+  '工程能力',
+] as const;
+
+function SkillPremium({rows}: {rows: number[][]}): ReactNode {
+  const [group, setGroup] = useState<string | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<'premium' | 'n'>('premium');
+  const base = useMemo(() => statOfSkillRows(rows), [rows]);
+  const all = useMemo(() => skillStatsOf(rows), [rows]);
+
+  const shown = useMemo(() => {
+    const list = group ? all.filter(s => s.group === group) : all;
+    return [...list].sort((a, b) =>
+      sortBy === 'premium' ? b.premium - a.premium : b.n - a.n,
+    );
+  }, [all, group, sortBy]);
+
+  if (!base || shown.length === 0) {
+    return (
+      <div className="jm-empty">
+        当前筛选下样本不足，算不出技能溢价。放宽城市或经验条件再试。
+      </div>
+    );
+  }
+
+  // 条形以零轴为原点各占轨道一半，跨度取最大溢价绝对值（下限 5K 避免除零）
+  const span = Math.max(...shown.map(s => Math.abs(s.premium)), 5);
+
+  return (
+    <div>
+      <div className="jm-sk-groups">
+        <button
+          type="button"
+          className={`jm-chip${group === undefined ? ' jm-chip-on' : ''}`}
+          onClick={() => setGroup(undefined)}>
+          全部
+        </button>
+        {SKILL_GROUPS.map(g => (
+          <button
+            key={g}
+            type="button"
+            className={`jm-chip${group === g ? ' jm-chip-on' : ''}`}
+            onClick={() => setGroup(group === g ? undefined : g)}>
+            {g}
+          </button>
+        ))}
+        <span className="jm-sk-spacer" />
+        <button
+          type="button"
+          className="jm-more-toggle"
+          onClick={() => setSortBy(s => (s === 'premium' ? 'n' : 'premium'))}>
+          {sortBy === 'premium' ? '按溢价排序 ⇅' : '按需求度排序 ⇅'}
+        </button>
+      </div>
+
+      <div className="jm-sk-list">
+        {shown.map(s => {
+          const st = s.stat!;
+          const up = s.premium >= 0;
+          const weak = s.n < 50;
+          // 条形以「零轴」（当前口径整体中位）为原点左右延伸，
+          // 长度即溢价绝对值，因此条长顺序与排序一致，不用二次解读。
+          const w = `${(Math.abs(s.premium) / span) * 50}%`;
+          return (
+            <div className={`jm-sk-row${weak ? ' jm-sk-weak' : ''}`} key={s.name}>
+              <span className="jm-sk-name" title={`${s.group} · n=${s.n}`}>
+                {s.name}
+              </span>
+              <div className="jm-sk-track">
+                <span className="jm-sk-zero" />
+                <div
+                  className={`jm-sk-bar${up ? ' jm-sk-bar-up' : ' jm-sk-bar-down'}`}
+                  style={up ? {left: '50%', width: w} : {right: '50%', width: w}}
+                />
+              </div>
+              <span className="jm-sk-val">{st.p50}K</span>
+              <span className={`jm-sk-prem${up ? ' jm-sk-up' : ' jm-sk-down'}`}>
+                {up ? '+' : ''}
+                {s.premium}K
+              </span>
+              <span className="jm-sk-n">n={s.n}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="jm-sec-sub" style={{marginTop: 14, marginBottom: 0}}>
+        条形以中间竖虚线（当前口径整体中位 {base.p50}K）为零轴：向右 = 该技能高于整体，向左 = 低于整体，
+        长度即差额。技能是从 JD 全文切词得到的，一个岗位命中多个技能会重复计入各组，
+        因此各技能样本数不能相加。
+      </p>
+      <p className="jm-warn" style={{marginTop: 10}}>
+        溢价是相关性，不是因果：高薪岗位本来就倾向列出更多技能要求，学会某项技能不等于立刻拿到这个差额。
+        建议先选一个职类再看这张图——跨职类比较会把「后端多、算法少」这类结构差异混进来。
+      </p>
+    </div>
+  );
+}
+
 /* ================= 技能（按职类） ================= */
 
 function SkillBlock({cat}: {cat: string | undefined}): ReactNode {
@@ -931,7 +1046,16 @@ function TrendBlock({cat}: {cat: string | undefined}): ReactNode {
 
 /* ================= 主体 ================= */
 
-type ViewKey = 'city' | 'hist' | 'exp' | 'deg' | 'dom' | 'mx' | 'quant' | 'scatter';
+type ViewKey =
+  | 'city'
+  | 'hist'
+  | 'exp'
+  | 'deg'
+  | 'dom'
+  | 'mx'
+  | 'quant'
+  | 'scatter'
+  | 'skill';
 
 export function JobsMarket(): ReactNode {
   const [f, setF] = useState<Filter>({cat: 'AI 应用'});
@@ -1021,6 +1145,8 @@ export function JobsMarket(): ReactNode {
   const rowsNoExp = useMemo(() => filterRows({...f, exp: undefined}), [f]);
   const rowsNoDeg = useMemo(() => filterRows({...f, deg: undefined}), [f]);
   const rowsNoDom = useMemo(() => filterRows({...f, dom: undefined}), [f]);
+  // 技能溢价看的是「当前口径内会不会 X」的薪资差，所以要响应全部筛选
+  const skillRowsFiltered = useMemo(() => filterSkillRows(f), [f]);
   const stat = useMemo(() => statOf(rows), [rows]);
   const catBase = useMemo(() => (f.cat ? statOf(filterRows({cat: f.cat})) : null), [f.cat]);
   const cityBase = useMemo(() => (f.city ? statOf(filterRows({city: f.city})) : null), [f.city]);
@@ -1152,6 +1278,7 @@ export function JobsMarket(): ReactNode {
                 ['mx', '城市 × 经验'],
                 ['quant', '分位对比'],
                 ['scatter', '竞争度散点'],
+                ['skill', '技能溢价'],
               ] as [ViewKey, string][]
             ).map(([k, t]) => (
               <button
@@ -1182,6 +1309,7 @@ export function JobsMarket(): ReactNode {
             <QuantileBox stat={stat} catBase={catBase} cityBase={cityBase} cat={f.cat} city={f.city} />
           )}
           {view === 'scatter' && <CityScatter rows={rowsNoCity} city={f.city} onPickCity={c => set('city', c)} />}
+          {view === 'skill' && <SkillPremium rows={skillRowsFiltered} />}
         </>
       )}
 

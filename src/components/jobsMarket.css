@@ -11,6 +11,19 @@ html[class*='docs-doc-id-jobs'].theme-forest:not([data-theme='dark']) {
   --course-muted: #6b6153; /* 森林是暖纸底，用暖深灰而非冷灰蓝，保持色温一致 */
 }
 
+/* ===== 图表填充色 =====
+   此前填充直接取 --course-border（淡绿线条色），对卡片底色仅约 1.1:1，
+   柱子、箱体几乎看不见。改为取强调色 --course-accent 的淡化版本：
+   强调色在三态主题下都已定义，自动跟随主题，不必为每套主题单独写死颜色。 */
+html[class*='docs-doc-id-jobs'] {
+  --jm-fill: 0.42;    /* 常规填充（柱 / 箱体） */
+  --jm-fill-2: 0.26;  /* 次级填充（触须线，比箱体更淡一档） */
+  --jm-fill-on: 0.85; /* 选中态：明显压过常规填充，一眼能分辨 */
+  /* 填充本身是淡色（约 2:1），靠 1px 强调色描边把图形边界拉到 3:1 以上，
+     满足 WCAG 1.4.11 非文本对比要求，又不会像实心色块那样压过版式。 */
+  --jm-fill-edge: inset 0 0 0 1px var(--course-accent);
+}
+
 .jm-root {
   margin: 1.5rem 0 2.5rem;
 }
@@ -280,21 +293,22 @@ html.immersive .jm-filters {
   position: absolute;
   top: 7px;
   height: 4px;
-  background: var(--course-border);
+  background: var(--course-accent);
+  opacity: var(--jm-fill-2);
   border-radius: 2px;
 }
 .jm-box {
   position: absolute;
   top: 4px;
   height: 10px;
-  background: var(--course-border);
+  background: var(--course-accent);
+  opacity: var(--jm-fill);
+  box-shadow: var(--jm-fill-edge);
   border-radius: 2px;
-  opacity: 0.85;
 }
 .jm-cityrow-on .jm-box,
 .jm-cityrow-on .jm-whisker {
-  background: var(--course-accent);
-  opacity: 0.45;
+  opacity: var(--jm-fill-on);
 }
 .jm-median {
   position: absolute;
@@ -347,13 +361,14 @@ html.immersive .jm-filters {
 .jm-hbar {
   flex: 1 1 0;
   min-width: 0;
-  background: var(--course-border);
+  background: var(--course-accent);
+  opacity: var(--jm-fill);
+  box-shadow: var(--jm-fill-edge);
   border-radius: 2px 2px 0 0;
   position: relative;
 }
 .jm-hbar-on {
-  background: var(--course-accent);
-  opacity: 0.55;
+  opacity: var(--jm-fill-on);
 }
 .jm-hbar-n {
   position: absolute;
@@ -421,12 +436,13 @@ html.immersive .jm-filters {
 .jm-lbar {
   width: 100%;
   max-width: 56px;
-  background: var(--course-border);
+  background: var(--course-accent);
+  opacity: var(--jm-fill);
+  box-shadow: var(--jm-fill-edge);
   border-radius: 3px 3px 0 0;
 }
 .jm-lbar-on {
-  background: var(--course-accent);
-  opacity: 0.6;
+  opacity: var(--jm-fill-on);
 }
 .jm-ln {
   font-size: 11px;
@@ -742,10 +758,118 @@ html.immersive .jm-filters {
   font-weight: 500;
 }
 
+/* ===== 视图 9：技能溢价 ===== */
+.jm-sk-groups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.jm-sk-spacer {
+  flex: 1 1 auto;
+}
+/* .jm-chip 在筛选条里是 flex:1 撑满的，这里要还原成内容宽度 */
+.jm-sk-groups .jm-chip {
+  flex: 0 0 auto;
+}
+.jm-sk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.jm-sk-row {
+  display: grid;
+  grid-template-columns: 7.6rem 1fr 3.2rem 3.2rem 4.2rem;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+.jm-sk-row:hover {
+  background: var(--course-highlight);
+}
+.jm-sk-name {
+  font-size: 12.5px;
+  color: var(--course-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jm-sk-track {
+  position: relative;
+  height: 16px;
+  background: var(--course-bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.jm-sk-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--course-accent);
+  opacity: var(--jm-fill);
+  box-shadow: var(--jm-fill-edge);
+  border-radius: 3px;
+}
+/* 正溢价用强调色且填充更实，负溢价退到次要色——不做红绿好坏解读 */
+.jm-sk-bar-up {
+  background: var(--course-accent);
+  opacity: var(--jm-fill-on);
+}
+.jm-sk-bar-down {
+  background: var(--course-muted);
+  opacity: 0.5;
+}
+/* 零轴：当前口径整体中位数，条形以它为原点左右延伸 */
+.jm-sk-zero {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 100%;
+  border-left: 1px dashed var(--course-muted);
+}
+/* 筛选后样本偏少的技能淡化，避免用几十条样本下结论 */
+.jm-sk-weak .jm-sk-name,
+.jm-sk-weak .jm-sk-val,
+.jm-sk-weak .jm-sk-prem {
+  opacity: 0.5;
+}
+.jm-sk-val {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--course-fg);
+  text-align: right;
+}
+.jm-sk-prem {
+  font-size: 12px;
+  text-align: right;
+}
+.jm-sk-up {
+  color: var(--course-ok);
+}
+.jm-sk-down {
+  color: var(--course-bad);
+}
+.jm-sk-n {
+  font-size: 11px;
+  color: var(--course-muted);
+  text-align: right;
+}
+
 @media (max-width: 640px) {
   .jm-metrics {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+  .jm-sk-row {
+    grid-template-columns: 5.2rem 1fr 3rem 3rem;
+    gap: 6px;
+  }
+  .jm-sk-n {
+    display: none;
   }
   .jm-metric-v {
     font-size: 18px;
@@ -777,5 +901,35 @@ html.immersive .jm-filters {
   .jm-mxrh,
   .jm-mxch {
     font-size: 10.5px;
+  }
+}
+
+/* 支持 color-mix 的浏览器：填充改用「强调色与卡片底色的预混实色」并复位 opacity 到 1。
+   不这么做的话 opacity 会把描边一起冲淡——描边是图形识别的关键，需要保持完整强调色。
+   必须放在所有元素规则之后，否则会被前面的 .jm-box 等基础规则覆盖。 */
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  html[class*='docs-doc-id-jobs'] {
+    --jm-fill-bg: color-mix(in srgb, var(--course-accent) 42%, var(--course-card));
+    --jm-fill-bg-2: color-mix(in srgb, var(--course-accent) 26%, var(--course-card));
+    --jm-fill-bg-on: color-mix(in srgb, var(--course-accent) 85%, var(--course-card));
+  }
+  .jm-box,
+  .jm-hbar,
+  .jm-lbar,
+  .jm-sk-bar {
+    background: var(--jm-fill-bg);
+    opacity: 1;
+  }
+  .jm-whisker {
+    background: var(--jm-fill-bg-2);
+    opacity: 1;
+  }
+  .jm-cityrow-on .jm-box,
+  .jm-cityrow-on .jm-whisker,
+  .jm-hbar-on,
+  .jm-lbar-on,
+  .jm-sk-bar-up {
+    background: var(--jm-fill-bg-on);
+    opacity: 1;
   }
 }
