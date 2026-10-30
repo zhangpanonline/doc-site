@@ -14,7 +14,7 @@ import {
   trendSnapshots,
 } from '@site/data/jobsInsights';
 import {skillLinks} from '@site/data/skillLinks';
-import {DIM, MIN_CELL_N, filterRows, groupByDim, statOf} from './jobsInsightsUtils';
+import {DIM, MIN_CELL_N, crossByDim, filterRows, groupByDim, statOf} from './jobsInsightsUtils';
 import type {SalaryStat} from './jobsInsightsUtils';
 import './jobsMarket.css';
 
@@ -398,6 +398,385 @@ function ExpLadder({rows, exp, onPickExp}: {rows: number[][]; exp: string | unde
   );
 }
 
+/* ================= 视图 4：学历溢价阶梯 ================= */
+
+function DegLadder({rows, deg, onPickDeg}: {rows: number[][]; deg: string | undefined; onPickDeg: (v: string | undefined) => void}): ReactNode {
+  const groups = useMemo(() => {
+    const g = groupByDim(rows, DIM.deg, insightDegBuckets);
+    return [...g].sort((a, b) => DEG_ORDER.indexOf(a.label) - DEG_ORDER.indexOf(b.label));
+  }, [rows]);
+  const valid = groups.filter(g => g.stat && g.n >= MIN_CELL_N);
+  if (valid.length === 0) {
+    return <div className="jm-empty">学历维度样本不足，暂时画不出阶梯。</div>;
+  }
+  const max = Math.max(...valid.map(g => g.stat!.p50), 5);
+  const scale = Math.ceil(max / 5) * 5;
+  const low = Math.min(...valid.map(g => g.stat!.p50));
+  return (
+    <div>
+      <div className="jm-ladder">
+        {groups.map(g => {
+          const ok = Boolean(g.stat) && g.n >= MIN_CELL_N;
+          const on = g.label === deg;
+          const delta = ok ? Math.round(g.stat!.p50 - low) : null;
+          return (
+            <div
+              className="jm-lcol"
+              key={g.label}
+              onClick={() => onPickDeg(on ? undefined : g.label)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  onPickDeg(on ? undefined : g.label);
+                }
+              }}
+              style={{cursor: 'pointer'}}>
+              <span className="jm-lval" style={ok ? undefined : {color: 'var(--course-muted)', fontSize: 11.5}}>
+                {ok ? `${g.stat!.p50}K` : '—'}
+              </span>
+              <div
+                className={`jm-lbar${ok ? '' : ' jm-lbar-on'}`}
+                style={{
+                  height: ok ? `${(g.stat!.p50 / scale) * 78}%` : '3px',
+                  opacity: on ? 1 : undefined,
+                  background: on ? 'var(--course-accent)' : undefined,
+                }}
+              />
+              <span className="jm-ln">
+                {ok ? `n=${g.n}${delta ? ` · +${delta}K` : ''}` : '积累中'}
+              </span>
+              <span className="jm-lname">{g.label}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="jm-sec-sub" style={{marginTop: 14, marginBottom: 0}}>
+        柱高 = 该学历档的薪资中位数，「+NK」是相对本组最低档的差额。
+        <b>看这栏前先固定职类和城市</b>：学历与经验、城市高度相关，硕士岗更多集中在一线与算法方向，
+        不控制的話会把城市和经验的差异算到学历头上。
+      </p>
+    </div>
+  );
+}
+
+/* ================= 视图 5：行业赛道对比 ================= */
+
+function DomainCompare({rows, dom, onPickDom}: {rows: number[][]; dom: string | undefined; onPickDom: (v: string | undefined) => void}): ReactNode {
+  const [showWeak, setShowWeak] = useState(false);
+  const groups = useMemo(
+    () =>
+      groupByDim(rows, DIM.dom, insightDomains)
+        .filter(g => g.stat && g.label !== '未收录')
+        .sort((a, b) => b.stat!.p50 - a.stat!.p50),
+    [rows],
+  );
+  const strong = groups.filter(g => g.n >= MIN_CELL_N);
+  const weak = groups.filter(g => g.n < MIN_CELL_N);
+  const list = showWeak ? [...strong, ...weak] : strong;
+
+  if (strong.length === 0) {
+    return (
+      <div className="jm-empty">
+        当前筛选下没有样本 ≥{MIN_CELL_N} 份的行业。
+        {weak.length > 0 && <div style={{marginTop: 6}}>{weak.length} 个行业有零星样本，不足以下结论。</div>}
+      </div>
+    );
+  }
+  const max = Math.max(...list.map(g => g.stat!.p90), 10);
+  const scale = Math.ceil(max / 5) * 5;
+
+  return (
+    <div>
+      <div className="jm-axis jm-axis-wide">
+        <span>0K</span>
+        <span>{Math.round(scale / 2)}K</span>
+        <span>{scale}K/月</span>
+      </div>
+      {list.map(g => {
+        const s = g.stat!;
+        const on = g.label === dom;
+        return (
+          <div
+            key={g.label}
+            className={`jm-cityrow jm-cityrow-wide${on ? ' jm-cityrow-on' : ''}`}
+            onClick={() => onPickDom(on ? undefined : g.label)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+              onPickDom(on ? undefined : g.label);
+              }
+            }}>
+            <span className="jm-cityname jm-cityname-wide">{g.label}</span>
+            <div className="jm-track" title={`P10–P90 ${s.range[0]}–${s.range[1]}K · P25–P75 ${s.p25}–${s.p75}K`}>
+              <div
+                className="jm-whisker"
+                style={{left: `${pctOf(s.p10, scale)}%`, width: `${pctOf(s.p90, scale) - pctOf(s.p10, scale)}%`}}
+              />
+              <div
+                className="jm-box"
+                style={{left: `${pctOf(s.p25, scale)}%`, width: `${pctOf(s.p75, scale) - pctOf(s.p25, scale)}%`}}
+              />
+              <div className="jm-median" style={{left: `${pctOf(s.p50, scale)}%`}} />
+            </div>
+            <span className="jm-citymeta">
+              <b>{s.p50}K</b> · n={g.n}
+            </span>
+          </div>
+        );
+      })}
+      {weak.length > 0 && (
+        <button type="button" className="jm-citymore" onClick={() => setShowWeak(v => !v)}>
+          {showWeak ? '收起' : `更多行业（${weak.length} 个样本不足 ${MIN_CELL_N} 份）`}
+        </button>
+      )}
+      <p className="jm-sec-sub" style={{marginTop: 14, marginBottom: 0}}>
+        粗条 = 中间一半岗位的薪资范围（P25–P75），细条 = 整体 P10–P90，竖线 = 中位数。
+        行业字段有约两成岗位未收录，默认已排除，不计入排序。
+      </p>
+    </div>
+  );
+}
+
+/* ================= 视图 6：薪资分位箱体对比 ================= */
+
+function QuantileBox({
+  stat,
+  catBase,
+  cityBase,
+  cat,
+  city,
+}: {
+  stat: SalaryStat | null;
+  catBase: SalaryStat | null;
+  cityBase: SalaryStat | null;
+  cat: string | undefined;
+  city: string | undefined;
+}): ReactNode {
+  const cmp = useMemo(() => {
+    const list: {label: string; s: SalaryStat; note: string}[] = [];
+    if (stat) {
+      list.push({label: '当前筛选', s: stat, note: '你选中的这个组合'});
+    }
+    if (cat && catBase) {
+      list.push({label: `全国 · ${cat}`, s: catBase, note: '同职类、不限城市'});
+    }
+    if (city && cityBase) {
+      list.push({label: `${city} · 全行业`, s: cityBase, note: '同城市、不限职类'});
+    }
+    return list;
+  }, [stat, catBase, cityBase, cat, city]);
+
+  if (cmp.length === 0) {
+    return <div className="jm-empty">没有样本可绘制分位对比。</div>;
+  }
+  const scale = Math.ceil(Math.max(...cmp.map(c => c.s.p90), 10) / 5) * 5;
+
+  return (
+    <div>
+      <div className="jm-axis jm-axis-wide">
+        <span>0K</span>
+        <span>{Math.round(scale / 2)}K</span>
+        <span>{scale}K/月</span>
+      </div>
+      {cmp.map(c => (
+        <div className="jm-qrow" key={c.label}>
+          <span className="jm-qlabel">
+            {c.label}
+            <em className="jm-qnote">{c.note}</em>
+          </span>
+          <div className="jm-track" title={`P10–P90 ${c.s.range[0]}–${c.s.range[1]}K`}>
+            <div
+              className="jm-whisker"
+              style={{left: `${pctOf(c.s.p10, scale)}%`, width: `${pctOf(c.s.p90, scale) - pctOf(c.s.p10, scale)}%`}}
+            />
+            <div
+              className="jm-box"
+              style={{left: `${pctOf(c.s.p25, scale)}%`, width: `${pctOf(c.s.p75, scale) - pctOf(c.s.p25, scale)}%`}}
+            />
+            <div className="jm-median" style={{left: `${pctOf(c.s.p50, scale)}%`}} />
+          </div>
+          <span className="jm-qvals">
+            <b>{c.s.p50}K</b> · {c.s.p25}–{c.s.p75} · n={c.s.n}
+          </span>
+        </div>
+      ))}
+      <p className="jm-sec-sub" style={{marginTop: 14, marginBottom: 0}}>
+        三条从上到下是「当前筛选 / 全国同职类 / 同城全行业」，共用同一根刻度尺，可以直接比位置。
+        粗条是中间一半岗位，细条是 P10–P90，竖线是中位数 —— 中位数接近粗条上沿，说明这个组合的多数人已经贴着上限了。
+      </p>
+    </div>
+  );
+}
+
+/* ================= 视图 7：城市 × 经验 热力矩阵 ================= */
+
+function CityExpMatrix({
+  rows,
+  city,
+  exp,
+  onPick,
+}: {
+  rows: number[][];
+  city: string | undefined;
+  exp: string | undefined;
+  onPick: (c: string | undefined, e: string | undefined) => void;
+}): ReactNode {
+  const grid = useMemo(() => {
+    const cityGroups = groupByDim(rows, DIM.city, insightCities)
+      .filter(g => g.stat && g.label !== '其他城市' && g.n >= MIN_CELL_N)
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 10);
+    return crossByDim({
+      rows,
+      row: {idx: DIM.city, labels: insightCities, keys: cityGroups.map(g => g.label)},
+      col: {idx: DIM.exp, labels: insightExpBuckets, keys: EXP_ORDER},
+    });
+  }, [rows]);
+
+  const vals = grid.cells.flat().filter(c => c?.stat && c.n >= MIN_CELL_N).map(c => c!.stat!.p50);
+  if (vals.length === 0) {
+    return <div className="jm-empty">当前筛选下没有足够样本做交叉对比，试着放宽城市或经验条件。</div>;
+  }
+  const vmin = Math.min(...vals);
+  const vmax = Math.max(...vals);
+  const cols = `4.6rem repeat(${grid.colKeys.length}, minmax(0, 1fr))`;
+
+  return (
+    <div>
+      <div className="jm-mx">
+        <div className="jm-mxrow" style={{gridTemplateColumns: cols}}>
+          <span className="jm-mxrh" />
+          {grid.colKeys.map(c => (
+            <span className="jm-mxch" key={c}>
+              {c}
+            </span>
+          ))}
+        </div>
+        {grid.cells.map((row, i) => (
+          <div className="jm-mxrow" key={grid.rowKeys[i]} style={{gridTemplateColumns: cols}}>
+            <span className="jm-mxrh">{grid.rowKeys[i]}</span>
+            {row.map((cell, j) => {
+              const on = grid.rowKeys[i] === city && grid.colKeys[j] === exp;
+              const ok = Boolean(cell?.stat) && cell!.n >= MIN_CELL_N;
+              const t = ok ? (cell!.stat!.p50 - vmin) / Math.max(vmax - vmin, 1) : 0;
+              return (
+                <div
+                  className={`jm-mxcell${ok ? '' : ' jm-mxcell-weak'}${on ? ' jm-mxcell-on' : ''}`}
+                  key={grid.colKeys[j]}
+                  onClick={() => (on ? onPick(undefined, undefined) : onPick(grid.rowKeys[i], grid.colKeys[j]))}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      if (on) {
+                        onPick(undefined, undefined);
+                      } else {
+                        onPick(grid.rowKeys[i], grid.colKeys[j]);
+                      }
+                    }
+                  }}
+                  title={
+                    ok
+                      ? `${grid.rowKeys[i]} · ${grid.colKeys[j]}：中位 ${cell!.stat!.p50}K，P25–P75 ${cell!.stat!.p25}–${cell!.stat!.p75}K，n=${cell!.n}`
+                      : '该组合样本不足 20 份'
+                  }>
+                  {ok && <i className="jm-mxfill" style={{opacity: 0.12 + t * 0.5}} />}
+                  <span className="jm-mxv">{ok ? cell!.stat!.p50 : '—'}</span>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <div className="jm-mxlegend">
+        <span className="jm-mxlegend-k">低</span>
+        <i className="jm-mxramp" />
+        <span className="jm-mxlegend-k">高</span>
+        <span className="jm-mxtip">
+          每格 = 该城市 × 该经验档的薪资中位数（K/月），颜色越深越高；「—」表示样本不足 {MIN_CELL_N} 份。
+          点任意一格会同时把城市和经验切过去，看它的技能构成。
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ================= 视图 8：城市竞争度散点 ================= */
+
+function CityScatter({rows, city, onPickCity}: {rows: number[][]; city: string | undefined; onPickCity: (c: string | undefined) => void}): ReactNode {
+  const pts = useMemo(
+    () =>
+      groupByDim(rows, DIM.city, insightCities)
+        .filter(g => g.stat && g.label !== '其他城市' && g.n >= MIN_CELL_N)
+        .map(g => ({label: g.label, n: g.n, p50: g.stat!.p50}))
+        .sort((a, b) => b.n - a.n),
+    [rows],
+  );
+  if (pts.length < 4) {
+    return <div className="jm-empty">样本充足的城市不足 4 个，画不出散点对比。</div>;
+  }
+  const W = 660;
+  const H = 340;
+  const L = 48;
+  const R = 20;
+  const T = 16;
+  const B = 46;
+  const maxN = Math.max(...pts.map(p => p.n));
+  const maxP = Math.max(Math.ceil(Math.max(...pts.map(p => p.p50)) / 5) * 5, 5);
+  const sortedN = pts.map(p => p.n).sort((a, b) => a - b);
+  const sortedP = pts.map(p => p.p50).sort((a, b) => a - b);
+  const medN = sortedN[Math.floor(sortedN.length / 2)];
+  const medP = sortedP[Math.floor(sortedP.length / 2)];
+  const X = (n: number) => L + (n / maxN) * (W - L - R);
+  const Y = (v: number) => H - B - (v / maxP) * (H - T - B);
+
+  return (
+    <div>
+      <div className="jm-sc">
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="各城市岗位数量与薪资中位数的散点对比">
+          <title>城市竞争度散点</title>
+          {[0, 0.25, 0.5, 0.75, 1].map(f => (
+            <line key={f} className="jm-grid" x1={L} y1={Y(maxP * f)} x2={W - R} y2={Y(maxP * f)} />
+          ))}
+          {[0, 0.5, 1].map(f => (
+            <text key={f} className="jm-axis-t" x={L - 8} y={Y(maxP * f) + 3} text-anchor="end">
+              {Math.round(maxP * f)}K
+            </text>
+          ))}
+          <line className="jm-quad" x1={X(medN)} y1={T} x2={X(medN)} y2={H - B} />
+          <line className="jm-quad" x1={L} y1={Y(medP)} x2={W - R} y2={Y(medP)} />
+          {pts.map(p => {
+            const on = p.label === city;
+            return (
+              <g key={p.label} className={`jm-pt${on ? ' jm-pt-on' : ''}`}>
+                <circle className={on ? 'jm-dot' : 'jm-dot-o'} cx={X(p.n)} cy={Y(p.p50)} r={on ? 7 : 5} />
+                <text className="jm-pt-t" x={X(p.n) + 10} y={Y(p.p50) + 4}>
+                  {p.label}
+                </text>
+              </g>
+            );
+          })}
+          <text className="jm-pt-t" x={W - R} y={T + 12} text-anchor="end">
+            钱多坑多 ↑→
+          </text>
+          <text className="jm-axis-t" x={L} y={H - 10}>
+            0
+          </text>
+          <text className="jm-axis-t" x={W - R} y={H - 10} text-anchor="end">
+            {maxN} 个在招岗位
+          </text>
+        </svg>
+      </div>
+      <p className="jm-sec-sub" style={{marginTop: 14, marginBottom: 0}}>
+        横轴 = 在招岗位数（机会多少），纵轴 = 薪资中位数。虚线是中位水平，把图分成四象限。
+        右上角是「机会多且给钱高」，左下角是两头都不占。点圆点可选中该城市。
+      </p>
+    </div>
+  );
+}
+
 /* ================= 技能（按职类） ================= */
 
 function SkillBlock({cat}: {cat: string | undefined}): ReactNode {
@@ -552,7 +931,7 @@ function TrendBlock({cat}: {cat: string | undefined}): ReactNode {
 
 /* ================= 主体 ================= */
 
-type ViewKey = 'city' | 'hist' | 'exp';
+type ViewKey = 'city' | 'hist' | 'exp' | 'deg' | 'dom' | 'mx' | 'quant' | 'scatter';
 
 export function JobsMarket(): ReactNode {
   const [f, setF] = useState<Filter>({cat: 'AI 应用'});
@@ -636,6 +1015,12 @@ export function JobsMarket(): ReactNode {
   }, []);
 
   const rows = useMemo(() => filterRows(f), [f]);
+  // 每个视图都要忽略「自身维度」的筛选，否则一旦选中某档，该视图就只剩一根柱/一行，
+  // 失去对比意义（例如选中「3-5年」后，经验阶梯原本只会剩下一列）。
+  const rowsNoCity = useMemo(() => filterRows({...f, city: undefined}), [f]);
+  const rowsNoExp = useMemo(() => filterRows({...f, exp: undefined}), [f]);
+  const rowsNoDeg = useMemo(() => filterRows({...f, deg: undefined}), [f]);
+  const rowsNoDom = useMemo(() => filterRows({...f, dom: undefined}), [f]);
   const stat = useMemo(() => statOf(rows), [rows]);
   const catBase = useMemo(() => (f.cat ? statOf(filterRows({cat: f.cat})) : null), [f.cat]);
   const cityBase = useMemo(() => (f.city ? statOf(filterRows({city: f.city})) : null), [f.city]);
@@ -762,6 +1147,11 @@ export function JobsMarket(): ReactNode {
                 ['city', '城市对比'],
                 ['hist', '薪资分布'],
                 ['exp', '经验阶梯'],
+                ['deg', '学历溢价'],
+                ['dom', '行业赛道'],
+                ['mx', '城市 × 经验'],
+                ['quant', '分位对比'],
+                ['scatter', '竞争度散点'],
               ] as [ViewKey, string][]
             ).map(([k, t]) => (
               <button
@@ -775,9 +1165,23 @@ export function JobsMarket(): ReactNode {
               </button>
             ))}
           </div>
-          {view === 'city' && <CityCompare rows={rows} city={f.city} onPickCity={c => set('city', c)} />}
+          {view === 'city' && <CityCompare rows={rowsNoCity} city={f.city} onPickCity={c => set('city', c)} />}
           {view === 'hist' && <SalaryHist rows={rows} stat={stat} />}
-          {view === 'exp' && <ExpLadder rows={rows} exp={f.exp} onPickExp={v => set('exp', v)} />}
+          {view === 'exp' && <ExpLadder rows={rowsNoExp} exp={f.exp} onPickExp={v => set('exp', v)} />}
+          {view === 'deg' && <DegLadder rows={rowsNoDeg} deg={f.deg} onPickDeg={v => set('deg', v)} />}
+          {view === 'dom' && <DomainCompare rows={rowsNoDom} dom={f.dom} onPickDom={v => set('dom', v)} />}
+          {view === 'mx' && (
+            <CityExpMatrix
+              rows={rowsNoCity}
+              city={f.city}
+              exp={f.exp}
+              onPick={(c, e) => setF(prev => ({...prev, city: c, exp: e}))}
+            />
+          )}
+          {view === 'quant' && (
+            <QuantileBox stat={stat} catBase={catBase} cityBase={cityBase} cat={f.cat} city={f.city} />
+          )}
+          {view === 'scatter' && <CityScatter rows={rowsNoCity} city={f.city} onPickCity={c => set('city', c)} />}
         </>
       )}
 

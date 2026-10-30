@@ -216,6 +216,7 @@ html.immersive .jm-filters {
 /* ===== 视图 tab ===== */
 .jm-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
   border-bottom: 1px solid var(--course-border);
   margin-bottom: 1rem;
@@ -570,6 +571,177 @@ html.immersive .jm-filters {
   cursor: pointer;
 }
 
+/* ===== 视图 5/6：宽标签行（行业名比城市名长） ===== */
+.jm-cityrow-wide {
+  grid-template-columns: 6.6rem 1fr 7.2rem;
+}
+.jm-cityname-wide {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jm-axis-wide {
+  padding-left: calc(6.6rem + 10px);
+}
+
+/* ===== 视图 6：分位对比行 ===== */
+.jm-qrow {
+  display: grid;
+  grid-template-columns: 8.6rem 1fr 10.8rem;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 6px;
+  border-radius: 6px;
+}
+.jm-qlabel {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 12.5px;
+  color: var(--course-fg);
+  line-height: 1.35;
+  min-width: 0;
+}
+.jm-qrow:first-of-type .jm-qlabel {
+  color: var(--course-accent-ink);
+  font-weight: 500;
+}
+.jm-qnote {
+  font-size: 11px;
+  font-style: normal;
+  color: var(--course-muted);
+}
+.jm-qvals {
+  font-size: 12px;
+  color: var(--course-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+.jm-qvals b {
+  font-weight: 500;
+  color: var(--course-fg);
+}
+
+/* ===== 视图 7：城市 × 经验 热力矩阵 ===== */
+.jm-mx {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.jm-mxrow {
+  display: grid;
+  gap: 4px;
+  align-items: stretch;
+}
+.jm-mxrh {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--course-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jm-mxch {
+  font-size: 11.5px;
+  color: var(--course-muted);
+  text-align: center;
+  line-height: 1.25;
+  padding-bottom: 2px;
+}
+.jm-mxcell {
+  position: relative;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--course-border);
+  border-radius: 6px;
+  background: var(--course-card);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.jm-mxcell:hover {
+  border-color: var(--course-accent);
+}
+.jm-mxcell-weak {
+  cursor: default;
+  background: transparent;
+}
+.jm-mxcell-weak:hover {
+  border-color: var(--course-border);
+}
+.jm-mxfill {
+  position: absolute;
+  inset: 0;
+  background: var(--course-accent);
+}
+.jm-mxv {
+  position: relative;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--course-fg);
+}
+.jm-mxcell-weak .jm-mxv {
+  font-weight: 400;
+  color: var(--course-muted);
+}
+.jm-mxcell-on {
+  border-color: var(--course-accent);
+  box-shadow: inset 0 0 0 1px var(--course-accent);
+}
+.jm-mxlegend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--course-muted);
+}
+.jm-mxramp {
+  flex: 0 0 96px;
+  height: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--course-border);
+  /* 从卡片底色渐变到强调色，跟着三态主题自动变化，不写死颜色 */
+  background: linear-gradient(90deg, var(--course-card), var(--course-accent));
+  opacity: 0.55;
+}
+.jm-mxtip {
+  flex: 1 1 260px;
+  line-height: 1.6;
+}
+
+/* ===== 视图 8：竞争度散点 ===== */
+.jm-sc {
+  width: 100%;
+  overflow-x: auto;
+}
+.jm-sc svg {
+  display: block;
+  width: 100%;
+  max-width: 660px;
+  height: auto;
+}
+.jm-quad {
+  stroke: var(--course-border);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+.jm-pt {
+  cursor: pointer;
+}
+.jm-pt-t {
+  fill: var(--course-muted);
+  font-size: 11px;
+}
+.jm-pt-on .jm-pt-t {
+  fill: var(--course-accent-ink);
+  font-weight: 500;
+}
+
 @media (max-width: 640px) {
   .jm-metrics {
     grid-template-columns: 1fr;
@@ -587,5 +759,23 @@ html.immersive .jm-filters {
   }
   .jm-filters {
     position: static;
+  }
+  .jm-qrow {
+    grid-template-columns: 5.4rem 1fr 6.6rem;
+    gap: 6px;
+  }
+  .jm-cityrow-wide {
+    grid-template-columns: 5.2rem 1fr 5.6rem;
+    gap: 6px;
+  }
+  .jm-axis-wide {
+    padding-left: calc(5.2rem + 6px);
+  }
+  .jm-mxcell {
+    min-height: 34px;
+  }
+  .jm-mxrh,
+  .jm-mxch {
+    font-size: 10.5px;
   }
 }

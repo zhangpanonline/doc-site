@@ -102,6 +102,55 @@ export function groupByDim(
     .sort((a, b) => b.n - a.n);
 }
 
+/**
+ * 二维交叉统计：行维度 × 列维度 → 格子矩阵。
+ * 单看任一一维都会把另一维的差异平均掉——只看城市会掩盖经验带来的跨度，
+ * 交叉视图才能真正回答「在 X 城、Y 年经验值多少」。
+ * keys 由调用方传入并自行排序（经验按档位顺序、城市按样本量降序）。
+ */
+export type CrossCell = {n: number; stat: SalaryStat | null} | null;
+export type CrossGrid = {
+  rowKeys: readonly string[];
+  colKeys: readonly string[];
+  /** cells[行序][列序]，该组合无样本时为 null */
+  cells: CrossCell[][];
+};
+
+export function crossByDim({
+  rows,
+  row,
+  col,
+}: {
+  rows: number[][];
+  row: {idx: number; labels: readonly string[]; keys: readonly string[]};
+  col: {idx: number; labels: readonly string[]; keys: readonly string[]};
+}): CrossGrid {
+  const buckets = new Map<string, Map<string, number[][]>>();
+  for (const r of rows) {
+    const rk = row.labels[r[row.idx]];
+    const ck = col.labels[r[col.idx]];
+    let inner = buckets.get(rk);
+    if (!inner) {
+      inner = new Map<string, number[][]>();
+      buckets.set(rk, inner);
+    }
+    const bucket = inner.get(ck);
+    if (bucket) {
+      bucket.push(r);
+    } else {
+      inner.set(ck, [r]);
+    }
+  }
+  const cells = row.keys.map(rk => {
+    const inner = buckets.get(rk);
+    return col.keys.map(ck => {
+      const bucket = inner?.get(ck);
+      return bucket && bucket.length > 0 ? {n: bucket.length, stat: statOf(bucket)} : null;
+    });
+  });
+  return {rowKeys: row.keys, colKeys: col.keys, cells};
+}
+
 /** 城市统计（CityStat 兼容形态，供课程页箱线图复用）：{city, n, p10..p90, range} */
 export type CubeCityStat = {
   city: string;
