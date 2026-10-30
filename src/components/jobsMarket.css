@@ -1,5 +1,16 @@
 /* 岗位市场探索器（JobsMarket）样式：全部基于 --course-* 变量，随三态主题切换 */
 
+/* ===== /jobs 页面文字对比度修正（仅本页作用域，不动全局课程色板） =====
+   亮色主题下 --course-muted 对背景仅约 3.7:1，低于 WCAG AA 正文要求的 4.5:1，
+   说明文字 / 标签 / 样本数等次要信息发灰看不清。这里加深到约 5.5:1。
+   深色主题实测约 6:1 已达标，不覆盖。作用域用 html 上的 docs-doc-id-jobs 类。 */
+html[class*='docs-doc-id-jobs']:not([data-theme='dark']) {
+  --course-muted: #5b6478;
+}
+html[class*='docs-doc-id-jobs'].theme-forest:not([data-theme='dark']) {
+  --course-muted: #6b6153; /* 森林是暖纸底，用暖深灰而非冷灰蓝，保持色温一致 */
+}
+
 .jm-root {
   margin: 1.5rem 0 2.5rem;
 }
