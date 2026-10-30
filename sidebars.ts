@@ -17,15 +17,8 @@ for (const c of courses) {
   ];
 }
 
-// 岗位地图：不属于六个学习单元的板块，保持原平铺列表
-sidebars.jobs = [
-  'jobs/agents',
-  'jobs/backend',
-  'jobs/devops',
-  'jobs/ai-coding',
-  'jobs/fullstack',
-];
-
+// 岗位地图已收成单页面工具（/jobs），无子页面、无左侧菜单：
+// 不注册 jobs 侧边栏，页面自身用 displayed_sidebar: null 隐藏。
 // 数据库官方文档拓展（非渡一课程）：分组标题标注来源。
 // 追加到所有「数据库」课程侧边栏（common / agentsDatabase / backendDatabase），
 // 用户从任意单元点进数据库课程，左侧菜单都能看到完整两分组。

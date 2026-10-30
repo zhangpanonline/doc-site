@@ -44,6 +44,31 @@
       "statusCode": 301
     },
     {
+      "source": "/jobs/agents",
+      "destination": "/jobs",
+      "statusCode": 301
+    },
+    {
+      "source": "/jobs/backend",
+      "destination": "/jobs",
+      "statusCode": 301
+    },
+    {
+      "source": "/jobs/devops",
+      "destination": "/jobs",
+      "statusCode": 301
+    },
+    {
+      "source": "/jobs/ai-coding",
+      "destination": "/jobs",
+      "statusCode": 301
+    },
+    {
+      "source": "/jobs/fullstack",
+      "destination": "/jobs",
+      "statusCode": 301
+    },
+    {
       "source": "/python/%e5%ae%89%e8%a3%85/:path*",
       "destination": "/agents/python/python%e7%8e%af%e5%a2%83%e5%ae%89%e8%a3%85/:path*",
       "statusCode": 301
