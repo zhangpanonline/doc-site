@@ -1,17 +1,11 @@
-import React, {Fragment, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import type {ReactNode} from 'react';
 import Link from '@docusaurus/Link';
 import {jobs} from '@site/data/jobs';
-import {
-  insightCategories,
-  insightCities,
-  insightTags,
-  insightTotals,
-  unitCategories,
-} from '@site/data/jobsInsights';
+import {insightTags, unitCategories} from '@site/data/jobsInsights';
 import {skillLinks} from '@site/data/skillLinks';
-import {DIM, MIN_CELL_N, cityStatsOf, cityStatsOfRows, rowsOfCats} from './jobsInsightsUtils';
-import type {CubeCityStat} from './jobsInsightsUtils';
+import {MIN_CELL_N, cityStatsOfRows, rowsOfCats, statOf} from './jobsInsightsUtils';
+import './jobsMarket.css';
 
 export type Course = {
   emoji: string;
@@ -280,240 +274,129 @@ export function JobsTiles(): ReactNode {
   );
 }
 
-/* ===== 岗位地图统计视图 ===== */
+/* ===== 岗位页统计区块（单元页）：一句结论 + 城市 Top 6 + 技能 Top 20 ===== */
 
-const toRow = (list: CubeCityStat[]): Record<string, CubeCityStat> => {
-  const row: Record<string, CubeCityStat> = {};
-  for (const s of list) {
-    row[s.city] = s;
+/** 合并若干职类的技能标签词频（取 Top n） */
+function mergeTags(cats: string[], n = 20): [string, number][] {
+  const m = new Map<string, number>();
+  for (const c of cats) {
+    for (const t of insightTags[c] ?? []) {
+      m.set(t.tag, (m.get(t.tag) ?? 0) + t.count);
+    }
   }
-  return row;
-};
-
-function skillHref(tag: string): string | null {
-  return skillLinks[tag] ?? null;
+  return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
 }
 
-/** 技术栈 chip：有映射进学习路线，无映射纯文本 */
-function TagChip({tag}: {tag: string}): ReactNode {
-  const href = skillHref(tag);
-  return href ? (
-    <Link to={href} className="js-tag">
-      {tag}
-    </Link>
-  ) : (
-    <span className="js-tag js-tag-plain">{tag}</span>
-  );
-}
-
-/** 单平台一横排城市箱线图（缺样本城市显示占位；城市轴 49 城，横向滚动） */
-function BoxPlotRow({
-  label,
-  row,
-  cities,
-}: {
-  label: string;
-  row: Record<string, CubeCityStat>;
-  cities: readonly string[];
-}): ReactNode {
-  const boxed = cities
-    .map(c => row[c])
-    .filter((s): s is CubeCityStat => Boolean(s) && s.n >= MIN_CELL_N);
-  if (boxed.length === 0) {
-    return (
-      <div className="js-box-row">
-        <span className="js-box-label">{label}</span>
-        <span className="js-note-plain">样本不足，暂不绘制（各城均不足 {MIN_CELL_N} 份）</span>
-      </div>
-    );
-  }
-  const minK = Math.floor(Math.min(...boxed.map(s => s.p10)) / 5) * 5;
-  const maxK = Math.max(Math.ceil(Math.max(...boxed.map(s => s.p90)) / 5) * 5, minK + 5);
-  const pct = (v: number) => Math.round(((v - minK) / (maxK - minK)) * 100);
-  return (
-    <div className="js-box-row">
-      <span className="js-box-label">{label}</span>
-      <div className="js-box-cells">
-        {cities.map(city => {
-          const s = row[city];
-          if (!s) {
-            return (
-              <div key={city} className="js-city">
-                <span className="js-city-name">{city}</span>
-                <div className="js-city-empty">待采集</div>
-              </div>
-            );
-          }
-          if (s.n < MIN_CELL_N) {
-            return (
-              <div key={city} className="js-city">
-                <span className="js-city-name">{city}</span>
-                <div className="js-city-empty">
-                  样本 {s.n} 份
-                  <br />
-                  待扩充
-                </div>
-              </div>
-            );
-          }
-          return (
-            <div key={city} className="js-city">
-              <span className="js-city-name">{city}</span>
-              <div className="js-box">
-                <div className="js-box-whisker" style={{top: `${pct(s.p10)}%`, height: `${pct(s.p90) - pct(s.p10)}%`}} />
-                <div className="js-box-body" style={{top: `${pct(s.p25)}%`, height: `${pct(s.p75) - pct(s.p25)}%`}} />
-                <div className="js-box-median" style={{top: `${pct(s.p50)}%`}} />
-              </div>
-              <span className="js-city-meta">
-                P50 {s.p50}K · n={s.n}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      <span className="js-box-scale">纵轴 {minK}–{maxK}K/月</span>
-    </div>
-  );
-}
-
-/** 岗位地图首页统计视图：职类 × 城市薪资箱线图 + 技能标签词频 + 课程对照参考（课程视角已降级） */
-export function JobStatsBoard(): ReactNode {
-  const [cat, setCat] = useState('AI 应用');
-  const bossRow = toRow(cityStatsOf(cat, 'boss'));
-  const j51Row = toRow(cityStatsOf(cat, 'job51'));
-  const lpRow = toRow(cityStatsOf(cat, 'liepin'));
-  return (
-    <div className="js-stats">
-      <h2 className="js-title">📊 岗位薪资与技能统计</h2>
-      <p className="js-sub">
-        按职类拆分的薪资分布与技术栈统计，点技术栈可直达对应学习单元或课程；课程单元已降级为参考视角。
-        全维度筛选见 <Link to="/jobs/insights">岗位市场情报</Link>。
-      </p>
-
-      <div className="js-tabs">
-        {insightCategories.map(c => {
-          const n = insightTotals[c].merged?.n ?? 0;
-          return (
-            <button
-              key={c}
-              type="button"
-              className={`js-tab${c === cat ? ' js-tab-active' : ''}`}
-              onClick={() => setCat(c)}>
-              {c}
-              <span className="js-tab-n">{n}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <h3 className="js-sec-title">职类 × 城市 · 薪资分布（{cat}）</h3>
-      <BoxPlotRow label="BOSS 直聘" row={bossRow} cities={insightCities} />
-      <BoxPlotRow label="前程无忧" row={j51Row} cities={insightCities} />
-      <BoxPlotRow label="猎聘" row={lpRow} cities={insightCities} />
-
-      <h3 className="js-sec-title">技术栈 · BOSS 技能标签真实词频（{cat}）</h3>
-      <div className="js-chips">
-        {(insightTags[cat] ?? []).map(t => (
-          <span key={t.tag} className="js-chip">
-            <TagChip tag={t.tag} />
-            <span className="js-chip-count">{t.count}</span>
-          </span>
-        ))}
-      </div>
-
-      <div className="ji-course-ref">
-        <h3 className="js-sec-title">课程对照参考</h3>
-        <p className="js-note-plain">课程单元与职类的对照（学习路线岗位要求与递进规则见各单元页）：</p>
-        <table className="ji-ref-table">
-          <tbody>
-            {Object.entries(unitCategories).map(([unit, cats]) => (
-              <tr key={unit}>
-                <td>
-                  <Link to={`/jobs/${unit}`}>
-                    {jobs[unit]?.emoji ?? ''} {jobs[unit]?.title ?? unit}
-                  </Link>
-                </td>
-                <td>{cats.join(' · ')}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <p className="js-note-plain">
-        口径说明：箱线图为薪资中点分布 P10/P25/P50/P75/P90（K/月）；每城样本不足 {MIN_CELL_N}{' '}
-        份不绘制；技术栈词频来自 BOSS 岗位「技能标签」（前程无忧无技能字段）；城市轴 49 城（BOSS
-        逐城轮换、前程无忧 10 城口径），未采集城市显示「待采集」；时间趋势见{' '}
-        <Link to="/jobs/insights">/jobs/insights</Link>。
-      </p>
-    </div>
-  );
-}
-
-/** 岗位页统计区块：该单元对应职类的城市箱线图 + 技能标签 Top 榜 + 与其余职类的技术栈交集 */
 export function JobStageStats({unit}: {unit: string}): ReactNode {
   const d = jobs[unit];
   const cats = unitCategories[unit] ?? [];
-  const allRows = rowsOfCats(cats);
-  const bossRow = toRow(cityStatsOfRows(allRows.filter(r => r[DIM.plat] === 0)));
-  const j51Row = toRow(cityStatsOfRows(allRows.filter(r => r[DIM.plat] === 1)));
-  const lpRow = toRow(cityStatsOfRows(allRows.filter(r => r[DIM.plat] === 2)));
-  const mergedTags = (() => {
-    const m = new Map<string, number>();
-    for (const c of cats) {
-      for (const t of insightTags[c] ?? []) {
-        m.set(t.tag, (m.get(t.tag) ?? 0) + t.count);
-      }
-    }
-    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
-  })();
+  const rows = rowsOfCats(cats);
+  const stat = statOf(rows);
+  const cities = cityStatsOfRows(rows)
+    .filter(s => s.n >= MIN_CELL_N)
+    .sort((a, b) => b.p50 - a.p50)
+    .slice(0, 6);
+  const scale = Math.max(Math.ceil(Math.max(...cities.map(c => c.p90), 10) / 5) * 5, 5);
+  const tags = mergeTags(cats);
+  const maxTag = tags[0]?.[1] ?? 1;
+
   return (
-    <div className="js-stats">
-      <h2 className="js-title">📊 {d.title} · 薪资与技能统计</h2>
-      <p className="js-sub">
-        本单元对应职类：{cats.join('、')}（课程对照参考）。市场数据以职类为主轴，全维度见{' '}
-        <Link to="/jobs/insights">岗位市场情报</Link>。
+    <div className="jm-root">
+      <h2 className="jm-sec-h" style={{fontSize: 18, marginBottom: 6}}>
+        {d.title} · 市场行情
+      </h2>
+      <p className="jm-lede">
+        这个方向在招聘市场对应 {cats.join('、')} 等职类。下面是它们的合并统计——想要按城市、经验、学历自由筛，去{' '}
+        <Link to={`/jobs${cats[0] ? `?cat=${encodeURIComponent(cats[0])}` : ''}`}>岗位地图</Link>。
       </p>
 
-      <h3 className="js-sec-title">城市 × 薪资分布</h3>
-      <BoxPlotRow label="BOSS 直聘" row={bossRow} cities={insightCities} />
-      <BoxPlotRow label="前程无忧" row={j51Row} cities={insightCities} />
-      <BoxPlotRow label="猎聘" row={lpRow} cities={insightCities} />
-
-      <h3 className="js-sec-title">BOSS 技能标签 Top（真实词频）</h3>
-      <div className="js-chips">
-        {mergedTags.map(([tag, count]) => (
-          <span key={tag} className="js-chip">
-            <TagChip tag={tag} />
-            <span className="js-chip-count">{count}</span>
-          </span>
-        ))}
-      </div>
-
-      <h3 className="js-sec-title">与其余职类的共同技术栈（交集）</h3>
-      {insightCategories
-        .filter(c => !cats.includes(c))
-        .map(other => {
-          const common = mergedTags.filter(([tag]) => (insightTags[other] ?? []).some(u => u.tag === tag));
-          return (
-            <div key={other} className="js-intersect-row">
-              <span className="js-intersect-label">
-                {d.emoji} × {other}
-              </span>
-              {common.length > 0 ? (
-                <span className="js-intersect-tags">
-                  {common.map(([tag]) => (
-                    <Fragment key={tag}>
-                      <TagChip tag={tag} />
-                    </Fragment>
-                  ))}
-                </span>
-              ) : (
-                <span className="js-note-plain">无共同标签（或该职类样本不足）</span>
-              )}
+      {stat ? (
+        <>
+          <div className="jm-metrics" style={{marginBottom: 8}}>
+            <div className="jm-metric">
+              <div className="jm-metric-k">在招岗位</div>
+              <div className="jm-metric-v">{stat.n}</div>
+              <div className="jm-metric-s">三平台合计</div>
             </div>
-          );
-        })}
+            <div className="jm-metric">
+              <div className="jm-metric-k">中位月薪</div>
+              <div className="jm-metric-v">{stat.p50}K</div>
+              <div className="jm-metric-s">岗位薪资中点的中位数</div>
+            </div>
+            <div className="jm-metric">
+              <div className="jm-metric-k">主流区间</div>
+              <div className="jm-metric-v">
+                {stat.p25}–{stat.p75}K
+              </div>
+              <div className="jm-metric-s">中间一半岗位的落点</div>
+            </div>
+          </div>
+
+          {cities.length > 0 && (
+            <div style={{marginTop: 20}}>
+              <h3 className="jm-sec-h" style={{fontSize: 14}}>
+                哪些城市给得高
+              </h3>
+              <p className="jm-sec-sub">只列样本 ≥{MIN_CELL_N} 份的城市，按中位数排序。</p>
+              <div className="jm-axis">
+                <span>0K</span>
+                <span>{Math.round(scale / 2)}K</span>
+                <span>{scale}K/月</span>
+              </div>
+              {cities.map(c => (
+                <div className="jm-cityrow" key={c.city}>
+                  <span className="jm-cityname">{c.city}</span>
+                  <div className="jm-track">
+                    <div
+                      className="jm-whisker"
+                      style={{left: `${(c.p10 / scale) * 100}%`, width: `${((c.p90 - c.p10) / scale) * 100}%`}}
+                    />
+                    <div
+                      className="jm-box"
+                      style={{left: `${(c.p25 / scale) * 100}%`, width: `${((c.p75 - c.p25) / scale) * 100}%`}}
+                    />
+                    <div className="jm-median" style={{left: `${(c.p50 / scale) * 100}%`}} />
+                  </div>
+                  <span className="jm-citymeta">
+                    <b>{c.p50}K</b> · n={c.n}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="jm-empty">该方向还没有足够样本。</p>
+      )}
+
+      {tags.length > 0 && (
+        <div className="jm-sec">
+          <h3 className="jm-sec-h" style={{fontSize: 14}}>
+            {d.title} · 岗位里最常要求的技能
+          </h3>
+          <p className="jm-sec-sub">字越大提到该技能的岗位越多，点击可跳到站内对应课程。</p>
+          <div className="jm-skills">
+            {tags.map(([tag, count]) => {
+              const href = skillLinks[tag];
+              const inner = (
+                <>
+                  {tag}
+                  <span className="jm-skill-n">{count}</span>
+                </>
+              );
+              return href ? (
+                <Link key={tag} to={href} className="jm-skill" style={{fontSize: 12.5 + 5 * (count / maxTag)}}>
+                  {inner}
+                </Link>
+              ) : (
+                <span key={tag} className="jm-skill" style={{fontSize: 12.5 + 5 * (count / maxTag)}}>
+                  {inner}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

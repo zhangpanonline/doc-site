@@ -34,6 +34,16 @@
   ],
   "redirects": [
     {
+      "source": "/jobs/insights",
+      "destination": "/jobs",
+      "statusCode": 301
+    },
+    {
+      "source": "/jobs/insights/:path*",
+      "destination": "/jobs",
+      "statusCode": 301
+    },
+    {
       "source": "/python/%e5%ae%89%e8%a3%85/:path*",
       "destination": "/agents/python/python%e7%8e%af%e5%a2%83%e5%ae%89%e8%a3%85/:path*",
       "statusCode": 301

@@ -19,7 +19,6 @@ for (const c of courses) {
 
 // 岗位地图：不属于六个学习单元的板块，保持原平铺列表
 sidebars.jobs = [
-  'jobs/insights',
   'jobs/agents',
   'jobs/backend',
   'jobs/devops',
