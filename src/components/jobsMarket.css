@@ -21,6 +21,23 @@
   border-radius: 12px;
   padding: 12px 14px;
   margin-bottom: 1rem;
+  /* top 随导航栏显隐切换，平滑过渡 */
+  transition: top 0.2s ease;
+}
+/* 导航栏下滑隐藏（Docusaurus 给 .navbar 加 navbar--hidden）或沉浸模式（导航 display:none）时，筛选条贴顶 */
+html:has(.navbar--hidden) .jm-filters,
+html.immersive .jm-filters {
+  top: 0;
+}
+
+/* ===== 单页面布局：/jobs 无左侧菜单，内容列去掉 75% 宽限制并水平居中 ===== */
+/* html 上的 docs-doc-id-jobs 类由 Docusaurus 按 docId 注入 */
+@media (min-width: 997px) {
+  html[class*='docs-doc-id-jobs'] [class*='docItemCol'] {
+    /* Docusaurus 内置 .docItemCol 带 max-width:75% !important，需同级覆盖 */
+    max-width: 1100px !important;
+    margin-inline: auto;
+  }
 }
 .jm-frow {
   display: flex;
