@@ -14,18 +14,18 @@
 /* ===== 筛选条 ===== */
 .jm-filters {
   position: sticky;
-  top: calc(var(--ifm-navbar-height) + 0px);
+  /* --jm-sticky-top 由 JobsMarket 按导航栏实际底边实时写入（px）。
+     不要用 --ifm-navbar-height 硬写：导航栏下滑隐藏时它只做 transform 移出视口，
+     高度值不变，会露出整条导航栏高度的空隙。JS 未执行时回落到导航栏高度。 */
+  top: var(--jm-sticky-top, var(--ifm-navbar-height));
   z-index: 20;
   background: var(--course-bg);
   border: 1px solid var(--course-border);
   border-radius: 12px;
   padding: 12px 14px;
   margin-bottom: 1rem;
-  /* top 随导航栏显隐切换，平滑过渡 */
-  transition: top 0.2s ease;
 }
-/* 导航栏下滑隐藏（Docusaurus 给 .navbar 加 navbar--hidden）或沉浸模式（导航 display:none）时，筛选条贴顶 */
-html:has(.navbar--hidden) .jm-filters,
+/* 沉浸模式（导航栏 display:none）无 JS 时的兜底；有 JS 时 navbar 底边量出来就是 0，两者一致 */
 html.immersive .jm-filters {
   top: 0;
 }

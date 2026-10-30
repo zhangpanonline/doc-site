@@ -593,6 +593,48 @@ export function JobsMarket(): ReactNode {
     window.history.replaceState(null, '', q ? `${window.location.pathname}?${q}` : window.location.pathname);
   }, [f, hydrated]);
 
+  // 筛选条始终紧贴导航栏下沿：直接量导航栏的实际底边，不猜它的类名。
+  // Docusaurus 的隐藏类是 CSS Module 哈希（navbarHidden_xxxx，每次构建都变），靠类名写 CSS 选择器必失效；
+  // 而量 rect.bottom 对「下滑隐藏（transform 移出视口）」「沉浸模式（display:none）」「换主题改高度」全都成立。
+  useEffect(() => {
+    const root = document.documentElement;
+    let raf = 0;
+    let idle = 0;
+    const apply = () => {
+      const nav = document.querySelector<HTMLElement>('.navbar');
+      const bottom = nav ? nav.getBoundingClientRect().bottom : 0;
+      root.style.setProperty('--jm-sticky-top', `${Math.max(0, Math.round(bottom))}px`);
+    };
+    const stop = () => {
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
+    // 导航栏显隐带 0.2s 过渡，滚动停止后仍要跟到最终位置，所以续跑一小段 rAF
+    const frame = () => {
+      apply();
+      raf = requestAnimationFrame(frame);
+    };
+    const kick = () => {
+      if (!raf) {
+        raf = requestAnimationFrame(frame);
+      }
+      window.clearTimeout(idle);
+      idle = window.setTimeout(stop, 600);
+    };
+    apply();
+    window.addEventListener('scroll', kick, {passive: true});
+    window.addEventListener('resize', kick);
+    return () => {
+      window.removeEventListener('scroll', kick);
+      window.removeEventListener('resize', kick);
+      window.clearTimeout(idle);
+      stop();
+      root.style.removeProperty('--jm-sticky-top');
+    };
+  }, []);
+
   const rows = useMemo(() => filterRows(f), [f]);
   const stat = useMemo(() => statOf(rows), [rows]);
   const catBase = useMemo(() => (f.cat ? statOf(filterRows({cat: f.cat})) : null), [f.cat]);
