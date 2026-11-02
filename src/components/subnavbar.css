@@ -1,0 +1,138 @@
+/**
+ * 滚动隐藏时的「二级导航」条（下方滑入替换主菜单）。
+ *
+ * 视觉分层：
+ *   .subnavbar-slot  —— 固定在导航栏中间区域（左避开 logo/站名，右避开搜索与主题切换），
+ *                       overflow:hidden 把面板裁在导航栏高度内；
+ *   .subnavbar       —— 面板本体，默认 translateY(100%) 藏在 slot 下沿之外，
+ *                       html[data-nav='swap'] 时滑到 0，正好盖住主菜单那一行。
+ * 左右两侧（logo、AI 搜索、主题三态）不参与动画，始终可见。
+ */
+
+.subnavbar-slot {
+  position: fixed;
+  top: 0;
+  left: var(--subnav-left, 0px);
+  right: var(--subnav-right, 0px);
+  height: var(--ifm-navbar-height);
+  overflow: hidden;
+  z-index: calc(var(--ifm-z-index-fixed) + 1);
+  pointer-events: none;
+}
+
+.subnavbar {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0 0.4rem;
+  background: var(--ifm-navbar-background-color);
+  border-bottom: 1px solid var(--course-border);
+  transform: translateY(100%);
+  transition: transform 0.26s cubic-bezier(0.33, 0.7, 0.3, 1);
+  pointer-events: none;
+}
+
+html[data-nav='swap'] .subnavbar {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 单元名：灰色小标签，告诉读者这一排子菜单属于哪个单元 */
+.subnavbar__unit {
+  flex: none;
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  color: var(--course-muted);
+  letter-spacing: 0.02em;
+  padding-right: 0.7rem;
+  border-right: 1px solid var(--course-border);
+}
+
+.subnavbar__list {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.subnavbar__list::-webkit-scrollbar {
+  display: none;
+}
+
+.subnavbar__item {
+  flex: none;
+  padding: 0.3rem 0.62rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ifm-navbar-link-color);
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.subnavbar__item:hover {
+  background: var(--ifm-menu-color-background-hover);
+  color: var(--ifm-navbar-link-hover-color);
+  text-decoration: none;
+}
+.subnavbar__item--active {
+  color: var(--course-accent);
+  font-weight: 600;
+  background: var(--ifm-menu-color-background-active);
+}
+
+/* 主菜单那一行向上滑出（只作用于左侧菜单链接，不动 logo 与右侧工具） */
+.navbar__items:not(.navbar__items--right) > .navbar__item {
+  transition:
+    transform 0.26s cubic-bezier(0.33, 0.7, 0.3, 1),
+    opacity 0.18s ease;
+}
+html[data-nav='swap'] .navbar__items:not(.navbar__items--right) > .navbar__item {
+  transform: translateY(-140%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 没有子导航的页面（首页 / 岗位地图 / 状态页等）：整条导航栏上滑隐藏 */
+.navbar {
+  transition: transform 0.2s ease-in-out;
+}
+html[data-nav='hide'] .navbar {
+  transform: translateY(-100%);
+}
+
+/* 沉浸模式：导航栏本身就隐藏，二级条一并收掉 */
+html.immersive .subnavbar-slot {
+  display: none;
+}
+
+/* 移动端导航收进汉堡菜单，不做替换效果 */
+@media (max-width: 996px) {
+  .subnavbar-slot {
+    display: none;
+  }
+  html[data-nav='swap'] .navbar__items:not(.navbar__items--right) > .navbar__item {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* 尊重系统「减少动态效果」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .subnavbar,
+  .navbar,
+  .navbar__items:not(.navbar__items--right) > .navbar__item {
+    transition: none;
+  }
+}

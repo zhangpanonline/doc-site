@@ -192,9 +192,11 @@ var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[
     image: 'img/social-card.png',
     navbar: {
       title: 'ZP',
-      // 下滑隐藏、上滑显示（沉浸模式下由 html.immersive .navbar {display:none}
-      // 覆盖，无论滚动方向都不展示）
-      hideOnScroll: true,
+      // 导航栏显隐改由 src/components/SubNavbar.tsx 统一接管（2026-11-02）：
+      // 向下滚动时中间菜单换成当前单元的子导航、左右 logo/搜索/主题保持不动；
+      // 没有子导航的页面（首页 / 岗位地图等）整条上滑隐藏，与旧 hideOnScroll 行为一致。
+      // 沉浸模式下由 html.immersive .navbar {display:none} 覆盖。
+      hideOnScroll: false,
       logo: {
         alt: 'AI 大全栈',
         src: 'img/avatar.png',
