@@ -161,7 +161,7 @@ var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[
           path: 'docs',
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
-          // 数学公式（2026-10-02 加，《Agents底层逻辑》课程大量公式需要）：
+          // 数学公式（remark-math + rehype-katex，KaTeX 样式见 src/css/custom.css 顶部 import）：
           // remark-math 解析 $...$ / $$...$$，rehype-katex 渲染为 HTML+MathML。
           // 注意：这两个选项必须配在内容插件（docs/pages）上，顶层 markdown.* 不被 schema 接受。
           // 样式与字体来自 katex/dist/katex.min.css（src/css/custom.css 顶部 @import，本地打包不走 CDN）。

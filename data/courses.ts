@@ -91,17 +91,13 @@ const dataScienceSections: CourseSection[] = DATASCIENCE_NAMES.map(
   name => ({id: `agents/数据科学工具包/${name}`}),
 );
 
-// Agents底层逻辑课程（gitee.com/dev-edu/agent-core）：34 章，从神经网络/Transformer 原理讲到 Agent 工程
-const AGENTCORE_NAMES = ['必看导言', 'AI的分类', '神经元', '前向传播', '梯度下降', '训练模式和框架', '词元', 'token统计', '神经网络的本质', '词嵌入', '注意力机制', 'Transformer的完整训练流程', '推理机制', '训练阶段', '模型接口契约', '系统提示词', '会话', 'tools', '封装tools', 'ReAct', 'Agent', 'Agent-搜索引擎', 'Skill', 'MCP协议', 'MCP-Client', 'Agent接入MCP', '实现MCP服务器', 'Skill-VS-MCP', '子代理', 'Prompt-Engineering', 'Context-Engineering', 'Harness-Engineering', 'Loop-Engineering', 'Graph-Engineering'];
-const agentCoreSections: CourseSection[] = AGENTCORE_NAMES.map(
-  name => ({id: `agents/Agents底层逻辑/${name}`}),
-);
+// Agents底层逻辑课程（2026-11-06 用户决定下线重做：后续直接用 .md 课件、不再做互动课，
+// 34 章 mdx 与 ac-* 互动课/速查表已全部删除；课程卡片在 docs/agents/index.mdx 改回筹备中）
 
 export const courses: CourseDef[] = [
   {unit: 'agents', key: 'python', name: 'Python 语言核心', sidebar: 'agentsPython', sections: pythonSections},
   {unit: 'agents', key: 'framework', name: 'Python 框架', sidebar: 'agentsFramework', sections: frameworkSections},
   {unit: 'agents', key: 'datascience', name: '数据科学工具包', sidebar: 'agentsDataScience', sections: dataScienceSections},
-  {unit: 'agents', key: 'agentcore', name: 'Agents底层逻辑', sidebar: 'agentsCore', sections: agentCoreSections},
   {unit: 'agents', key: 'database', name: '数据库', sidebar: 'agentsDatabase', sections: databaseSections('agents')},
   {unit: 'backend', key: 'database', name: '数据库', sidebar: 'backendDatabase', sections: databaseSections('backend')},
   {unit: 'common', key: 'database', name: '数据库', sidebar: 'common', sections: databaseSections('common')},
