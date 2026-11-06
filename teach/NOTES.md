@@ -130,12 +130,17 @@
 - **面试题数弹性 4–8 道**（不采用框架课的固定 5 题）
 - **题源协议 B 照旧**：官方文档一手来源 + URL + 检索日期；子代理若找不到官方来源，改用「源课程场景化」的场景题，禁止编造 URL
 
-## Agents底层逻辑课程（**2026-11-06 已整体下线**）
+## Agents底层逻辑课程（**2026-11-06 已整体下线，同日开启 Markdown 重制**）
 
 用户决定：**删除全部 34 章文档（mdx）、34 节互动课（ac-0001..0034）、34 张速查表与全部图片**；后续该课程**直接以 .md 文件做课件，不再制作互动课**。转换器（agentcore2mdx.py / agentcore_build_docs.py）、时间胶囊（capsule-agents-core.md）、课程简报（LESSON-BRIEF-agents-core.md）一并删除；`data/courses.ts` 的 agentcore 登记与单元卡片已回退为「筹备中」。
 
 - **保留的站点能力**：数学公式渲染（remark-math + rehype-katex + katex，配置在 preset 的 `docs`/`pages`，样式 `src/css/custom.css` 顶部 KaTeX import）——其他课程仍可用，勿删。
 - 若将来以 .md 课件形式重做本课程，源仓库 gitee.com/dev-edu/agent-core 仍可访问，重取归档 zip 即可（约 7.5MB）。
+- **2026-11-06 起重制启动**：`docs/agents/Agents底层逻辑/01.必看导言.md` 为**示例章节（模板）**。补章节的固定三步：
+  1. 新建 `docs/agents/Agents底层逻辑/NN.章节名.md`（纯 Markdown；frontmatter 含 `displayed_sidebar: agentsCore` + `sidebar_position` + `description`，文件名数字前缀决定顺序与路由）
+  2. `data/courses.ts` 的 `AGENTCORE_MD_NAMES` 追加章节名（侧边栏、二级导航、上次学到自动生效）
+  3. `docs/agents/index.mdx` 卡片 badge 的 `n/34` 计数 +1
+  图片放 `static/img/`（禁止外链）；**不做互动课与速查表**。
 
 ## AI 搜索替代本地插件（2026-09-28 定，站点级）
 

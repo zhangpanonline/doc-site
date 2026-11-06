@@ -91,13 +91,20 @@ const dataScienceSections: CourseSection[] = DATASCIENCE_NAMES.map(
   name => ({id: `agents/数据科学工具包/${name}`}),
 );
 
-// Agents底层逻辑课程（2026-11-06 用户决定下线重做：后续直接用 .md 课件、不再做互动课，
-// 34 章 mdx 与 ac-* 互动课/速查表已全部删除；课程卡片在 docs/agents/index.mdx 改回筹备中）
+// Agents底层逻辑课程（2026-11-06 决定下线 mdx+互动课，改用纯 Markdown 课件重做）：
+// 34 章规划（见 docs/agents/Agents底层逻辑/01.必看导言.md 的路线表），
+// 逐章补充：新增章节 = 新建 docs/agents/Agents底层逻辑/NN.章节名.md + 在此追加章节名。
+// 文件用 .md（纯 Markdown 课件，不再做互动课与速查表）。
+const AGENTCORE_MD_NAMES = ['必看导言'];
+const agentCoreMdSections: CourseSection[] = AGENTCORE_MD_NAMES.map(
+  name => ({id: `agents/Agents底层逻辑/${name}`}),
+);
 
 export const courses: CourseDef[] = [
   {unit: 'agents', key: 'python', name: 'Python 语言核心', sidebar: 'agentsPython', sections: pythonSections},
   {unit: 'agents', key: 'framework', name: 'Python 框架', sidebar: 'agentsFramework', sections: frameworkSections},
   {unit: 'agents', key: 'datascience', name: '数据科学工具包', sidebar: 'agentsDataScience', sections: dataScienceSections},
+  {unit: 'agents', key: 'agentcore', name: 'Agents底层逻辑', sidebar: 'agentsCore', sections: agentCoreMdSections},
   {unit: 'agents', key: 'database', name: '数据库', sidebar: 'agentsDatabase', sections: databaseSections('agents')},
   {unit: 'backend', key: 'database', name: '数据库', sidebar: 'backendDatabase', sections: databaseSections('backend')},
   {unit: 'common', key: 'database', name: '数据库', sidebar: 'common', sections: databaseSections('common')},
