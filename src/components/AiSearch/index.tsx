@@ -69,6 +69,12 @@ export default function AiSearchButton(): React.JSX.Element {
       const data = (await res.json().catch(() => null)) as
         | ({error?: string} & Partial<Result>)
         | null;
+      // 全站密码门下 /api/ai-search 也要求 zg_pw cookie（防内容抽离），
+      // cookie 过期/被清时给出可操作提示，而不是裸露的 unauthorized
+      if (res.status === 401) {
+        setError('访问凭证已失效，请刷新页面重新输入访问密码');
+        return;
+      }
       if (!res.ok || !data) {
         setError(data?.error ?? `服务错误（HTTP ${res.status}）`);
         return;

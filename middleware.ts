@@ -10,20 +10,25 @@
 //                    ② 未设置 STATUS_TOKEN：文档页必须持 zg_js cookie 才放行，
 //                       无 JS 执行能力的客户端（curl/脚本/朴素爬虫）拿不到正文；
 //                       搜索引擎、微信、社交预览等白名单直通。
-//   豁免（2026-11-09 用户决定）：白名单爬虫（搜索引擎/AI 搜索/微信/社交预览）
-//                    直通，不要求密码。
+//   豁免（2026-11-09 用户决定）：白名单爬虫（搜索引擎/AI 搜索/社交预览）直通，
+//                    不要求密码。
 //   2026-11-10 用户追加：iframe/App 内嵌（fuel_records WebView）也要密码——
 //                    密码门不再豁免 iframe；密码 cookie 用 SameSite=None; Secure
 //                    （跨站 iframe 里才能写入），App 侧已同步开启第三方 cookie。
 //                    注意：iframe 豁免仅在「未设 STATUS_TOKEN 的 JS 挑战门」下保留
 //                    （那条路径会自动重载，iframe 无 cookie 会死循环）。
+//   2026-11-10 用户反馈「微信里不用输密码就能进」：根因是微信内置浏览器 UA 与
+//                    微信预览抓取器同为 MicroMessenger，被爬虫白名单整体放行。
+//                    现拆成两组：服务端抓取类（ALLOWED_BOTS，密码门也直通）与
+//                    应用内浏览器（IN_APP_BROWSER_UA，密码门下必须输密码）。
 //
 // 诚实边界：无头浏览器（真实 Chrome 内核）能执行 JS，可越过本门——
 //          对付它靠 Vercel Firewall 的 Bot Protection 启发式挑战（控制台开启）。
 import { next } from '@vercel/functions';
 
-/** 白名单 UA 子串（小写匹配）：搜索引擎 + 微信 + 社交预览 + 可用性监控 */
-const ALLOWED_UA = [
+/** 服务端抓取类 UA 子串（小写匹配）：搜索引擎 + AI 搜索 + 社交预览 + 可用性监控。
+ *  这些客户端不向用户渲染页面，全站密码门下仍直通（SEO 收录、分享卡片不受影响）。 */
+const ALLOWED_BOTS = [
   // 搜索引擎（保留收录：仅已提交站长平台的三家）
   'googlebot',
   'bingbot',
@@ -41,8 +46,6 @@ const ALLOWED_UA = [
   'duckduckbot',
   'applebot',
   'mojeekbot',
-  // 微信内置浏览器与链接卡片预览抓取器（中文用户分享主渠道，必须直通）
-  'micromessenger',
   // 社交平台链接预览
   'twitterbot',
   'facebookexternalhit',
@@ -51,7 +54,6 @@ const ALLOWED_UA = [
   'linkedinbot',
   'discordbot',
   'whatsapp',
-  'line/',
   // 可用性监控
   'uptimerobot',
   'pingdom',
@@ -60,6 +62,12 @@ const ALLOWED_UA = [
   // 搜索引擎的附属抓取器（Bing 抓 favicon/预览图用 BingPreview，须放行否则搜索结果无图标）
   'bingpreview',
 ];
+
+/** 应用内浏览器 UA（微信/LINE 等）：真实用户在浏览，不是爬虫。
+ *  全站密码门启用时必须输密码——曾因与预览抓取器共用 MicroMessenger UA
+ *  被整体放行，导致微信里点链接不用密码直接进（2026-11-10 用户反馈）。
+ *  仅在未设 STATUS_TOKEN 的 JS 挑战门路径放行（保持原「分享主渠道直通」）。 */
+const IN_APP_BROWSER_UA = ['micromessenger', 'line/'];
 
 const COOKIE_NAME = 'zg_js';
 const COOKIE_MAX_AGE = 7 * 24 * 3600; // 7 天免校验
@@ -180,7 +188,12 @@ function hasValidCookie(request: Request): boolean {
 
 function isAllowedBot(ua: string): boolean {
   const lower = ua.toLowerCase();
-  return ALLOWED_UA.some((token) => lower.includes(token));
+  return ALLOWED_BOTS.some((token) => lower.includes(token));
+}
+
+function isInAppBrowser(ua: string): boolean {
+  const lower = ua.toLowerCase();
+  return IN_APP_BROWSER_UA.some((token) => lower.includes(token));
 }
 
 /** 挑战页：内联 JS 设置 cookie 后原地重载；无 JS 的客户端停留在此，拿不到正文 */
@@ -234,15 +247,32 @@ function cookieNotice(): Response {
 export default async function middleware(request: Request) {
   const url = new URL(request.url);
   const { pathname } = url;
+  const passHash = sitePassHash();
 
-  // 跳过：API 函数、带扩展名的静态资源（assets/img/sitemap.xml/robots.txt 等）
-  if (pathname.startsWith('/api/')) return next();
+  // API 函数：默认跳过（/api/status 自带 STATUS_TOKEN 校验、track 埋点等）。
+  // 例外：/api/ai-search 会返回文档片段（等于内容出口），密码门启用时同样要
+  // 凭 zg_pw 访问，否则脚本可直接用它绕过密码全站抽内容。
+  if (pathname.startsWith('/api/')) {
+    if (passHash && pathname.startsWith('/api/ai-search')) {
+      const provided = passCookieValue(request);
+      if (!provided || !constantTimeEqual(provided, await passHash)) {
+        return new Response(JSON.stringify({ error: 'unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+        });
+      }
+    }
+    return next();
+  }
+
+  // 带扩展名的静态资源（assets/img/sitemap.xml/robots.txt 等）跳过
   if (/\.[^/]+$/.test(pathname)) return next();
 
   const ua = request.headers.get('user-agent') ?? '';
 
-  // 白名单直通（搜索引擎收录、微信分享、社交预览、监控探活；
-  // 2026-11-09 用户决定：全站密码下仍保留直通，SEO 与分享预览不受影响）
+  // 服务端抓取类直通（搜索引擎收录、社交预览、可用性监控——
+  // 2026-11-09 用户决定：全站密码下仍保留直通，SEO 与分享预览不受影响）。
+  // 注意这里只放「机器」，应用内浏览器（微信/LINE）不算——见下方密码门。
   if (ua && isAllowedBot(ua)) return next();
 
   // ── 全站密码门（STATUS_TOKEN 已设置时启用，优先于 JS 挑战门）──────────
@@ -250,19 +280,24 @@ export default async function middleware(request: Request) {
   // 不再豁免。密码页只在提交时重载一次（无自动循环），iframe 里安全；
   // 配套：密码 cookie 用 SameSite=None; Secure（跨站 iframe 可写）+ App 侧
   // WebView 开启第三方 cookie，输一次密码 30 天免输。
+  // 微信/LINE 内置浏览器同样要密码（2026-11-10 用户反馈的绕过已修）。
   // 密码页本身需要 JS（crypto.subtle 摘要），无 JS 客户端同样拿不到正文。
-  const passHash = sitePassHash();
   if (passHash) {
     const provided = passCookieValue(request);
     if (provided && constantTimeEqual(provided, await passHash)) return next();
     return passwordPage();
   }
 
-  // iframe/embed 嵌入式导航直接放行【仅 JS 挑战门路径】：第三方 iframe 里
-  // cookie 常被浏览器拦截，挑战页会自动重载形成死循环（fuel-records App
-  // 依赖此行为）。Sec-Fetch-Dest 是浏览器自动附加的请求元数据（JS 无法
-  // 伪造），脚本用 curl 伪造也过不了前面的 Bot Protection 挑战层，
-  // 因此不损失防护。生产环境已设 STATUS_TOKEN，本路径不生效。
+  // ── 以下为「未设 STATUS_TOKEN」的回落路径 ──────────────────────────────
+
+  // 应用内浏览器（微信/LINE）直通：原「中文用户分享主渠道」，JS 挑战门不拦。
+  // 密码门启用后走不到这里（上面已要求密码）。
+  if (ua && isInAppBrowser(ua)) return next();
+
+  // iframe/embed 嵌入式导航直接放行：第三方 iframe 里 cookie 常被浏览器拦截，
+  // 挑战页会自动重载形成死循环（fuel-records App 依赖此行为）。Sec-Fetch-Dest
+  // 是浏览器自动附加的请求元数据（JS 无法伪造），脚本用 curl 伪造也过不了
+  // 前面的 Bot Protection 挑战层，因此不损失防护。
   const secFetchDest = request.headers.get('sec-fetch-dest');
   if (secFetchDest === 'iframe' || secFetchDest === 'embed') return next();
 
