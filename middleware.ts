@@ -11,7 +11,12 @@
 //                       无 JS 执行能力的客户端（curl/脚本/朴素爬虫）拿不到正文；
 //                       搜索引擎、微信、社交预览等白名单直通。
 //   豁免（2026-11-09 用户决定）：白名单爬虫（搜索引擎/AI 搜索/微信/社交预览）
-//                    与 iframe 嵌入（fuel-records App）直通，不要求密码。
+//                    直通，不要求密码。
+//   2026-11-10 用户追加：iframe/App 内嵌（fuel_records WebView）也要密码——
+//                    密码门不再豁免 iframe；密码 cookie 用 SameSite=None; Secure
+//                    （跨站 iframe 里才能写入），App 侧已同步开启第三方 cookie。
+//                    注意：iframe 豁免仅在「未设 STATUS_TOKEN 的 JS 挑战门」下保留
+//                    （那条路径会自动重载，iframe 无 cookie 会死循环）。
 //
 // 诚实边界：无头浏览器（真实 Chrome 内核）能执行 JS，可越过本门——
 //          对付它靠 Vercel Firewall 的 Bot Protection 启发式挑战（控制台开启）。
@@ -144,7 +149,7 @@ function passwordPage(): Response {
       var hex = Array.from(new Uint8Array(buf)).map(function (b) {
         return b.toString(16).padStart(2, '0');
       }).join('');
-      document.cookie = '${PASS_COOKIE}=' + hex + '; max-age=${PASS_MAX_AGE}; path=/; samesite=lax';
+      document.cookie = '${PASS_COOKIE}=' + hex + '; max-age=${PASS_MAX_AGE}; path=/; samesite=none; secure';
       var v = new URL(location.href);
       v.searchParams.set('zg_try', '1');
       location.replace(v.pathname + v.search);
@@ -240,14 +245,11 @@ export default async function middleware(request: Request) {
   // 2026-11-09 用户决定：全站密码下仍保留直通，SEO 与分享预览不受影响）
   if (ua && isAllowedBot(ua)) return next();
 
-  // iframe/embed 嵌入式导航直接放行：第三方 iframe 里 cookie 常被浏览器拦截，
-  // 密码页会死循环（fuel-records App 依赖此行为；2026-11-09 用户决定继续豁免）。
-  // Sec-Fetch-Dest 是浏览器自动附加的请求元数据（JS 无法伪造），脚本用 curl
-  // 伪造也过不了前面的 Bot Protection 挑战层，因此不损失防护。
-  const secFetchDest = request.headers.get('sec-fetch-dest');
-  if (secFetchDest === 'iframe' || secFetchDest === 'embed') return next();
-
   // ── 全站密码门（STATUS_TOKEN 已设置时启用，优先于 JS 挑战门）──────────
+  // 2026-11-10 用户决定：iframe/App 内嵌（fuel_records WebView）同样要求密码，
+  // 不再豁免。密码页只在提交时重载一次（无自动循环），iframe 里安全；
+  // 配套：密码 cookie 用 SameSite=None; Secure（跨站 iframe 可写）+ App 侧
+  // WebView 开启第三方 cookie，输一次密码 30 天免输。
   // 密码页本身需要 JS（crypto.subtle 摘要），无 JS 客户端同样拿不到正文。
   const passHash = sitePassHash();
   if (passHash) {
@@ -255,6 +257,14 @@ export default async function middleware(request: Request) {
     if (provided && constantTimeEqual(provided, await passHash)) return next();
     return passwordPage();
   }
+
+  // iframe/embed 嵌入式导航直接放行【仅 JS 挑战门路径】：第三方 iframe 里
+  // cookie 常被浏览器拦截，挑战页会自动重载形成死循环（fuel-records App
+  // 依赖此行为）。Sec-Fetch-Dest 是浏览器自动附加的请求元数据（JS 无法
+  // 伪造），脚本用 curl 伪造也过不了前面的 Bot Protection 挑战层，
+  // 因此不损失防护。生产环境已设 STATUS_TOKEN，本路径不生效。
+  const secFetchDest = request.headers.get('sec-fetch-dest');
+  if (secFetchDest === 'iframe' || secFetchDest === 'embed') return next();
 
   // ── JS 挑战门（未设置 STATUS_TOKEN 时的原有行为）───────────────────────
   // 已有有效 cookie → 放行
