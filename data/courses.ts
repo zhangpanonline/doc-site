@@ -101,6 +101,14 @@ const agentCoreMdSections: CourseSection[] = AGENTCORE_MD_NAMES.map(
   name => ({id: `agents/Agents底层逻辑/${name}`}),
 );
 
+// Linux与运维基础实战课程（gitee.com/dev-edu/linux-core）：源仓按章节区间合并为 6 篇长课件，
+// 导入时保持该粒度：01 导言 / 02-05 Linux环境 / 06-17 Linux命令 / 18-21 系统与性能 / 22-32 Shell脚本 / 33-43 网络基础。
+// 图片已本地化到 static/img/linux/{env,cmd,perf,shell,net}/（源仓 02 课件有一张 E:/ 本地路径图缺失，与其后时间线图重复，已删）。
+const LINUX_NAMES = ['必看导言', 'Linux环境', 'Linux命令', '系统与性能', 'Shell脚本', '网络基础'];
+const linuxSections: CourseSection[] = LINUX_NAMES.map(
+  name => ({id: `devops/Linux与运维基础实战/${name}`}),
+);
+
 export const courses: CourseDef[] = [
   {unit: 'agents', key: 'python', name: 'Python 语言核心', sidebar: 'agentsPython', sections: pythonSections},
   {unit: 'agents', key: 'framework', name: 'Python 框架', sidebar: 'agentsFramework', sections: frameworkSections},
@@ -109,4 +117,5 @@ export const courses: CourseDef[] = [
   {unit: 'agents', key: 'database', name: '数据库', sidebar: 'agentsDatabase', sections: databaseSections('agents')},
   {unit: 'backend', key: 'database', name: '数据库', sidebar: 'backendDatabase', sections: databaseSections('backend')},
   {unit: 'common', key: 'database', name: '数据库', sidebar: 'common', sections: databaseSections('common')},
+  {unit: 'devops', key: 'linux', name: 'Linux与运维基础实战', sidebar: 'devopsLinux', sections: linuxSections},
 ];
