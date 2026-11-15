@@ -39,7 +39,8 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "xmind-embed-viewer": "^1.2.0"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.10.2",

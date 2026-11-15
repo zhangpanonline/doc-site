@@ -95,7 +95,8 @@ const dataScienceSections: CourseSection[] = DATASCIENCE_NAMES.map(
 // 34 章规划（见 docs/agents/Agents底层逻辑/01.必看导言.md 的路线表），
 // 逐章补充：新增章节 = 新建 docs/agents/Agents底层逻辑/NN.章节名.md + 在此追加章节名。
 // 文件用 .md（纯 Markdown 课件，不再做互动课与速查表）。
-const AGENTCORE_MD_NAMES = ['必看导言'];
+// 例外：02.AI的分类 为 .mdx（内嵌 XMindViewer 组件渲染 .xmind 脑图，无法用纯 Markdown）。
+const AGENTCORE_MD_NAMES = ['必看导言', 'AI的分类'];
 const agentCoreMdSections: CourseSection[] = AGENTCORE_MD_NAMES.map(
   name => ({id: `agents/Agents底层逻辑/${name}`}),
 );
