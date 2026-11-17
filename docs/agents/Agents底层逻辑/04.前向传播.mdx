@@ -4,7 +4,13 @@ title: '04. 前向传播'
 description: "Agents 底层逻辑第 4 章「前向传播」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
 displayed_sidebar: agentsCore
 ---
-
+:::tip 交互实验：前向传播
+<div style={{display: 'inline-block'}}><a href="/neural-lab/#/forward" target="_blank" rel="noopener noreferrer"><strong>全连接神经网络 — 信号向前流动 ↗</strong></a></div>
+:::
+:::tip 前向传播
+对于一个神经元，当输入固定时，参数（权重+偏执）唯一影响着输出的结果。  
+对于神经网络，每一层（不包括输入层）的输入参数（权重+偏执）都影响下一层的输出结果，也就是说所有的权重+偏执的集合最终影响输出层的结果。
+:::
 $$
 \begin{aligned}
 & \textbf{单个神经元} \\
