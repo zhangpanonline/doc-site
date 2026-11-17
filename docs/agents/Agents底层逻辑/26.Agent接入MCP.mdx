@@ -1,0 +1,37 @@
+---
+sidebar_position: 26
+title: '26. Agent接入MCP'
+description: "Agents 底层逻辑第 26 章「Agent接入MCP」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+# Agent 接入 MCP
+
+<img src="/img/duyi/agentcore-26-mcp.svg" />
+
+to do list:
+
+- `mcp` 独立配置
+- 进一步封装描述和工具
+- 注册工具
+- 修改系统提示词模板和注入
+
+```python
+from agent.agent import Agent
+from agent.printer import ModelPrinterListener
+
+listener = ModelPrinterListener()
+agent = Agent(model_listener=listener)
+```
+
+```python
+agent.session.print_friendly()
+```
+
+```python
+agent.invoke("当前时间是？")
+```
+
+```python
+agent.session.save()
+```

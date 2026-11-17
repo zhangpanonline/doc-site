@@ -1,0 +1,33 @@
+---
+sidebar_position: 21
+title: '21. Agent'
+description: "Agents 底层逻辑第 21 章「Agent」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+# Agent
+
+AI Agent（智能体）：通过自主规划、调用工具、持续观察反馈并迭代行动，独立推进复杂任务直至目标达成的人工智能运行单元。
+
+课前修改：
+
+- 修改了系统提示词，现在系统提示词更加简洁
+- 封装了`agent.py`
+- 封装了抽象的监听器
+- 新增了`session`的简洁打印方法`print_friendly`
+
+```python
+from agent.agent import Agent
+from agent.printer import ModelPrinterListener
+
+listener = ModelPrinterListener()
+agent = Agent(model_listener=listener)
+```
+
+```python
+agent.invoke("请帮我分析./agent目录中的核心实现逻辑，将结果放到当前目录的 分析.md 中")
+```
+
+```python
+agent.session.print_friendly()
+```

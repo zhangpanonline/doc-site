@@ -1,0 +1,136 @@
+---
+sidebar_position: 22
+title: '22. Agent 搜索引擎'
+description: "Agents 底层逻辑第 22 章「Agent 搜索引擎」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+# Agent 搜索引擎
+
+<img src="/img/duyi/agentcore-22-AI搜索原理.svg" />
+
+问题的关键是，`web_search` 工具应该返回给 AI 什么调用结果？
+
+如何使用传统的搜索引擎，内容被大量的标签、样式、JS代码污染，会遇到以下问题：
+
+- 更多的 token 消耗
+- 注意力被分散
+- 很多 CSR 的页面无法得到内容
+- 包含大量无关信息，比如广告图片、菜单、banner等等
+- 深层链接无法一次性获取
+- ...
+
+这些问题，都使得我们需要一个更加适合 Agent 调用的搜索引擎
+
+- **Firecrawl**：https://www.firecrawl.dev/
+
+- **Tavily**：https://www.tavily.com/
+
+- **AnySearch**：http://www.anysearch.com/
+
+- **Brave**：https://brave.com/
+
+- **Exa**: https://exa.ai/
+
+## 获取 API-KEY
+
+https://www.tavily.com/
+
+将获取到的 API KEY 保存到环境变量
+
+## 使用 Tavily
+
+```python
+!uv add tavily-python==0.7.26
+```
+
+```python
+from tavily import TavilyClient, TavilyKeylessLimitError
+from agent.config import tavily_settings
+
+client = TavilyClient(api_key=tavily_settings.api_key)
+```
+
+### 基本搜索功能
+
+```python
+import json
+response = client.search(query="可控核聚变最新研究进展")
+print(json.dumps(response, indent=2, ensure_ascii=False))
+```
+
+### 网页提取功能
+
+```python
+response = client.extract(
+    urls=[
+        "https://baike.baidu.com/item/Tavily/67277807",
+        "https://baike.baidu.com/item/Firecrawl"
+    ], 
+    include_images=True)
+
+print(json.dumps(response, indent=2, ensure_ascii=False))
+```
+
+### 爬虫功能
+
+```python
+response = client.crawl(
+    url="https://www.yuanjin.tech/",
+    max_depth=3,
+    limit=50,
+    instructions="找到所有和网络相关的知识"
+)
+
+print(json.dumps(response, indent=2, ensure_ascii=False))
+```
+
+### 更多功能
+
+https://github.com/tavily-ai/tavily-python
+
+## 集成到 Agent
+
+```python
+# 新增 tools
+from agent.tool import registry
+from agent.tool.core import tool
+from tavily import TavilyClient, TavilyKeylessLimitError
+from agent.config import tavily_settings
+
+
+
+@tool(query="搜索关键字")
+def web_search(query:str):
+    "根据关键字进行网络搜索，返回结构化的搜索结果"
+    client = TavilyClient(api_key=tavily_settings.api_key)
+    response = client.search(query=query)
+    return json.dumps(response, ensure_ascii=False)
+
+@tool(urls="要抓取的url链接数组")
+def fetch_url(urls: list[str]):
+    "根据提供的url数组，抓取网页内容，返回结构化的搜索结果"
+    client = TavilyClient(api_key=tavily_settings.api_key)
+    response = client.extract(
+    urls=urls, 
+    include_images=False)
+
+    return json.dumps(response, ensure_ascii=False)
+
+registry.register(web_search)
+registry.register(fetch_url)
+```
+
+```python
+from agent.agent import Agent
+from agent.printer import ModelPrinterListener
+
+listener = ModelPrinterListener()
+agent = Agent(model_listener=listener)
+
+agent.invoke("帮我查一查苹果最新发布了哪些产品？")
+```
+
+```python
+agent.session.print_friendly()
+```

@@ -1,0 +1,203 @@
+---
+sidebar_position: 18
+title: '18. tools'
+description: "Agents 底层逻辑第 18 章「tools」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+```python
+from agent.model import Model
+from agent.printer import ModelPrinterListener
+from agent.prompt import render_prompt
+from agent.session import Session
+import os
+
+session = Session()
+model = Model()
+listener = ModelPrinterListener(model)
+session.add_message({"role": "system", "content": render_prompt("system")})
+```
+
+# Tool Calling
+
+大模型只能处理输入得到输出，没有任何其他功能。
+
+而在Agent应用中，经常会出现希望：
+
+- 大模型读取或写入一个文件
+- 执行一段命令
+- 联网搜索一些资料
+- ...
+
+这些功能大模型都无法直接处理。
+
+如果需要大模型去完成一些除了文本输出之外的功能的时候，就需要借助`Tool Calling`
+
+<img src="/img/duyi/agentcore-18-tool_calling.svg" />
+
+## 定义工具函数
+
+```python
+def read_file(filepath: str) -> str:
+    """读取文件内容并以字符串形式返回"""
+    with open(filepath, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+# 测试：读取当前课件文件的前 200 个字符
+content = read_file("./agent/prompt/system.j2")
+print(content[:200])
+```
+
+```python
+def write_file(filepath: str, content: str) -> None:
+    """将内容写入文件"""
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+# 测试：写入测试文件
+write_file("test_write.txt", "Hello, this is a test file.\n这是测试文件。")
+print(read_file("test_write.txt"))
+```
+
+## 绑定工具到上下文
+
+https://api-docs.deepseek.com/zh-cn/api/create-chat-completion
+
+```python
+session.tools = [
+    # 工具1: 读文件
+    {
+        # 固定: function
+        "type": "function",
+        "function": {
+            # 工具名称，会影响模型输出结果，通常为函数名
+            "name": "read_file",
+            # 自然语言描述函数功能，模型能理解 
+            "description": "读取文件",
+            # 参数的schema描述”
+            "parameters": {
+                "type": "object", # 固定为 object
+                "properties": {
+                    # 描述参数 filepath
+                    "filepath":{
+                        "type": "string",
+                        "description": "文件的绝对路径，或相对于cwd的路径",
+                    }
+                },
+                # 必填参数
+                "required": ["filepath"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "write_file",
+            "description": "写入文件",
+            "parameters": {
+                "type": "object", 
+                "properties": {
+                    "filepath":{
+                        "type": "string",
+                        "description": "文件的绝对路径，或相对于cwd的路径",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "要写入的内容，该内容会完全覆盖文件原本内容"
+                    }
+                },
+                "required": ["filepath", "content"]
+            }
+        }
+    }
+]
+```
+
+```python
+# 查看上下文
+session.print()
+```
+
+## 调用模型
+
+大模型厂商通常会将你传递的工具放到系统上下文的末尾，比如：
+
+```markdown
+<|im_start|>system<|im_sep|>
+系统提示词
+# Tools
+
+## functions
+
+namespace functions {
+    // 读取文件
+    type read_file = ({
+        // 文件的绝对路径，或相对于cwd的路径
+        file_path: string
+    }) => any;
+    // 写入文件
+    type write_file = ({
+        // 文件的绝对路径，或相对于cwd的路径
+        file_path: string;
+        // 待写入的内容
+        content: string
+    }) => any;
+}
+<|im_end|>
+<|im_start|>user<|im_sep|>
+用户消息
+<|im_end|>
+<|im_start|>assistant<|im_sep|>
+<think>
+```
+
+模型会返回：
+
+```
+思考内容
+</think>
+<tool_call>
+{"name": "write_file", "arguments": {"file_path": "..."}}
+</tool_call>
+<|im_end|>
+```
+
+```python
+listener.listening = False # 暂时不监听流式输出
+
+session.add_message({"role": "user", "content": "请在当前目录新建一个`uv.md`文件，写入UV的安装教程。直接新建就好"})
+resp = model.invoke(session)
+print(resp.print_raw())
+```
+
+```python
+session.save()
+```
+
+## 执行工具
+
+```python
+msg = session.messages[-1]
+msg
+```
+
+```python
+import json
+
+tool_calls = msg["tool_calls"][0]
+tool_id = tool_calls["id"]
+tool_name = tool_calls["function"]["name"]
+arguments = json.loads(tool_calls["function"]["arguments"])
+
+print("tool id", tool_id)
+print("tool name", tool_name)
+print("arguments", arguments)
+```
+
+```python
+func = globals().get(tool_name)
+if callable(func):
+    func(**arguments)
+```

@@ -1,0 +1,77 @@
+---
+sidebar_position: 29
+title: '29. 子代理'
+description: "Agents 底层逻辑第 29 章「子代理」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+# 子代理 Sub Agent
+
+考虑这么一种场景，你需要完成一个业务功能开发，并将其暴露为FastAPI的接口，如果让一个Agent单独的去完成，在一个轮次中，它会经历以下流程：
+
+- reasoning：需求分析、方案设计
+- 一个超级庞大的ReAct循环
+  - 建立ORM数据层
+  - 实现数据迁移
+  - 执行迁移命令
+  - 创建DTO
+  - 创建Service
+  - 创建接口
+  - 创建多个测试脚本
+  - 运行测试脚本
+  - 解决错误（循环）
+
+你最终会得到一个超级庞大的上下文，这会带来诸多问题
+
+可以使用子代理来解决这个问题
+
+<img src="/img/duyi/agentcore-29-子代理.svg" height="600" />
+
+刚才的例子，更友好的设计是：
+
+- reasoning：仅宏观需求分析、方案设计
+- ReAct循环
+  - 子代理：实现数据层
+  - 子代理：实现DTO
+  - 子代理：实现接口
+  - 子代理：完成测试
+  - 等待所有子代理完成，汇总结果
+
+## 代码实现
+
+### 实现 tool: create_agent
+
+```python
+# 测试
+from agent.tool.create_agent import create_agent
+
+resp = create_agent(agent_config=[
+    {
+        "name": "sub-agent-1",
+        "query": "这是一个测试，请说：你好！"
+    },
+    {
+        "name": "sub-agent-2",
+        "query": "this is a test, reply: Hello!"
+    }
+]) 
+print(resp)
+```
+
+### 启动子代理
+
+```python
+from agent.agent import Agent
+from agent.printer import ModelPrinterListener
+
+listener = ModelPrinterListener()
+agent = Agent(model_listener=listener)
+```
+
+```python
+agent.invoke("请开启多个子代理，创建两个页面，分别画小猪佩奇和海绵宝宝。")
+```
+
+```python
+agent.session.save()
+```

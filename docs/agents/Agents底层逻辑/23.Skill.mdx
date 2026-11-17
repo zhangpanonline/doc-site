@@ -1,0 +1,83 @@
+---
+sidebar_position: 23
+title: '23. Skill'
+description: "Agents 底层逻辑第 23 章「Skill」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+# Skill
+
+接下来要聚焦提示词的问题。
+
+考虑下面的场景，提示词该如何编排？
+
+- 在`SaaS`系统中，用户**有时候**需要对销售数据分析，数据分析时，需要告诉模型：
+  - 从哪里获取销售数据？
+  - 数据有哪些字段，每个字段是什么含义？
+  - 有哪些常见的分析方式？
+  - 如何根据用户的需求选择合适的分析方式？
+  - 分析结果用哪种形式展现？
+  - ...
+- 在智能客服系统中，用户会**经常**询问关于产品的信息，则需要告诉模型：
+  - 我们有哪些产品
+  - 每个产品的参数、特点、用法、注意事项、价格、活动、购买链接、建议组合...
+
+
+
+如果在系统提示词中，完整地塞入这些内容，会导致严重的提示词膨胀。
+
+而实际上，像这些提示词只有在某些场景下才会触发。因此，我们可以用更加优雅的方式完成提示词的注入。
+
+<img src="/img/duyi/agentcore-23-skill.svg" />
+
+## 编写 SKILL
+
+编写 `agent/.agents/skills/no-permission/SKILL.md`
+
+## 注入系统提示词和工具
+
+```python
+from agent.agent import Agent
+from agent.printer import ModelPrinterListener
+
+listener = ModelPrinterListener()
+agent = Agent(model_listener=listener)
+```
+
+```python
+agent.session.print_friendly()
+```
+
+```python
+agent.session.tools
+```
+
+```python
+# 测试
+agent.invoke("最近天气如何？")
+```
+
+```python
+agent.session.save()
+```
+
+## 安装公共 SKILL
+
+请先安装 node：https://nodejs.org/zh-cn/
+
+查询公共skill: 
+
+https://www.skills.sh/
+
+```shell
+# 安装 skill
+npx skills add https://github.com/anthropics/skills --skill frontend-design
+```
+
+```python
+agent.invoke("帮我在 ./demo 中创建一个 html 页面，创建一个漂亮的分页表格，请使用 frontend-design skill")
+```
+
+```python
+agent.session.save()
+```

@@ -1,0 +1,59 @@
+---
+sidebar_position: 15
+title: '15. 模型接口契约'
+description: "Agents 底层逻辑第 15 章「模型接口契约」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+# Ollama
+
+## 本地模型
+
+- `Pytorch + Transformers`：主要是用于本地训练、微调，也可以进行本地推理，但需要自行适配硬件加速
+- `Ollama`：一键部署和运行开源大模型的命令行工具，内置量化支持和 GPU 加速
+- `llama.cpp`：高性能 C/C++ 推理引擎，主打 CPU 推理和多种量化方案
+- `vLLM`：高吞吐量推理框架，基于 PagedAttention 技术，适用于生产环境部署
+- `MLX`：Apple 官方 ML 框架，专为 Apple Silicon 设计的本地推理方案
+- `LM Studio`：带图形界面的桌面应用，支持一键下载和运行本地开源模型
+- `LocalAI`：提供 OpenAI 兼容 API 的本地推理服务，方便现有应用无缝切换
+
+## 下载安装
+
+自行下载安装：https://ollama.com/
+
+```shell
+ollama -v
+```
+
+Ollama官方仓库：https://ollama.com/library
+
+设置环境变量：`OLLAMA_MODEL_SERVER="https://mirror.ollama.com"`
+
+```shell
+# 拉取模型到本地
+ollama pull qwen3-vl
+# 查看已下载的模型
+ollama list
+# 删除模型
+ollama rm <模型名称>
+# 查看模型信息
+ollama show <模型名称>
+# 运行模型
+ollama run <模型名称>
+# 查看目前的服务
+ollama ps
+```
+
+访问：http://localhost:11434/ ，查看服务是否正在运行
+
+
+
+测试接口：
+
+```shell
+# 模型列表
+curl http://localhost:11434/v1/models
+
+# 聊天接口
+curl -X POST http://localhost:11434/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\": \"qwen3-vl\", \"messages\": [{\"role\": \"user\", \"content\": \"你好，请介绍一下自己\"}], \"stream\": false}"
+```

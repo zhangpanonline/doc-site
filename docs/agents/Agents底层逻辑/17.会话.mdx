@@ -1,0 +1,86 @@
+---
+sidebar_position: 17
+title: '17. 会话'
+description: "Agents 底层逻辑第 17 章「会话」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+```python
+from agent.model import Model
+from agent.printer import print_response, print_stream, PrinterConfig
+from agent.prompt import render_prompt
+
+model = Model()
+```
+
+```python
+# 第1次调用
+resp = model.invoke_stream([
+    {"role": "system", "content": render_prompt("system")},
+    {"role": "user", "content": "uv是什么？"}
+])
+
+print_stream(resp)
+```
+
+```python
+# 第2次调用
+resp = model.invoke_stream([
+    {"role": "system", "content": render_prompt("system")},
+    {"role": "user", "content": "如何安装？"}
+])
+
+print_stream(resp)
+```
+
+```python
+from agent.session import Session
+
+session = Session()
+session.add_message({"role": "system", "content": render_prompt("system")})
+session.add_message({"role": "user", "content": "uv是什么？"})
+# 第一次调用
+resp = model.invoke_stream(session)
+
+print_stream(resp)
+```
+
+```python
+# 查看会话内容
+import json
+
+print(session.id)
+print(json.dumps(session.messages, ensure_ascii=False, indent=2))
+```
+
+```python
+session.add_message({"role":"user", "content": "如何安装？"})
+# 第2词调用
+resp = model.invoke_stream(session)
+
+print_stream(resp)
+```
+
+```python
+# 查看会话内容
+import json
+
+print(session.id)
+print(json.dumps(session.messages, ensure_ascii=False, indent=2))
+```
+
+```python
+# 保存会话内容
+session.save()
+```
+
+# 最佳实践
+
+在使用会话功能的时候，不管以何种方式实现，应该遵循以下法则：
+
+- **历史上下文不可修改**
+
+  不满足此条，会导致难以命中模型服务商的 prompt cache
+- **上下文中应保留思维链**
+
+  不满足此条，会导致推理上下文丢失，从而导致模型回复质量下降

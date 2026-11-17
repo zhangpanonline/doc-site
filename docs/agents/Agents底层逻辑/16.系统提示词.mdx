@@ -1,0 +1,213 @@
+---
+sidebar_position: 16
+title: '16. 系统提示词'
+description: "Agents 底层逻辑第 16 章「系统提示词」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+# 二次封装
+
+```python
+!uv add pydantic-settings==2.14.1
+```
+
+```python
+from agent.model import Model
+from agent.printer import print_response, print_stream, PrinterConfig
+from agent.message import SystemMessage, UserMessage, AssistantMessage
+
+model = Model()
+```
+
+```python
+resp = model.invoke_stream([
+    SystemMessage("当用户向你打招呼时，你仅需回答你好即可"),
+    UserMessage("你好")
+])
+print_stream(resp)
+```
+
+# 系统提示词
+
+系统提示词往往出现在所有消息的最前面，大模型在训练的过程中，会重点关注系统提示词。
+
+编写系统提示词的核心原则是：
+
+- **精简**
+
+  能不说就不说，能少说就少说，绝对避免无病呻吟。
+
+  > **反面案例：**
+  >
+  > 
+  >
+  > 你现在要充当一名专业代码顾问，接下来我会向你提出各种各样和编程相关的问题。希望你认真仔细地阅读我每一次发送过来的内容，充分理解我的诉求之后，再进行回答。回答的时候尽量清晰易懂，方便我进行理解。如果遇到不清楚的内容，千万不要随意编造答案。
+  >
+  > 
+  >
+  > **正面案例**
+  >
+  > 
+  >
+  > 你是代码顾问。精准解答编程问题，不懂直接说明，禁止编造信息。
+
+- **自洽**
+
+  提示词不能自我矛盾。
+
+  > **反面案例：**
+  >
+  > 
+  >
+  > 你是数据分析助手。回答务必详尽，多角度展开说明；同时所有回复控制在 30 字以内。
+  >
+  > 
+  >
+  > **正面案例**
+  >
+  > 
+  >
+  > 你是数据分析助手。回答简洁，整体控制在 30 字以内。
+
+- **全局约束**
+
+  系统提示词内所有规则作用于整条对话的每一轮交互。
+
+  > **反面案例：**
+  >
+  > 
+  >
+  > 当用户要求你写数据分析类代码的时候，你应该使用Python来编写。
+  >
+  > 
+  >
+  > **正面案例**
+  >
+  > 
+  >
+  > &lt;空&gt;
+
+- **保持静态**
+
+  系统提示词内容应当**尽量**固定不变。
+
+  > **反面案例：**
+  >
+  > 
+  >
+  > 当前用户是：&lt;动态内容&gt;，时间是：&lt;动态内容&gt;
+  >
+  > 
+  >
+  > **正面案例**
+  >
+  > 
+  >
+  > &lt;空&gt;
+
+- **结构化**
+
+  系统提示词采用 Markdown / XML（或二者混用）进行分层排版；核心指令、硬性约束、输出规范使用标记进行隔离，便于模型区分层级、识别关键规则，避免文本扁平化造成理解偏差。
+
+  > **反面案例：**
+  >
+  > 
+  >
+  > 你是技术助手。回答必须精简，不能编造信息。输出答案尽量条理清晰。如果信息不足直接说明。禁止额外多余话术。
+  >
+  > 
+  >
+  > **正面案例：**
+  >
+  > ```markdown
+  > # 角色
+  > 技术助手
+  > ## 硬性规则
+  > 1. 回答精简，严禁编造信息
+  > 2. 信息不足直接说明，不强行作答
+  > ## 输出要求
+  > 条理清晰，无多余开场白与结束语
+  > ```
+
+```python
+!uv add jinja2==3.1.6
+```
+
+```python
+# 获取所需信息
+import os
+import platform
+import subprocess
+
+
+def get_cwd() -> str:
+    return os.getcwd()
+
+
+def get_is_git() -> bool:
+    result = subprocess.run(
+        ['git', 'rev-parse', '--is-inside-work-tree'],
+        capture_output=True, text=True, timeout=5
+    )
+    return result.returncode == 0 and result.stdout.strip() == 'true'
+
+
+def get_language() -> str:
+    system = platform.system()
+    if system == 'Darwin':
+        result = subprocess.run(
+            ['defaults', 'read', '-g', 'AppleLocale'],
+            capture_output=True, text=True, timeout=5
+        )
+        return result.stdout.strip()
+    elif system == 'Windows':
+        import ctypes
+        lcid = ctypes.windll.kernel32.GetUserDefaultLCID() # type: ignore
+        buf = ctypes.create_unicode_buffer(256)
+        ctypes.windll.kernel32.GetLocaleInfoW(lcid, 0x5C, buf, 256) # type: ignore
+        return buf.value
+    return ''
+
+
+print(f"cwd: {get_cwd()}")
+print(f"is_git: {get_is_git()}")
+print(f"language: {get_language()}")
+```
+
+```python
+# 模板渲染
+from jinja2 import Environment, FileSystemLoader
+
+
+def render_system_prompt() -> str:
+    template_dir = os.path.join(os.getcwd(), 'agent/prompt')
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template('system.j2')
+    return template.render(
+        language=get_language(),
+        cwd=get_cwd(),
+        is_git=get_is_git(),
+    )
+
+
+print(render_system_prompt())
+```
+
+```python
+# 使用封装后的结果
+from agent.prompt import render_prompt
+
+print(render_prompt("system"))
+```
+
+```python
+# 使用系统提示词
+
+from agent.prompt import render_prompt
+
+resp = model.invoke_stream([
+    SystemMessage(render_prompt("system")),
+    UserMessage("目前在哪个目录？")
+])
+print_stream(resp)
+```

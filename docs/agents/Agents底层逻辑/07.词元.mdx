@@ -1,0 +1,202 @@
+---
+sidebar_position: 7
+title: '07. 词元'
+description: "Agents 底层逻辑第 7 章「词元」课件：完整讲解核心概念与实现方法，配合代码示例与配图。"
+displayed_sidebar: agentsCore
+---
+
+# 词元（Token）
+
+词元来自于 NLP 领域，它研究的话题是：
+
+如何将文字序列转化为可被AI使用的数字序列
+
+试一试：https://tiktokenizer.vercel.app/
+
+转化过程称之为 **分词（Tokenize）**，转化的工具称之为 **分词器（Tokenizer）**，转化的结果序列称之为 **词元（Token）序列**，每一个数字称为为 **词元（Token）**。
+
+## 字符编码
+
+实现分词最简单的方式是将所有文字转化为UTF-8编码的数字
+
+```python
+# 示例1：中文+英文+符号测试
+input_text = "你好Hello!123"
+result = list(input_text.encode(encoding="utf-8"))
+print(f"文本：{input_text}")
+print(f"UTF-8：{result}")
+```
+
+为什么不直接将UTF-8的数字序列作为分词结果呢？主要有这几个原因：
+
+- 长度膨胀：中文一个汉字 = 3 个 UTF-8 字节数字，导致将来的计算量、显存占用、训练速度全部恶化
+- 信息浪费：模型每一层都要重复学习「228,189,160 = 你」这种固定组合，大量重复冗余学习
+- 语义不明：模型很难学到词语、字的边界规律
+
+如果能将每个有意义的字/词对应一个数字就好了，比如：
+- 你好 -> 10000
+- Hello -> 10001
+- ! -> 10002
+- 123 -> 10003
+
+这样一来，只需要4个数字就可以表达这句话，同时每个数字对应着一个可以被学习的语义。
+
+要实现这一点，就必须要建立一个“词典”，称之为 分词表（token vocabulary，Vocab）
+
+## 词表的建立
+
+通过统计大量的文字内容，建立词表。
+
+词表中会合并那些高频出现的组合。
+
+```python
+import json
+from collections import Counter
+
+def bpe_train(text, target_vocab_size=400):
+    """
+    简易 BPE 算法
+
+    将文本转为 UTF-8 字节序列后，不断合并高频相邻对，
+    直到词表大小达到 target_vocab_size。
+    """
+    byte_seq = list(text.encode("utf-8"))
+    # 初始词表：0~255 单字节
+    vocab = {i: bytes([i]) for i in range(256)}
+    seq = byte_seq.copy()
+
+    print(f"文本: {len(text)} 字符")
+    print(f"UTF-8 字节序列: {len(byte_seq)}（>> 初始词表 256）")
+    print(f"目标词表大小: {target_vocab_size}")
+    print()
+
+    step = 0
+    while len(vocab) < target_vocab_size:
+        pair_counts = Counter()
+        for i in range(len(seq) - 1):
+            pair_counts[(seq[i], seq[i + 1])] += 1
+        if not pair_counts:
+            break
+
+        best_pair, _ = pair_counts.most_common(1)[0]
+        new_id = len(vocab)
+        vocab[new_id] = vocab[best_pair[0]] + vocab[best_pair[1]]
+        step += 1
+        new_seq = []
+        i = 0
+        while i < len(seq):
+            if i + 1 < len(seq) and seq[i] == best_pair[0] and seq[i + 1] == best_pair[1]:
+                new_seq.append(new_id)
+                i += 2
+            else:
+                new_seq.append(seq[i])
+                i += 1
+        seq = new_seq
+
+    print(f"\n--- 合并结束 ---")
+    print(f"合并次数: {step}")
+    print(f"序列压缩: {len(byte_seq)} → {len(seq)}（{len(seq)/len(byte_seq)*100:.1f}%）")
+    print(f"词表: 256 → {len(vocab)}")
+
+    # 保存词表
+    id_to_token = {}
+    for tid in sorted(vocab.keys()):
+        raw = vocab[tid]
+        try:
+            id_to_token[tid] = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            id_to_token[tid] = raw.hex()
+
+    with open("bpe_vocab.json", "w", encoding="utf-8") as f:
+        json.dump(id_to_token, f, ensure_ascii=False, indent=2)
+
+
+
+# ==================== 测试 ====================
+
+with open("corpus.txt", "r", encoding="utf-8") as f:
+    corpus = f.read()
+
+bpe_train(corpus, target_vocab_size=400)
+```
+
+## 分词
+
+词表固定下来后，就不再改动了。
+
+后续的分词动作，只需要读取词表进行匹配，就能高效完成分词。
+
+```python
+import json
+import re
+
+with open("bpe_vocab.json", "r", encoding="utf-8") as f:
+    id_to_token = {int(k): v for k, v in json.load(f).items()}
+
+def to_bytes(tid, s):
+    if tid < 256:
+        return bytes([tid])
+    if re.fullmatch(r"(?:[0-9a-f]{2})+", s):
+        raw = bytes.fromhex(s)
+        try:
+            raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return raw
+    return s.encode("utf-8")
+
+vocab_bytes = {tid: to_bytes(tid, s) for tid, s in id_to_token.items()}
+bytes_to_id = {}
+for tid in sorted(vocab_bytes):
+    b = vocab_bytes[tid]
+    if b not in bytes_to_id:
+        bytes_to_id[b] = tid
+max_len = max(len(b) for b in bytes_to_id)
+
+def tokenize(text):
+    data = text.encode("utf-8")
+    ids = []
+    i = 0
+    while i < len(data):
+        for length in range(min(max_len, len(data) - i), 0, -1):
+            piece = data[i : i + length]
+            if piece in bytes_to_id:
+                ids.append(bytes_to_id[piece])
+                i += length
+                break
+    return ids
+
+test_text = "人工智能模型通过深度学习来理解自然语言。"
+ids = tokenize(test_text)
+
+print(f"测试文本: {test_text}")
+print(f"UTF-8 字节数: {len(test_text.encode('utf-8'))}")
+print(f"分词数量: {len(ids)}")
+print()
+decoded = []
+for tid in ids:
+    raw = vocab_bytes[tid]
+    try:
+        decoded.append(raw.decode("utf-8"))
+    except UnicodeDecodeError:
+        decoded.append(f"<字节 {raw.hex()}>")
+
+print(ids)
+print(decoded)
+```
+
+你会发现，某些单个汉字被拆分为了多个token，发生这种情况的原因有：
+
+- 词表太小，有些词还未收录就已经达到了词表上限
+- 训练的语料库中没有出现过该词
+
+| 文本单元     | 海外模型              | 国产模型         |
+| ------------ | --------------------- | ---------------- |
+| 1 个汉字     | 1.3～1.5 token        | 0.8～1 token     |
+| 1 个英文字母 | 平均 0.25～0.33 token | 0.25～0.33 token |
+| 1 个英文单词 | 平均 1.3 token        | 平均 1.3 token   |
+
+## 总结
+
+通过分词表，可以高效的将文本序列转化为 token 序列。
+
+不同的训练语料、不同的分词算法，得到不同的格式和内容的词表，从而得到不同的分词结果
