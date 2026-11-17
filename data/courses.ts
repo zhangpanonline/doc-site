@@ -96,7 +96,42 @@ const dataScienceSections: CourseSection[] = DATASCIENCE_NAMES.map(
 // 逐章补充：新增章节 = 新建 docs/agents/Agents底层逻辑/NN.章节名.md + 在此追加章节名。
 // 文件用 .md（纯 Markdown 课件，不再做互动课与速查表）。
 // 例外：02.AI的分类 为 .mdx（内嵌 XMindViewer 组件渲染 .xmind 脑图，无法用纯 Markdown）。
-const AGENTCORE_MD_NAMES = ['必看导言', 'AI的分类'];
+const AGENTCORE_MD_NAMES = [
+  '必看导言',
+  'AI的分类',
+  '神经元',
+  '前向传播',
+  '梯度下降',
+  '训练模式和框架',
+  '词元',
+  'token统计',
+  '神经网络的本质',
+  '词嵌入',
+  '注意力机制',
+  'Transformer的完整训练流程',
+  '推理机制',
+  '训练阶段',
+  '模型接口契约',
+  '系统提示词',
+  '会话',
+  'tools',
+  '封装tools',
+  'ReAct',
+  'Agent',
+  'Agent 搜索引擎',
+  'Skill',
+  'MCP协议',
+  'MCP Client',
+  'Agent接入MCP',
+  '实现MCP服务器',
+  'Skill VS MCP',
+  '子代理',
+  'Prompt Engineering',
+  'Context Engineering',
+  'Harness Engineering',
+  'Loop Engineering',
+  'Graph Engineering',
+];
 const agentCoreMdSections: CourseSection[] = AGENTCORE_MD_NAMES.map(
   name => ({id: `agents/Agents底层逻辑/${name}`}),
 );
