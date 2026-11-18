@@ -138,7 +138,7 @@ function passwordPage(): Response {
 <div class="card">
   <h1>🔒 本站需要访问密码</h1>
   <p id="err">密码不正确，请重试</p>
-  <input id="pw" type="password" placeholder="请输入访问密码" autofocus autocomplete="current-password">
+  <input id="pw" type="password" placeholder="QQ469069433" autofocus autocomplete="current-password">
   <button id="go">进入</button>
 </div>
 <script>
