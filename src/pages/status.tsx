@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import Layout from '@theme/Layout';
+import Head from '@docusaurus/Head';
 import {regionZh} from '../../lib/regions';
 import {CHINA_PROVINCES, CHINA_VIEWBOX} from '../components/chinaMap';
 import './status.css';
@@ -904,6 +905,10 @@ export default function StatusPage(): React.JSX.Element {
 
   return (
     <Layout title="访问统计" description="站点访问统计：IP、地区、访问次数与频率">
+      {/* 内部统计页不对外收录：sitemap 已排除，这里再禁止搜索引擎索引 */}
+      <Head>
+        <meta name="robots" content="noindex, nofollow" />
+      </Head>
       <main className="viz-root status-page">
         <header className="status-header">
           <div>

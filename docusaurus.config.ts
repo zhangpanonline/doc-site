@@ -172,6 +172,13 @@ var l=document.querySelectorAll('link[rel~="icon"]'),i;for(i=0;i<l.length;i++)l[
           remarkPlugins: [remarkMath],
           rehypePlugins: [[rehypeKatex, {strict: false, throwOnError: false}]],
         },
+        // sitemap：lastmod 取文件 git 最后提交时间（YYYY-MM-DD）；
+        // /status 是内部访问统计页，不对外收录——routesBuildMetadata 里按路由 path 排除。
+        // teach 静态页不在 Docusaurus 路由里，由 scripts/inject-teach-sitemap.mjs 补 lastmod。
+        sitemap: {
+          lastmod: 'date',
+          ignorePatterns: ['/status'],
+        },
         blog: false,
         theme: {
           customCss: './src/css/custom.css',

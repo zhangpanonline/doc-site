@@ -8,6 +8,7 @@
 //   构建会重建 build/，插早了会被覆盖。
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const SITE = 'https://doc.zhangpan.online';
 const SITEMAP = path.join('build', 'sitemap.xml');
@@ -38,6 +39,23 @@ const xml = fs.readFileSync(SITEMAP, 'utf8');
 const entries = [];
 let skipped = 0;
 
+/** 取源文件最后提交日期（YYYY-MM-DD），与 docusaurus-plugin-sitemap 的 lastmod:'date' 同口径。
+ *  build/teach 是 static/teach 的副本，git 里跟踪的是 static/teach；查不到时回退文件 mtime。 */
+function lastmod(rel) {
+  const tracked = path.join('static', 'teach', rel);
+  try {
+    const out = execFileSync('git', ['log', '-1', '--format=%cI', '--', tracked], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    if (out) return out.slice(0, 10);
+  } catch {
+    // 非 git 环境（如 CI 浅克隆无历史）→ 回退 mtime
+  }
+  const f = path.join(TEACH, rel);
+  return fs.statSync(f).mtime.toISOString().slice(0, 10);
+}
+
 for (const rel of files) {
   // 与其它 URL 一致：中文路径按段百分号编码
   const encoded = rel.split('/').map(encodeURIComponent).join('/');
@@ -46,7 +64,9 @@ for (const rel of files) {
     skipped += 1;
     continue;
   }
-  entries.push(`<url><loc>${loc}</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>`);
+  entries.push(
+    `<url><loc>${loc}</loc><lastmod>${lastmod(rel)}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`,
+  );
 }
 
 if (!entries.length) {
